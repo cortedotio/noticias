@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Clipping de Not?cias - Admin</title>
+    <title>Clipping de Notícias - Admin</title>
     <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -34,7 +34,7 @@
             .action-button { display: none; }
         }
 
-        /* Anima??o para o sino */
+        /* Animação para o sino */
         @keyframes ring {
             0%, 100% { transform: rotate(0); }
             10%, 30%, 50%, 70%, 90% { transform: rotate(-10deg); }
@@ -47,7 +47,7 @@
 </head>
 <body class="bg-gray-100 text-gray-800">
 
-    <!-- Cabe?alho Principal Fixo -->
+    <!-- Cabeçalho Principal Fixo -->
     <header class="bg-white shadow-md">
         <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
             <div class="text-2xl font-bold text-indigo-600 flex items-center">
@@ -56,12 +56,12 @@
             </div>
             <div class="flex items-center">
                 <div id="nav-logged-in" class="hidden items-center">
-                    <a href="#" id="nav-inicio" class="text-gray-600 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">In?cio</a>
-                    <a href="#" id="nav-relatorio" class="hidden text-gray-600 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">Relat?rio</a>
+                    <a href="#" id="nav-inicio" class="text-gray-600 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">Início</a>
+                    <a href="#" id="nav-relatorio" class="hidden text-gray-600 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">Relatório</a>
                     <a href="#" id="nav-pesquisa" class="text-gray-600 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">Pesquisa</a>
                     <a href="#" id="nav-super-admin" class="hidden text-red-600 hover:text-red-800 px-3 py-2 rounded-md text-sm font-bold">Super Admin</a>
                     
-                    <!-- ?cone de Sino -->
+                    <!-- Ícone de Sino -->
                     <div id="notification-bell-container" class="relative cursor-pointer ml-4">
                         <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
                         <span id="notification-badge" class="hidden absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white"></span>
@@ -77,24 +77,24 @@
     <main class="container mx-auto p-6">
         <div id="global-alert" class="mb-6"></div>
 
-        <!-- Se??o de Login -->
+        <!-- Seção de Login -->
         <section id="login-page" class="page-section fade-in">
             <div class="max-w-md mx-auto bg-white p-8 rounded-lg shadow-lg mt-10 relative">
                  <div id="login-logo-container" class="absolute top-4 right-4 h-12 w-auto"></div>
                 <h2 class="text-2xl font-bold text-center mb-6">Acesso ao Sistema</h2>
                 <form id="login-form">
                     <div class="mb-4"><label for="login-company" class="block text-sm font-medium text-gray-700 mb-1">Empresa</label><input type="text" id="login-company" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" required></div>
-                    <div class="mb-4"><label for="login-user" class="block text-sm font-medium text-gray-700 mb-1">Usu?rio</label><input type="text" id="login-user" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" required></div>
+                    <div class="mb-4"><label for="login-user" class="block text-sm font-medium text-gray-700 mb-1">Usuário</label><input type="text" id="login-user" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" required></div>
                     <div class="mb-6"><label for="login-password" class="block text-sm font-medium text-gray-700 mb-1">Senha</label><input type="password" id="login-password" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" required></div>
                     <button type="submit" class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">Entrar</button>
                 </form>
             </div>
         </section>
 
-        <!-- Se??o do Dashboard (In?cio) -->
+        <!-- Seção do Dashboard (Início) -->
         <section id="dashboard-page" class="page-section fade-in">
             <div class="flex flex-col md:flex-row justify-between md:items-center mb-6 bg-white p-4 rounded-lg shadow-md">
-                <h2 id="dashboard-title" class="text-2xl font-bold text-gray-800 mb-2 md:mb-0">Not?cias do Dia</h2>
+                <h2 id="dashboard-title" class="text-2xl font-bold text-gray-800 mb-2 md:mb-0">Notícias do Dia</h2>
                 <p id="current-datetime" class="text-lg text-indigo-600 font-medium"></p>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -105,7 +105,7 @@
                 <div id="news-alerts-container" class="md:col-span-2">
                     <div class="bg-white p-6 rounded-lg shadow-lg">
                         <div class="flex justify-between items-center mb-4">
-                            <h3 class="text-xl font-semibold text-gray-700">Relat?rio de Alertas</h3>
+                            <h3 class="text-xl font-semibold text-gray-700">Relatório de Alertas</h3>
                             <div class="flex items-center gap-2">
                                 <label for="alert-date-filter" class="text-sm font-medium">Filtrar por data:</label>
                                 <input type="date" id="alert-date-filter" class="px-2 py-1 border border-gray-300 rounded-md text-sm">
@@ -117,7 +117,7 @@
             </div>
         </section>
         
-        <!-- Se??o Super Admin -->
+        <!-- Seção Super Admin -->
         <section id="super-admin-page" class="page-section fade-in">
             <h2 class="text-3xl font-bold mb-6 text-red-600">Painel Super-Administrador</h2>
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -135,13 +135,13 @@
             </div>
         </section>
 
-        <!-- Se??o de Gerenciamento de Usu?rios (pelo Super Admin) -->
+        <!-- Seção de Gerenciamento de Usuários (pelo Super Admin) -->
         <section id="company-user-admin-page" class="page-section fade-in">
             <button id="back-to-super-admin-users" class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar para Super Admin</button>
-            <h2 id="company-user-admin-title" class="text-3xl font-bold mb-6">Gerenciar Usu?rios</h2>
+            <h2 id="company-user-admin-title" class="text-3xl font-bold mb-6">Gerenciar Usuários</h2>
             <div class="bg-white p-6 rounded-lg shadow-lg">
                 <form id="user-form" class="flex gap-2 mb-4">
-                    <input type="text" id="user-input" placeholder="Nome do usu?rio" class="w-1/2 px-3 py-2 border border-gray-300 rounded-md">
+                    <input type="text" id="user-input" placeholder="Nome do usuário" class="w-1/2 px-3 py-2 border border-gray-300 rounded-md">
                     <input type="text" id="user-password-input" placeholder="Senha" class="w-1/2 px-3 py-2 border border-gray-300 rounded-md">
                     <input type="hidden" id="user-id">
                     <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Salvar</button>
@@ -150,7 +150,7 @@
             </div>
         </section>
 
-        <!-- Se??o de Gerenciamento de Palavras-chave (pelo Super Admin) -->
+        <!-- Seção de Gerenciamento de Palavras-chave (pelo Super Admin) -->
         <section id="company-keyword-admin-page" class="page-section fade-in">
             <button id="back-to-super-admin-kw" class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar para Super Admin</button>
             <h2 id="company-keyword-admin-title" class="text-3xl font-bold mb-6">Gerenciar Palavras-Chave</h2>
@@ -164,39 +164,39 @@
             </div>
         </section>
 
-        <!-- Se??o de Configura??es da Empresa (pelo Super Admin) -->
+        <!-- Seção de Configurações da Empresa (pelo Super Admin) -->
         <section id="company-settings-admin-page" class="page-section fade-in">
             <button id="back-to-super-admin-settings" class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar para Super Admin</button>
-            <h2 id="company-settings-admin-title" class="text-3xl font-bold mb-6">Configura??es da Empresa</h2>
+            <h2 id="company-settings-admin-title" class="text-3xl font-bold mb-6">Configurações da Empresa</h2>
             <div class="bg-white p-6 rounded-lg shadow-lg">
                 <div class="space-y-6">
-                    <div class="flex items-center"><input type="checkbox" id="report-access-toggle" class="h-4 w-4 text-indigo-600 border-gray-300 rounded"><label for="report-access-toggle" class="ml-2 block text-sm text-gray-900">Liberar acesso ao relat?rio de alertas na tela inicial.</label></div>
+                    <div class="flex items-center"><input type="checkbox" id="report-access-toggle" class="h-4 w-4 text-indigo-600 border-gray-300 rounded"><label for="report-access-toggle" class="ml-2 block text-sm text-gray-900">Liberar acesso ao relatório de alertas na tela inicial.</label></div>
                     <div><h4 class="text-lg font-semibold mb-2">Logo da Empresa</h4><input type="file" id="logo-upload" accept="image/*" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"></div>
-                    <div><h4 class="text-lg font-semibold mb-2">Chave da API GNews</h4><div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-md"><p>Insira a chave da API para que o rob? possa buscar not?cias.</p><input type="text" id="api-key-input" placeholder="Cole a chave da API GNews aqui" class="mt-2 w-full px-3 py-2 border border-gray-300 rounded-md"></div></div>
+                    <div><h4 class="text-lg font-semibold mb-2">Chave da API GNews</h4><div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-md"><p>Insira a chave da API para que o robô possa buscar notícias.</p><input type="text" id="api-key-input" placeholder="Cole a chave da API GNews aqui" class="mt-2 w-full px-3 py-2 border border-gray-300 rounded-md"></div></div>
                 </div>
             </div>
         </section>
 
-        <!-- Se??o de Relat?rio (Em Desenvolvimento) -->
+        <!-- Seção de Relatório (Em Desenvolvimento) -->
         <section id="report-page" class="page-section fade-in">
             <div class="bg-white p-8 rounded-lg shadow-lg text-center">
-                <h2 class="text-3xl font-bold mb-4 text-gray-700">Relat?rios</h2>
+                <h2 class="text-3xl font-bold mb-4 text-gray-700">Relatórios</h2>
                 <div class="mt-6">
                     <svg class="mx-auto h-16 w-16 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    <p class="text-gray-600 text-lg mt-4">Esta se??o est? em desenvolvimento.</p>
+                    <p class="text-gray-600 text-lg mt-4">Esta seção está em desenvolvimento.</p>
                 </div>
             </div>
         </section>
 
-        <!-- Se??o de Pesquisa -->
+        <!-- Seção de Pesquisa -->
         <section id="search-page" class="page-section fade-in">
              <div class="bg-white p-6 md:p-8 rounded-lg shadow-lg">
                 <h2 class="text-2xl md:text-3xl font-bold mb-6">Pesquisar nos Alertas Salvos</h2>
                 <div id="filter-container" class="mb-8 p-4 border border-gray-200 rounded-lg bg-gray-50"></div>
-                <input type="text" id="search-input" placeholder="Digite para pesquisar em t?tulos ou descri??es..." class="w-full p-3 border border-gray-300 rounded-md mb-6">
-                <div id="search-results" class="space-y-4 max-h-[60vh] overflow-y-auto"><p class="text-gray-500">Digite algo para come?ar a pesquisar ou use os filtros.</p></div>
+                <input type="text" id="search-input" placeholder="Digite para pesquisar em títulos ou descrições..." class="w-full p-3 border border-gray-300 rounded-md mb-6">
+                <div id="search-results" class="space-y-4 max-h-[60vh] overflow-y-auto"><p class="text-gray-500">Digite algo para começar a pesquisar ou use os filtros.</p></div>
             </div>
         </section>
     </main>
@@ -218,21 +218,21 @@
         const userForm = document.getElementById('user-form'), userInput = document.getElementById('user-input'), userPasswordInput = document.getElementById('user-password-input'), userIdInput = document.getElementById('user-id'), adminUserList = document.getElementById('admin-user-list');
         const notificationBell = document.getElementById('notification-bell-container'), notificationBadge = document.getElementById('notification-badge');
         
-        // --- ESTADO DA APLICA??O ---
+        // --- ESTADO DA APLICAÇÃO ---
         let currentUser = null, newsCheckInterval = null, clockInterval = null, selectedCompanyForManagement = null;
 
-        // --- FUN??ES DE UTILIDADE ---
+        // --- FUNÇÕES DE UTILIDADE ---
         function showAlert(message, type = 'success') { const c = type === 'success' ? 'bg-green-100 border-green-500 text-green-700' : 'bg-red-100 border-red-500 text-red-700'; globalAlert.innerHTML = `<div class="${c} border-l-4 p-4 rounded-md fade-in" role="alert"><p>${message}</p></div>`; setTimeout(() => { globalAlert.innerHTML = ''; }, 4000); }
         function updateView(pageName) { pageSections.forEach(s => s.classList.remove('active')); const i = !!currentUser; navLoggedIn.style.display = i ? 'flex' : 'none'; navSuperAdmin.classList.toggle('hidden', !currentUser || !currentUser.isSuperAdmin); if (clockInterval) clearInterval(clockInterval); loadAndDisplayLogo(); switch (pageName) { case 'login': loginPage.classList.add('active'); break; case 'dashboard': dashboardPage.classList.add('active'); renderDashboard(); updateDateTime(); clockInterval = setInterval(updateDateTime, 60000); break; case 'super-admin': superAdminPage.classList.add('active'); renderSuperAdminPage(); break; case 'search': searchPage.classList.add('active'); handleSearch(); break; case 'company-keyword-admin': companyKeywordAdminPage.classList.add('active'); renderCompanyKeywordAdminPage(); break; case 'company-settings-admin': companySettingsAdminPage.classList.add('active'); renderCompanySettingsAdminPage(); break; case 'company-user-admin': companyUserAdminPage.classList.add('active'); renderCompanyUserAdminPage(); break; case 'report': reportPage.classList.add('active'); break; } }
         function getStorage(key, defaultValue = []) { try { const d = localStorage.getItem(key); return d ? JSON.parse(d) : defaultValue; } catch (e) { console.error(e); return defaultValue; } }
         function setStorage(key, value) { localStorage.setItem(key, JSON.stringify(value)); }
         function updateDateTime() { if (!currentDateTimeEl) return; const n = new Date(), f = { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }; currentDateTimeEl.textContent = `Data: ${n.toLocaleDateString('pt-BR', f).replace(',', ' -')}`; }
 
-        // --- L?GICA DE LOGO ---
+        // --- LÓGICA DE LOGO ---
         function handleLogoUpload(e) { const file = e.target.files[0]; if (!file) return; const companyId = currentUser.isSuperAdmin ? selectedCompanyForManagement.id : currentUser.companyId; if (!companyId) return; const reader = new FileReader(); reader.onloadend = () => { setStorage(`clipping_logo_${companyId}`, reader.result); loadAndDisplayLogo(); showAlert('Logo atualizada com sucesso!'); }; reader.readAsDataURL(file); }
         function loadAndDisplayLogo() { const companyId = currentUser ? currentUser.companyId : null; const logoData = companyId ? getStorage(`clipping_logo_${companyId}`, null) : null; const logoHtml = logoData ? `<img src="${logoData}" alt="Logo da Empresa" class="h-full w-auto object-contain">` : ''; headerLogoContainer.innerHTML = logoHtml; loginLogoContainer.innerHTML = logoHtml; }
 
-        // --- L?GICA DE AUTENTICA??O ---
+        // --- LÓGICA DE AUTENTICAÇÃO ---
         function handleLogin(e) {
             e.preventDefault();
             const companyName = document.getElementById('login-company').value.trim();
@@ -250,12 +250,12 @@
             const company = companies.find(c => c.name.toLowerCase() === companyName.toLowerCase());
 
             if (!company) {
-                showAlert('Empresa n?o encontrada.', 'error');
+                showAlert('Empresa não encontrada.', 'error');
                 return;
             }
 
             if (company.status === 'inactive') {
-                showAlert('Esta empresa est? inativa e n?o pode ser acessada.', 'error');
+                showAlert('Esta empresa está inativa e não pode ser acessada.', 'error');
                 return;
             }
 
@@ -267,15 +267,15 @@
                 setStorage('clipping_currentUser', currentUser);
                 updateView('dashboard');
             } else {
-                showAlert('Usu?rio ou senha inv?lidos para esta empresa.', 'error');
+                showAlert('Usuário ou senha inválidos para esta empresa.', 'error');
             }
         }
         function handleLogout() { currentUser = null; selectedCompanyForManagement = null; localStorage.removeItem('clipping_currentUser'); if (newsCheckInterval) clearInterval(newsCheckInterval); if (clockInterval) clearInterval(clockInterval); headerLogoContainer.innerHTML = ''; updateView('login'); }
 
-        // --- L?GICA DO DASHBOARD ---
+        // --- LÓGICA DO DASHBOARD ---
         function renderDashboard() { 
             if (!currentUser) return; 
-            dashboardTitle.textContent = currentUser.isSuperAdmin ? 'Painel Super Admin' : `Not?cias do Dia - ${currentUser.companyName}`; 
+            dashboardTitle.textContent = currentUser.isSuperAdmin ? 'Painel Super Admin' : `Notícias do Dia - ${currentUser.companyName}`; 
             renderVerticalKeywordList(); 
             const hasReportAccess = getStorage(`clipping_reportAccess_${currentUser.companyId}`, true);
             newsAlertsContainer.style.display = hasReportAccess ? 'block' : 'none';
@@ -285,7 +285,7 @@
         }
         function renderVerticalKeywordList() { if (!currentUser || !dashboardKeywordList) return; const k = getStorage(`clipping_keywords_${currentUser.companyId}`, []); dashboardKeywordList.innerHTML = ''; if (k.length === 0) { dashboardKeywordList.innerHTML = `<p class="text-gray-500 text-sm">Nenhuma palavra-chave cadastrada.</p>`; } else { k.forEach(kw => { const li = document.createElement('li'); li.className = 'bg-indigo-100 text-indigo-800 text-md font-medium px-3 py-2 rounded-md'; li.textContent = kw.word; dashboardKeywordList.appendChild(li); }); } }
         
-        // --- L?GICA SUPER ADMIN ---
+        // --- LÓGICA SUPER ADMIN ---
         function renderSuperAdminPage() {
             const companies = getStorage('clipping_companies', []);
             companyList.innerHTML = '';
@@ -314,15 +314,15 @@
                         <span class="text-sm ${statusClass}">(${statusText})</span>
                     </div>
                     <div class="mt-2 sm:mt-0 flex flex-wrap gap-2">
-                        <button data-company-id="${c.id}" data-company-name="${c.name}" class="manage-company-users-btn bg-purple-500 text-white px-3 py-1 rounded-md text-sm hover:bg-purple-600">Usu?rios</button>
+                        <button data-company-id="${c.id}" data-company-name="${c.name}" class="manage-company-users-btn bg-purple-500 text-white px-3 py-1 rounded-md text-sm hover:bg-purple-600">Usuários</button>
                         <button data-company-id="${c.id}" data-company-name="${c.name}" class="manage-company-keywords-btn bg-blue-500 text-white px-3 py-1 rounded-md text-sm hover:bg-blue-600">Palavras-Chave</button>
-                        <button data-company-id="${c.id}" data-company-name="${c.name}" class="manage-company-settings-btn bg-green-500 text-white px-3 py-1 rounded-md text-sm hover:bg-green-600">Configura??es</button>
+                        <button data-company-id="${c.id}" data-company-name="${c.name}" class="manage-company-settings-btn bg-green-500 text-white px-3 py-1 rounded-md text-sm hover:bg-green-600">Configurações</button>
                         ${actionButtons}
                     </div>`;
                 companyList.appendChild(li);
             });
         }
-        function handleCompanySubmit(e) { e.preventDefault(); const name = document.getElementById('company-name-input').value.trim(); if(!name) { showAlert('O nome da empresa ? obrigat?rio.', 'error'); return; } const companies = getStorage('clipping_companies', []); if (companies.find(c => c.name.toLowerCase() === name.toLowerCase())) { showAlert('Este nome de empresa j? existe.', 'error'); return; } companies.push({ id: Date.now(), name: name }); setStorage('clipping_companies', companies); showAlert('Empresa adicionada com sucesso!'); companyForm.reset(); renderSuperAdminPage(); }
+        function handleCompanySubmit(e) { e.preventDefault(); const name = document.getElementById('company-name-input').value.trim(); if(!name) { showAlert('O nome da empresa é obrigatório.', 'error'); return; } const companies = getStorage('clipping_companies', []); if (companies.find(c => c.name.toLowerCase() === name.toLowerCase())) { showAlert('Este nome de empresa já existe.', 'error'); return; } companies.push({ id: Date.now(), name: name }); setStorage('clipping_companies', companies); showAlert('Empresa adicionada com sucesso!'); companyForm.reset(); renderSuperAdminPage(); }
         function handleCompanyActions(e) {
             const companies = getStorage('clipping_companies', []);
             const id = e.target.dataset.id || e.target.dataset.companyId;
@@ -343,7 +343,7 @@
                     renderSuperAdminPage();
                 }
             } else if (e.target.classList.contains('delete-company-btn')) {
-                if (confirm('Tem certeza que deseja excluir esta empresa PERMANENTEMENTE? Esta a??o n?o pode ser desfeita.')) {
+                if (confirm('Tem certeza que deseja excluir esta empresa PERMANENTEMENTE? Esta ação não pode ser desfeita.')) {
                     let users = getStorage('clipping_users', []);
                     const updatedCompanies = companies.filter(c => c.id != id);
                     users = users.filter(u => u.companyId != id);
@@ -364,22 +364,22 @@
             }
         }
 
-        // --- L?GICA DE GERENCIAMENTO DE USU?RIOS (PELO SUPER ADMIN) ---
-        function renderCompanyUserAdminPage() { if (!selectedCompanyForManagement) return; companyUserAdminTitle.textContent = `Gerenciar Usu?rios para: ${selectedCompanyForManagement.name}`; renderUsersForSelectedCompany(); }
+        // --- LÓGICA DE GERENCIAMENTO DE USUÁRIOS (PELO SUPER ADMIN) ---
+        function renderCompanyUserAdminPage() { if (!selectedCompanyForManagement) return; companyUserAdminTitle.textContent = `Gerenciar Usuários para: ${selectedCompanyForManagement.name}`; renderUsersForSelectedCompany(); }
         function renderUsersForSelectedCompany() { const allUsers = getStorage('clipping_users', []); const companyUsers = allUsers.filter(u => u.companyId == selectedCompanyForManagement.id); adminUserList.innerHTML = ''; companyUsers.forEach(user => { const li = document.createElement('li'); li.className = 'flex justify-between items-center bg-gray-100 p-2 rounded-md'; li.innerHTML = `<span>${user.username}</span><div><button data-id="${user.id}" class="edit-user-btn text-blue-500 hover:text-blue-700 mr-2">Editar</button><button data-id="${user.id}" class="delete-user-btn text-red-500 hover:text-red-700">Excluir</button></div>`; adminUserList.appendChild(li); }); }
-        function handleUserSubmit(e) { e.preventDefault(); const username = userInput.value.trim(), password = userPasswordInput.value.trim(), id = userIdInput.value; if (!username || !password || !selectedCompanyForManagement) return; let allUsers = getStorage('clipping_users', []); const companyUsers = allUsers.filter(u => u.companyId === selectedCompanyForManagement.id); if (id) { const index = allUsers.findIndex(u => u.id == id); if (index > -1) { const otherCompanyUsers = companyUsers.filter(u => u.id != id); if (otherCompanyUsers.find(u => u.username === username)) { showAlert('Este nome de usu?rio j? est? em uso nesta empresa.', 'error'); return; } allUsers[index].username = username; allUsers[index].password = password; } } else { if (companyUsers.find(u => u.username === username)) { showAlert('Este nome de usu?rio j? est? em uso nesta empresa.', 'error'); return; } allUsers.push({ id: Date.now(), username, password, companyId: selectedCompanyForManagement.id }); } setStorage('clipping_users', allUsers); userInput.value = ''; userPasswordInput.value = ''; userIdInput.value = ''; renderUsersForSelectedCompany(); }
+        function handleUserSubmit(e) { e.preventDefault(); const username = userInput.value.trim(), password = userPasswordInput.value.trim(), id = userIdInput.value; if (!username || !password || !selectedCompanyForManagement) return; let allUsers = getStorage('clipping_users', []); const companyUsers = allUsers.filter(u => u.companyId === selectedCompanyForManagement.id); if (id) { const index = allUsers.findIndex(u => u.id == id); if (index > -1) { const otherCompanyUsers = companyUsers.filter(u => u.id != id); if (otherCompanyUsers.find(u => u.username === username)) { showAlert('Este nome de usuário já está em uso nesta empresa.', 'error'); return; } allUsers[index].username = username; allUsers[index].password = password; } } else { if (companyUsers.find(u => u.username === username)) { showAlert('Este nome de usuário já está em uso nesta empresa.', 'error'); return; } allUsers.push({ id: Date.now(), username, password, companyId: selectedCompanyForManagement.id }); } setStorage('clipping_users', allUsers); userInput.value = ''; userPasswordInput.value = ''; userIdInput.value = ''; renderUsersForSelectedCompany(); }
         function handleUserActions(e) { if (!selectedCompanyForManagement) return; let allUsers = getStorage('clipping_users', []); if (e.target.classList.contains('edit-user-btn')) { const id = e.target.dataset.id, user = allUsers.find(u => u.id == id); if (user) { userInput.value = user.username; userPasswordInput.value = user.password; userIdInput.value = user.id; userInput.focus(); } } if (e.target.classList.contains('delete-user-btn')) { const id = e.target.dataset.id; allUsers = allUsers.filter(u => u.id != id); setStorage('clipping_users', allUsers); renderUsersForSelectedCompany(); } }
 
-        // --- L?GICA DE GERENCIAMENTO DE PALAVRAS-CHAVE (PELO SUPER ADMIN) ---
+        // --- LÓGICA DE GERENCIAMENTO DE PALAVRAS-CHAVE (PELO SUPER ADMIN) ---
         function renderCompanyKeywordAdminPage() { if (!selectedCompanyForManagement) return; companyKeywordAdminTitle.textContent = `Gerenciar Palavras-Chave para: ${selectedCompanyForManagement.name}`; renderKeywordsForSelectedCompany(); }
         function renderKeywordsForSelectedCompany() { const keywords = getStorage(`clipping_keywords_${selectedCompanyForManagement.id}`, []); adminKeywordList.innerHTML = ''; keywords.forEach(kw => { const li = document.createElement('li'); li.className = 'flex justify-between items-center bg-gray-100 p-2 rounded-md'; li.innerHTML = `<span>${kw.word}</span><div><button data-id="${kw.id}" class="edit-keyword-btn text-blue-500 hover:text-blue-700 mr-2">Editar</button><button data-id="${kw.id}" class="delete-keyword-btn text-red-500 hover:text-red-700">Excluir</button></div>`; adminKeywordList.appendChild(li); }); }
         function handleKeywordSubmit(e) { e.preventDefault(); const word = keywordInput.value.trim(), id = keywordIdInput.value; if (!word || !selectedCompanyForManagement) return; let keywords = getStorage(`clipping_keywords_${selectedCompanyForManagement.id}`, []); if (id) { const i = keywords.findIndex(kw => kw.id == id); if (i > -1) keywords[i].word = word; } else { keywords.push({ id: Date.now(), word: word }); } setStorage(`clipping_keywords_${selectedCompanyForManagement.id}`, keywords); keywordInput.value = ''; keywordIdInput.value = ''; renderKeywordsForSelectedCompany(); }
         function handleKeywordActions(e) { if (!selectedCompanyForManagement) return; const keywords = getStorage(`clipping_keywords_${selectedCompanyForManagement.id}`, []); if (e.target.classList.contains('edit-keyword-btn')) { const id = e.target.dataset.id, kw = keywords.find(i => i.id == id); if (kw) { keywordInput.value = kw.word; keywordIdInput.value = kw.id; keywordInput.focus(); } } if (e.target.classList.contains('delete-keyword-btn')) { const id = e.target.dataset.id, u = keywords.filter(i => i.id != id); setStorage(`clipping_keywords_${selectedCompanyForManagement.id}`, u); renderKeywordsForSelectedCompany(); } }
         
-        // --- L?GICA DE GERENCIAMENTO DE CONFIGURA??ES (PELO SUPER ADMIN) ---
-        function renderCompanySettingsAdminPage() { if (!selectedCompanyForManagement) return; companySettingsAdminTitle.textContent = `Configura??es para: ${selectedCompanyForManagement.name}`; apiKeyInput.value = getStorage(`clipping_apikey_${selectedCompanyForManagement.id}`, ''); reportAccessToggle.checked = getStorage(`clipping_reportAccess_${selectedCompanyForManagement.id}`, true); }
+        // --- LÓGICA DE GERENCIAMENTO DE CONFIGURAÇÕES (PELO SUPER ADMIN) ---
+        function renderCompanySettingsAdminPage() { if (!selectedCompanyForManagement) return; companySettingsAdminTitle.textContent = `Configurações para: ${selectedCompanyForManagement.name}`; apiKeyInput.value = getStorage(`clipping_apikey_${selectedCompanyForManagement.id}`, ''); reportAccessToggle.checked = getStorage(`clipping_reportAccess_${selectedCompanyForManagement.id}`, true); }
         
-        // --- L?GICA DE NOTIFICA??O ---
+        // --- LÓGICA DE NOTIFICAÇÃO ---
         function checkNotificationStatus() {
             if (!currentUser) return;
             const hasNewAlerts = getStorage(`clipping_newAlerts_${currentUser.companyId}`, false);
@@ -392,17 +392,17 @@
             }, 1000);
         }
 
-        // --- L?GICA DO ROB? DE NOT?CIAS ---
+        // --- LÓGICA DO ROBÔ DE NOTÍCIAS ---
         async function fetchNews() { 
             const companies = getStorage('clipping_companies', []); 
             for (const company of companies) { 
                 if (company.status === 'inactive') continue; // Pula empresas inativas
                 const apiKey = getStorage(`clipping_apikey_${company.id}`, ''); 
-                if (!apiKey) { console.log(`ROB?: Sem chave de API para ${company.name}.`); continue; } 
+                if (!apiKey) { console.log(`ROBÔ: Sem chave de API para ${company.name}.`); continue; } 
                 const keywords = getStorage(`clipping_keywords_${company.id}`, []); 
                 const foundArticlesData = getStorage(`clipping_articles_data_${company.id}`, []); 
                 const foundUrls = foundArticlesData.map(a => a.url); 
-                console.log(`ROB?: Buscando para ${company.name}: ${keywords.map(k=>k.word).join(', ')}`); 
+                console.log(`ROBÔ: Buscando para ${company.name}: ${keywords.map(k=>k.word).join(', ')}`); 
                 for (const kw of keywords) { 
                     const url = `https://gnews.io/api/v4/search?q="${encodeURIComponent(kw.word)}"&lang=pt&token=${apiKey}`; 
                     try { 
@@ -428,20 +428,20 @@
                                 triggerNotificationAnimation();
                             }
                         }
-                    } catch (error) { console.error(`ROB?: Falha na requisi??o para "${kw.word}":`, error); } 
+                    } catch (error) { console.error(`ROBÔ: Falha na requisição para "${kw.word}":`, error); } 
                 } 
             } 
         }
-        function displayNewsAlert(article) { /* ... L?gica mantida ... */ }
+        function displayNewsAlert(article) { /* ... Lógica mantida ... */ }
         function populateInitialAlerts() { if (!currentUser) return; newsAlerts.innerHTML = ''; const articles = getStorage(`clipping_articles_data_${currentUser.companyId}`, []); articles.forEach(article => displayNewsAlert(article)); filterAlertsByDate(); }
         function filterAlertsByDate() { const selectedDate = alertDateFilter.value; const allAlerts = newsAlerts.querySelectorAll('.fade-in'); let visibleCount = 0; allAlerts.forEach(alert => { const isVisible = !selectedDate || alert.dataset.date === selectedDate; alert.style.display = isVisible ? 'block' : 'none'; if(isVisible) visibleCount++; }); if(visibleCount === 0) { newsAlerts.innerHTML = `<p class="text-gray-500">Nenhum alerta encontrado para a data selecionada.</p>`; } }
-        function handleAlertActions(e) { /* ... L?gica mantida ... */ }
+        function handleAlertActions(e) { /* ... Lógica mantida ... */ }
         function startNewsRobot() { if (newsCheckInterval) clearInterval(newsCheckInterval); fetchNews(); newsCheckInterval = setInterval(fetchNews, 60000); }
-        function setupFilters() { /* ... L?gica mantida ... */ }
-        function handleSearch() { /* ... L?gica de pesquisa mantida ... */ }
-        function renderSearchResults(articles) { /* ... L?gica de pesquisa mantida ... */ }
+        function setupFilters() { /* ... Lógica mantida ... */ }
+        function handleSearch() { /* ... Lógica de pesquisa mantida ... */ }
+        function renderSearchResults(articles) { /* ... Lógica de pesquisa mantida ... */ }
 
-        // --- INICIALIZA??O E EVENT LISTENERS ---
+        // --- INICIALIZAÇÃO E EVENT LISTENERS ---
         document.addEventListener('DOMContentLoaded', () => {
             loginForm.addEventListener('submit', handleLogin);
             navInicio.addEventListener('click', (e) => { e.preventDefault(); updateView('dashboard'); });
