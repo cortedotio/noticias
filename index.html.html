@@ -255,7 +255,11 @@
                 // O onAuthStateChanged vai cuidar do resto
             } catch (error) {
                 console.error("Erro de login:", error.code);
-                showAlert('Email ou senha inválidos.', 'error');
+                if (error.code === 'auth/too-many-requests') {
+                    showAlert('Muitas tentativas de login falharam. Por favor, aguarde alguns minutos antes de tentar novamente.', 'error');
+                } else {
+                    showAlert('Email ou senha inválidos.', 'error');
+                }
             }
         }
         async function handleLogout() { await signOut(auth); }
@@ -413,6 +417,7 @@
         // --- INICIALIZAÇÃO E EVENT LISTENERS ---
         onAuthStateChanged(auth, async (user) => {
             if (user) {
+                // Usuário está logado via Firebase Auth
                 const userDocRef = doc(db, "users", user.uid);
                 const userDocSnap = await getDoc(userDocRef);
                 if (userDocSnap.exists()) {
@@ -469,10 +474,7 @@
                 newsAlertsContainer.scrollIntoView({ behavior: 'smooth' });
             });
             
-            // Não precisa mais disso, o onAuthStateChanged cuida do estado inicial
-            // const savedUser = getStorage('clipping_currentUser', null);
-            // if (savedUser) { currentUser = savedUser; updateView('dashboard'); } 
-            // else { updateView('login'); }
+            // O onAuthStateChanged cuida do estado inicial, não precisa mais do código abaixo
         });
     </script>
 </body>
