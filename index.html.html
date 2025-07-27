@@ -431,7 +431,7 @@
                     };
                     setStorage('clipping_currentUser', currentUser);
                     updateView('dashboard');
-                } else if (user.email === 'ulysses@admin.com') { 
+                } else if (user.email === 'ulyssesbrasil@hotmail.com') { 
                      currentUser = { uid: user.uid, email: user.email, isSuperAdmin: true, companyId: 'super' };
                      await setDoc(userDocRef, { isSuperAdmin: true, email: user.email });
                      setStorage('clipping_currentUser', currentUser);
@@ -474,7 +474,7 @@
                 newsAlertsContainer.scrollIntoView({ behavior: 'smooth' });
             });
             
-            // O onAuthStateChanged cuida do estado inicial, não precisa mais do código abaixo
+            // O onAuthStateChanged cuida do estado inicial
         });
     </script>
 </body>
