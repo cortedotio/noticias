@@ -236,6 +236,8 @@
         // --- FUNÇÕES DE UTILIDADE ---
         function showAlert(message, type = 'success') { const c = type === 'success' ? 'bg-green-100 border-green-500 text-green-700' : 'bg-red-100 border-red-500 text-red-700'; globalAlert.innerHTML = `<div class="${c} border-l-4 p-4 rounded-md fade-in" role="alert"><p>${message}</p></div>`; setTimeout(() => { globalAlert.innerHTML = ''; }, 4000); }
         function updateView(pageName) { pageSections.forEach(s => s.classList.remove('active')); const i = !!currentUser; navLoggedIn.style.display = i ? 'flex' : 'none'; navSuperAdmin.classList.toggle('hidden', !currentUser || !currentUser.isSuperAdmin); if (clockInterval) clearInterval(clockInterval); loadAndDisplayLogo(); switch (pageName) { case 'login': loginPage.classList.add('active'); break; case 'dashboard': dashboardPage.classList.add('active'); renderDashboard(); updateDateTime(); clockInterval = setInterval(updateDateTime, 60000); break; case 'super-admin': superAdminPage.classList.add('active'); renderSuperAdminPage(); break; case 'search': searchPage.classList.add('active'); handleSearch(); break; case 'company-keyword-admin': companyKeywordAdminPage.classList.add('active'); renderCompanyKeywordAdminPage(); break; case 'company-settings-admin': companySettingsAdminPage.classList.add('active'); renderCompanySettingsAdminPage(); break; case 'company-user-admin': companyUserAdminPage.classList.add('active'); renderCompanyUserAdminPage(); break; case 'report': reportPage.classList.add('active'); break; } }
+        function getStorage(key, defaultValue) { try { const d = localStorage.getItem(key); return d ? JSON.parse(d) : defaultValue; } catch (e) { console.error(e); return defaultValue; } }
+        function setStorage(key, value) { localStorage.setItem(key, JSON.stringify(value)); }
         function updateDateTime() { if (!currentDateTimeEl) return; const n = new Date(), f = { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }; currentDateTimeEl.textContent = `Data: ${n.toLocaleDateString('pt-BR', f).replace(',', ' -')}`; }
 
         // --- LÓGICA DE LOGO ---
@@ -249,14 +251,14 @@
             const pass = document.getElementById('login-password').value.trim();
             
             try {
-                const userCredential = await signInWithEmailAndPassword(auth, email, pass);
+                await signInWithEmailAndPassword(auth, email, pass);
                 // O onAuthStateChanged vai cuidar do resto
             } catch (error) {
                 console.error("Erro de login:", error.code);
                 showAlert('Email ou senha inválidos.', 'error');
             }
         }
-        async function handleLogout() { await signOut(auth); currentUser = null; selectedCompanyForManagement = null; headerLogoContainer.innerHTML = ''; updateView('login'); }
+        async function handleLogout() { await signOut(auth); }
 
         // --- LÓGICA DO DASHBOARD ---
         async function renderDashboard() { 
@@ -290,7 +292,7 @@
                     actionButtons = `<button data-id="${c.id}" class="reactivate-company-btn bg-yellow-500 text-white px-3 py-1 rounded-md text-sm hover:bg-yellow-600">Reativar</button>`;
                     const oneYearAgo = new Date();
                     oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-                    if (new Date(c.deactivationDate) < oneYearAgo) {
+                    if (c.deactivationDate && new Date(c.deactivationDate) < oneYearAgo) {
                         actionButtons += `<button data-id="${c.id}" class="delete-company-btn bg-red-500 text-white px-3 py-1 rounded-md text-sm hover:bg-red-600 ml-2">Excluir Permanentemente</button>`;
                     }
                 } else {
@@ -411,7 +413,6 @@
         // --- INICIALIZAÇÃO E EVENT LISTENERS ---
         onAuthStateChanged(auth, async (user) => {
             if (user) {
-                // Usuário está logado via Firebase Auth
                 const userDocRef = doc(db, "users", user.uid);
                 const userDocSnap = await getDoc(userDocRef);
                 if (userDocSnap.exists()) {
@@ -425,19 +426,15 @@
                     };
                     setStorage('clipping_currentUser', currentUser);
                     updateView('dashboard');
+                } else if (user.email === 'ulysses@admin.com') { 
+                     currentUser = { uid: user.uid, email: user.email, isSuperAdmin: true, companyId: 'super' };
+                     await setDoc(userDocRef, { isSuperAdmin: true, email: user.email });
+                     setStorage('clipping_currentUser', currentUser);
+                     updateView('dashboard');
                 } else {
-                    // Caso especial do super admin que não está na coleção 'users'
-                    if (user.email === 'ulysses@admin.com') { // Use um email fixo para o super admin
-                         currentUser = { username: 'Ulysses', isSuperAdmin: true, companyId: 'super', email: user.email };
-                         setStorage('clipping_currentUser', currentUser);
-                         updateView('dashboard');
-                    } else {
-                        // Usuário autenticado mas sem registro no Firestore. Deslogar.
-                        await signOut(auth);
-                    }
+                    await signOut(auth);
                 }
             } else {
-                // Usuário deslogado
                 currentUser = null;
                 localStorage.removeItem('clipping_currentUser');
                 updateView('login');
@@ -472,13 +469,10 @@
                 newsAlertsContainer.scrollIntoView({ behavior: 'smooth' });
             });
             
-            const savedUser = getStorage('clipping_currentUser', null);
-            if (savedUser) { 
-                currentUser = savedUser;
-                updateView('dashboard'); 
-            } else {
-                updateView('login');
-            }
+            // Não precisa mais disso, o onAuthStateChanged cuida do estado inicial
+            // const savedUser = getStorage('clipping_currentUser', null);
+            // if (savedUser) { currentUser = savedUser; updateView('dashboard'); } 
+            // else { updateView('login'); }
         });
     </script>
 </body>
