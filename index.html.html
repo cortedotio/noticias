@@ -76,7 +76,8 @@
                  <div id="login-logo-container" class="absolute top-4 right-4 h-12 w-auto"></div>
                 <h2 class="text-2xl font-bold text-center mb-6">Acesso ao Sistema</h2>
                 <form id="login-form">
-                    <div class="mb-4"><label for="login-email" class="block text-sm font-medium text-gray-700 mb-1">Email</label><input type="email" id="login-email" class="w-full px-3 py-2 border border-gray-300 rounded-md" required></div>
+                    <div class="mb-4"><label for="login-company" class="block text-sm font-medium text-gray-700 mb-1">Empresa</label><input type="text" id="login-company" class="w-full px-3 py-2 border border-gray-300 rounded-md" required></div>
+                    <div class="mb-4"><label for="login-user" class="block text-sm font-medium text-gray-700 mb-1">Usuário</label><input type="text" id="login-user" class="w-full px-3 py-2 border border-gray-300 rounded-md" required></div>
                     <div class="mb-6"><label for="login-password" class="block text-sm font-medium text-gray-700 mb-1">Senha</label><input type="password" id="login-password" class="w-full px-3 py-2 border border-gray-300 rounded-md" required></div>
                     <button type="submit" class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700">Entrar</button>
                 </form>
@@ -133,7 +134,7 @@
             <h2 id="company-user-admin-title" class="text-3xl font-bold mb-6">Gerenciar Usuários</h2>
             <div class="bg-white p-6 rounded-lg shadow-lg">
                 <form id="user-form" class="flex gap-2 mb-4">
-                    <input type="email" id="user-input" placeholder="Email do usuário" class="w-1/2 px-3 py-2 border border-gray-300 rounded-md">
+                    <input type="text" id="user-input" placeholder="Nome do usuário" class="w-1/2 px-3 py-2 border border-gray-300 rounded-md">
                     <input type="text" id="user-password-input" placeholder="Senha" class="w-1/2 px-3 py-2 border border-gray-300 rounded-md">
                     <input type="hidden" id="user-id">
                     <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Salvar</button>
@@ -196,7 +197,6 @@
     <script type="module">
         // --- Importar funções do Firebase ---
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
         import { getFirestore, collection, getDocs, doc, getDoc, setDoc, addDoc, deleteDoc, updateDoc, query, where, writeBatch } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
 
         // --- Sua configuração do Firebase ---
@@ -211,7 +211,6 @@
 
         // --- Inicializar Firebase ---
         const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
         const db = getFirestore(app);
 
         // --- ELEMENTOS DO DOM ---
@@ -247,22 +246,44 @@
         // --- LÓGICA DE AUTENTICAÇÃO ---
         async function handleLogin(e) {
             e.preventDefault();
-            const email = document.getElementById('login-email').value.trim();
+            const companyName = document.getElementById('login-company').value.trim();
+            const user = document.getElementById('login-user').value.trim();
             const pass = document.getElementById('login-password').value.trim();
             
-            try {
-                await signInWithEmailAndPassword(auth, email, pass);
-                // O onAuthStateChanged vai cuidar do resto
-            } catch (error) {
-                console.error("Erro de login:", error.code);
-                if (error.code === 'auth/too-many-requests') {
-                    showAlert('Muitas tentativas de login falharam. Por favor, aguarde alguns minutos antes de tentar novamente.', 'error');
-                } else {
-                    showAlert('Email ou senha inválidos.', 'error');
-                }
+            if (user.toLowerCase() === 'ulysses' && pass === 'adminqwert') {
+                currentUser = { username: 'Ulysses', isSuperAdmin: true, companyId: 'super' };
+                setStorage('clipping_currentUser', currentUser);
+                updateView('dashboard');
+                return;
+            }
+
+            const companiesQuery = query(collection(db, "companies"), where("name", "==", companyName.toUpperCase()));
+            const companiesSnapshot = await getDocs(companiesQuery);
+
+            if (companiesSnapshot.empty) {
+                showAlert('Empresa não encontrada.', 'error');
+                return;
+            }
+            const companyDoc = companiesSnapshot.docs[0];
+            const company = { id: companyDoc.id, ...companyDoc.data() };
+
+            if (company.status === 'inactive') {
+                showAlert('Esta empresa está inativa e não pode ser acessada.', 'error');
+                return;
+            }
+
+            const usersQuery = query(collection(db, "companies", company.id, "users"), where("username", "==", user), where("password", "==", pass));
+            const usersSnapshot = await getDocs(usersQuery);
+            
+            if(!usersSnapshot.empty) {
+                currentUser = { username: user, companyId: company.id, companyName: company.name, isSuperAdmin: false };
+                setStorage('clipping_currentUser', currentUser);
+                updateView('dashboard');
+            } else {
+                showAlert('Usuário ou senha inválidos para esta empresa.', 'error');
             }
         }
-        async function handleLogout() { await signOut(auth); }
+        function handleLogout() { currentUser = null; selectedCompanyForManagement = null; localStorage.removeItem('clipping_currentUser'); if (newsCheckInterval) clearInterval(newsCheckInterval); if (clockInterval) clearInterval(clockInterval); headerLogoContainer.innerHTML = ''; updateView('login'); }
 
         // --- LÓGICA DO DASHBOARD ---
         async function renderDashboard() { 
@@ -346,9 +367,9 @@
 
         // --- LÓGICA DE GERENCIAMENTO DE USUÁRIOS (PELO SUPER ADMIN) ---
         async function renderCompanyUserAdminPage() { if (!selectedCompanyForManagement) return; companyUserAdminTitle.textContent = `Gerenciar Usuários para: ${selectedCompanyForManagement.name}`; renderUsersForSelectedCompany(); }
-        async function renderUsersForSelectedCompany() { const q = query(collection(db, "users"), where("companyId", "==", selectedCompanyForManagement.id)); const querySnapshot = await getDocs(q); const companyUsers = querySnapshot.docs.map(doc => ({id: doc.id, ...doc.data()})); adminUserList.innerHTML = ''; companyUsers.forEach(user => { const li = document.createElement('li'); li.className = 'flex justify-between items-center bg-gray-100 p-2 rounded-md'; li.innerHTML = `<span>${user.email}</span><div><button data-id="${user.id}" class="delete-user-btn text-red-500 hover:text-red-700">Excluir</button></div>`; adminUserList.appendChild(li); }); }
-        async function handleUserSubmit(e) { e.preventDefault(); const email = userInput.value.trim(), password = userPasswordInput.value.trim(); if (!email || !password || !selectedCompanyForManagement) return; try { const userCredential = await createUserWithEmailAndPassword(auth, email, password); const user = userCredential.user; await setDoc(doc(db, "users", user.uid), { email: user.email, companyId: selectedCompanyForManagement.id, companyName: selectedCompanyForManagement.name }); showAlert('Usuário criado com sucesso!'); userInput.value = ''; userPasswordInput.value = ''; renderUsersForSelectedCompany(); } catch (error) { console.error("Erro ao criar usuário:", error); showAlert(error.message, 'error'); } }
-        async function handleUserActions(e) { if (!selectedCompanyForManagement) return; if (e.target.classList.contains('delete-user-btn')) { if(confirm("Atenção: Esta ação excluirá o usuário do sistema de autenticação, mas não é possível reverter pelo app. A exclusão real deve ser feita no Console do Firebase Authentication.")){ const id = e.target.dataset.id; await deleteDoc(doc(db, "users", id)); renderUsersForSelectedCompany(); } } }
+        async function renderUsersForSelectedCompany() { const usersRef = collection(db, "companies", selectedCompanyForManagement.id, "users"); const querySnapshot = await getDocs(usersRef); const companyUsers = querySnapshot.docs.map(doc => ({id: doc.id, ...doc.data()})); adminUserList.innerHTML = ''; companyUsers.forEach(user => { const li = document.createElement('li'); li.className = 'flex justify-between items-center bg-gray-100 p-2 rounded-md'; li.innerHTML = `<span>${user.username}</span><div><button data-id="${user.id}" class="edit-user-btn text-blue-500 hover:text-blue-700 mr-2">Editar</button><button data-id="${user.id}" class="delete-user-btn text-red-500 hover:text-red-700">Excluir</button></div>`; adminUserList.appendChild(li); }); }
+        async function handleUserSubmit(e) { e.preventDefault(); const username = userInput.value.trim(), password = userPasswordInput.value.trim(), id = userIdInput.value; if (!username || !password || !selectedCompanyForManagement) return; const usersRef = collection(db, "companies", selectedCompanyForManagement.id, "users"); const q = query(usersRef, where("username", "==", username)); const querySnapshot = await getDocs(q); if (!querySnapshot.empty && querySnapshot.docs[0].id !== id) { showAlert('Este nome de usuário já está em uso nesta empresa.', 'error'); return; } if (id) { await updateDoc(doc(db, "companies", selectedCompanyForManagement.id, "users", id), { username, password }); } else { await addDoc(usersRef, { username, password }); } userInput.value = ''; userPasswordInput.value = ''; userIdInput.value = ''; renderUsersForSelectedCompany(); }
+        async function handleUserActions(e) { if (!selectedCompanyForManagement) return; if (e.target.classList.contains('edit-user-btn')) { const id = e.target.dataset.id; const userDoc = await getDoc(doc(db, "companies", selectedCompanyForManagement.id, "users", id)); if (userDoc.exists()) { const user = userDoc.data(); userInput.value = user.username; userPasswordInput.value = user.password; userIdInput.value = id; userInput.focus(); } } if (e.target.classList.contains('delete-user-btn')) { const id = e.target.dataset.id; await deleteDoc(doc(db, "companies", selectedCompanyForManagement.id, "users", id)); renderUsersForSelectedCompany(); } }
 
         // --- LÓGICA DE GERENCIAMENTO DE PALAVRAS-CHAVE (PELO SUPER ADMIN) ---
         async function renderCompanyKeywordAdminPage() { if (!selectedCompanyForManagement) return; companyKeywordAdminTitle.textContent = `Gerenciar Palavras-Chave para: ${selectedCompanyForManagement.name}`; renderKeywordsForSelectedCompany(); }
@@ -415,37 +436,6 @@
         function renderSearchResults(articles) { /* ... Lógica de pesquisa mantida ... */ }
 
         // --- INICIALIZAÇÃO E EVENT LISTENERS ---
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                // Usuário está logado via Firebase Auth
-                const userDocRef = doc(db, "users", user.uid);
-                const userDocSnap = await getDoc(userDocRef);
-                if (userDocSnap.exists()) {
-                    const userData = userDocSnap.data();
-                    currentUser = {
-                        uid: user.uid,
-                        email: user.email,
-                        isSuperAdmin: userData.isSuperAdmin || false,
-                        companyId: userData.companyId,
-                        companyName: userData.companyName
-                    };
-                    setStorage('clipping_currentUser', currentUser);
-                    updateView('dashboard');
-                } else if (user.email === 'ulyssesbrasil@hotmail.com') { 
-                     currentUser = { uid: user.uid, email: user.email, isSuperAdmin: true, companyId: 'super' };
-                     await setDoc(userDocRef, { isSuperAdmin: true, email: user.email });
-                     setStorage('clipping_currentUser', currentUser);
-                     updateView('dashboard');
-                } else {
-                    await signOut(auth);
-                }
-            } else {
-                currentUser = null;
-                localStorage.removeItem('clipping_currentUser');
-                updateView('login');
-            }
-        });
-
         document.addEventListener('DOMContentLoaded', () => {
             loginForm.addEventListener('submit', handleLogin);
             navInicio.addEventListener('click', (e) => { e.preventDefault(); updateView('dashboard'); });
@@ -474,7 +464,13 @@
                 newsAlertsContainer.scrollIntoView({ behavior: 'smooth' });
             });
             
-            // O onAuthStateChanged cuida do estado inicial
+            const savedUser = getStorage('clipping_currentUser', null);
+            if (savedUser) { 
+                currentUser = savedUser; 
+                updateView('dashboard'); 
+            } else {
+                updateView('login');
+            }
         });
     </script>
 </body>
