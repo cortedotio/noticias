@@ -90,7 +90,7 @@
                 <h2 id="dashboard-title" class="text-2xl font-bold text-gray-800 mb-2 md:mb-0">Notícias do Dia</h2>
                 <p id="current-datetime" class="text-lg text-indigo-600 font-medium"></p>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div id="dashboard-grid" class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div class="md:col-span-1 bg-white p-6 rounded-lg shadow-lg">
                     <h3 class="text-xl font-semibold mb-3 text-gray-700">Palavras-Chave Monitoradas</h3>
                     <ul id="dashboard-keyword-list" class="space-y-2"></ul>
@@ -107,6 +107,10 @@
                         <div id="news-alerts" class="space-y-4 max-h-[70vh] overflow-y-auto"></div>
                     </div>
                 </div>
+            </div>
+             <div id="super-admin-dashboard-message" class="hidden bg-white p-8 rounded-lg shadow-lg text-center">
+                <h3 class="text-2xl font-bold">Bem-vindo, Super Admin!</h3>
+                <p class="mt-4 text-gray-600">Use o menu "Super Admin" no topo da página para gerenciar empresas e usuários.</p>
             </div>
         </section>
         
@@ -197,7 +201,6 @@
     <script type="module">
         // --- Importar funções do Firebase ---
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
         import { getFirestore, collection, getDocs, doc, getDoc, setDoc, addDoc, deleteDoc, updateDoc, query, where, writeBatch } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
 
         // --- Sua configuração do Firebase ---
@@ -212,7 +215,6 @@
 
         // --- Inicializar Firebase ---
         const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
         const db = getFirestore(app);
 
         // --- ELEMENTOS DO DOM ---
@@ -253,22 +255,12 @@
             const pass = document.getElementById('login-password').value.trim();
             
             if (user.toLowerCase() === 'ulysses' && pass === 'adminqwert') {
-                try {
-                    await signInWithEmailAndPassword(auth, 'ulyssesbrasil@hotmail.com', pass);
-                    // onAuthStateChanged cuidará da navegação
-                    return;
-                } catch (error) {
-                    if (error.code === 'auth/user-not-found') {
-                        // Cria o superadmin se não existir
-                        await createUserWithEmailAndPassword(auth, 'ulyssesbrasil@hotmail.com', pass);
-                        await signInWithEmailAndPassword(auth, 'ulyssesbrasil@hotmail.com', pass);
-                    } else {
-                        showAlert('Erro ao logar como Super Admin. Verifique a senha.', 'error');
-                    }
-                    return;
-                }
+                currentUser = { username: 'Ulysses', isSuperAdmin: true, companyId: 'super', companyName: 'Super Admin' };
+                setStorage('clipping_currentUser', currentUser);
+                updateView('dashboard');
+                return;
             }
-            
+
             const companiesQuery = query(collection(db, "companies"), where("name", "==", companyName.toUpperCase()));
             const companiesSnapshot = await getDocs(companiesQuery);
 
@@ -288,22 +280,21 @@
             const usersSnapshot = await getDocs(usersQuery);
             
             if(!usersSnapshot.empty) {
-                const userData = usersSnapshot.docs[0].data();
-                try {
-                    // O login no Auth é feito com o email interno, não com o username
-                    await signInWithEmailAndPassword(auth, userData.email, pass);
-                } catch(error) {
-                    showAlert('Falha na autenticação. Contate o suporte.', 'error');
-                }
+                currentUser = { username: user, companyId: company.id, companyName: company.name, isSuperAdmin: false };
+                setStorage('clipping_currentUser', currentUser);
+                updateView('dashboard');
             } else {
                 showAlert('Usuário ou senha inválidos para esta empresa.', 'error');
             }
         }
-        async function handleLogout() { await signOut(auth); }
+        function handleLogout() { currentUser = null; selectedCompanyForManagement = null; localStorage.removeItem('clipping_currentUser'); if (newsCheckInterval) clearInterval(newsCheckInterval); if (clockInterval) clearInterval(clockInterval); headerLogoContainer.innerHTML = ''; updateView('login'); }
 
         // --- LÓGICA DO DASHBOARD ---
         async function renderDashboard() { 
             if (!currentUser) return; 
+            document.getElementById('dashboard-grid').style.display = currentUser.isSuperAdmin ? 'none' : 'grid';
+            document.getElementById('super-admin-dashboard-message').style.display = currentUser.isSuperAdmin ? 'block' : 'none';
+            
             dashboardTitle.textContent = currentUser.isSuperAdmin ? 'Painel Super Admin' : `Notícias do Dia - ${currentUser.companyName}`; 
             renderVerticalKeywordList(); 
             const settingsRef = doc(db, "settings", currentUser.companyId);
@@ -383,10 +374,9 @@
 
         // --- LÓGICA DE GERENCIAMENTO DE USUÁRIOS (PELO SUPER ADMIN) ---
         async function renderCompanyUserAdminPage() { if (!selectedCompanyForManagement) return; companyUserAdminTitle.textContent = `Gerenciar Usuários para: ${selectedCompanyForManagement.name}`; renderUsersForSelectedCompany(); }
-        async function renderUsersForSelectedCompany() { const usersRef = collection(db, "companies", selectedCompanyForManagement.id, "users"); const querySnapshot = await getDocs(usersRef); const companyUsers = querySnapshot.docs.map(doc => ({id: doc.id, ...doc.data()})); adminUserList.innerHTML = ''; companyUsers.forEach(user => { const li = document.createElement('li'); li.className = 'flex justify-between items-center bg-gray-100 p-2 rounded-md'; li.innerHTML = `<span>${user.username}</span><div><button data-id="${user.id}" class="delete-user-btn text-red-500 hover:text-red-700">Excluir</button></div>`; adminUserList.appendChild(li); }); }
-        async function handleUserSubmit(e) { e.preventDefault(); const username = userInput.value.trim(), password = userPasswordInput.value.trim(); if (!username || !password || !selectedCompanyForManagement) return; const usersRef = collection(db, "companies", selectedCompanyForManagement.id, "users"); const q = query(usersRef, where("username", "==", username)); const querySnapshot = await getDocs(q); if (!querySnapshot.empty) { showAlert('Este nome de usuário já está em uso nesta empresa.', 'error'); return; } const emailForAuth = `${username.toLowerCase().replace(/\s+/g, '')}@${selectedCompanyForManagement.id}.app`; try { const userCredential = await createUserWithEmailAndPassword(auth, emailForAuth, password); await signOut(auth); // Desloga o admin para não interferir na sessão
-            await addDoc(usersRef, { username, password, email: emailForAuth }); showAlert('Usuário criado com sucesso!'); userInput.value = ''; userPasswordInput.value = ''; renderUsersForSelectedCompany(); } catch (error) { console.error("Erro ao criar usuário:", error); showAlert(error.message, 'error'); } }
-        async function handleUserActions(e) { if (!selectedCompanyForManagement) return; if (e.target.classList.contains('delete-user-btn')) { if(confirm("Atenção: Esta ação excluirá o usuário do sistema de autenticação, mas não é possível reverter pelo app. A exclusão real deve ser feita no Console do Firebase Authentication.")){ const id = e.target.dataset.id; await deleteDoc(doc(db, "companies", selectedCompanyForManagement.id, "users", id)); renderUsersForSelectedCompany(); } } }
+        async function renderUsersForSelectedCompany() { const usersRef = collection(db, "companies", selectedCompanyForManagement.id, "users"); const querySnapshot = await getDocs(usersRef); const companyUsers = querySnapshot.docs.map(doc => ({id: doc.id, ...doc.data()})); adminUserList.innerHTML = ''; companyUsers.forEach(user => { const li = document.createElement('li'); li.className = 'flex justify-between items-center bg-gray-100 p-2 rounded-md'; li.innerHTML = `<span>${user.username}</span><div><button data-id="${user.id}" class="edit-user-btn text-blue-500 hover:text-blue-700 mr-2">Editar</button><button data-id="${user.id}" class="delete-user-btn text-red-500 hover:text-red-700">Excluir</button></div>`; adminUserList.appendChild(li); }); }
+        async function handleUserSubmit(e) { e.preventDefault(); const username = userInput.value.trim(), password = userPasswordInput.value.trim(), id = userIdInput.value; if (!username || !password || !selectedCompanyForManagement) return; const usersRef = collection(db, "companies", selectedCompanyForManagement.id, "users"); const q = query(usersRef, where("username", "==", username)); const querySnapshot = await getDocs(q); if (!querySnapshot.empty && querySnapshot.docs[0].id !== id) { showAlert('Este nome de usuário já está em uso nesta empresa.', 'error'); return; } if (id) { await updateDoc(doc(db, "companies", selectedCompanyForManagement.id, "users", id), { username, password }); } else { await addDoc(usersRef, { username, password }); } userInput.value = ''; userPasswordInput.value = ''; userIdInput.value = ''; renderUsersForSelectedCompany(); }
+        async function handleUserActions(e) { if (!selectedCompanyForManagement) return; if (e.target.classList.contains('edit-user-btn')) { const id = e.target.dataset.id; const userDoc = await getDoc(doc(db, "companies", selectedCompanyForManagement.id, "users", id)); if (userDoc.exists()) { const user = userDoc.data(); userInput.value = user.username; userPasswordInput.value = user.password; userIdInput.value = id; userInput.focus(); } } if (e.target.classList.contains('delete-user-btn')) { const id = e.target.dataset.id; await deleteDoc(doc(db, "companies", selectedCompanyForManagement.id, "users", id)); renderUsersForSelectedCompany(); } }
 
         // --- LÓGICA DE GERENCIAMENTO DE PALAVRAS-CHAVE (PELO SUPER ADMIN) ---
         async function renderCompanyKeywordAdminPage() { if (!selectedCompanyForManagement) return; companyKeywordAdminTitle.textContent = `Gerenciar Palavras-Chave para: ${selectedCompanyForManagement.name}`; renderKeywordsForSelectedCompany(); }
@@ -453,38 +443,6 @@
         function renderSearchResults(articles) { /* ... Lógica de pesquisa mantida ... */ }
 
         // --- INICIALIZAÇÃO E EVENT LISTENERS ---
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                // Usuário está logado via Firebase Auth
-                const userDocRef = doc(db, "users", user.uid);
-                const userDocSnap = await getDoc(userDocRef);
-                if (userDocSnap.exists()) {
-                    const userData = userDocSnap.data();
-                    currentUser = {
-                        uid: user.uid,
-                        email: user.email,
-                        username: userData.username,
-                        isSuperAdmin: userData.isSuperAdmin || false,
-                        companyId: userData.companyId,
-                        companyName: userData.companyName
-                    };
-                    setStorage('clipping_currentUser', currentUser);
-                    updateView('dashboard');
-                } else if (user.email === 'ulyssesbrasil@hotmail.com') { 
-                     currentUser = { uid: user.uid, email: user.email, username: 'Ulysses', isSuperAdmin: true, companyId: 'super' };
-                     await setDoc(userDocRef, { isSuperAdmin: true, email: user.email, username: 'Ulysses' });
-                     setStorage('clipping_currentUser', currentUser);
-                     updateView('dashboard');
-                } else {
-                    await signOut(auth);
-                }
-            } else {
-                currentUser = null;
-                localStorage.removeItem('clipping_currentUser');
-                updateView('login');
-            }
-        });
-
         document.addEventListener('DOMContentLoaded', () => {
             loginForm.addEventListener('submit', handleLogin);
             navInicio.addEventListener('click', (e) => { e.preventDefault(); updateView('dashboard'); });
@@ -513,7 +471,13 @@
                 newsAlertsContainer.scrollIntoView({ behavior: 'smooth' });
             });
             
-            // O onAuthStateChanged cuida do estado inicial
+            const savedUser = getStorage('clipping_currentUser', null);
+            if (savedUser) { 
+                currentUser = savedUser; 
+                updateView('dashboard'); 
+            } else {
+                updateView('login');
+            }
         });
     </script>
 </body>
