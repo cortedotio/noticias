@@ -1,4 +1,4 @@
-<!DOCTYPE html><!DOCTYPE html>
+<!DOCTYPE html><!DOCTYPE html><!DOCTYPE html>
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
@@ -169,7 +169,7 @@
                 <div class="space-y-6">
                     <div class="flex items-center"><input type="checkbox" id="report-access-toggle" class="h-4 w-4 text-indigo-600 border-gray-300 rounded"><label for="report-access-toggle" class="ml-2 block text-sm text-gray-900">Liberar acesso ao relatório de alertas na tela inicial.</label></div>
                     <div><h4 class="text-lg font-semibold mb-2">Logo da Empresa</h4><input type="file" id="logo-upload" accept="image/*" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"></div>
-                    <div><h4 class="text-lg font-semibold mb-2">Chave da API GNews</h4><div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-md"><p>Insira a chave da API para que o robô possa buscar notícias.</p><input type="text" id="api-key-input" placeholder="Cole a chave da API GNews aqui" class="mt-2 w-full px-3 py-2 border border-gray-300 rounded-md"></div></div>
+                    <div><h4 class="text-lg font-semibold mb-2">Chave da API de Notícias</h4><div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-md"><p>Insira a chave da API (NewsAPI.org) para que o robô possa buscar notícias.</p><input type="text" id="api-key-input" placeholder="Cole a chave da API aqui" class="mt-2 w-full px-3 py-2 border border-gray-300 rounded-md"></div></div>
                 </div>
             </div>
         </section>
@@ -382,8 +382,8 @@
         async function renderCompanyKeywordAdminPage() { if (!selectedCompanyForManagement) return; companyKeywordAdminTitle.textContent = `Gerenciar Palavras-Chave para: ${selectedCompanyForManagement.name}`; renderKeywordsForSelectedCompany(); }
         async function renderKeywordsForSelectedCompany() { const keywordsRef = collection(db, "companies", selectedCompanyForManagement.id, "keywords"); const querySnapshot = await getDocs(keywordsRef); const keywords = querySnapshot.docs.map(doc => ({id: doc.id, ...doc.data()})); adminKeywordList.innerHTML = ''; keywords.forEach(kw => { const li = document.createElement('li'); li.className = 'flex justify-between items-center bg-gray-100 p-2 rounded-md'; li.innerHTML = `<span>${kw.word}</span><div><button data-id="${kw.id}" class="edit-keyword-btn text-blue-500 hover:text-blue-700 mr-2">Editar</button><button data-id="${kw.id}" class="delete-keyword-btn text-red-500 hover:text-red-700">Excluir</button></div>`; adminKeywordList.appendChild(li); }); }
         async function handleKeywordSubmit(e) { e.preventDefault(); const word = keywordInput.value.trim(), id = keywordIdInput.value; if (!word || !selectedCompanyForManagement) return; const keywordsRef = collection(db, "companies", selectedCompanyForManagement.id, "keywords"); if (id) { await updateDoc(doc(db, "companies", selectedCompanyForManagement.id, "keywords", id), { word }); } else { await addDoc(keywordsRef, { word }); } keywordInput.value = ''; keywordIdInput.value = ''; renderKeywordsForSelectedCompany(); }
-        async function handleKeywordActions(e) { if (!selectedCompanyForManagement) return; if (e.target.classList.contains('edit-keyword-btn')) { const id = e.target.dataset.id; const kwDoc = await getDoc(doc(db, "companies", selectedCompanyForManagement.id, "keywords", id)); if (kwDoc.exists()) { const kw = kwDoc.data(); keywordInput.value = kw.word; keywordIdInput.value = id; keywordInput.focus(); } } if (e.target.classList.contains('delete-keyword-btn')) { const id = e.target.dataset.id; await deleteDoc(doc(db, "companies", selectedCompanyForManagement.id, "keywords", id)); renderKeywordsForSelectedCompany(); } }
-        
+        async function handleUserActions(e) { if (!selectedCompanyForManagement) return; if (e.target.classList.contains('edit-user-btn')) { const id = e.target.dataset.id; const userDoc = await getDoc(doc(db, "companies", selectedCompanyForManagement.id, "users", id)); if (userDoc.exists()) { const user = userDoc.data(); userInput.value = user.username; userPasswordInput.value = user.password; userIdInput.value = id; userInput.focus(); } } if (e.target.classList.contains('delete-user-btn')) { const id = e.target.dataset.id; await deleteDoc(doc(db, "companies", selectedCompanyForManagement.id, "users", id)); renderUsersForSelectedCompany(); } }
+
         // --- LÓGICA DE GERENCIAMENTO DE CONFIGURAÇÕES (PELO SUPER ADMIN) ---
         async function renderCompanySettingsAdminPage() { if (!selectedCompanyForManagement) return; companySettingsAdminTitle.textContent = `Configurações para: ${selectedCompanyForManagement.name}`; const settingsRef = doc(db, "settings", selectedCompanyForManagement.id); const docSnap = await getDoc(settingsRef); if (docSnap.exists()) { const settings = docSnap.data(); apiKeyInput.value = settings.apiKey || ''; reportAccessToggle.checked = settings.reportAccess !== false; } else { apiKeyInput.value = ''; reportAccessToggle.checked = true; } }
         
@@ -405,10 +405,14 @@
                 const foundUrls = articlesSnapshot.docs.map(d => d.data().url);
                 console.log(`ROBÔ: Buscando para ${company.name}: ${keywords.map(k=>k.word).join(', ')}`); 
                 for (const kw of keywords) { 
-                    const url = `https://gnews.io/api/v4/search?q="${encodeURIComponent(kw.word)}"&lang=pt&token=${apiKey}`; 
+                    const url = `https://newsapi.org/v2/everything?q="${encodeURIComponent(kw.word)}"&apiKey=${apiKey}&language=pt`; 
                     try { 
                         const response = await fetch(url); 
-                        if (!response.ok) continue; 
+                        if (!response.ok) {
+                            const errorData = await response.json();
+                            console.error(`ROBÔ: Erro na API para "${kw.word}" [${company.name}]: ${errorData.message}`);
+                            continue;
+                        } 
                         const data = await response.json(); 
                         let newItemsFound = false; 
                         const batch = writeBatch(db);
@@ -453,7 +457,6 @@
             keywordForm.addEventListener('submit', handleKeywordSubmit);
             adminKeywordList.addEventListener('click', handleKeywordActions);
             reportAccessToggle.addEventListener('change', (e) => setDoc(doc(db, "settings", selectedCompanyForManagement.id), { reportAccess: e.target.checked }, { merge: true }));
-            apiKeyInput.addEventListener('change', (e) => setDoc(doc(db, "settings", selectedCompanyForManagement.id), { apiKey: e.target.value }, { merge: true }));
             logoUploadInput.addEventListener('change', handleLogoUpload);
             companyForm.addEventListener('submit', handleCompanySubmit);
             companyList.addEventListener('click', handleCompanyActions);
@@ -469,6 +472,12 @@
                 checkNotificationStatus();
                 updateView('dashboard');
                 newsAlertsContainer.scrollIntoView({ behavior: 'smooth' });
+            });
+            saveApiKeyBtn.addEventListener('click', async () => {
+                if (!selectedCompanyForManagement) return;
+                const apiKey = apiKeyInput.value.trim();
+                await setDoc(doc(db, "settings", selectedCompanyForManagement.id), { apiKey: apiKey }, { merge: true });
+                showAlert('Chave de API salva com sucesso!');
             });
             
             const savedUser = getStorage('clipping_currentUser', null);
