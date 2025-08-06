@@ -203,13 +203,43 @@
         </section>
     </main>
 
+    <!-- Delete Confirmation Modal -->
+    <div id="delete-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3 text-center">
+                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
+                    <svg class="h-6 w-6 text-red-600" stroke="currentColor" fill="none" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                </div>
+                <h3 class="text-lg leading-6 font-medium text-gray-900 mt-2">Excluir Empresa</h3>
+                <div class="mt-2 px-7 py-3">
+                    <p class="text-sm text-gray-500">
+                        Tem certeza que deseja excluir a empresa <strong id="company-name-to-delete"></strong>?
+                        <br><br>
+                        <span class="font-bold text-red-600">Esta ação é permanente e removerá todos os usuários, palavras-chave e notícias associados.</span>
+                    </p>
+                </div>
+                <div class="items-center px-4 py-3">
+                    <button id="confirm-delete-btn" class="px-4 py-2 bg-red-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500">
+                        Sim, excluir permanentemente
+                    </button>
+                    <button id="cancel-delete-btn" class="mt-3 px-4 py-2 bg-gray-200 text-gray-900 text-base font-medium rounded-md w-full shadow-sm hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500">
+                        Cancelar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
     <script type="module">
-        // --- Import Firebase functions (updated to a recent version) ---
+        // --- Import Firebase functions ---
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, collection, getDocs, doc, getDoc, setDoc, addDoc, deleteDoc, updateDoc, query, where, writeBatch, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js";
 
         // --- Your Firebase Configuration ---
-        // IMPORTANT: For production, use environment variables or a secure configuration method.
         const firebaseConfig = {
             apiKey: "AIzaSyCWzQM1SbIgO10GIu4AZ8lVtwmcKPEPAbo",
             authDomain: "noticias-6e952.firebaseapp.com",
@@ -222,6 +252,7 @@
         // --- Initialize Firebase ---
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+        const functions = getFunctions(app, 'southamerica-east1'); // Match the region of your function
 
         // --- DOM ELEMENTS ---
         const pageSections = document.querySelectorAll('.page-section');
@@ -238,12 +269,13 @@
         const backToSuperAdminKwBtn = document.getElementById('back-to-super-admin-kw'), backToSuperAdminSettingsBtn = document.getElementById('back-to-super-admin-settings'), backToSuperAdminUsersBtn = document.getElementById('back-to-super-admin-users'), companyKeywordAdminTitle = document.getElementById('company-keyword-admin-title'), companySettingsAdminTitle = document.getElementById('company-settings-admin-title'), companyUserAdminTitle = document.getElementById('company-user-admin-title'), keywordForm = document.getElementById('keyword-form'), keywordInput = document.getElementById('keyword-input'), keywordIdInput = document.getElementById('keyword-id'), adminKeywordList = document.getElementById('admin-keyword-list');
         const userForm = document.getElementById('user-form'), userInput = document.getElementById('user-input'), userPasswordInput = document.getElementById('user-password-input'), userIdInput = document.getElementById('user-id'), adminUserList = document.getElementById('admin-user-list');
         const notificationBell = document.getElementById('notification-bell-container'), notificationBadge = document.getElementById('notification-badge');
+        const deleteModal = document.getElementById('delete-modal'), confirmDeleteBtn = document.getElementById('confirm-delete-btn'), cancelDeleteBtn = document.getElementById('cancel-delete-btn'), companyNameToDeleteEl = document.getElementById('company-name-to-delete');
         
         // --- APPLICATION STATE ---
-        let currentUser = null, clockInterval = null, selectedCompanyForManagement = null, allCompanyArticles = [];
+        let currentUser = null, clockInterval = null, selectedCompanyForManagement = null, allCompanyArticles = [], companyIdToDelete = null;
 
         // --- UTILITY FUNCTIONS ---
-        function showAlert(message, type = 'success') { const c = type === 'success' ? 'bg-green-100 border-green-500 text-green-700' : 'bg-red-100 border-red-500 text-red-700'; globalAlert.innerHTML = `<div class="${c} border-l-4 p-4 rounded-md fade-in" role="alert"><p>${message}</p></div>`; setTimeout(() => { globalAlert.innerHTML = ''; }, 4000); }
+        function showAlert(message, type = 'success') { const c = type === 'success' ? 'bg-green-100 border-green-500 text-green-700' : 'bg-red-100 border-red-500 text-red-700'; globalAlert.innerHTML = `<div class="${c} border-l-4 p-4 rounded-md fade-in" role="alert"><p>${message}</p></div>`; setTimeout(() => { globalAlert.innerHTML = ''; }, 5000); }
         function updateView(pageName) { pageSections.forEach(s => s.classList.remove('active')); const i = !!currentUser; navLoggedIn.style.display = i ? 'flex' : 'none'; navSuperAdmin.classList.toggle('hidden', !currentUser || !currentUser.isSuperAdmin); if (clockInterval) clearInterval(clockInterval); loadAndDisplayLogo(); switch (pageName) { case 'login': loginPage.classList.add('active'); break; case 'dashboard': dashboardPage.classList.add('active'); renderDashboard(); updateDateTime(); clockInterval = setInterval(updateDateTime, 60000); break; case 'super-admin': superAdminPage.classList.add('active'); renderSuperAdminPage(); break; case 'search': searchPage.classList.add('active'); setupSearchPage(); break; case 'company-keyword-admin': companyKeywordAdminPage.classList.add('active'); renderCompanyKeywordAdminPage(); break; case 'company-settings-admin': companySettingsAdminPage.classList.add('active'); renderCompanySettingsAdminPage(); break; case 'company-user-admin': companyUserAdminPage.classList.add('active'); renderCompanyUserAdminPage(); break; case 'report': reportPage.classList.add('active'); break; } }
         function getStorage(key, defaultValue) { try { const d = localStorage.getItem(key); return d ? JSON.parse(d) : defaultValue; } catch (e) { console.error(e); return defaultValue; } }
         function setStorage(key, value) { localStorage.setItem(key, JSON.stringify(value)); }
@@ -262,9 +294,72 @@
         async function renderVerticalKeywordList() { if (!currentUser || !dashboardKeywordList) return; try { const q = query(collection(db, "companies", currentUser.companyId, "keywords")); const querySnapshot = await getDocs(q); const keywords = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); dashboardKeywordList.innerHTML = ''; if (keywords.length === 0) { dashboardKeywordList.innerHTML = `<p class="text-gray-500 text-sm">Nenhuma palavra-chave cadastrada.</p>`; } else { keywords.forEach(kw => { const li = document.createElement('li'); li.className = 'bg-indigo-100 text-indigo-800 text-md font-medium px-3 py-2 rounded-md'; li.textContent = kw.word; dashboardKeywordList.appendChild(li); }); } } catch (error) { console.error("Error fetching keywords:", error); } }
         
         // --- SUPER ADMIN LOGIC ---
-        async function renderSuperAdminPage() { try { const querySnapshot = await getDocs(collection(db, "companies")); const companies = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); companyList.innerHTML = ''; companies.forEach(c => { const li = document.createElement('li'); li.className = 'flex flex-col sm:flex-row justify-between items-start sm:items-center bg-gray-100 p-3 rounded-md'; const statusClass = c.status === 'inactive' ? 'text-orange-500' : 'text-green-500'; const statusText = c.status === 'inactive' ? 'Inativa' : 'Ativa'; let actionButtons; if (c.status === 'inactive') { actionButtons = `<button data-id="${c.id}" class="reactivate-company-btn bg-yellow-500 text-white px-3 py-1 rounded-md text-sm hover:bg-yellow-600">Reativar</button>`; const oneYearAgo = new Date(); oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1); if (c.deactivationDate && new Date(c.deactivationDate) < oneYearAgo) { actionButtons += `<button data-id="${c.id}" class="delete-company-btn bg-red-500 text-white px-3 py-1 rounded-md text-sm hover:bg-red-600 ml-2">Excluir Permanentemente</button>`; } } else { actionButtons = `<button data-id="${c.id}" class="deactivate-company-btn bg-gray-500 text-white px-3 py-1 rounded-md text-sm hover:bg-gray-600">Inativar</button>`; } li.innerHTML = `<div><span class="font-bold">${c.name}</span> <span class="text-sm ${statusClass}">(${statusText})</span></div><div class="mt-2 sm:mt-0 flex flex-wrap gap-2"><button data-company-id="${c.id}" data-company-name="${c.name}" class="manage-company-users-btn bg-purple-500 text-white px-3 py-1 rounded-md text-sm hover:bg-purple-600">Usuários</button><button data-company-id="${c.id}" data-company-name="${c.name}" class="manage-company-keywords-btn bg-blue-500 text-white px-3 py-1 rounded-md text-sm hover:bg-blue-600">Palavras-Chave</button><button data-company-id="${c.id}" data-company-name="${c.name}" class="manage-company-settings-btn bg-green-500 text-white px-3 py-1 rounded-md text-sm hover:bg-green-600">Configurações</button>${actionButtons}</div>`; companyList.appendChild(li); }); } catch (error) { console.error("Error rendering super admin page:", error); } }
+        async function renderSuperAdminPage() { try { const querySnapshot = await getDocs(collection(db, "companies")); const companies = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); companyList.innerHTML = ''; companies.forEach(c => { const li = document.createElement('li'); li.className = 'flex flex-col sm:flex-row justify-between items-start sm:items-center bg-gray-100 p-3 rounded-md'; const statusClass = c.status === 'inactive' ? 'text-orange-500' : 'text-green-500'; const statusText = c.status === 'inactive' ? 'Inativa' : 'Ativa'; let statusButton; if (c.status === 'inactive') { statusButton = `<button data-id="${c.id}" class="reactivate-company-btn bg-yellow-500 text-white px-3 py-1 rounded-md text-sm hover:bg-yellow-600">Reativar</button>`; } else { statusButton = `<button data-id="${c.id}" class="deactivate-company-btn bg-gray-500 text-white px-3 py-1 rounded-md text-sm hover:bg-gray-600">Inativar</button>`; } li.innerHTML = `<div><span class="font-bold">${c.name}</span> <span class="text-sm ${statusClass}">(${statusText})</span></div><div class="mt-2 sm:mt-0 flex flex-wrap gap-2"><button data-company-id="${c.id}" data-company-name="${c.name}" class="manage-company-users-btn bg-purple-500 text-white px-3 py-1 rounded-md text-sm hover:bg-purple-600">Usuários</button><button data-company-id="${c.id}" data-company-name="${c.name}" class="manage-company-keywords-btn bg-blue-500 text-white px-3 py-1 rounded-md text-sm hover:bg-blue-600">Palavras-Chave</button><button data-company-id="${c.id}" data-company-name="${c.name}" class="manage-company-settings-btn bg-green-500 text-white px-3 py-1 rounded-md text-sm hover:bg-green-600">Config.</button>${statusButton}<button data-company-id="${c.id}" data-company-name="${c.name}" class="delete-company-btn bg-red-600 text-white px-3 py-1 rounded-md text-sm hover:bg-red-800">Excluir</button></div>`; companyList.appendChild(li); }); } catch (error) { console.error("Error rendering super admin page:", error); } }
         async function handleCompanySubmit(e) { e.preventDefault(); const name = document.getElementById('company-name-input').value.trim(); if(!name) { showAlert('O nome da empresa é obrigatório.', 'error'); return; } try { const q = query(collection(db, "companies"), where("name", "==", name.toUpperCase())); const querySnapshot = await getDocs(q); if (!querySnapshot.empty) { showAlert('Este nome de empresa já existe.', 'error'); return; } await addDoc(collection(db, "companies"), { name: name.toUpperCase(), status: 'active' }); showAlert('Empresa adicionada com sucesso!'); companyForm.reset(); renderSuperAdminPage(); } catch (error) { console.error("Error adding company:", error); showAlert("Erro ao adicionar empresa.", "error"); } }
-        async function handleCompanyActions(e) { const id = e.target.dataset.id || e.target.dataset.companyId; if (!id) return; const companyRef = doc(db, "companies", id); try { if (e.target.classList.contains('deactivate-company-btn')) { await updateDoc(companyRef, { status: 'inactive', deactivationDate: new Date().toISOString() }); } else if (e.target.classList.contains('reactivate-company-btn')) { await updateDoc(companyRef, { status: 'active', deactivationDate: null }); } else if (e.target.classList.contains('delete-company-btn')) { showAlert("A exclusão permanente deve ser feita via Cloud Function para remover subcoleções. Esta ação não foi executada.", "error"); } else if (e.target.classList.contains('manage-company-keywords-btn')) { selectedCompanyForManagement = { id: e.target.dataset.companyId, name: e.target.dataset.companyName }; updateView('company-keyword-admin'); } else if (e.target.classList.contains('manage-company-settings-btn')) { selectedCompanyForManagement = { id: e.target.dataset.companyId, name: e.target.dataset.companyName }; updateView('company-settings-admin'); } else if (e.target.classList.contains('manage-company-users-btn')) { selectedCompanyForManagement = { id: e.target.dataset.companyId, name: e.target.dataset.companyName }; updateView('company-user-admin'); } renderSuperAdminPage(); } catch (error) { console.error("Error handling company action:", error); showAlert("Ocorreu um erro.", "error"); } }
+        async function handleCompanyActions(e) {
+            const target = e.target;
+            const companyId = target.dataset.id || target.dataset.companyId;
+            if (!companyId) return;
+
+            const companyRef = doc(db, "companies", companyId);
+            try {
+                if (target.classList.contains('deactivate-company-btn')) {
+                    await updateDoc(companyRef, { status: 'inactive', deactivationDate: new Date().toISOString() });
+                } else if (target.classList.contains('reactivate-company-btn')) {
+                    await updateDoc(companyRef, { status: 'active', deactivationDate: null });
+                } else if (target.classList.contains('delete-company-btn')) {
+                    companyIdToDelete = target.dataset.companyId;
+                    companyNameToDeleteEl.textContent = target.dataset.companyName;
+                    deleteModal.classList.remove('hidden');
+                    return; // Stop further processing to avoid re-rendering immediately
+                } else if (target.classList.contains('manage-company-keywords-btn')) {
+                    selectedCompanyForManagement = { id: target.dataset.companyId, name: target.dataset.companyName };
+                    updateView('company-keyword-admin');
+                    return;
+                } else if (target.classList.contains('manage-company-settings-btn')) {
+                    selectedCompanyForManagement = { id: target.dataset.companyId, name: target.dataset.companyName };
+                    updateView('company-settings-admin');
+                    return;
+                } else if (target.classList.contains('manage-company-users-btn')) {
+                    selectedCompanyForManagement = { id: target.dataset.companyId, name: target.dataset.companyName };
+                    updateView('company-user-admin');
+                    return;
+                }
+                renderSuperAdminPage();
+            } catch (error) {
+                console.error("Error handling company action:", error);
+                showAlert("Ocorreu um erro.", "error");
+            }
+        }
+
+        // --- DELETE COMPANY LOGIC ---
+        async function handleConfirmDelete() {
+            if (!companyIdToDelete) return;
+            
+            const deleteButton = confirmDeleteBtn;
+            deleteButton.disabled = true;
+            deleteButton.textContent = 'Excluindo...';
+
+            const deleteCompanyFunc = httpsCallable(functions, 'deleteCompany');
+            try {
+                const result = await deleteCompanyFunc({ companyId: companyIdToDelete });
+                if (result.data.success) {
+                    showAlert('Empresa e todos os seus dados foram excluídos com sucesso.');
+                } else {
+                    throw new Error(result.data.error || 'A função de exclusão falhou.');
+                }
+            } catch (error) {
+                console.error("Erro ao chamar a função de exclusão:", error);
+                showAlert(`Erro ao excluir empresa: ${error.message}`, 'error');
+            } finally {
+                deleteModal.classList.add('hidden');
+                deleteButton.disabled = false;
+                deleteButton.textContent = 'Sim, excluir permanentemente';
+                companyIdToDelete = null;
+                renderSuperAdminPage(); // Re-render the list after deletion
+            }
+        }
+
 
         // --- USER MANAGEMENT LOGIC (BY SUPER ADMIN) ---
         async function renderCompanyUserAdminPage() { if (!selectedCompanyForManagement) return; companyUserAdminTitle.textContent = `Gerenciar Usuários para: ${selectedCompanyForManagement.name}`; renderUsersForSelectedCompany(); }
@@ -346,6 +441,13 @@
             filterContainer.addEventListener('click', (e) => { if (e.target.classList.contains('filter-btn')) { document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('bg-indigo-500', 'text-white')); e.target.classList.add('bg-indigo-500', 'text-white'); handleSearch(); } });
             notificationBell.addEventListener('click', async () => { if (!currentUser) return; try { await setDoc(doc(db, "settings", currentUser.companyId), { newAlerts: false }, { merge: true }); checkNotificationStatus(); updateView('dashboard'); newsAlertsContainer.scrollIntoView({ behavior: 'smooth' }); } catch (error) { console.error("Error clearing notification:", error); } });
             
+            // Delete modal listeners
+            cancelDeleteBtn.addEventListener('click', () => {
+                deleteModal.classList.add('hidden');
+                companyIdToDelete = null;
+            });
+            confirmDeleteBtn.addEventListener('click', handleConfirmDelete);
+
             const savedUser = getStorage('clipping_currentUser', null);
             if (savedUser) { 
                 currentUser = savedUser; 
