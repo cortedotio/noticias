@@ -29,6 +29,21 @@
             20%, 40%, 60%, 80% { transform: rotate(10deg); }
         }
         .animate-ring { animation: ring 1s ease-in-out; }
+
+        #notification-badge {
+            min-width: 1.25rem;
+            height: 1.25rem;
+            padding: 0 0.25rem;
+            line-height: 1.25rem;
+            font-size: 0.75rem;
+            font-weight: bold;
+            top: -0.25rem;
+            right: -0.5rem;
+        }
+        .keyword-filter.active {
+            background-color: #4F46E5 !important;
+            color: white !important;
+        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
@@ -48,7 +63,7 @@
                     <a href="#" id="nav-super-admin" class="hidden text-red-600 hover:text-red-800 px-3 py-2 rounded-md text-sm font-bold">Super Admin</a>
                     <div id="notification-bell-container" class="relative cursor-pointer ml-4">
                         <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
-                        <span id="notification-badge" class="hidden absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white"></span>
+                        <span id="notification-badge" class="hidden absolute text-white text-center rounded-full bg-red-500 ring-2 ring-white"></span>
                     </div>
                     <a href="#" id="nav-logout" class="ml-4 bg-indigo-600 text-white hover:bg-indigo-700 px-3 py-2 rounded-md text-sm font-medium">Sair</a>
                 </div>
@@ -321,87 +336,9 @@
         function renderSearchResults(articles) { searchResults.innerHTML = ''; if (articles.length === 0) { searchResults.innerHTML = '<p class="text-gray-500">Nenhum resultado.</p>'; return; } articles.forEach(article => displayNewsAlert(article, searchResults)); }
 
         // --- Report Page ---
-        async function renderReportPage() {
-            if (!currentUser || currentUser.isSuperAdmin) return;
-            // Fetch all articles for the charts
-            const q = query(collection(db, "companies", currentUser.companyId, "articles"), orderBy("publishedAt", "desc"));
-            const articlesSnapshot = await getDocs(q);
-            const articles = articlesSnapshot.docs.map(doc => doc.data());
-
-            renderSourceChart(articles);
-            renderDateChart(articles);
-            
-            startDateInput.addEventListener('change', () => renderDateChart(articles));
-            endDateInput.addEventListener('change', () => renderDateChart(articles));
-        }
-
-        function renderSourceChart(articles) {
-            const sourceCounts = articles.reduce((acc, article) => {
-                const sourceName = article.source.name;
-                acc[sourceName] = (acc[sourceName] || 0) + 1;
-                return acc;
-            }, {});
-
-            const topSources = Object.entries(sourceCounts).sort((a, b) => b[1] - a[1]).slice(0, 10);
-            const labels = topSources.map(entry => entry[0]);
-            const data = topSources.map(entry => entry[1]);
-
-            const ctx = document.getElementById('source-chart').getContext('2d');
-            if (sourceChartInstance) sourceChartInstance.destroy();
-            sourceChartInstance = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Notícias por Veículo',
-                        data: data,
-                        backgroundColor: ['#4F46E5', '#6366F1', '#818CF8', '#A5B4FC', '#C7D2FE', '#E0E7FF', '#60A5FA', '#3B82F6', '#1D4ED8', '#1E3A8A'],
-                        hoverOffset: 4
-                    }]
-                }
-            });
-        }
-
-        function renderDateChart(articles) {
-            const startDate = startDateInput.value ? new Date(startDateInput.value) : null;
-            const endDate = endDateInput.value ? new Date(endDateInput.value) : null;
-            
-            if (startDate) startDate.setHours(0, 0, 0, 0);
-            if (endDate) endDate.setHours(23, 59, 59, 999);
-
-            const filteredArticles = articles.filter(article => {
-                const pubDate = article.publishedAt.toDate();
-                if (startDate && pubDate < startDate) return false;
-                if (endDate && pubDate > endDate) return false;
-                return true;
-            });
-
-            const dateCounts = filteredArticles.reduce((acc, article) => {
-                const dateStr = article.publishedAt.toDate().toLocaleDateString('pt-BR');
-                acc[dateStr] = (acc[dateStr] || 0) + 1;
-                return acc;
-            }, {});
-
-            const sortedDates = Object.entries(dateCounts).sort((a, b) => new Date(a[0].split('/').reverse().join('-')) - new Date(b[0].split('/').reverse().join('-')));
-            const labels = sortedDates.map(entry => entry[0]);
-            const data = sortedDates.map(entry => entry[1]);
-
-            const ctx = document.getElementById('date-chart').getContext('2d');
-            if (dateChartInstance) dateChartInstance.destroy();
-            dateChartInstance = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Notícias por Dia',
-                        data: data,
-                        fill: false,
-                        borderColor: '#4F46E5',
-                        tension: 0.1
-                    }]
-                }
-            });
-        }
+        async function renderReportPage() { if (!currentUser || currentUser.isSuperAdmin) return; const q = query(collection(db, "companies", currentUser.companyId, "articles"), orderBy("publishedAt", "desc")); const articlesSnapshot = await getDocs(q); const articles = articlesSnapshot.docs.map(doc => doc.data()); renderSourceChart(articles); renderDateChart(articles); startDateInput.addEventListener('change', () => renderDateChart(articles)); endDateInput.addEventListener('change', () => renderDateChart(articles)); }
+        function renderSourceChart(articles) { const sourceCounts = articles.reduce((acc, article) => { const sourceName = article.source.name; acc[sourceName] = (acc[sourceName] || 0) + 1; return acc; }, {}); const topSources = Object.entries(sourceCounts).sort((a, b) => b[1] - a[1]).slice(0, 10); const labels = topSources.map(entry => entry[0]); const data = topSources.map(entry => entry[1]); const ctx = document.getElementById('source-chart').getContext('2d'); if (sourceChartInstance) sourceChartInstance.destroy(); sourceChartInstance = new Chart(ctx, { type: 'doughnut', data: { labels: labels, datasets: [{ label: 'Notícias por Veículo', data: data, backgroundColor: ['#4F46E5', '#6366F1', '#818CF8', '#A5B4FC', '#C7D2FE', '#E0E7FF', '#60A5FA', '#3B82F6', '#1D4ED8', '#1E3A8A'], hoverOffset: 4 }] } }); }
+        function renderDateChart(articles) { const startDate = startDateInput.value ? new Date(startDateInput.value) : null; const endDate = endDateInput.value ? new Date(endDateInput.value) : null; if (startDate) startDate.setHours(0, 0, 0, 0); if (endDate) endDate.setHours(23, 59, 59, 999); const filteredArticles = articles.filter(article => { const pubDate = article.publishedAt.toDate(); if (startDate && pubDate < startDate) return false; if (endDate && pubDate > endDate) return false; return true; }); const dateCounts = filteredArticles.reduce((acc, article) => { const dateStr = article.publishedAt.toDate().toLocaleDateString('pt-BR'); acc[dateStr] = (acc[dateStr] || 0) + 1; return acc; }, {}); const sortedDates = Object.entries(dateCounts).sort((a, b) => new Date(a[0].split('/').reverse().join('-')) - new Date(b[0].split('/').reverse().join('-'))); const labels = sortedDates.map(entry => entry[0]); const data = sortedDates.map(entry => entry[1]); const ctx = document.getElementById('date-chart').getContext('2d'); if (dateChartInstance) dateChartInstance.destroy(); dateChartInstance = new Chart(ctx, { type: 'line', data: { labels: labels, datasets: [{ label: 'Notícias por Dia', data: data, fill: false, borderColor: '#4F46E5', tension: 0.1 }] } }); }
 
         // --- Init & Listeners ---
         document.addEventListener('DOMContentLoaded', () => {
