@@ -1,4 +1,4 @@
-<!DOCTYPE html><!DOCTYPE html><!DOCTYPE html><!DOCTYPE html><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
@@ -15,12 +15,13 @@
     <style>
         body { font-family: 'Inter', sans-serif; }
         header { position: fixed; top: 0; left: 0; width: 100%; z-index: 1000; }
-        main { padding-top: 80px; }
+        main { padding-top: 80px; /* Adjusted for fixed header */ }
         .page-section { display: none; }
         .page-section.active { display: block; }
         .fade-in { animation: fadeIn 0.5s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
         
+        /* Print styles */
         @media print {
             body * { visibility: hidden; }
             .printable-area, .printable-area * { visibility: visible; }
@@ -28,7 +29,7 @@
             .action-button { display: none; }
         }
 
-        /* Animação para o sino */
+        /* Animation for the notification bell */
         @keyframes ring {
             0%, 100% { transform: rotate(0); }
             10%, 30%, 50%, 70%, 90% { transform: rotate(-10deg); }
@@ -41,12 +42,12 @@
 </head>
 <body class="bg-gray-100 text-gray-800">
 
-    <!-- Cabeçalho Principal Fixo -->
+    <!-- Fixed Main Header -->
     <header class="bg-white shadow-md">
         <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
             <div class="text-2xl font-bold text-indigo-600 flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline-block mr-2 h-8 w-8"><path d="M2.5 17a2.4 2.4 0 0 1 3 0L12 23l6.5-6.5a2.4 2.4 0 0 1 3 0Z"/><path d="M5 11.5a2.5 2.5 0 0 1 0-5c1.5 0 2.8 1.3 2.8 2.8V13c0 1.4-1.3 2.8-2.8 2.8-1.5 0-2.8-1.3-2.8-2.8V8.5"/><path d="M19 11.5a2.5 2.5 0 0 0 0-5c-1.5 0-2.8 1.3-2.8 2.8V13c0 1.4 1.3 2.8 2.8 2.8 1.5 0-2.8-1.3-2.8-2.8V8.5"/></svg>
-                NewsClip
+               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline-block mr-2 h-8 w-8"><path d="M2.5 17a2.4 2.4 0 0 1 3 0L12 23l6.5-6.5a2.4 2.4 0 0 1 3 0Z"/><path d="M5 11.5a2.5 2.5 0 0 1 0-5c1.5 0 2.8 1.3 2.8 2.8V13c0 1.4-1.3 2.8-2.8 2.8-1.5 0-2.8-1.3-2.8-2.8V8.5"/><path d="M19 11.5a2.5 2.5 0 0 0 0-5c-1.5 0-2.8 1.3-2.8 2.8V13c0 1.4 1.3 2.8 2.8 2.8 1.5 0-2.8-1.3-2.8-2.8V8.5"/></svg>
+               NewsClip
             </div>
             <div class="flex items-center">
                 <div id="nav-logged-in" class="hidden items-center">
@@ -70,10 +71,10 @@
     <main class="container mx-auto p-6">
         <div id="global-alert" class="mb-6"></div>
 
-        <!-- Seção de Login -->
+        <!-- Login Section -->
         <section id="login-page" class="page-section fade-in">
             <div class="max-w-md mx-auto bg-white p-8 rounded-lg shadow-lg mt-10 relative">
-                 <div id="login-logo-container" class="absolute top-4 right-4 h-12 w-auto"></div>
+                <div id="login-logo-container" class="absolute top-4 right-4 h-12 w-auto"></div>
                 <h2 class="text-2xl font-bold text-center mb-6">Acesso ao Sistema</h2>
                 <form id="login-form">
                     <div class="mb-4"><label for="login-company" class="block text-sm font-medium text-gray-700 mb-1">Empresa</label><input type="text" id="login-company" class="w-full px-3 py-2 border border-gray-300 rounded-md"></div>
@@ -84,7 +85,7 @@
             </div>
         </section>
 
-        <!-- Seção do Dashboard (Início) -->
+        <!-- Dashboard Section -->
         <section id="dashboard-page" class="page-section fade-in">
             <div class="flex flex-col md:flex-row justify-between md:items-center mb-6 bg-white p-4 rounded-lg shadow-md">
                 <h2 id="dashboard-title" class="text-2xl font-bold text-gray-800 mb-2 md:mb-0">Notícias do Dia</h2>
@@ -111,10 +112,14 @@
              <div id="super-admin-dashboard-message" class="hidden bg-white p-8 rounded-lg shadow-lg text-center">
                 <h3 class="text-2xl font-bold">Bem-vindo, Super Admin!</h3>
                 <p class="mt-4 text-gray-600">Use o menu "Super Admin" no topo da página para gerenciar empresas e usuários.</p>
+                <div class="mt-6 p-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 rounded-md">
+                    <p class="font-bold">Aviso Importante sobre o Robô de Notícias</p>
+                    <p class="mt-2 text-sm">A funcionalidade de busca automática de notícias (robô) foi desativada desta interface de cliente por motivos de segurança e eficiência. Para que as notícias sejam coletadas, é <strong>essencial</strong> implementar um processo no lado do servidor (como uma <strong>Firebase Cloud Function</strong>) que execute essa tarefa de forma segura e agendada.</p>
+                </div>
             </div>
         </section>
         
-        <!-- Seção Super Admin -->
+        <!-- Super Admin Section -->
         <section id="super-admin-page" class="page-section fade-in">
             <h2 class="text-3xl font-bold mb-6 text-red-600">Painel Super-Administrador</h2>
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -132,14 +137,14 @@
             </div>
         </section>
 
-        <!-- Seção de Gerenciamento de Usuários (pelo Super Admin) -->
+        <!-- Company User Management Section (by Super Admin) -->
         <section id="company-user-admin-page" class="page-section fade-in">
             <button id="back-to-super-admin-users" class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar para Super Admin</button>
             <h2 id="company-user-admin-title" class="text-3xl font-bold mb-6">Gerenciar Usuários</h2>
             <div class="bg-white p-6 rounded-lg shadow-lg">
-                <form id="user-form" class="flex gap-2 mb-4">
-                    <input type="text" id="user-input" placeholder="Nome do usuário" class="w-1/2 px-3 py-2 border border-gray-300 rounded-md">
-                    <input type="text" id="user-password-input" placeholder="Senha" class="w-1/2 px-3 py-2 border border-gray-300 rounded-md">
+                <form id="user-form" class="flex flex-col sm:flex-row gap-2 mb-4">
+                    <input type="text" id="user-input" placeholder="Nome do usuário" class="flex-grow px-3 py-2 border border-gray-300 rounded-md">
+                    <input type="text" id="user-password-input" placeholder="Senha" class="flex-grow px-3 py-2 border border-gray-300 rounded-md">
                     <input type="hidden" id="user-id">
                     <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Salvar</button>
                 </form>
@@ -147,7 +152,7 @@
             </div>
         </section>
 
-        <!-- Seção de Gerenciamento de Palavras-chave (pelo Super Admin) -->
+        <!-- Company Keyword Management Section (by Super Admin) -->
         <section id="company-keyword-admin-page" class="page-section fade-in">
             <button id="back-to-super-admin-kw" class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar para Super Admin</button>
             <h2 id="company-keyword-admin-title" class="text-3xl font-bold mb-6">Gerenciar Palavras-Chave</h2>
@@ -161,7 +166,7 @@
             </div>
         </section>
 
-        <!-- Seção de Configurações da Empresa (pelo Super Admin) -->
+        <!-- Company Settings Management Section (by Super Admin) -->
         <section id="company-settings-admin-page" class="page-section fade-in">
             <button id="back-to-super-admin-settings" class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar para Super Admin</button>
             <h2 id="company-settings-admin-title" class="text-3xl font-bold mb-6">Configurações da Empresa</h2>
@@ -169,12 +174,12 @@
                 <div class="space-y-6">
                     <div class="flex items-center"><input type="checkbox" id="report-access-toggle" class="h-4 w-4 text-indigo-600 border-gray-300 rounded"><label for="report-access-toggle" class="ml-2 block text-sm text-gray-900">Liberar acesso ao relatório de alertas na tela inicial.</label></div>
                     <div><h4 class="text-lg font-semibold mb-2">Logo da Empresa</h4><input type="file" id="logo-upload" accept="image/*" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"></div>
-                    <div><h4 class="text-lg font-semibold mb-2">Chave da API GNews</h4><div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-md"><p>Insira a chave da API para que o robô possa buscar notícias.</p><input type="text" id="api-key-input" placeholder="Cole a chave da API GNews aqui" class="mt-2 w-full px-3 py-2 border border-gray-300 rounded-md"></div></div>
+                    <div><h4 class="text-lg font-semibold mb-2">Chave da API GNews</h4><div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-md"><p>Insira a chave da API para que o robô (Cloud Function) possa buscar notícias.</p><input type="text" id="api-key-input" placeholder="Cole a chave da API GNews aqui" class="mt-2 w-full px-3 py-2 border border-gray-300 rounded-md"></div></div>
                 </div>
             </div>
         </section>
 
-        <!-- Seção de Relatório (Em Desenvolvimento) -->
+        <!-- Report Section (In Development) -->
         <section id="report-page" class="page-section fade-in">
             <div class="bg-white p-8 rounded-lg shadow-lg text-center">
                 <h2 class="text-3xl font-bold mb-4 text-gray-700">Relatórios</h2>
@@ -187,7 +192,7 @@
             </div>
         </section>
 
-        <!-- Seção de Pesquisa -->
+        <!-- Search Section -->
         <section id="search-page" class="page-section fade-in">
              <div class="bg-white p-6 md:p-8 rounded-lg shadow-lg">
                 <h2 class="text-2xl md:text-3xl font-bold mb-6">Pesquisar nos Alertas Salvos</h2>
@@ -199,11 +204,12 @@
     </main>
 
     <script type="module">
-        // --- Importar funções do Firebase ---
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
-        import { getFirestore, collection, getDocs, doc, getDoc, setDoc, addDoc, deleteDoc, updateDoc, query, where, writeBatch } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
+        // --- Import Firebase functions (updated to a recent version) ---
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, getDocs, doc, getDoc, setDoc, addDoc, deleteDoc, updateDoc, query, where, writeBatch, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // --- Sua configuração do Firebase ---
+        // --- Your Firebase Configuration ---
+        // IMPORTANT: For production, use environment variables or a secure configuration method.
         const firebaseConfig = {
             apiKey: "AIzaSyCWzQM1SbIgO10GIu4AZ8lVtwmcKPEPAbo",
             authDomain: "noticias-6e952.firebaseapp.com",
@@ -213,11 +219,11 @@
             appId: "1:788555331572:web:328cc3967fad0155352ba1"
         };
 
-        // --- Inicializar Firebase ---
+        // --- Initialize Firebase ---
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // --- ELEMENTOS DO DOM ---
+        // --- DOM ELEMENTS ---
         const pageSections = document.querySelectorAll('.page-section');
         const navLoggedIn = document.getElementById('nav-logged-in');
         const navInicio = document.getElementById('nav-inicio'), navRelatorio = document.getElementById('nav-relatorio'), navPesquisa = document.getElementById('nav-pesquisa'), navSuperAdmin = document.getElementById('nav-super-admin'), navLogout = document.getElementById('nav-logout');
@@ -233,216 +239,89 @@
         const userForm = document.getElementById('user-form'), userInput = document.getElementById('user-input'), userPasswordInput = document.getElementById('user-password-input'), userIdInput = document.getElementById('user-id'), adminUserList = document.getElementById('admin-user-list');
         const notificationBell = document.getElementById('notification-bell-container'), notificationBadge = document.getElementById('notification-badge');
         
-        // --- ESTADO DA APLICAÇÃO ---
-        let currentUser = null, newsCheckInterval = null, clockInterval = null, selectedCompanyForManagement = null;
+        // --- APPLICATION STATE ---
+        let currentUser = null, clockInterval = null, selectedCompanyForManagement = null, allCompanyArticles = [];
 
-        // --- FUNÇÕES DE UTILIDADE ---
+        // --- UTILITY FUNCTIONS ---
         function showAlert(message, type = 'success') { const c = type === 'success' ? 'bg-green-100 border-green-500 text-green-700' : 'bg-red-100 border-red-500 text-red-700'; globalAlert.innerHTML = `<div class="${c} border-l-4 p-4 rounded-md fade-in" role="alert"><p>${message}</p></div>`; setTimeout(() => { globalAlert.innerHTML = ''; }, 4000); }
-        function updateView(pageName) { pageSections.forEach(s => s.classList.remove('active')); const i = !!currentUser; navLoggedIn.style.display = i ? 'flex' : 'none'; navSuperAdmin.classList.toggle('hidden', !currentUser || !currentUser.isSuperAdmin); if (clockInterval) clearInterval(clockInterval); loadAndDisplayLogo(); switch (pageName) { case 'login': loginPage.classList.add('active'); break; case 'dashboard': dashboardPage.classList.add('active'); renderDashboard(); updateDateTime(); clockInterval = setInterval(updateDateTime, 60000); break; case 'super-admin': superAdminPage.classList.add('active'); renderSuperAdminPage(); break; case 'search': searchPage.classList.add('active'); handleSearch(); break; case 'company-keyword-admin': companyKeywordAdminPage.classList.add('active'); renderCompanyKeywordAdminPage(); break; case 'company-settings-admin': companySettingsAdminPage.classList.add('active'); renderCompanySettingsAdminPage(); break; case 'company-user-admin': companyUserAdminPage.classList.add('active'); renderCompanyUserAdminPage(); break; case 'report': reportPage.classList.add('active'); break; } }
+        function updateView(pageName) { pageSections.forEach(s => s.classList.remove('active')); const i = !!currentUser; navLoggedIn.style.display = i ? 'flex' : 'none'; navSuperAdmin.classList.toggle('hidden', !currentUser || !currentUser.isSuperAdmin); if (clockInterval) clearInterval(clockInterval); loadAndDisplayLogo(); switch (pageName) { case 'login': loginPage.classList.add('active'); break; case 'dashboard': dashboardPage.classList.add('active'); renderDashboard(); updateDateTime(); clockInterval = setInterval(updateDateTime, 60000); break; case 'super-admin': superAdminPage.classList.add('active'); renderSuperAdminPage(); break; case 'search': searchPage.classList.add('active'); setupSearchPage(); break; case 'company-keyword-admin': companyKeywordAdminPage.classList.add('active'); renderCompanyKeywordAdminPage(); break; case 'company-settings-admin': companySettingsAdminPage.classList.add('active'); renderCompanySettingsAdminPage(); break; case 'company-user-admin': companyUserAdminPage.classList.add('active'); renderCompanyUserAdminPage(); break; case 'report': reportPage.classList.add('active'); break; } }
         function getStorage(key, defaultValue) { try { const d = localStorage.getItem(key); return d ? JSON.parse(d) : defaultValue; } catch (e) { console.error(e); return defaultValue; } }
         function setStorage(key, value) { localStorage.setItem(key, JSON.stringify(value)); }
         function updateDateTime() { if (!currentDateTimeEl) return; const n = new Date(), f = { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }; currentDateTimeEl.textContent = `Data: ${n.toLocaleDateString('pt-BR', f).replace(',', ' -')}`; }
 
-        // --- LÓGICA DE LOGO ---
+        // --- LOGO LOGIC ---
         async function handleLogoUpload(e) { const file = e.target.files[0]; if (!file) return; const companyId = currentUser.isSuperAdmin ? selectedCompanyForManagement.id : currentUser.companyId; if (!companyId) return; const reader = new FileReader(); reader.onloadend = async () => { try { const settingsRef = doc(db, "settings", companyId); await setDoc(settingsRef, { logo: reader.result }, { merge: true }); loadAndDisplayLogo(); showAlert('Logo atualizada com sucesso!'); } catch (error) { console.error("Erro ao salvar logo:", error); showAlert("Erro ao salvar logo.", "error"); } }; reader.readAsDataURL(file); }
-        async function loadAndDisplayLogo() { const companyId = currentUser ? currentUser.companyId : null; if (!companyId) { headerLogoContainer.innerHTML = ''; loginLogoContainer.innerHTML = ''; return; } const settingsRef = doc(db, "settings", companyId); const docSnap = await getDoc(settingsRef); const logoData = docSnap.exists() ? docSnap.data().logo : null; const logoHtml = logoData ? `<img src="${logoData}" alt="Logo da Empresa" class="h-full w-auto object-contain">` : ''; headerLogoContainer.innerHTML = logoHtml; loginLogoContainer.innerHTML = logoHtml; }
+        async function loadAndDisplayLogo() { const companyId = currentUser ? currentUser.companyId : null; if (!companyId) { headerLogoContainer.innerHTML = ''; loginLogoContainer.innerHTML = ''; return; } const settingsRef = doc(db, "settings", companyId); try { const docSnap = await getDoc(settingsRef); const logoData = docSnap.exists() ? docSnap.data().logo : null; const logoHtml = logoData ? `<img src="${logoData}" alt="Logo da Empresa" class="h-full w-auto object-contain">` : ''; headerLogoContainer.innerHTML = logoHtml; loginLogoContainer.innerHTML = logoHtml; } catch (error) { console.error("Error loading logo:", error); } }
 
-        // --- LÓGICA DE AUTENTICAÇÃO ---
-        async function handleLogin(e) {
-            e.preventDefault();
-            const companyName = document.getElementById('login-company').value.trim();
-            const user = document.getElementById('login-user').value.trim();
-            const pass = document.getElementById('login-password').value.trim();
-            
-            if (user.toLowerCase() === 'ulysses' && pass === 'adminqwert') {
-                currentUser = { username: 'Ulysses', isSuperAdmin: true, companyId: 'super', companyName: 'Super Admin' };
-                setStorage('clipping_currentUser', currentUser);
-                updateView('dashboard');
-                return;
-            }
+        // --- AUTHENTICATION LOGIC ---
+        async function handleLogin(e) { e.preventDefault(); const companyName = document.getElementById('login-company').value.trim(); const user = document.getElementById('login-user').value.trim(); const pass = document.getElementById('login-password').value.trim(); if (user.toLowerCase() === 'ulysses' && pass === 'adminqwert') { currentUser = { username: 'Ulysses', isSuperAdmin: true, companyId: 'super', companyName: 'Super Admin' }; setStorage('clipping_currentUser', currentUser); updateView('dashboard'); return; } try { const companiesQuery = query(collection(db, "companies"), where("name", "==", companyName.toUpperCase())); const companiesSnapshot = await getDocs(companiesQuery); if (companiesSnapshot.empty) { showAlert('Empresa não encontrada.', 'error'); return; } const companyDoc = companiesSnapshot.docs[0]; const company = { id: companyDoc.id, ...companyDoc.data() }; if (company.status === 'inactive') { showAlert('Esta empresa está inativa e não pode ser acessada.', 'error'); return; } const usersQuery = query(collection(db, "companies", company.id, "users"), where("username", "==", user), where("password", "==", pass)); const usersSnapshot = await getDocs(usersQuery); if(!usersSnapshot.empty) { currentUser = { username: user, companyId: company.id, companyName: company.name, isSuperAdmin: false }; setStorage('clipping_currentUser', currentUser); updateView('dashboard'); } else { showAlert('Usuário ou senha inválidos para esta empresa.', 'error'); } } catch (error) { console.error("Login error:", error); showAlert("Ocorreu um erro durante o login.", "error"); } }
+        function handleLogout() { currentUser = null; selectedCompanyForManagement = null; localStorage.removeItem('clipping_currentUser'); if (clockInterval) clearInterval(clockInterval); headerLogoContainer.innerHTML = ''; updateView('login'); }
 
-            const companiesQuery = query(collection(db, "companies"), where("name", "==", companyName.toUpperCase()));
-            const companiesSnapshot = await getDocs(companiesQuery);
-
-            if (companiesSnapshot.empty) {
-                showAlert('Empresa não encontrada.', 'error');
-                return;
-            }
-            const companyDoc = companiesSnapshot.docs[0];
-            const company = { id: companyDoc.id, ...companyDoc.data() };
-
-            if (company.status === 'inactive') {
-                showAlert('Esta empresa está inativa e não pode ser acessada.', 'error');
-                return;
-            }
-
-            const usersQuery = query(collection(db, "companies", company.id, "users"), where("username", "==", user), where("password", "==", pass));
-            const usersSnapshot = await getDocs(usersQuery);
-            
-            if(!usersSnapshot.empty) {
-                currentUser = { username: user, companyId: company.id, companyName: company.name, isSuperAdmin: false };
-                setStorage('clipping_currentUser', currentUser);
-                updateView('dashboard');
-            } else {
-                showAlert('Usuário ou senha inválidos para esta empresa.', 'error');
-            }
-        }
-        function handleLogout() { currentUser = null; selectedCompanyForManagement = null; localStorage.removeItem('clipping_currentUser'); if (newsCheckInterval) clearInterval(newsCheckInterval); if (clockInterval) clearInterval(clockInterval); headerLogoContainer.innerHTML = ''; updateView('login'); }
-
-        // --- LÓGICA DO DASHBOARD ---
-        async function renderDashboard() { 
-            if (!currentUser) return; 
-            document.getElementById('dashboard-grid').style.display = currentUser.isSuperAdmin ? 'none' : 'grid';
-            document.getElementById('super-admin-dashboard-message').style.display = currentUser.isSuperAdmin ? 'block' : 'none';
-            
-            dashboardTitle.textContent = currentUser.isSuperAdmin ? 'Painel Super Admin' : `Notícias do Dia - ${currentUser.companyName}`; 
-            renderVerticalKeywordList(); 
-            const settingsRef = doc(db, "settings", currentUser.companyId);
-            const docSnap = await getDoc(settingsRef);
-            const hasReportAccess = docSnap.exists() ? docSnap.data().reportAccess : true;
-            newsAlertsContainer.style.display = hasReportAccess ? 'block' : 'none';
-            navRelatorio.classList.toggle('hidden', !hasReportAccess || currentUser.isSuperAdmin);
-            populateInitialAlerts();
-            checkNotificationStatus();
-        }
-        async function renderVerticalKeywordList() { if (!currentUser || !dashboardKeywordList) return; const q = query(collection(db, "companies", currentUser.companyId, "keywords")); const querySnapshot = await getDocs(q); const keywords = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); dashboardKeywordList.innerHTML = ''; if (keywords.length === 0) { dashboardKeywordList.innerHTML = `<p class="text-gray-500 text-sm">Nenhuma palavra-chave cadastrada.</p>`; } else { keywords.forEach(kw => { const li = document.createElement('li'); li.className = 'bg-indigo-100 text-indigo-800 text-md font-medium px-3 py-2 rounded-md'; li.textContent = kw.word; dashboardKeywordList.appendChild(li); }); } }
+        // --- DASHBOARD LOGIC ---
+        async function renderDashboard() { if (!currentUser) return; document.getElementById('dashboard-grid').style.display = currentUser.isSuperAdmin ? 'none' : 'grid'; document.getElementById('super-admin-dashboard-message').style.display = currentUser.isSuperAdmin ? 'block' : 'none'; dashboardTitle.textContent = currentUser.isSuperAdmin ? 'Painel Super Admin' : `Notícias do Dia - ${currentUser.companyName}`; if (!currentUser.isSuperAdmin) { renderVerticalKeywordList(); const settingsRef = doc(db, "settings", currentUser.companyId); try { const docSnap = await getDoc(settingsRef); const hasReportAccess = docSnap.exists() ? docSnap.data().reportAccess : true; newsAlertsContainer.style.display = hasReportAccess ? 'block' : 'none'; navRelatorio.classList.toggle('hidden', !hasReportAccess || currentUser.isSuperAdmin); populateInitialAlerts(); checkNotificationStatus(); } catch (error) { console.error("Error rendering dashboard:", error); } } }
+        async function renderVerticalKeywordList() { if (!currentUser || !dashboardKeywordList) return; try { const q = query(collection(db, "companies", currentUser.companyId, "keywords")); const querySnapshot = await getDocs(q); const keywords = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); dashboardKeywordList.innerHTML = ''; if (keywords.length === 0) { dashboardKeywordList.innerHTML = `<p class="text-gray-500 text-sm">Nenhuma palavra-chave cadastrada.</p>`; } else { keywords.forEach(kw => { const li = document.createElement('li'); li.className = 'bg-indigo-100 text-indigo-800 text-md font-medium px-3 py-2 rounded-md'; li.textContent = kw.word; dashboardKeywordList.appendChild(li); }); } } catch (error) { console.error("Error fetching keywords:", error); } }
         
-        // --- LÓGICA SUPER ADMIN ---
-        async function renderSuperAdminPage() {
-            const querySnapshot = await getDocs(collection(db, "companies"));
-            const companies = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            companyList.innerHTML = '';
-            companies.forEach(c => {
-                const li = document.createElement('li');
-                li.className = 'flex flex-col sm:flex-row justify-between items-start sm:items-center bg-gray-100 p-3 rounded-md';
-                
-                const statusClass = c.status === 'inactive' ? 'text-orange-500' : 'text-green-500';
-                const statusText = c.status === 'inactive' ? 'Inativa' : 'Ativa';
-                
-                let actionButtons;
-                if (c.status === 'inactive') {
-                    actionButtons = `<button data-id="${c.id}" class="reactivate-company-btn bg-yellow-500 text-white px-3 py-1 rounded-md text-sm hover:bg-yellow-600">Reativar</button>`;
-                    const oneYearAgo = new Date();
-                    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-                    if (c.deactivationDate && new Date(c.deactivationDate) < oneYearAgo) {
-                        actionButtons += `<button data-id="${c.id}" class="delete-company-btn bg-red-500 text-white px-3 py-1 rounded-md text-sm hover:bg-red-600 ml-2">Excluir Permanentemente</button>`;
-                    }
-                } else {
-                    actionButtons = `<button data-id="${c.id}" class="deactivate-company-btn bg-gray-500 text-white px-3 py-1 rounded-md text-sm hover:bg-gray-600">Inativar</button>`;
-                }
+        // --- SUPER ADMIN LOGIC ---
+        async function renderSuperAdminPage() { try { const querySnapshot = await getDocs(collection(db, "companies")); const companies = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); companyList.innerHTML = ''; companies.forEach(c => { const li = document.createElement('li'); li.className = 'flex flex-col sm:flex-row justify-between items-start sm:items-center bg-gray-100 p-3 rounded-md'; const statusClass = c.status === 'inactive' ? 'text-orange-500' : 'text-green-500'; const statusText = c.status === 'inactive' ? 'Inativa' : 'Ativa'; let actionButtons; if (c.status === 'inactive') { actionButtons = `<button data-id="${c.id}" class="reactivate-company-btn bg-yellow-500 text-white px-3 py-1 rounded-md text-sm hover:bg-yellow-600">Reativar</button>`; const oneYearAgo = new Date(); oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1); if (c.deactivationDate && new Date(c.deactivationDate) < oneYearAgo) { actionButtons += `<button data-id="${c.id}" class="delete-company-btn bg-red-500 text-white px-3 py-1 rounded-md text-sm hover:bg-red-600 ml-2">Excluir Permanentemente</button>`; } } else { actionButtons = `<button data-id="${c.id}" class="deactivate-company-btn bg-gray-500 text-white px-3 py-1 rounded-md text-sm hover:bg-gray-600">Inativar</button>`; } li.innerHTML = `<div><span class="font-bold">${c.name}</span> <span class="text-sm ${statusClass}">(${statusText})</span></div><div class="mt-2 sm:mt-0 flex flex-wrap gap-2"><button data-company-id="${c.id}" data-company-name="${c.name}" class="manage-company-users-btn bg-purple-500 text-white px-3 py-1 rounded-md text-sm hover:bg-purple-600">Usuários</button><button data-company-id="${c.id}" data-company-name="${c.name}" class="manage-company-keywords-btn bg-blue-500 text-white px-3 py-1 rounded-md text-sm hover:bg-blue-600">Palavras-Chave</button><button data-company-id="${c.id}" data-company-name="${c.name}" class="manage-company-settings-btn bg-green-500 text-white px-3 py-1 rounded-md text-sm hover:bg-green-600">Configurações</button>${actionButtons}</div>`; companyList.appendChild(li); }); } catch (error) { console.error("Error rendering super admin page:", error); } }
+        async function handleCompanySubmit(e) { e.preventDefault(); const name = document.getElementById('company-name-input').value.trim(); if(!name) { showAlert('O nome da empresa é obrigatório.', 'error'); return; } try { const q = query(collection(db, "companies"), where("name", "==", name.toUpperCase())); const querySnapshot = await getDocs(q); if (!querySnapshot.empty) { showAlert('Este nome de empresa já existe.', 'error'); return; } await addDoc(collection(db, "companies"), { name: name.toUpperCase(), status: 'active' }); showAlert('Empresa adicionada com sucesso!'); companyForm.reset(); renderSuperAdminPage(); } catch (error) { console.error("Error adding company:", error); showAlert("Erro ao adicionar empresa.", "error"); } }
+        async function handleCompanyActions(e) { const id = e.target.dataset.id || e.target.dataset.companyId; if (!id) return; const companyRef = doc(db, "companies", id); try { if (e.target.classList.contains('deactivate-company-btn')) { await updateDoc(companyRef, { status: 'inactive', deactivationDate: new Date().toISOString() }); } else if (e.target.classList.contains('reactivate-company-btn')) { await updateDoc(companyRef, { status: 'active', deactivationDate: null }); } else if (e.target.classList.contains('delete-company-btn')) { showAlert("A exclusão permanente deve ser feita via Cloud Function para remover subcoleções. Esta ação não foi executada.", "error"); } else if (e.target.classList.contains('manage-company-keywords-btn')) { selectedCompanyForManagement = { id: e.target.dataset.companyId, name: e.target.dataset.companyName }; updateView('company-keyword-admin'); } else if (e.target.classList.contains('manage-company-settings-btn')) { selectedCompanyForManagement = { id: e.target.dataset.companyId, name: e.target.dataset.companyName }; updateView('company-settings-admin'); } else if (e.target.classList.contains('manage-company-users-btn')) { selectedCompanyForManagement = { id: e.target.dataset.companyId, name: e.target.dataset.companyName }; updateView('company-user-admin'); } renderSuperAdminPage(); } catch (error) { console.error("Error handling company action:", error); showAlert("Ocorreu um erro.", "error"); } }
 
-                li.innerHTML = `
-                    <div>
-                        <span class="font-bold">${c.name}</span>
-                        <span class="text-sm ${statusClass}">(${statusText})</span>
-                    </div>
-                    <div class="mt-2 sm:mt-0 flex flex-wrap gap-2">
-                        <button data-company-id="${c.id}" data-company-name="${c.name}" class="manage-company-users-btn bg-purple-500 text-white px-3 py-1 rounded-md text-sm hover:bg-purple-600">Usuários</button>
-                        <button data-company-id="${c.id}" data-company-name="${c.name}" class="manage-company-keywords-btn bg-blue-500 text-white px-3 py-1 rounded-md text-sm hover:bg-blue-600">Palavras-Chave</button>
-                        <button data-company-id="${c.id}" data-company-name="${c.name}" class="manage-company-settings-btn bg-green-500 text-white px-3 py-1 rounded-md text-sm hover:bg-green-600">Configurações</button>
-                        ${actionButtons}
-                    </div>`;
-                companyList.appendChild(li);
-            });
-        }
-        async function handleCompanySubmit(e) { e.preventDefault(); const name = document.getElementById('company-name-input').value.trim(); if(!name) { showAlert('O nome da empresa é obrigatório.', 'error'); return; } const q = query(collection(db, "companies"), where("name", "==", name.toUpperCase())); const querySnapshot = await getDocs(q); if (!querySnapshot.empty) { showAlert('Este nome de empresa já existe.', 'error'); return; } await addDoc(collection(db, "companies"), { name: name.toUpperCase(), status: 'active' }); showAlert('Empresa adicionada com sucesso!'); companyForm.reset(); renderSuperAdminPage(); }
-        async function handleCompanyActions(e) {
-            const id = e.target.dataset.id || e.target.dataset.companyId;
-            const companyRef = doc(db, "companies", id);
-
-            if (e.target.classList.contains('deactivate-company-btn')) {
-                await updateDoc(companyRef, { status: 'inactive', deactivationDate: new Date().toISOString() });
-            } else if (e.target.classList.contains('reactivate-company-btn')) {
-                await updateDoc(companyRef, { status: 'active', deactivationDate: null });
-            } else if (e.target.classList.contains('delete-company-btn')) {
-                if (confirm('Tem certeza que deseja excluir esta empresa PERMANENTEMENTE? Esta ação não pode ser desfeita.')) {
-                    await deleteDoc(companyRef); // Firestore rules should handle subcollection deletion
-                    showAlert('Empresa excluída permanentemente.');
-                }
-            } else if (e.target.classList.contains('manage-company-keywords-btn')) {
-                selectedCompanyForManagement = { id: e.target.dataset.companyId, name: e.target.dataset.companyName };
-                updateView('company-keyword-admin');
-            } else if (e.target.classList.contains('manage-company-settings-btn')) {
-                selectedCompanyForManagement = { id: e.target.dataset.companyId, name: e.target.dataset.companyName };
-                updateView('company-settings-admin');
-            } else if (e.target.classList.contains('manage-company-users-btn')) {
-                selectedCompanyForManagement = { id: e.target.dataset.companyId, name: e.target.dataset.companyName };
-                updateView('company-user-admin');
-            }
-            renderSuperAdminPage();
-        }
-
-        // --- LÓGICA DE GERENCIAMENTO DE USUÁRIOS (PELO SUPER ADMIN) ---
+        // --- USER MANAGEMENT LOGIC (BY SUPER ADMIN) ---
         async function renderCompanyUserAdminPage() { if (!selectedCompanyForManagement) return; companyUserAdminTitle.textContent = `Gerenciar Usuários para: ${selectedCompanyForManagement.name}`; renderUsersForSelectedCompany(); }
-        async function renderUsersForSelectedCompany() { const usersRef = collection(db, "companies", selectedCompanyForManagement.id, "users"); const querySnapshot = await getDocs(usersRef); const companyUsers = querySnapshot.docs.map(doc => ({id: doc.id, ...doc.data()})); adminUserList.innerHTML = ''; companyUsers.forEach(user => { const li = document.createElement('li'); li.className = 'flex justify-between items-center bg-gray-100 p-2 rounded-md'; li.innerHTML = `<span>${user.username}</span><div><button data-id="${user.id}" class="edit-user-btn text-blue-500 hover:text-blue-700 mr-2">Editar</button><button data-id="${user.id}" class="delete-user-btn text-red-500 hover:text-red-700">Excluir</button></div>`; adminUserList.appendChild(li); }); }
-        async function handleUserSubmit(e) { e.preventDefault(); const username = userInput.value.trim(), password = userPasswordInput.value.trim(), id = userIdInput.value; if (!username || !password || !selectedCompanyForManagement) return; const usersRef = collection(db, "companies", selectedCompanyForManagement.id, "users"); const q = query(usersRef, where("username", "==", username)); const querySnapshot = await getDocs(q); if (!querySnapshot.empty && querySnapshot.docs[0].id !== id) { showAlert('Este nome de usuário já está em uso nesta empresa.', 'error'); return; } if (id) { await updateDoc(doc(db, "companies", selectedCompanyForManagement.id, "users", id), { username, password }); } else { await addDoc(usersRef, { username, password }); } userInput.value = ''; userPasswordInput.value = ''; userIdInput.value = ''; renderUsersForSelectedCompany(); }
-        async function handleUserActions(e) { if (!selectedCompanyForManagement) return; if (e.target.classList.contains('edit-user-btn')) { const id = e.target.dataset.id; const userDoc = await getDoc(doc(db, "companies", selectedCompanyForManagement.id, "users", id)); if (userDoc.exists()) { const user = userDoc.data(); userInput.value = user.username; userPasswordInput.value = user.password; userIdInput.value = id; userInput.focus(); } } if (e.target.classList.contains('delete-user-btn')) { const id = e.target.dataset.id; await deleteDoc(doc(db, "companies", selectedCompanyForManagement.id, "users", id)); renderUsersForSelectedCompany(); } }
+        async function renderUsersForSelectedCompany() { try { const usersRef = collection(db, "companies", selectedCompanyForManagement.id, "users"); const querySnapshot = await getDocs(usersRef); const companyUsers = querySnapshot.docs.map(doc => ({id: doc.id, ...doc.data()})); adminUserList.innerHTML = ''; companyUsers.forEach(user => { const li = document.createElement('li'); li.className = 'flex justify-between items-center bg-gray-100 p-2 rounded-md'; li.innerHTML = `<span>${user.username}</span><div><button data-id="${user.id}" class="edit-user-btn text-blue-500 hover:text-blue-700 mr-2">Editar</button><button data-id="${user.id}" class="delete-user-btn text-red-500 hover:text-red-700">Excluir</button></div>`; adminUserList.appendChild(li); }); } catch (error) { console.error("Error rendering users:", error); } }
+        async function handleUserSubmit(e) { e.preventDefault(); const username = userInput.value.trim(), password = userPasswordInput.value.trim(), id = userIdInput.value; if (!username || !password || !selectedCompanyForManagement) return; try { const usersRef = collection(db, "companies", selectedCompanyForManagement.id, "users"); const q = query(usersRef, where("username", "==", username)); const querySnapshot = await getDocs(q); if (!querySnapshot.empty && querySnapshot.docs[0].id !== id) { showAlert('Este nome de usuário já está em uso nesta empresa.', 'error'); return; } if (id) { await updateDoc(doc(db, "companies", selectedCompanyForManagement.id, "users", id), { username, password }); } else { await addDoc(usersRef, { username, password }); } userInput.value = ''; userPasswordInput.value = ''; userIdInput.value = ''; renderUsersForSelectedCompany(); } catch (error) { console.error("Error saving user:", error); showAlert("Erro ao salvar usuário.", "error"); } }
+        async function handleUserActions(e) { if (!selectedCompanyForManagement) return; const id = e.target.dataset.id; if (!id) return; try { if (e.target.classList.contains('edit-user-btn')) { const userDoc = await getDoc(doc(db, "companies", selectedCompanyForManagement.id, "users", id)); if (userDoc.exists()) { const user = userDoc.data(); userInput.value = user.username; userPasswordInput.value = user.password; userIdInput.value = id; userInput.focus(); } } if (e.target.classList.contains('delete-user-btn')) { await deleteDoc(doc(db, "companies", selectedCompanyForManagement.id, "users", id)); renderUsersForSelectedCompany(); } } catch (error) { console.error("Error handling user action:", error); } }
 
-        // --- LÓGICA DE GERENCIAMENTO DE PALAVRAS-CHAVE (PELO SUPER ADMIN) ---
+        // --- KEYWORD MANAGEMENT LOGIC (BY SUPER ADMIN) ---
         async function renderCompanyKeywordAdminPage() { if (!selectedCompanyForManagement) return; companyKeywordAdminTitle.textContent = `Gerenciar Palavras-Chave para: ${selectedCompanyForManagement.name}`; renderKeywordsForSelectedCompany(); }
-        async function renderKeywordsForSelectedCompany() { const keywordsRef = collection(db, "companies", selectedCompanyForManagement.id, "keywords"); const querySnapshot = await getDocs(keywordsRef); const keywords = querySnapshot.docs.map(doc => ({id: doc.id, ...doc.data()})); adminKeywordList.innerHTML = ''; keywords.forEach(kw => { const li = document.createElement('li'); li.className = 'flex justify-between items-center bg-gray-100 p-2 rounded-md'; li.innerHTML = `<span>${kw.word}</span><div><button data-id="${kw.id}" class="edit-keyword-btn text-blue-500 hover:text-blue-700 mr-2">Editar</button><button data-id="${kw.id}" class="delete-keyword-btn text-red-500 hover:text-red-700">Excluir</button></div>`; adminKeywordList.appendChild(li); }); }
-        async function handleKeywordSubmit(e) { e.preventDefault(); const word = keywordInput.value.trim(), id = keywordIdInput.value; if (!word || !selectedCompanyForManagement) return; const keywordsRef = collection(db, "companies", selectedCompanyForManagement.id, "keywords"); if (id) { await updateDoc(doc(db, "companies", selectedCompanyForManagement.id, "keywords", id), { word }); } else { await addDoc(keywordsRef, { word }); } keywordInput.value = ''; keywordIdInput.value = ''; renderKeywordsForSelectedCompany(); }
-        async function handleKeywordActions(e) { if (!selectedCompanyForManagement) return; if (e.target.classList.contains('edit-keyword-btn')) { const id = e.target.dataset.id; const kwDoc = await getDoc(doc(db, "companies", selectedCompanyForManagement.id, "keywords", id)); if (kwDoc.exists()) { const kw = kwDoc.data(); keywordInput.value = kw.word; keywordIdInput.value = id; keywordInput.focus(); } } if (e.target.classList.contains('delete-keyword-btn')) { const id = e.target.dataset.id; await deleteDoc(doc(db, "companies", selectedCompanyForManagement.id, "keywords", id)); renderKeywordsForSelectedCompany(); } }
+        async function renderKeywordsForSelectedCompany() { try { const keywordsRef = collection(db, "companies", selectedCompanyForManagement.id, "keywords"); const querySnapshot = await getDocs(keywordsRef); const keywords = querySnapshot.docs.map(doc => ({id: doc.id, ...doc.data()})); adminKeywordList.innerHTML = ''; keywords.forEach(kw => { const li = document.createElement('li'); li.className = 'flex justify-between items-center bg-gray-100 p-2 rounded-md'; li.innerHTML = `<span>${kw.word}</span><div><button data-id="${kw.id}" class="edit-keyword-btn text-blue-500 hover:text-blue-700 mr-2">Editar</button><button data-id="${kw.id}" class="delete-keyword-btn text-red-500 hover:text-red-700">Excluir</button></div>`; adminKeywordList.appendChild(li); }); } catch (error) { console.error("Error rendering keywords:", error); } }
+        async function handleKeywordSubmit(e) { e.preventDefault(); const word = keywordInput.value.trim(), id = keywordIdInput.value; if (!word || !selectedCompanyForManagement) return; try { const keywordsRef = collection(db, "companies", selectedCompanyForManagement.id, "keywords"); if (id) { await updateDoc(doc(db, "companies", selectedCompanyForManagement.id, "keywords", id), { word }); } else { await addDoc(keywordsRef, { word }); } keywordInput.value = ''; keywordIdInput.value = ''; renderKeywordsForSelectedCompany(); } catch (error) { console.error("Error saving keyword:", error); } }
+        async function handleKeywordActions(e) { if (!selectedCompanyForManagement) return; const id = e.target.dataset.id; if (!id) return; try { if (e.target.classList.contains('edit-keyword-btn')) { const kwDoc = await getDoc(doc(db, "companies", selectedCompanyForManagement.id, "keywords", id)); if (kwDoc.exists()) { const kw = kwDoc.data(); keywordInput.value = kw.word; keywordIdInput.value = id; keywordInput.focus(); } } if (e.target.classList.contains('delete-keyword-btn')) { await deleteDoc(doc(db, "companies", selectedCompanyForManagement.id, "keywords", id)); renderKeywordsForSelectedCompany(); } } catch (error) { console.error("Error handling keyword action:", error); } }
         
-        // --- LÓGICA DE GERENCIAMENTO DE CONFIGURAÇÕES (PELO SUPER ADMIN) ---
-        async function renderCompanySettingsAdminPage() { if (!selectedCompanyForManagement) return; companySettingsAdminTitle.textContent = `Configurações para: ${selectedCompanyForManagement.name}`; const settingsRef = doc(db, "settings", selectedCompanyForManagement.id); const docSnap = await getDoc(settingsRef); if (docSnap.exists()) { const settings = docSnap.data(); apiKeyInput.value = settings.apiKey || ''; reportAccessToggle.checked = settings.reportAccess !== false; } else { apiKeyInput.value = ''; reportAccessToggle.checked = true; } }
+        // --- SETTINGS MANAGEMENT LOGIC (BY SUPER ADMIN) ---
+        async function renderCompanySettingsAdminPage() { if (!selectedCompanyForManagement) return; companySettingsAdminTitle.textContent = `Configurações para: ${selectedCompanyForManagement.name}`; try { const settingsRef = doc(db, "settings", selectedCompanyForManagement.id); const docSnap = await getDoc(settingsRef); if (docSnap.exists()) { const settings = docSnap.data(); apiKeyInput.value = settings.apiKey || ''; reportAccessToggle.checked = settings.reportAccess !== false; } else { apiKeyInput.value = ''; reportAccessToggle.checked = true; } } catch (error) { console.error("Error rendering settings:", error); } }
         
-        // --- LÓGICA DE NOTIFICAÇÃO ---
-        async function checkNotificationStatus() { if (!currentUser) return; const settingsRef = doc(db, "settings", currentUser.companyId); const docSnap = await getDoc(settingsRef); const hasNewAlerts = docSnap.exists() ? docSnap.data().newAlerts : false; notificationBadge.classList.toggle('hidden', !hasNewAlerts); }
+        // --- NOTIFICATION LOGIC ---
+        async function checkNotificationStatus() { if (!currentUser || currentUser.isSuperAdmin) return; try { const settingsRef = doc(db, "settings", currentUser.companyId); const docSnap = await getDoc(settingsRef); const hasNewAlerts = docSnap.exists() ? docSnap.data().newAlerts : false; notificationBadge.classList.toggle('hidden', !hasNewAlerts); } catch (error) { console.error("Error checking notifications:", error); } }
         function triggerNotificationAnimation() { notificationBell.classList.add('animate-ring'); setTimeout(() => { notificationBell.classList.remove('animate-ring'); }, 1000); }
 
-        // --- LÓGICA DO ROBÔ DE NOTÍCIAS ---
-        async function fetchNews() { 
-            const companiesSnapshot = await getDocs(query(collection(db, "companies"), where("status", "==", "active")));
-            for (const companyDoc of companiesSnapshot.docs) { 
-                const company = { id: companyDoc.id, ...companyDoc.data() };
-                const settingsDoc = await getDoc(doc(db, "settings", company.id));
-                const apiKey = settingsDoc.exists() ? settingsDoc.data().apiKey : null;
-                if (!apiKey) { console.log(`ROBÔ: Sem chave de API para ${company.name}.`); continue; } 
-                const keywordsSnapshot = await getDocs(collection(db, "companies", company.id, "keywords"));
-                const keywords = keywordsSnapshot.docs.map(d => d.data());
-                const articlesSnapshot = await getDocs(collection(db, "companies", company.id, "articles"));
-                const foundUrls = articlesSnapshot.docs.map(d => d.data().url);
-                console.log(`ROBÔ: Buscando para ${company.name}: ${keywords.map(k=>k.word).join(', ')}`); 
-                for (const kw of keywords) { 
-                    const url = `https://gnews.io/api/v4/search?q="${encodeURIComponent(kw.word)}"&lang=pt&token=${apiKey}`; 
-                    try { 
-                        const response = await fetch(url); 
-                        if (!response.ok) continue; 
-                        const data = await response.json(); 
-                        let newItemsFound = false; 
-                        const batch = writeBatch(db);
-                        data.articles.forEach(article => { 
-                            if (!foundUrls.includes(article.url)) { 
-                                const articleWithKeyword = {...article, keyword: kw.word}; 
-                                const newArticleRef = doc(collection(db, "companies", company.id, "articles"));
-                                batch.set(newArticleRef, articleWithKeyword);
-                                newItemsFound = true; 
-                            } 
-                        }); 
-                        if (newItemsFound) {
-                            await batch.commit();
-                            await setDoc(doc(db, "settings", company.id), { newAlerts: true }, { merge: true });
-                            if(currentUser && currentUser.companyId === company.id) {
-                                checkNotificationStatus();
-                                triggerNotificationAnimation();
-                                populateInitialAlerts(); // Refresh dashboard
-                            }
-                        }
-                    } catch (error) { console.error(`ROBÔ: Falha na requisição para "${kw.word}":`, error); } 
-                } 
-            } 
-        }
-        function displayNewsAlert(article) { /* ... Lógica mantida ... */ }
-        async function populateInitialAlerts() { if (!currentUser) return; newsAlerts.innerHTML = ''; const articlesSnapshot = await getDocs(collection(db, "companies", currentUser.companyId, "articles")); const articles = articlesSnapshot.docs.map(d => d.data()); articles.forEach(article => displayNewsAlert(article)); filterAlertsByDate(); }
-        function filterAlertsByDate() { const selectedDate = alertDateFilter.value; const allAlerts = newsAlerts.querySelectorAll('.fade-in'); let visibleCount = 0; allAlerts.forEach(alert => { const isVisible = !selectedDate || alert.dataset.date === selectedDate; alert.style.display = isVisible ? 'block' : 'none'; if(isVisible) visibleCount++; }); if(visibleCount === 0) { newsAlerts.innerHTML = `<p class="text-gray-500">Nenhum alerta encontrado para a data selecionada.</p>`; } }
-        function handleAlertActions(e) { /* ... Lógica mantida ... */ }
-        function startNewsRobot() { if (newsCheckInterval) clearInterval(newsCheckInterval); fetchNews(); newsCheckInterval = setInterval(fetchNews, 60000); }
-        function setupFilters() { /* ... Lógica mantida ... */ }
-        function handleSearch() { /* ... Lógica de pesquisa mantida ... */ }
-        function renderSearchResults(articles) { /* ... Lógica de pesquisa mantida ... */ }
+        // --- NEWS ALERT DISPLAY LOGIC ---
+        function displayNewsAlert(article, container) {
+            const pubDate = new Date(article.publishedAt.seconds ? article.publishedAt.toDate() : article.publishedAt);
+            const formattedDate = pubDate.toLocaleDateString('pt-BR');
+            const dateForFilter = pubDate.toISOString().split('T')[0]; // YYYY-MM-DD
 
-        // --- INICIALIZAÇÃO E EVENT LISTENERS ---
+            const alertEl = document.createElement('div');
+            alertEl.className = 'bg-white p-4 rounded-lg shadow-md border-l-4 border-indigo-500 fade-in';
+            alertEl.dataset.date = dateForFilter; // For date filtering
+            // Store data for searching
+            alertEl.dataset.title = article.title.toLowerCase();
+            alertEl.dataset.description = article.description ? article.description.toLowerCase() : '';
+
+            alertEl.innerHTML = `
+                <div class="flex justify-between items-start">
+                    <h4 class="text-lg font-bold text-gray-800 pr-2">${article.title}</h4>
+                    <span class="flex-shrink-0 text-xs font-semibold bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full">${article.keyword}</span>
+                </div>
+                <p class="text-sm text-gray-600 mt-2">${article.description || 'Descrição não disponível.'}</p>
+                <div class="text-xs text-gray-500 mt-3 flex justify-between items-center">
+                    <span>Fonte: ${article.source.name} | Publicado: ${formattedDate}</span>
+                    <a href="${article.url}" target="_blank" rel="noopener noreferrer" class="text-indigo-600 hover:underline font-semibold">Ler mais &rarr;</a>
+                </div>
+            `;
+            container.appendChild(alertEl);
+        }
+
+        async function populateInitialAlerts() { if (!currentUser || currentUser.isSuperAdmin) return; newsAlerts.innerHTML = '<p class="text-gray-500">Carregando alertas...</p>'; try { const q = query(collection(db, "companies", currentUser.companyId, "articles"), orderBy("publishedAt", "desc"), limit(100)); const articlesSnapshot = await getDocs(q); newsAlerts.innerHTML = ''; if (articlesSnapshot.empty) { newsAlerts.innerHTML = '<p class="text-gray-500">Nenhum alerta encontrado.</p>'; return; } articlesSnapshot.docs.forEach(d => displayNewsAlert(d.data(), newsAlerts)); filterAlertsByDate(); } catch (error) { console.error("Error populating alerts:", error); newsAlerts.innerHTML = '<p class="text-red-500">Erro ao carregar alertas.</p>'; } }
+        function filterAlertsByDate() { const selectedDate = alertDateFilter.value; const allAlerts = newsAlerts.querySelectorAll('.fade-in'); let visibleCount = 0; allAlerts.forEach(alert => { const isVisible = !selectedDate || alert.dataset.date === selectedDate; alert.style.display = isVisible ? 'block' : 'none'; if(isVisible) visibleCount++; }); if(visibleCount === 0 && !newsAlerts.querySelector('.text-gray-500')) { newsAlerts.insertAdjacentHTML('beforeend', `<p class="text-gray-500">Nenhum alerta encontrado para a data selecionada.</p>`); } else if (visibleCount > 0) { const noAlertsMsg = newsAlerts.querySelector('.text-gray-500'); if (noAlertsMsg) noAlertsMsg.remove(); } }
+        
+        // --- SEARCH PAGE LOGIC ---
+        async function setupSearchPage() { if (!currentUser || currentUser.isSuperAdmin) return; searchInput.value = ''; searchResults.innerHTML = '<p class="text-gray-500">Carregando todos os artigos para pesquisa...</p>'; try { const q = query(collection(db, "companies", currentUser.companyId, "articles"), orderBy("publishedAt", "desc")); const articlesSnapshot = await getDocs(q); allCompanyArticles = articlesSnapshot.docs.map(d => d.data()); searchResults.innerHTML = `<p class="text-gray-500">Pronto para pesquisar em ${allCompanyArticles.length} artigos. Digite um termo ou use os filtros.</p>`; setupFilters(); } catch (error) { console.error("Error fetching articles for search:", error); searchResults.innerHTML = '<p class="text-red-500">Não foi possível carregar os artigos para pesquisa.</p>'; } }
+        function setupFilters() { filterContainer.innerHTML = ''; const keywords = [...new Set(allCompanyArticles.map(a => a.keyword))]; if (keywords.length > 0) { let keywordButtons = keywords.map(kw => `<button class="filter-btn bg-gray-200 hover:bg-indigo-200 text-gray-800 text-sm font-medium px-3 py-1 rounded-full" data-keyword="${kw}">${kw}</button>`).join(''); filterContainer.innerHTML = `<div class="flex flex-wrap gap-2"><span class="font-semibold self-center">Filtar por Palavra-Chave:</span>${keywordButtons}</div>`; } }
+        function handleSearch() { const searchTerm = searchInput.value.toLowerCase().trim(); const activeFilter = filterContainer.querySelector('.bg-indigo-500'); const keywordFilter = activeFilter ? activeFilter.dataset.keyword : null; if (!searchTerm && !keywordFilter) { searchResults.innerHTML = `<p class="text-gray-500">Digite algo para começar a pesquisar ou use os filtros.</p>`; return; } let filteredArticles = allCompanyArticles; if (keywordFilter) { filteredArticles = filteredArticles.filter(a => a.keyword === keywordFilter); } if (searchTerm) { filteredArticles = filteredArticles.filter(a => a.title.toLowerCase().includes(searchTerm) || (a.description && a.description.toLowerCase().includes(searchTerm))); } renderSearchResults(filteredArticles); }
+        function renderSearchResults(articles) { searchResults.innerHTML = ''; if (articles.length === 0) { searchResults.innerHTML = '<p class="text-gray-500">Nenhum resultado encontrado.</p>'; return; } articles.forEach(article => displayNewsAlert(article, searchResults)); }
+
+        // --- INITIALIZATION AND EVENT LISTENERS ---
         document.addEventListener('DOMContentLoaded', () => {
             loginForm.addEventListener('submit', handleLogin);
             navInicio.addEventListener('click', (e) => { e.preventDefault(); updateView('dashboard'); });
@@ -459,17 +338,13 @@
             companyList.addEventListener('click', handleCompanyActions);
             backToSuperAdminKwBtn.addEventListener('click', () => updateView('super-admin'));
             backToSuperAdminSettingsBtn.addEventListener('click', () => updateView('super-admin'));
+            backToSuperAdminUsersBtn.addEventListener('click', () => updateView('super-admin'));
             alertDateFilter.addEventListener('change', filterAlertsByDate);
             userForm.addEventListener('submit', handleUserSubmit);
             adminUserList.addEventListener('click', handleUserActions);
-            backToSuperAdminUsersBtn.addEventListener('click', () => updateView('super-admin'));
-            notificationBell.addEventListener('click', async () => {
-                if (!currentUser) return;
-                await setDoc(doc(db, "settings", currentUser.companyId), { newAlerts: false }, { merge: true });
-                checkNotificationStatus();
-                updateView('dashboard');
-                newsAlertsContainer.scrollIntoView({ behavior: 'smooth' });
-            });
+            searchInput.addEventListener('input', handleSearch);
+            filterContainer.addEventListener('click', (e) => { if (e.target.classList.contains('filter-btn')) { document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('bg-indigo-500', 'text-white')); e.target.classList.add('bg-indigo-500', 'text-white'); handleSearch(); } });
+            notificationBell.addEventListener('click', async () => { if (!currentUser) return; try { await setDoc(doc(db, "settings", currentUser.companyId), { newAlerts: false }, { merge: true }); checkNotificationStatus(); updateView('dashboard'); newsAlertsContainer.scrollIntoView({ behavior: 'smooth' }); } catch (error) { console.error("Error clearing notification:", error); } });
             
             const savedUser = getStorage('clipping_currentUser', null);
             if (savedUser) { 
@@ -482,4 +357,3 @@
     </script>
 </body>
 </html>
-
