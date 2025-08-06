@@ -29,6 +29,21 @@
             20%, 40%, 60%, 80% { transform: rotate(10deg); }
         }
         .animate-ring { animation: ring 1s ease-in-out; }
+
+        #notification-badge {
+            min-width: 1.25rem;
+            height: 1.25rem;
+            padding: 0 0.25rem;
+            line-height: 1.25rem;
+            font-size: 0.75rem;
+            font-weight: bold;
+            top: -0.25rem;
+            right: -0.5rem;
+        }
+        .keyword-filter.active {
+            background-color: #4F46E5 !important;
+            color: white !important;
+        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
@@ -48,7 +63,7 @@
                     <a href="#" id="nav-super-admin" class="hidden text-red-600 hover:text-red-800 px-3 py-2 rounded-md text-sm font-bold">Super Admin</a>
                     <div id="notification-bell-container" class="relative cursor-pointer ml-4">
                         <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
-                        <span id="notification-badge" class="hidden absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white"></span>
+                        <span id="notification-badge" class="hidden absolute text-white text-center rounded-full bg-red-500 ring-2 ring-white"></span>
                     </div>
                     <a href="#" id="nav-logout" class="ml-4 bg-indigo-600 text-white hover:bg-indigo-700 px-3 py-2 rounded-md text-sm font-medium">Sair</a>
                 </div>
@@ -284,7 +299,7 @@
 
         // --- Dashboard ---
         async function renderDashboard() { if (!currentUser) return; document.getElementById('dashboard-grid').style.display = currentUser.isSuperAdmin ? 'none' : 'grid'; document.getElementById('super-admin-dashboard-message').style.display = currentUser.isSuperAdmin ? 'block' : 'none'; dashboardTitle.textContent = currentUser.isSuperAdmin ? 'Painel Super Admin' : `Notícias do Dia - ${currentUser.companyName}`; if (!currentUser.isSuperAdmin) { renderVerticalKeywordList(); const settingsRef = doc(db, "settings", currentUser.companyId); try { const docSnap = await getDoc(settingsRef); const hasReportAccess = docSnap.exists() ? docSnap.data().reportAccess !== false : true; newsAlertsContainer.style.display = hasReportAccess ? 'block' : 'none'; navRelatorio.classList.toggle('hidden', !hasReportAccess || currentUser.isSuperAdmin); populateInitialAlerts(); checkNotificationStatus(); } catch (error) { console.error("Error rendering dashboard:", error); } } }
-        async function renderVerticalKeywordList() { if (!currentUser || !dashboardKeywordList) return; try { const q = query(collection(db, "companies", currentUser.companyId, "keywords")); const querySnapshot = await getDocs(q); const keywords = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); dashboardKeywordList.innerHTML = ''; if (keywords.length === 0) { dashboardKeywordList.innerHTML = `<p class="text-gray-500 text-sm">Nenhuma palavra-chave.</p>`; } else { keywords.forEach(kw => { const li = document.createElement('li'); li.className = 'bg-indigo-100 text-indigo-800 text-md font-medium px-3 py-2 rounded-md'; li.textContent = kw.word; dashboardKeywordList.appendChild(li); }); } } catch (error) { console.error("Error fetching keywords:", error); } }
+        async function renderVerticalKeywordList() { if (!currentUser || !dashboardKeywordList) return; try { const settingsRef = doc(db, "settings", currentUser.companyId); const settingsSnap = await getDoc(settingsRef); const newAlerts = settingsSnap.exists() ? (settingsSnap.data().newAlerts || {}) : {}; const q = query(collection(db, "companies", currentUser.companyId, "keywords")); const querySnapshot = await getDocs(q); const keywords = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); dashboardKeywordList.innerHTML = ''; // Add a "Show All" button first const showAllLi = document.createElement('li'); showAllLi.className = 'keyword-filter active bg-indigo-100 text-indigo-800 text-md font-medium px-3 py-2 rounded-md flex justify-between items-center cursor-pointer hover:bg-indigo-200'; showAllLi.dataset.keyword = "all"; showAllLi.innerHTML = `<span>Mostrar Todas</span>`; dashboardKeywordList.appendChild(showAllLi); if (keywords.length === 0) { dashboardKeywordList.insertAdjacentHTML('beforeend', `<p class="text-gray-500 text-sm mt-2">Nenhuma palavra-chave.</p>`); } else { keywords.forEach(kw => { const li = document.createElement('li'); const count = newAlerts.byKeyword ? (newAlerts.byKeyword[kw.word] || 0) : 0; li.className = 'keyword-filter bg-indigo-100 text-indigo-800 text-md font-medium px-3 py-2 rounded-md flex justify-between items-center cursor-pointer hover:bg-indigo-200'; li.dataset.keyword = kw.word; li.innerHTML = `<span>${kw.word}</span> ${count > 0 ? `<span class="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">${count}</span>` : ''}`; dashboardKeywordList.appendChild(li); }); } } catch (error) { console.error("Error fetching keywords:", error); } }
         
         // --- Super Admin ---
         async function renderSuperAdminPage() { try { const querySnapshot = await getDocs(collection(db, "companies")); const companies = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); companyList.innerHTML = ''; companies.forEach(c => { const li = document.createElement('li'); li.className = 'flex flex-col sm:flex-row justify-between items-start sm:items-center bg-gray-100 p-3 rounded-md'; const statusClass = c.status === 'inactive' ? 'text-orange-500' : 'text-green-500'; const statusText = c.status === 'inactive' ? 'Inativa' : 'Ativa'; let statusButton; if (c.status === 'inactive') { statusButton = `<button data-id="${c.id}" class="reactivate-company-btn bg-yellow-500 text-white px-3 py-1 rounded-md text-sm hover:bg-yellow-600">Reativar</button>`; } else { statusButton = `<button data-id="${c.id}" class="deactivate-company-btn bg-gray-500 text-white px-3 py-1 rounded-md text-sm hover:bg-gray-600">Inativar</button>`; } li.innerHTML = `<div><span class="font-bold">${c.name}</span> <span class="text-sm ${statusClass}">(${statusText})</span></div><div class="mt-2 sm:mt-0 flex flex-wrap gap-2"><button data-company-id="${c.id}" data-company-name="${c.name}" class="manage-company-users-btn bg-purple-500 text-white px-3 py-1 rounded-md text-sm hover:bg-purple-600">Usuários</button><button data-company-id="${c.id}" data-company-name="${c.name}" class="manage-company-keywords-btn bg-blue-500 text-white px-3 py-1 rounded-md text-sm hover:bg-blue-600">Palavras-Chave</button><button data-company-id="${c.id}" data-company-name="${c.name}" class="manage-company-settings-btn bg-green-500 text-white px-3 py-1 rounded-md text-sm hover:bg-green-600">Config.</button>${statusButton}<button data-company-id="${c.id}" data-company-name="${c.name}" class="delete-company-btn bg-red-600 text-white px-3 py-1 rounded-md text-sm hover:bg-red-800">Excluir</button></div>`; companyList.appendChild(li); }); } catch (error) { console.error("Error rendering super admin page:", error); } }
@@ -309,10 +324,41 @@
         async function handleSettingsChange(e) { if (!selectedCompanyForManagement) return; const settingsRef = doc(db, "settings", selectedCompanyForManagement.id); const key = e.target.id === 'report-access-toggle' ? 'reportAccess' : e.target.name === 'news-scope' ? 'newsScope' : 'apiKey'; const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value; try { await setDoc(settingsRef, { [key]: value }, { merge: true }); } catch (error) { console.error("Error saving setting:", error); } }
 
         // --- News Alerts & Notifications ---
-        async function checkNotificationStatus() { if (!currentUser || currentUser.isSuperAdmin) return; try { const settingsRef = doc(db, "settings", currentUser.companyId); const docSnap = await getDoc(settingsRef); const hasNewAlerts = docSnap.exists() ? docSnap.data().newAlerts : false; notificationBadge.classList.toggle('hidden', !hasNewAlerts); } catch (error) { console.error("Error checking notifications:", error); } }
-        function displayNewsAlert(article, container) { const pubDate = new Date(article.publishedAt.seconds ? article.publishedAt.toDate() : article.publishedAt); const formattedDate = pubDate.toLocaleDateString('pt-BR'); const dateForFilter = pubDate.toISOString().split('T')[0]; const alertEl = document.createElement('div'); alertEl.className = 'bg-white p-4 rounded-lg shadow-md border-l-4 border-indigo-500 fade-in'; alertEl.dataset.date = dateForFilter; alertEl.dataset.title = article.title.toLowerCase(); alertEl.dataset.description = article.description ? article.description.toLowerCase() : ''; alertEl.innerHTML = `<div class="flex justify-between items-start"><h4 class="text-lg font-bold text-gray-800 pr-2">${article.title}</h4><span class="flex-shrink-0 text-xs font-semibold bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full">${article.keyword}</span></div><p class="text-sm text-gray-600 mt-2">${article.description || 'Descrição não disponível.'}</p><div class="text-xs text-gray-500 mt-3 flex justify-between items-center"><span>Fonte: ${article.source.name} | Publicado: ${formattedDate}</span><a href="${article.url}" target="_blank" rel="noopener noreferrer" class="text-indigo-600 hover:underline font-semibold">Ler mais &rarr;</a></div>`; container.appendChild(alertEl); }
-        async function populateInitialAlerts() { if (!currentUser || currentUser.isSuperAdmin) return; newsAlerts.innerHTML = '<p class="text-gray-500">Carregando...</p>'; try { const q = query(collection(db, "companies", currentUser.companyId, "articles"), orderBy("publishedAt", "desc"), limit(100)); const articlesSnapshot = await getDocs(q); newsAlerts.innerHTML = ''; if (articlesSnapshot.empty) { newsAlerts.innerHTML = '<p class="text-gray-500">Nenhum alerta encontrado.</p>'; return; } articlesSnapshot.docs.forEach(d => displayNewsAlert(d.data(), newsAlerts)); filterAlertsByDate(); } catch (error) { console.error("Error populating alerts:", error); newsAlerts.innerHTML = '<p class="text-red-500">Erro ao carregar alertas.</p>'; } }
-        function filterAlertsByDate() { const selectedDate = alertDateFilter.value; const allAlerts = newsAlerts.querySelectorAll('.fade-in'); let visibleCount = 0; allAlerts.forEach(alert => { const isVisible = !selectedDate || alert.dataset.date === selectedDate; alert.style.display = isVisible ? 'block' : 'none'; if(isVisible) visibleCount++; }); if(visibleCount === 0 && !newsAlerts.querySelector('.text-gray-500')) { newsAlerts.insertAdjacentHTML('beforeend', `<p class="text-gray-500">Nenhum alerta para a data.</p>`); } else if (visibleCount > 0) { const noAlertsMsg = newsAlerts.querySelector('.text-gray-500'); if (noAlertsMsg) noAlertsMsg.remove(); } }
+        async function checkNotificationStatus() { if (!currentUser || currentUser.isSuperAdmin) return; try { const settingsRef = doc(db, "settings", currentUser.companyId); const docSnap = await getDoc(settingsRef); const newAlerts = docSnap.exists() ? docSnap.data().newAlerts : null; const total = newAlerts ? newAlerts.total : 0; if (total > 0) { notificationBadge.textContent = total; notificationBadge.classList.remove('hidden'); } else { notificationBadge.classList.add('hidden'); } } catch (error) { console.error("Error checking notifications:", error); } }
+        function displayNewsAlert(article, container) { const pubDate = new Date(article.publishedAt.seconds ? article.publishedAt.toDate() : article.publishedAt); const formattedDate = pubDate.toLocaleDateString('pt-BR'); const dateForFilter = pubDate.toISOString().split('T')[0]; const alertEl = document.createElement('div'); alertEl.className = 'bg-white p-4 rounded-lg shadow-md border-l-4 border-indigo-500 fade-in'; alertEl.dataset.date = dateForFilter; alertEl.dataset.keyword = article.keyword; alertEl.dataset.title = article.title.toLowerCase(); alertEl.dataset.description = article.description ? article.description.toLowerCase() : ''; alertEl.innerHTML = `<div class="flex justify-between items-start"><h4 class="text-lg font-bold text-gray-800 pr-2">${article.title}</h4><span class="flex-shrink-0 text-xs font-semibold bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full">${article.keyword}</span></div><p class="text-sm text-gray-600 mt-2">${article.description || 'Descrição não disponível.'}</p><div class="text-xs text-gray-500 mt-3 flex justify-between items-center"><span>Fonte: ${article.source.name} | Publicado: ${formattedDate}</span><a href="${article.url}" target="_blank" rel="noopener noreferrer" class="text-indigo-600 hover:underline font-semibold">Ler mais &rarr;</a></div>`; container.appendChild(alertEl); }
+        async function populateInitialAlerts() { if (!currentUser || currentUser.isSuperAdmin) return; newsAlerts.innerHTML = '<p class="text-gray-500">Carregando...</p>'; try { const q = query(collection(db, "companies", currentUser.companyId, "articles"), orderBy("publishedAt", "desc"), limit(100)); const articlesSnapshot = await getDocs(q); newsAlerts.innerHTML = ''; if (articlesSnapshot.empty) { newsAlerts.innerHTML = '<p class="text-gray-500">Nenhum alerta encontrado.</p>'; return; } articlesSnapshot.docs.forEach(d => displayNewsAlert(d.data(), newsAlerts)); filterAlerts(); } catch (error) { console.error("Error populating alerts:", error); newsAlerts.innerHTML = '<p class="text-red-500">Erro ao carregar alertas.</p>'; } }
+        
+        function handleKeywordFilterClick(e) {
+            const target = e.target.closest('.keyword-filter');
+            if (!target) return;
+
+            document.querySelectorAll('.keyword-filter').forEach(el => el.classList.remove('active'));
+            target.classList.add('active');
+            filterAlerts();
+        }
+
+        function filterAlerts() { 
+            const selectedDate = alertDateFilter.value; 
+            const activeKeywordEl = document.querySelector('.keyword-filter.active');
+            const selectedKeyword = activeKeywordEl ? activeKeywordEl.dataset.keyword : 'all';
+
+            const allAlerts = newsAlerts.querySelectorAll('.fade-in'); 
+            let visibleCount = 0; 
+            allAlerts.forEach(alert => { 
+                const dateMatch = !selectedDate || alert.dataset.date === selectedDate;
+                const keywordMatch = selectedKeyword === 'all' || alert.dataset.keyword === selectedKeyword;
+                const isVisible = dateMatch && keywordMatch;
+                alert.style.display = isVisible ? 'block' : 'none'; 
+                if(isVisible) visibleCount++; 
+            }); 
+
+            const noAlertsMsg = newsAlerts.querySelector('.no-alerts-msg');
+            if (noAlertsMsg) noAlertsMsg.remove();
+
+            if(visibleCount === 0) { 
+                newsAlerts.insertAdjacentHTML('beforeend', `<p class="text-gray-500 no-alerts-msg">Nenhum alerta para os filtros selecionados.</p>`); 
+            }
+        }
         
         // --- Search Page ---
         async function setupSearchPage() { if (!currentUser || currentUser.isSuperAdmin) return; searchInput.value = ''; searchResults.innerHTML = '<p class="text-gray-500">Carregando artigos...</p>'; try { const q = query(collection(db, "companies", currentUser.companyId, "articles"), orderBy("publishedAt", "desc")); const articlesSnapshot = await getDocs(q); allCompanyArticles = articlesSnapshot.docs.map(d => d.data()); searchResults.innerHTML = `<p class="text-gray-500">Pronto para pesquisar em ${allCompanyArticles.length} artigos.</p>`; setupFilters(); } catch (error) { console.error("Error fetching articles for search:", error); searchResults.innerHTML = '<p class="text-red-500">Erro ao carregar artigos.</p>'; } }
@@ -321,87 +367,9 @@
         function renderSearchResults(articles) { searchResults.innerHTML = ''; if (articles.length === 0) { searchResults.innerHTML = '<p class="text-gray-500">Nenhum resultado.</p>'; return; } articles.forEach(article => displayNewsAlert(article, searchResults)); }
 
         // --- Report Page ---
-        async function renderReportPage() {
-            if (!currentUser || currentUser.isSuperAdmin) return;
-            // Fetch all articles for the charts
-            const q = query(collection(db, "companies", currentUser.companyId, "articles"), orderBy("publishedAt", "desc"));
-            const articlesSnapshot = await getDocs(q);
-            const articles = articlesSnapshot.docs.map(doc => doc.data());
-
-            renderSourceChart(articles);
-            renderDateChart(articles);
-            
-            startDateInput.addEventListener('change', () => renderDateChart(articles));
-            endDateInput.addEventListener('change', () => renderDateChart(articles));
-        }
-
-        function renderSourceChart(articles) {
-            const sourceCounts = articles.reduce((acc, article) => {
-                const sourceName = article.source.name;
-                acc[sourceName] = (acc[sourceName] || 0) + 1;
-                return acc;
-            }, {});
-
-            const topSources = Object.entries(sourceCounts).sort((a, b) => b[1] - a[1]).slice(0, 10);
-            const labels = topSources.map(entry => entry[0]);
-            const data = topSources.map(entry => entry[1]);
-
-            const ctx = document.getElementById('source-chart').getContext('2d');
-            if (sourceChartInstance) sourceChartInstance.destroy();
-            sourceChartInstance = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Notícias por Veículo',
-                        data: data,
-                        backgroundColor: ['#4F46E5', '#6366F1', '#818CF8', '#A5B4FC', '#C7D2FE', '#E0E7FF', '#60A5FA', '#3B82F6', '#1D4ED8', '#1E3A8A'],
-                        hoverOffset: 4
-                    }]
-                }
-            });
-        }
-
-        function renderDateChart(articles) {
-            const startDate = startDateInput.value ? new Date(startDateInput.value) : null;
-            const endDate = endDateInput.value ? new Date(endDateInput.value) : null;
-            
-            if (startDate) startDate.setHours(0, 0, 0, 0);
-            if (endDate) endDate.setHours(23, 59, 59, 999);
-
-            const filteredArticles = articles.filter(article => {
-                const pubDate = article.publishedAt.toDate();
-                if (startDate && pubDate < startDate) return false;
-                if (endDate && pubDate > endDate) return false;
-                return true;
-            });
-
-            const dateCounts = filteredArticles.reduce((acc, article) => {
-                const dateStr = article.publishedAt.toDate().toLocaleDateString('pt-BR');
-                acc[dateStr] = (acc[dateStr] || 0) + 1;
-                return acc;
-            }, {});
-
-            const sortedDates = Object.entries(dateCounts).sort((a, b) => new Date(a[0].split('/').reverse().join('-')) - new Date(b[0].split('/').reverse().join('-')));
-            const labels = sortedDates.map(entry => entry[0]);
-            const data = sortedDates.map(entry => entry[1]);
-
-            const ctx = document.getElementById('date-chart').getContext('2d');
-            if (dateChartInstance) dateChartInstance.destroy();
-            dateChartInstance = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Notícias por Dia',
-                        data: data,
-                        fill: false,
-                        borderColor: '#4F46E5',
-                        tension: 0.1
-                    }]
-                }
-            });
-        }
+        async function renderReportPage() { if (!currentUser || currentUser.isSuperAdmin) return; const q = query(collection(db, "companies", currentUser.companyId, "articles"), orderBy("publishedAt", "desc")); const articlesSnapshot = await getDocs(q); const articles = articlesSnapshot.docs.map(doc => doc.data()); renderSourceChart(articles); renderDateChart(articles); startDateInput.addEventListener('change', () => renderDateChart(articles)); endDateInput.addEventListener('change', () => renderDateChart(articles)); }
+        function renderSourceChart(articles) { const sourceCounts = articles.reduce((acc, article) => { const sourceName = article.source.name; acc[sourceName] = (acc[sourceName] || 0) + 1; return acc; }, {}); const topSources = Object.entries(sourceCounts).sort((a, b) => b[1] - a[1]).slice(0, 10); const labels = topSources.map(entry => entry[0]); const data = topSources.map(entry => entry[1]); const ctx = document.getElementById('source-chart').getContext('2d'); if (sourceChartInstance) sourceChartInstance.destroy(); sourceChartInstance = new Chart(ctx, { type: 'doughnut', data: { labels: labels, datasets: [{ label: 'Notícias por Veículo', data: data, backgroundColor: ['#4F46E5', '#6366F1', '#818CF8', '#A5B4FC', '#C7D2FE', '#E0E7FF', '#60A5FA', '#3B82F6', '#1D4ED8', '#1E3A8A'], hoverOffset: 4 }] } }); }
+        function renderDateChart(articles) { const startDate = startDateInput.value ? new Date(startDateInput.value) : null; const endDate = endDateInput.value ? new Date(endDateInput.value) : null; if (startDate) startDate.setHours(0, 0, 0, 0); if (endDate) endDate.setHours(23, 59, 59, 999); const filteredArticles = articles.filter(article => { const pubDate = article.publishedAt.toDate(); if (startDate && pubDate < startDate) return false; if (endDate && pubDate > endDate) return false; return true; }); const dateCounts = filteredArticles.reduce((acc, article) => { const dateStr = article.publishedAt.toDate().toLocaleDateString('pt-BR'); acc[dateStr] = (acc[dateStr] || 0) + 1; return acc; }, {}); const sortedDates = Object.entries(dateCounts).sort((a, b) => new Date(a[0].split('/').reverse().join('-')) - new Date(b[0].split('/').reverse().join('-'))); const labels = sortedDates.map(entry => entry[0]); const data = sortedDates.map(entry => entry[1]); const ctx = document.getElementById('date-chart').getContext('2d'); if (dateChartInstance) dateChartInstance.destroy(); dateChartInstance = new Chart(ctx, { type: 'line', data: { labels: labels, datasets: [{ label: 'Notícias por Dia', data: data, fill: false, borderColor: '#4F46E5', tension: 0.1 }] } }); }
 
         // --- Init & Listeners ---
         document.addEventListener('DOMContentLoaded', () => {
@@ -422,12 +390,13 @@
             backToSuperAdminKwBtn.addEventListener('click', () => updateView('super-admin'));
             backToSuperAdminSettingsBtn.addEventListener('click', () => updateView('super-admin'));
             backToSuperAdminUsersBtn.addEventListener('click', () => updateView('super-admin'));
-            alertDateFilter.addEventListener('change', filterAlertsByDate);
+            alertDateFilter.addEventListener('change', filterAlerts);
+            dashboardKeywordList.addEventListener('click', handleKeywordFilterClick);
             userForm.addEventListener('submit', handleUserSubmit);
             adminUserList.addEventListener('click', handleUserActions);
             searchInput.addEventListener('input', handleSearch);
             filterContainer.addEventListener('click', (e) => { if (e.target.classList.contains('filter-btn')) { document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('bg-indigo-500', 'text-white')); e.target.classList.add('bg-indigo-500', 'text-white'); handleSearch(); } });
-            notificationBell.addEventListener('click', async () => { if (!currentUser) return; try { await setDoc(doc(db, "settings", currentUser.companyId), { newAlerts: false }, { merge: true }); checkNotificationStatus(); updateView('dashboard'); newsAlertsContainer.scrollIntoView({ behavior: 'smooth' }); } catch (error) { console.error("Error clearing notification:", error); } });
+            notificationBell.addEventListener('click', async () => { if (!currentUser) return; try { await setDoc(doc(db, "settings", currentUser.companyId), { newAlerts: { total: 0, byKeyword: {} } }, { merge: true }); checkNotificationStatus(); renderVerticalKeywordList(); } catch (error) { console.error("Error clearing notification:", error); } });
             cancelDeleteBtn.addEventListener('click', () => { deleteModal.classList.add('hidden'); companyIdToDelete = null; });
             confirmDeleteBtn.addEventListener('click', handleConfirmDelete);
             const savedUser = getStorage('clipping_currentUser', null);
