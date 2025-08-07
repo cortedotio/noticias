@@ -1,0 +1,40 @@
+# Nome do seu fluxo de trabalho
+name: Deploy to Firebase
+
+# Define quando esta ação deve ser acionada
+on:
+  push:
+    branches:
+      # Aciona apenas quando houver um push na branch 'master' ou 'main'
+      - master
+      - main
+
+# Define as tarefas que serão executadas
+jobs:
+  deploy:
+    # Usa um ambiente virtual do Ubuntu para rodar os comandos
+    runs-on: ubuntu-latest
+    steps:
+      # 1. Baixa o seu código do GitHub para o ambiente virtual
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # 2. Configura o ambiente Node.js para instalar as dependências
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      # 3. Instala as dependências das suas Cloud Functions
+      - name: Install Functions Dependencies
+        run: cd functions && npm install
+
+      # 4. Ação oficial do Firebase para fazer a implantação
+      - name: Deploy to Firebase
+        uses: w9jds/firebase-action@master
+        with:
+          # Comando que será executado
+          args: deploy --only functions,hosting
+        env:
+          # Usa o segredo que você criou no GitHub para autenticação
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_NOTICIAS_6E952 }}
