@@ -16,13 +16,6 @@ exports.fetchNewsRobot = functions
     .onRun(async (context) => {
         functions.logger.info("News Fetching Robot Started!");
 
-        // SECURELY GET GNEWS API KEY FROM ENVIRONMENT CONFIGURATION
-        const gnewsApiKey = functions.config().gnews.key;
-        if (!gnewsApiKey) {
-            functions.logger.error("GNews API key not set in Firebase environment configuration. Run 'firebase functions:config:set gnews.key=\"YOUR_KEY\"'");
-            return null;
-        }
-
         const companiesRef = db.collection("companies");
         const activeCompaniesQuery = companiesRef.where("status", "==", "active");
         
@@ -44,11 +37,17 @@ exports.fetchNewsRobot = functions
             functions.logger.log(`Processing company: ${company.name} (ID: ${company.id})`);
 
             const settingsDoc = await db.collection("settings").doc(company.id).get();
+            const apiKey = settingsDoc.exists() ? settingsDoc.data().apiKey : null;
             const newsScope = settingsDoc.exists() ? settingsDoc.data().newsScope : 'br';
             
             let newAlertsCount = settingsDoc.exists() && settingsDoc.data().newAlerts 
                 ? settingsDoc.data().newAlerts 
                 : { total: 0, byKeyword: {} };
+
+            if (!apiKey) {
+                functions.logger.warn(`No API Key for company ${company.name}. Skipping.`);
+                return;
+            }
 
             const keywordsSnapshot = await db.collection("companies").doc(company.id).collection("keywords").get();
             if (keywordsSnapshot.empty) {
@@ -63,7 +62,7 @@ exports.fetchNewsRobot = functions
             let newItemsFoundForCompany = false;
 
             for (const keyword of keywords) {
-                let searchUrl = `https://gnews.io/api/v4/search?q="${encodeURIComponent(keyword)}"&lang=pt&token=${gnewsApiKey}`;
+                let searchUrl = `https://gnews.io/api/v4/search?q="${encodeURIComponent(keyword)}"&lang=pt&token=${apiKey}`;
                 if (newsScope === 'br' || newsScope === 'us') {
                     searchUrl += `&country=${newsScope}`;
                 }
