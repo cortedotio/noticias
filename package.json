@@ -1,0 +1,23 @@
+{
+  "name": "projeto-ulysses",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cortedotio/noticias.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/cortedotio/noticias/issues"
+  },
+  "homepage": "https://github.com/cortedotio/noticias#readme",
+  "dependencies": {
+    "axios": "^1.11.0"
+  }
+}
