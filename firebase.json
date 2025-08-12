@@ -7,28 +7,7 @@
       "**/node_modules/**"
     ]
   },
-  "news-robot": [
-    {
-      "source": "news-robot",
-      "codebase": "default",
-      "ignore": [
-        "node_modules",
-        ".git",
-        "firebase-debug.log",
-        "firebase-debug.*.log",
-        "*.local"
-      ]
-    },
-    {
-      "source": "news-robot",
-      "codebase": "news-robot",
-      "ignore": [
-        "node_modules",
-        ".git",
-        "firebase-debug.log",
-        "firebase-debug.*.log",
-        "*.local"
-      ]
-    }
-  ]
+  "functions": {
+    "source": "news-robot"
+  }
 }

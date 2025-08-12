@@ -1,12 +1,17 @@
-const functions = require("firebase-functions");
+const { onSchedule } = require("firebase-functions/v2/scheduler");
 const admin = require("firebase-admin");
 const axios = require("axios");
 
 admin.initializeApp();
 const db = admin.firestore();
 
-// Esta função será executada automaticamente a cada 30 minutos.
-exports.fetchNewsRobot = functions.runWith({ timeoutSeconds: 300, memory: "1GB" }).pubsub.schedule("every 30 minutes").onRun(async (context) => {
+// SINTAXE ATUALIZADA: As opções como timeout, memória e agendamento são definidas no objeto.
+exports.fetchNewsRobot = onSchedule({
+  schedule: "every 30 minutes",
+  timeoutSeconds: 300,
+  memory: "1GiB",
+  region: "southamerica-east1" // <-- LINHA ADICIONADA PARA DEFINIR A REGIÃO
+}, async (event) => {
   console.log("Iniciando o robô de busca de notícias (Google News via NewsAPI)...");
 
   try {
@@ -93,7 +98,6 @@ exports.fetchNewsRobot = functions.runWith({ timeoutSeconds: 300, memory: "1GB" 
         }
       }
 
-      // *** LINHA DE CÓDIGO ADICIONADA ***
       // Se encontrámos novos artigos para esta empresa, ativamos a notificação.
       if (newArticlesFoundForCompany) {
         await settingsRef.set({ newAlerts: true }, { merge: true });
