@@ -7,9 +7,9 @@
       "**/node_modules/**"
     ]
   },
-  "functions": [
+  "news-robot": [
     {
-      "source": "functions",
+      "source": "news-robot",
       "codebase": "default",
       "ignore": [
         "node_modules",

@@ -48,11 +48,12 @@ exports.fetchNewsRobot = functions.runWith({ timeoutSeconds: 300, memory: "1GB" 
         return;
       }
 
+      let newArticlesFoundForCompany = false;
+
       for (const keywordDoc of keywordsSnapshot.docs) {
         const keyword = keywordDoc.data().word;
         console.log(`Buscando notícias para "${keyword}" da empresa ${companyName}...`);
 
-        // URL ATUALIZADA para usar a NewsAPI com a fonte do Google News Brasil
         const url = `https://newsapi.org/v2/everything?q="${encodeURIComponent(keyword)}"&sources=google-news-br&language=pt&apiKey=${apiKey}`;
 
         try {
@@ -70,7 +71,7 @@ exports.fetchNewsRobot = functions.runWith({ timeoutSeconds: 300, memory: "1GB" 
               title: article.title,
               description: article.description,
               url: article.url,
-              source: { name: article.source.name, url: null }, // NewsAPI não fornece URL da fonte
+              source: { name: article.source.name, url: null },
               publishedAt: new Date(article.publishedAt),
               keyword: keyword,
               companyId: companyId,
@@ -82,10 +83,21 @@ exports.fetchNewsRobot = functions.runWith({ timeoutSeconds: 300, memory: "1GB" 
 
           await batch.commit();
           console.log(`${articles.length} artigos salvos para "${keyword}".`);
+          
+          if (articles.length > 0) {
+            newArticlesFoundForCompany = true;
+          }
 
         } catch (apiError) {
           console.error(`Erro ao buscar notícias para a palavra-chave "${keyword}":`, apiError.response ? apiError.response.data : apiError.message);
         }
+      }
+
+      // *** LINHA DE CÓDIGO ADICIONADA ***
+      // Se encontrámos novos artigos para esta empresa, ativamos a notificação.
+      if (newArticlesFoundForCompany) {
+        await settingsRef.set({ newAlerts: true }, { merge: true });
+        console.log(`Sinal de notificação ativado para ${companyName}.`);
       }
     });
 
