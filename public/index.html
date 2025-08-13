@@ -46,7 +46,7 @@
     <header class="bg-white shadow-md">
         <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
             <div class="text-2xl font-bold text-indigo-600 flex items-center">
-               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline-block mr-2 h-8 w-8"><path d="M2.5 17a2.4 2.4 0 0 1 3 0L12 23l6.5-6.5a2.4 2.4 0 0 1 3 0Z"/><path d="M5 11.5a2.5 2.5 0 0 1 0-5c1.5 0 2.8 1.3 2.8 2.8V13c0 1.4-1.3 2.8-2.8 2.8-1.5 0-2.8-1.3-2.8-2.8V8.5"/><path d="M19 11.5a2.5 2.5 0 0 0 0-5c-1.5 0-2.8 1.3-2.8 2.8V13c0 1.4 1.3 2.8 2.8 2.8 1.5 0-2.8-1.3-2.8-2.8V8.5"/></svg>
+               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline-block mr-2 h-8 w-8"><path d="M2.5 17a2.4 2.4 0 0 1 3 0L12 23l6.5-6.5a2.4 2.4 0 0 1 3 0Z"/><path d="M5 11.5a2.5 2.5 0 0 1 0-5c1.5 0 2.8 1.3 2.8 2.8V13c0 1.4-1.3 2.8-2.8 2.8-1.5 0-2.8-1.3-2.8-2.8V8.5"/><path d="M19 11.5a2.5 2.5 0 0 0 0-5c-1.5 0-2.8 1.3-2.8 2.8V13c0 1.4 1.3 2.8 2.8 2.8 1.5 0-2.8-1.3-2.8-2.8V8.5"/></svg>
                 NewsClip
             </div>
             <div class="flex items-center">
@@ -57,7 +57,7 @@
                     <a href="#" id="nav-super-admin" class="hidden text-red-600 hover:text-red-800 px-3 py-2 rounded-md text-sm font-bold">Super Admin</a>
                     
                     <div id="notification-bell-container" class="relative cursor-pointer ml-4">
-                        <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                        <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
                         <span id="notification-badge" class="hidden absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white"></span>
                     </div>
 
@@ -73,7 +73,7 @@
 
         <!-- Login Section -->
         <section id="login-page" class="page-section fade-in">
-            <div class="max-w-md mx-auto bg-white p-8 rounded-lg shadow-lg mt-10 relative">
+            <div class="max-w-md mx-auto bg-gray-50 p-8 rounded-lg shadow-lg mt-10 relative">
                 <div id="login-logo-container" class="absolute top-4 right-4 h-12 w-auto"></div>
                 <h1 class="text-3xl font-bold text-center text-gray-800">Bem-Vindo</h1>
                 <p class="text-center text-gray-500 mt-2 mb-6">Informe seus dados de acesso</p>
@@ -113,9 +113,10 @@
              <div id="super-admin-dashboard-message" class="hidden bg-white p-8 rounded-lg shadow-lg text-center">
                 <h3 class="text-2xl font-bold">Bem-vindo, Super Admin!</h3>
                 <p class="mt-4 text-gray-600">Use o menu "Super Admin" no topo da página para gerenciar empresas e usuários.</p>
-                <div class="mt-6 p-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 rounded-md">
-                    <p class="font-bold">Aviso Importante sobre o Robô de Notícias</p>
-                    <p class="mt-2 text-sm">A funcionalidade de busca automática de notícias (robô) foi desativada desta interface de cliente por motivos de segurança e eficiência. Para que as notícias sejam coletadas, é <strong>essencial</strong> implementar um processo no lado do servidor (como uma <strong>Firebase Cloud Function</strong>) que execute essa tarefa de forma segura e agendada.</p>
+                <div class="mt-6 p-4 bg-blue-100 border-l-4 border-blue-500 text-blue-800 rounded-md text-left">
+                    <p class="font-bold">Execução Manual do Robô</p>
+                    <p class="mt-2 text-sm">Use o botão abaixo para disparar a coleta de notícias imediatamente. Isso é útil para testes e para obter as notícias mais recentes sem esperar pelo agendamento automático de 30 minutos.</p>
+                    <button id="manual-trigger-btn" class="mt-4 w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:bg-blue-300">Executar Robô Manualmente</button>
                 </div>
             </div>
         </section>
@@ -185,7 +186,7 @@
             <div class="bg-white p-8 rounded-lg shadow-lg text-center">
                 <h2 class="text-3xl font-bold mb-4 text-gray-700">Relatórios</h2>
                 <div class="mt-6">
-                    <svg class="mx-auto h-16 w-16 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg class="mx-auto h-16 w-16 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     <p class="text-gray-600 text-lg mt-4">Esta seção está em desenvolvimento.</p>
@@ -205,12 +206,11 @@
     </main>
 
     <script type="module">
-        // --- Import Firebase functions (updated to a recent version) ---
+        // --- Import Firebase functions ---
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, collection, getDocs, doc, getDoc, setDoc, addDoc, deleteDoc, updateDoc, query, where, writeBatch, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         // --- Your Firebase Configuration ---
-        // IMPORTANT: For production, use environment variables or a secure configuration method.
         const firebaseConfig = {
             apiKey: "AIzaSyCWzQM1SbIgO10GIu4AZ8lVtwmcKPEPAbo",
             authDomain: "noticias-6e952.firebaseapp.com",
@@ -239,6 +239,7 @@
         const backToSuperAdminKwBtn = document.getElementById('back-to-super-admin-kw'), backToSuperAdminSettingsBtn = document.getElementById('back-to-super-admin-settings'), backToSuperAdminUsersBtn = document.getElementById('back-to-super-admin-users'), companyKeywordAdminTitle = document.getElementById('company-keyword-admin-title'), companySettingsAdminTitle = document.getElementById('company-settings-admin-title'), companyUserAdminTitle = document.getElementById('company-user-admin-title'), keywordForm = document.getElementById('keyword-form'), keywordInput = document.getElementById('keyword-input'), keywordIdInput = document.getElementById('keyword-id'), adminKeywordList = document.getElementById('admin-keyword-list');
         const userForm = document.getElementById('user-form'), userInput = document.getElementById('user-input'), userPasswordInput = document.getElementById('user-password-input'), userIdInput = document.getElementById('user-id'), adminUserList = document.getElementById('admin-user-list');
         const notificationBell = document.getElementById('notification-bell-container'), notificationBadge = document.getElementById('notification-badge');
+        const manualTriggerBtn = document.getElementById('manual-trigger-btn');
         
         // --- APPLICATION STATE ---
         let currentUser = null, clockInterval = null, selectedCompanyForManagement = null, allCompanyArticles = [];
@@ -249,6 +250,31 @@
         function getStorage(key, defaultValue) { try { const d = localStorage.getItem(key); return d ? JSON.parse(d) : defaultValue; } catch (e) { console.error(e); return defaultValue; } }
         function setStorage(key, value) { localStorage.setItem(key, JSON.stringify(value)); }
         function updateDateTime() { if (!currentDateTimeEl) return; const n = new Date(), f = { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }; currentDateTimeEl.textContent = `Data: ${n.toLocaleDateString('pt-BR', f).replace(',', ' -')}`; }
+
+        // --- MANUAL TRIGGER LOGIC ---
+        async function handleManualTrigger() {
+            manualTriggerBtn.disabled = true;
+            manualTriggerBtn.textContent = 'Executando...';
+            showAlert('A coleta manual de notícias foi iniciada. Isto pode levar alguns minutos.', 'success');
+
+            const functionUrl = 'https://southamerica-east1-noticias-6e952.cloudfunctions.net/manualFetch';
+
+            try {
+                const response = await fetch(functionUrl, { method: 'POST' });
+                const data = await response.json();
+                if (response.ok && data.success) {
+                    showAlert('Robô executado com sucesso! As novas notícias estarão disponíveis em breve.', 'success');
+                } else {
+                    throw new Error(data.message || 'Erro desconhecido na execução do robô.');
+                }
+            } catch (error) {
+                console.error("Erro ao acionar o robô manual:", error);
+                showAlert(`Erro ao acionar o robô: ${error.message}`, 'error');
+            } finally {
+                manualTriggerBtn.disabled = false;
+                manualTriggerBtn.textContent = 'Executar Robô Manualmente';
+            }
+        }
 
         // --- LOGO LOGIC ---
         async function handleLogoUpload(e) { const file = e.target.files[0]; if (!file) return; const companyId = currentUser.isSuperAdmin ? selectedCompanyForManagement.id : currentUser.companyId; if (!companyId) return; const reader = new FileReader(); reader.onloadend = async () => { try { const settingsRef = doc(db, "settings", companyId); await setDoc(settingsRef, { logo: reader.result }, { merge: true }); loadAndDisplayLogo(); showAlert('Logo atualizada com sucesso!'); } catch (error) { console.error("Erro ao salvar logo:", error); showAlert("Erro ao salvar logo.", "error"); } }; reader.readAsDataURL(file); }
