@@ -1,4 +1,7 @@
 {
+  "functions": {
+    "source": "news-robot"
+  },
   "hosting": {
     "public": "public",
     "ignore": [
@@ -6,8 +9,5 @@
       "**/.*",
       "**/node_modules/**"
     ]
-  },
-  "functions": {
-    "source": "news-robot"
   }
 }
