@@ -9,7 +9,8 @@ const cors = require("cors")({ origin: true });
 admin.initializeApp();
 const db = admin.firestore();
 
-// --- Lógica Principal do Robô ---
+// --- Lógica Principal do Robô (Refatorada) ---
+// Esta função contém toda a lógica de busca e salvamento de notícias.
 const fetchAndStoreNews = async () => {
   logger.info("Iniciando o robô de busca de notícias...");
 
@@ -40,8 +41,14 @@ const fetchAndStoreNews = async () => {
       }
 
       const settings = settingsDoc.data();
-      const apiKey = "99a1ffeb151849ff9e8f129f5a292bc1"; // Sua API key
+      const apiKey = settings.apiKey;
+      const apiProvider = settings.apiProvider || 'newsapi'; // Padrão: newsapi
       const searchScope = settings.searchScope || 'br'; // Padrão: 'br' (nacional)
+
+      if (!apiKey) {
+        logger.warn(`Nenhuma chave de API configurada para ${companyName}.`);
+        return;
+      }
 
       if (keywordsSnapshot.empty) {
         logger.info(`Nenhuma palavra-chave encontrada para ${companyName}.`);
@@ -52,15 +59,18 @@ const fetchAndStoreNews = async () => {
 
       for (const keywordDoc of keywordsSnapshot.docs) {
         const keyword = keywordDoc.data().word;
-        logger.info(`Buscando notícias para "${keyword}" da empresa ${companyName} com escopo "${searchScope}"...`);
+        logger.info(`Buscando notícias para "${keyword}" da empresa ${companyName} via ${apiProvider}...`);
         
         let url;
-        if (searchScope === 'international') {
-          // Busca internacional
-          url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(keyword)}&language=pt&apiKey=${apiKey}`;
-        } else {
-          // Busca nacional
-          url = `https://newsapi.org/v2/top-headlines?q=${encodeURIComponent(keyword)}&country=br&language=pt&apiKey=${apiKey}`;
+        // Constrói a URL com base no provedor e no escopo
+        if (apiProvider === 'gnews') {
+            url = `https://gnews.io/api/v4/search?q="${encodeURIComponent(keyword)}"&lang=pt&country=br&max=10&apikey=${apiKey}`;
+        } else { // Padrão é newsapi
+            if (searchScope === 'international') {
+                url = `https://newsapi.org/v2/everything?q="${encodeURIComponent(keyword)}"&language=pt&apiKey=${apiKey}`;
+            } else {
+                url = `https://newsapi.org/v2/top-headlines?q=${encodeURIComponent(keyword)}&country=br&language=pt&apiKey=${apiKey}`;
+            }
         }
 
         try {
@@ -78,7 +88,7 @@ const fetchAndStoreNews = async () => {
               title: article.title,
               description: article.description,
               url: article.url,
-              source: { name: article.source.name, url: null },
+              source: { name: article.source.name, url: article.source.url || null },
               publishedAt: new Date(article.publishedAt),
               keyword: keyword,
               companyId: companyId,
@@ -90,7 +100,10 @@ const fetchAndStoreNews = async () => {
 
           await batch.commit();
           logger.info(`${articles.length} artigos salvos para "${keyword}".`);
-          newArticlesFoundForCompany = true;
+          
+          if (articles.length > 0) {
+            newArticlesFoundForCompany = true;
+          }
 
         } catch (apiError) {
           logger.error(`Erro ao buscar notícias para a palavra-chave "${keyword}":`, apiError.response ? apiError.response.data : apiError.message);
@@ -109,9 +122,10 @@ const fetchAndStoreNews = async () => {
 
   } catch (error) {
     logger.error("Erro geral na execução do robô de notícias:", error);
-    throw new Error('Erro interno ao executar o robô.');
+    throw new functions.https.HttpsError('internal', 'Erro interno ao executar o robô.');
   }
 };
+
 
 // --- Trigger 1: Agendamento Automático ---
 exports.scheduledFetch = onSchedule({
@@ -123,47 +137,52 @@ exports.scheduledFetch = onSchedule({
   return await fetchAndStoreNews();
 });
 
+
 // --- Trigger 2: Execução Manual (HTTP) ---
 exports.manualFetch = onRequest({
-  region: "southamerica-east1",
-  timeoutSeconds: 540,
-  memory: "1GiB",
+    region: "southamerica-east1",
+    timeoutSeconds: 540,
+    memory: "1GiB",
 }, (req, res) => {
-  cors(req, res, async () => {
-    try {
-      const result = await fetchAndStoreNews();
-      res.status(200).send(result);
-    } catch (error) {
-      logger.error("Erro na execução manual:", error);
-      res.status(500).send({ success: false, message: "Ocorreu um erro." });
-    }
-  });
+    cors(req, res, async () => {
+        try {
+            const result = await fetchAndStoreNews();
+            res.status(200).send(result);
+        } catch (error) {
+            logger.error("Erro na execução manual:", error);
+            res.status(500).send({ success: false, message: "Ocorreu um erro." });
+        }
+    });
 });
 
 // --- Trigger 3: Excluir Empresa e Subcoleções ---
 exports.deleteCompany = onCall({ region: "southamerica-east1" }, async (request) => {
-  const companyId = request.data.companyId;
-  if (!companyId) {
-    throw new Error('O ID da empresa é obrigatório.');
-  }
+    // Adicionar verificação de Super Admin aqui em produção
+    const companyId = request.data.companyId;
+    if (!companyId) {
+        throw new functions.https.HttpsError('invalid-argument', 'O ID da empresa é obrigatório.');
+    }
 
-  logger.info(`Iniciando exclusão da empresa ${companyId} e seus dados...`);
-  const companyRef = db.collection('companies').doc(companyId);
-  const collections = ['articles', 'keywords', 'users'];
+    logger.info(`Iniciando exclusão da empresa ${companyId} e seus dados...`);
+    const companyRef = db.collection('companies').doc(companyId);
 
-  for (const collection of collections) {
-    const snapshot = await companyRef.collection(collection).get();
-    const batch = db.batch();
-    snapshot.docs.forEach(doc => batch.delete(doc.ref));
-    await batch.commit();
-    logger.info(`Subcoleção ${collection} da empresa ${companyId} excluída.`);
-  }
+    // Excluir subcoleções (ex: articles, keywords, users)
+    const collections = ['articles', 'keywords', 'users'];
+    for (const collection of collections) {
+        const snapshot = await companyRef.collection(collection).get();
+        const batch = db.batch();
+        snapshot.docs.forEach(doc => batch.delete(doc.ref));
+        await batch.commit();
+        logger.info(`Subcoleção ${collection} da empresa ${companyId} excluída.`);
+    }
 
-  await db.collection('settings').doc(companyId).delete();
-  logger.info(`Configurações da empresa ${companyId} excluídas.`);
+    // Excluir documento de configurações
+    await db.collection('settings').doc(companyId).delete();
+    logger.info(`Configurações da empresa ${companyId} excluídas.`);
 
-  await companyRef.delete();
-  logger.info(`Empresa ${companyId} excluída com sucesso.`);
+    // Excluir o documento da empresa
+    await companyRef.delete();
+    logger.info(`Empresa ${companyId} excluída com sucesso.`);
 
-  return { success: true, message: 'Empresa e todos os dados associados foram excluídos.' };
+    return { success: true, message: 'Empresa e todos os dados associados foram excluídos.' };
 });

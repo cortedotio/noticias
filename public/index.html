@@ -173,7 +173,18 @@
                             <div class="flex items-center"><input type="radio" id="scope-estadual" name="news-scope" value="state" class="h-4 w-4 text-indigo-600 border-gray-300" disabled><label for="scope-estadual" class="ml-2 block text-sm text-gray-500">Estaduais (Em breve)</label></div>
                         </div>
                     </div>
-                    <div><h4 class="text-lg font-semibold mb-2">Chave da API (NewsAPI.org)</h4><div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-md"><p>Insira a chave da API do NewsAPI.org para que o robô (Cloud Function) possa buscar notícias do Google.</p><input type="text" id="api-key-input" placeholder="Cole a chave da API aqui" class="mt-2 w-full px-3 py-2 border border-gray-300 rounded-md"></div></div>
+                    <div>
+                        <h4 class="text-lg font-semibold mb-2">Provedor de Notícias e Chave de API</h4>
+                        <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-md">
+                            <label for="api-provider-select" class="block text-sm font-medium mb-1">Selecione o Provedor:</label>
+                            <select id="api-provider-select" class="w-full p-2 border border-gray-300 rounded-md mb-2">
+                                <option value="newsapi">NewsAPI.org (Google News)</option>
+                                <option value="gnews">GNews.io</option>
+                            </select>
+                            <label for="api-key-input" class="block text-sm font-medium mb-1">Chave da API:</label>
+                            <input type="text" id="api-key-input" placeholder="Cole a chave da API aqui" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
@@ -229,6 +240,23 @@
         </div>
     </div>
 
+    <!-- Access Link Modal -->
+    <div id="link-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 text-center">Link de Acesso Exclusivo</h3>
+                <div class="mt-4 px-7 py-3">
+                    <p class="text-sm text-gray-500 mb-2">Use este link para dar acesso direto à página de login desta empresa:</p>
+                    <input type="text" id="access-link-input" readonly class="w-full bg-gray-100 p-2 border rounded-md text-sm">
+                </div>
+                <div class="items-center px-4 py-3 flex gap-2">
+                    <button id="copy-link-btn" class="px-4 py-2 bg-indigo-600 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-indigo-700">Copiar</button>
+                    <button id="close-link-modal-btn" class="px-4 py-2 bg-gray-200 text-gray-900 text-base font-medium rounded-md w-full shadow-sm hover:bg-gray-300">Fechar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script type="module">
         // --- Import Firebase modules ---
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -269,6 +297,8 @@
         const deleteModal = document.getElementById('delete-modal'), confirmDeleteBtn = document.getElementById('confirm-delete-btn'), cancelDeleteBtn = document.getElementById('cancel-delete-btn'), companyNameToDeleteEl = document.getElementById('company-name-to-delete');
         const newsScopeContainer = document.getElementById('news-scope-container');
         const startDateInput = document.getElementById('start-date'), endDateInput = document.getElementById('end-date');
+        const apiProviderSelect = document.getElementById('api-provider-select');
+        const linkModal = document.getElementById('link-modal'), accessLinkInput = document.getElementById('access-link-input'), copyLinkBtn = document.getElementById('copy-link-btn'), closeLinkModalBtn = document.getElementById('close-link-modal-btn');
         
         // --- APPLICATION STATE ---
         let currentUser = null, clockInterval = null, selectedCompanyForManagement = null, allCompanyArticles = [], companyIdToDelete = null;
@@ -319,9 +349,9 @@
         async function renderVerticalKeywordList() { if (!currentUser || !dashboardKeywordList) return; try { const q = query(collection(db, "companies", currentUser.companyId, "keywords")); const querySnapshot = await getDocs(q); const keywords = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); dashboardKeywordList.innerHTML = ''; if (keywords.length === 0) { dashboardKeywordList.innerHTML = `<p class="text-gray-500 text-sm">Nenhuma palavra-chave cadastrada.</p>`; } else { keywords.forEach(kw => { const li = document.createElement('li'); li.className = 'bg-indigo-100 text-indigo-800 text-md font-medium px-3 py-2 rounded-md'; li.textContent = kw.word; dashboardKeywordList.appendChild(li); }); } } catch (error) { console.error("Error fetching keywords:", error); } }
         
         // --- SUPER ADMIN LOGIC ---
-        async function renderSuperAdminPage() { try { const querySnapshot = await getDocs(collection(db, "companies")); const companies = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); companyList.innerHTML = ''; companies.forEach(c => { const li = document.createElement('li'); li.className = 'flex flex-col sm:flex-row justify-between items-start sm:items-center bg-gray-100 p-3 rounded-md'; const statusClass = c.status === 'inactive' ? 'text-orange-500' : 'text-green-500'; const statusText = c.status === 'inactive' ? 'Inativa' : 'Ativa'; let actionButtons; if (c.status === 'inactive') { actionButtons = `<button data-id="${c.id}" class="reactivate-company-btn bg-yellow-500 text-white px-3 py-1 rounded-md text-sm hover:bg-yellow-600">Reativar</button>`; } else { actionButtons = `<button data-id="${c.id}" class="deactivate-company-btn bg-gray-500 text-white px-3 py-1 rounded-md text-sm hover:bg-gray-600">Inativar</button>`; } li.innerHTML = `<div><span class="font-bold">${c.name}</span> <span class="text-sm ${statusClass}">(${statusText})</span></div><div class="mt-2 sm:mt-0 flex flex-wrap gap-2"><button data-company-id="${c.id}" data-company-name="${c.name}" class="manage-company-users-btn bg-purple-500 text-white px-3 py-1 rounded-md text-sm hover:bg-purple-600">Usuários</button><button data-company-id="${c.id}" data-company-name="${c.name}" class="manage-company-keywords-btn bg-blue-500 text-white px-3 py-1 rounded-md text-sm hover:bg-blue-600">Palavras-Chave</button><button data-company-id="${c.id}" data-company-name="${c.name}" class="manage-company-settings-btn bg-green-500 text-white px-3 py-1 rounded-md text-sm hover:bg-green-600">Configurações</button>${actionButtons}<button data-company-id="${c.id}" data-company-name="${c.name}" class="delete-company-btn bg-red-600 text-white px-3 py-1 rounded-md text-sm hover:bg-red-800">Excluir</button></div>`; companyList.appendChild(li); }); } catch (error) { console.error("Error rendering super admin page:", error); } }
+        async function renderSuperAdminPage() { try { const querySnapshot = await getDocs(collection(db, "companies")); const companies = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); companyList.innerHTML = ''; companies.forEach(c => { const li = document.createElement('li'); li.className = 'flex flex-col sm:flex-row justify-between items-start sm:items-center bg-gray-100 p-3 rounded-md'; const statusClass = c.status === 'inactive' ? 'text-orange-500' : 'text-green-500'; const statusText = c.status === 'inactive' ? 'Inativa' : 'Ativa'; let actionButtons; if (c.status === 'inactive') { actionButtons = `<button data-id="${c.id}" class="reactivate-company-btn bg-yellow-500 text-white px-3 py-1 rounded-md text-sm hover:bg-yellow-600">Reativar</button>`; } else { actionButtons = `<button data-id="${c.id}" class="deactivate-company-btn bg-gray-500 text-white px-3 py-1 rounded-md text-sm hover:bg-gray-600">Inativar</button>`; } li.innerHTML = `<div><span class="font-bold">${c.name}</span> <span class="text-sm ${statusClass}">(${statusText})</span></div><div class="mt-2 sm:mt-0 flex flex-wrap gap-2"><button data-company-name="${c.name}" class="view-access-link-btn bg-teal-500 text-white px-3 py-1 rounded-md text-sm hover:bg-teal-600">Link de Acesso</button><button data-company-id="${c.id}" data-company-name="${c.name}" class="manage-company-users-btn bg-purple-500 text-white px-3 py-1 rounded-md text-sm hover:bg-purple-600">Usuários</button><button data-company-id="${c.id}" data-company-name="${c.name}" class="manage-company-keywords-btn bg-blue-500 text-white px-3 py-1 rounded-md text-sm hover:bg-blue-600">Palavras-Chave</button><button data-company-id="${c.id}" data-company-name="${c.name}" class="manage-company-settings-btn bg-green-500 text-white px-3 py-1 rounded-md text-sm hover:bg-green-600">Configurações</button>${actionButtons}<button data-company-id="${c.id}" data-company-name="${c.name}" class="delete-company-btn bg-red-600 text-white px-3 py-1 rounded-md text-sm hover:bg-red-800">Excluir</button></div>`; companyList.appendChild(li); }); } catch (error) { console.error("Error rendering super admin page:", error); } }
         async function handleCompanySubmit(e) { e.preventDefault(); const name = document.getElementById('company-name-input').value.trim(); if(!name) { showAlert('O nome da empresa é obrigatório.', 'error'); return; } try { const q = query(collection(db, "companies"), where("name", "==", name.toUpperCase())); const querySnapshot = await getDocs(q); if (!querySnapshot.empty) { showAlert('Este nome de empresa já existe.', 'error'); return; } await addDoc(collection(db, "companies"), { name: name.toUpperCase(), status: 'active' }); showAlert('Empresa adicionada com sucesso!'); companyForm.reset(); renderSuperAdminPage(); } catch (error) { console.error("Error adding company:", error); showAlert("Erro ao adicionar empresa.", "error"); } }
-        async function handleCompanyActions(e) { const target = e.target; const companyId = target.dataset.id || target.dataset.companyId; if (!companyId) return; const companyRef = doc(db, "companies", companyId); try { if (target.classList.contains('deactivate-company-btn')) { await updateDoc(companyRef, { status: 'inactive', deactivationDate: new Date().toISOString() }); renderSuperAdminPage(); } else if (target.classList.contains('reactivate-company-btn')) { await updateDoc(companyRef, { status: 'active', deactivationDate: null }); renderSuperAdminPage(); } else if (target.classList.contains('delete-company-btn')) { companyIdToDelete = companyId; companyNameToDeleteEl.textContent = target.dataset.companyName; deleteModal.classList.remove('hidden'); } else if (target.classList.contains('manage-company-keywords-btn')) { selectedCompanyForManagement = { id: target.dataset.companyId, name: target.dataset.companyName }; updateView('company-keyword-admin'); } else if (target.classList.contains('manage-company-settings-btn')) { selectedCompanyForManagement = { id: target.dataset.companyId, name: target.dataset.companyName }; updateView('company-settings-admin'); } else if (target.classList.contains('manage-company-users-btn')) { selectedCompanyForManagement = { id: target.dataset.companyId, name: target.dataset.companyName }; updateView('company-user-admin'); } } catch (error) { console.error("Error handling company action:", error); showAlert("Ocorreu um erro.", "error"); } }
+        async function handleCompanyActions(e) { const target = e.target; const companyId = target.dataset.id || target.dataset.companyId; if (target.classList.contains('view-access-link-btn')) { const companyName = target.dataset.companyName; const baseUrl = window.location.origin + window.location.pathname; const accessUrl = `${baseUrl}?company=${encodeURIComponent(companyName)}`; accessLinkInput.value = accessUrl; linkModal.classList.remove('hidden'); return; } if (!companyId) return; const companyRef = doc(db, "companies", companyId); try { if (target.classList.contains('deactivate-company-btn')) { await updateDoc(companyRef, { status: 'inactive', deactivationDate: new Date().toISOString() }); renderSuperAdminPage(); } else if (target.classList.contains('reactivate-company-btn')) { await updateDoc(companyRef, { status: 'active', deactivationDate: null }); renderSuperAdminPage(); } else if (target.classList.contains('delete-company-btn')) { companyIdToDelete = companyId; companyNameToDeleteEl.textContent = target.dataset.companyName; deleteModal.classList.remove('hidden'); } else if (target.classList.contains('manage-company-keywords-btn')) { selectedCompanyForManagement = { id: target.dataset.companyId, name: target.dataset.companyName }; updateView('company-keyword-admin'); } else if (target.classList.contains('manage-company-settings-btn')) { selectedCompanyForManagement = { id: target.dataset.companyId, name: target.dataset.companyName }; updateView('company-settings-admin'); } else if (target.classList.contains('manage-company-users-btn')) { selectedCompanyForManagement = { id: target.dataset.companyId, name: target.dataset.companyName }; updateView('company-user-admin'); } } catch (error) { console.error("Error handling company action:", error); showAlert("Ocorreu um erro.", "error"); } }
 
         // --- DELETE COMPANY LOGIC ---
         async function handleConfirmDelete() {
@@ -362,8 +392,8 @@
         async function handleKeywordActions(e) { if (!selectedCompanyForManagement) return; const id = e.target.dataset.id; if (!id) return; try { if (e.target.classList.contains('edit-keyword-btn')) { const kwDoc = await getDoc(doc(db, "companies", selectedCompanyForManagement.id, "keywords", id)); if (kwDoc.exists()) { const kw = kwDoc.data(); keywordInput.value = kw.word; keywordIdInput.value = id; keywordInput.focus(); } } if (e.target.classList.contains('delete-keyword-btn')) { await deleteDoc(doc(db, "companies", selectedCompanyForManagement.id, "keywords", id)); renderKeywordsForSelectedCompany(); } } catch (error) { console.error("Error handling keyword action:", error); } }
         
         // --- SETTINGS MANAGEMENT LOGIC (BY SUPER ADMIN) ---
-        async function renderCompanySettingsAdminPage() { if (!selectedCompanyForManagement) return; companySettingsAdminTitle.textContent = `Configurações para: ${selectedCompanyForManagement.name}`; try { const settingsRef = doc(db, "settings", selectedCompanyForManagement.id); const docSnap = await getDoc(settingsRef); if (docSnap.exists()) { const settings = docSnap.data(); apiKeyInput.value = settings.apiKey || ''; reportAccessToggle.checked = settings.reportAccess !== false; document.querySelector(`input[name="news-scope"][value="${settings.searchScope || 'br'}"]`).checked = true; } else { apiKeyInput.value = ''; reportAccessToggle.checked = true; document.querySelector('input[name="news-scope"][value="br"]').checked = true; } } catch (error) { console.error("Error rendering settings:", error); } }
-        async function handleSettingsChange(e) { if (!selectedCompanyForManagement) return; const settingsRef = doc(db, "settings", selectedCompanyForManagement.id); const key = e.target.id === 'report-access-toggle' ? 'reportAccess' : e.target.name === 'news-scope' ? 'searchScope' : 'apiKey'; const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value; try { await setDoc(settingsRef, { [key]: value }, { merge: true }); showAlert('Configuração salva!', 'success'); } catch (error) { console.error("Error saving setting:", error); } }
+        async function renderCompanySettingsAdminPage() { if (!selectedCompanyForManagement) return; companySettingsAdminTitle.textContent = `Configurações para: ${selectedCompanyForManagement.name}`; try { const settingsRef = doc(db, "settings", selectedCompanyForManagement.id); const docSnap = await getDoc(settingsRef); if (docSnap.exists()) { const settings = docSnap.data(); apiKeyInput.value = settings.apiKey || ''; apiProviderSelect.value = settings.apiProvider || 'newsapi'; reportAccessToggle.checked = settings.reportAccess !== false; document.querySelector(`input[name="news-scope"][value="${settings.searchScope || 'br'}"]`).checked = true; } else { apiKeyInput.value = ''; apiProviderSelect.value = 'newsapi'; reportAccessToggle.checked = true; document.querySelector('input[name="news-scope"][value="br"]').checked = true; } } catch (error) { console.error("Error rendering settings:", error); } }
+        async function handleSettingsChange(e) { if (!selectedCompanyForManagement) return; const settingsRef = doc(db, "settings", selectedCompanyForManagement.id); const key = e.target.id === 'report-access-toggle' ? 'reportAccess' : e.target.name === 'news-scope' ? 'searchScope' : e.target.id === 'api-provider-select' ? 'apiProvider' : 'apiKey'; const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value; try { await setDoc(settingsRef, { [key]: value }, { merge: true }); showAlert('Configuração salva!', 'success'); } catch (error) { console.error("Error saving setting:", error); } }
         
         // --- NOTIFICATION LOGIC ---
         async function checkNotificationStatus() { if (!currentUser) return; try { const settingsRef = doc(db, "settings", currentUser.companyId); const docSnap = await getDoc(settingsRef); const hasNewAlerts = docSnap.exists() ? docSnap.data().newAlerts : false; notificationBadge.classList.toggle('hidden', !hasNewAlerts); } catch (error) { console.error("Error checking notifications:", error); } }
@@ -380,13 +410,29 @@
             const q = query(collection(db, "companies", currentUser.companyId, "articles"), orderBy("publishedAt", "desc"));
             const articlesSnapshot = await getDocs(q);
             const articles = articlesSnapshot.docs.map(doc => doc.data());
-            renderSourceChart(articles);
-            renderDateChart(articles);
-            startDateInput.addEventListener('change', () => renderDateChart(articles));
-            endDateInput.addEventListener('change', () => renderDateChart(articles));
+            
+            const updateCharts = () => {
+                const startDate = startDateInput.value ? new Date(startDateInput.value) : null;
+                const endDate = endDateInput.value ? new Date(endDateInput.value) : null;
+                if (startDate) startDate.setHours(0, 0, 0, 0);
+                if (endDate) endDate.setHours(23, 59, 59, 999);
+
+                const filteredArticles = articles.filter(article => {
+                    const pubDate = article.publishedAt.toDate();
+                    if (startDate && pubDate < startDate) return false;
+                    if (endDate && pubDate > endDate) return false;
+                    return true;
+                });
+                renderSourceChart(filteredArticles);
+                renderDateChart(filteredArticles);
+            };
+            
+            updateCharts();
+            startDateInput.addEventListener('change', updateCharts);
+            endDateInput.addEventListener('change', updateCharts);
         }
-        function renderSourceChart(articles) { const sourceCounts = articles.reduce((acc, article) => { const sourceName = article.source.name; acc[sourceName] = (acc[sourceName] || 0) + 1; return acc; }, {}); const topSources = Object.entries(sourceCounts).sort((a, b) => b[1] - a[1]).slice(0, 10); const labels = topSources.map(entry => entry[0]); const data = topSources.map(entry => entry[1]); const ctx = document.getElementById('source-chart').getContext('2d'); if (sourceChartInstance) sourceChartInstance.destroy(); sourceChartInstance = new Chart(ctx, { type: 'doughnut', data: { labels: labels, datasets: [{ label: 'Notícias por Veículo', data: data, backgroundColor: ['#4F46E5', '#6366F1', '#818CF8', '#A5B4FC', '#C7D2FE', '#E0E7FF', '#60A5FA', '#3B82F6', '#1D4ED8', '#1E3A8A'], hoverOffset: 4 }] } }); }
-        function renderDateChart(articles) { const startDate = startDateInput.value ? new Date(startDateInput.value) : null; const endDate = endDateInput.value ? new Date(endDateInput.value) : null; if (startDate) startDate.setHours(0, 0, 0, 0); if (endDate) endDate.setHours(23, 59, 59, 999); const filteredArticles = articles.filter(article => { const pubDate = article.publishedAt.toDate(); if (startDate && pubDate < startDate) return false; if (endDate && pubDate > endDate) return false; return true; }); const dateCounts = filteredArticles.reduce((acc, article) => { const dateStr = article.publishedAt.toDate().toLocaleDateString('pt-BR'); acc[dateStr] = (acc[dateStr] || 0) + 1; return acc; }, {}); const sortedDates = Object.entries(dateCounts).sort((a, b) => new Date(a[0].split('/').reverse().join('-')) - new Date(b[0].split('/').reverse().join('-'))); const labels = sortedDates.map(entry => entry[0]); const data = sortedDates.map(entry => entry[1]); const ctx = document.getElementById('date-chart').getContext('2d'); if (dateChartInstance) dateChartInstance.destroy(); dateChartInstance = new Chart(ctx, { type: 'line', data: { labels: labels, datasets: [{ label: 'Notícias por Dia', data: data, fill: false, borderColor: '#4F46E5', tension: 0.1 }] } }); }
+        function renderSourceChart(articles) { const sourceCounts = articles.reduce((acc, article) => { const sourceName = article.source.name; acc[sourceName] = (acc[sourceName] || 0) + 1; return acc; }, {}); const topSources = Object.entries(sourceCounts).sort((a, b) => b[1] - a[1]).slice(0, 10); const labels = topSources.map(entry => entry[0]); const data = topSources.map(entry => entry[1]); const ctx = document.getElementById('source-chart').getContext('2d'); if (sourceChartInstance) sourceChartInstance.destroy(); sourceChartInstance = new Chart(ctx, { type: 'bar', data: { labels: labels, datasets: [{ label: 'Notícias por Veículo', data: data, backgroundColor: '#4F46E5' }] }, options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } } } }); }
+        function renderDateChart(articles) { const dateCounts = articles.reduce((acc, article) => { const dateStr = article.publishedAt.toDate().toLocaleDateString('pt-BR'); acc[dateStr] = (acc[dateStr] || 0) + 1; return acc; }, {}); const sortedDates = Object.entries(dateCounts).sort((a, b) => new Date(a[0].split('/').reverse().join('-')) - new Date(b[0].split('/').reverse().join('-'))); const labels = sortedDates.map(entry => entry[0]); const data = sortedDates.map(entry => entry[1]); const ctx = document.getElementById('date-chart').getContext('2d'); if (dateChartInstance) dateChartInstance.destroy(); dateChartInstance = new Chart(ctx, { type: 'line', data: { labels: labels, datasets: [{ label: 'Notícias por Dia', data: data, fill: false, borderColor: '#4F46E5', tension: 0.1 }] } }); }
 
         // --- SEARCH PAGE LOGIC ---
         async function setupSearchPage() { if (!currentUser) return; searchInput.value = ''; searchResults.innerHTML = '<p class="text-gray-500">Carregando todos os artigos para pesquisa...</p>'; try { const q = query(collection(db, "companies", currentUser.companyId, "articles"), orderBy("publishedAt", "desc")); const articlesSnapshot = await getDocs(q); allCompanyArticles = articlesSnapshot.docs.map(d => d.data()); searchResults.innerHTML = `<p class="text-gray-500">Pronto para pesquisar em ${allCompanyArticles.length} artigos. Digite um termo ou use os filtros.</p>`; setupFilters(); } catch (error) { console.error("Error fetching articles for search:", error); searchResults.innerHTML = '<p class="text-red-500">Não foi possível carregar os artigos para pesquisa.</p>'; } }
@@ -406,8 +452,15 @@
             companyList.addEventListener('click', handleCompanyActions);
             confirmDeleteBtn.addEventListener('click', handleConfirmDelete);
             cancelDeleteBtn.addEventListener('click', () => deleteModal.classList.add('hidden'));
+            closeLinkModalBtn.addEventListener('click', () => linkModal.classList.add('hidden'));
+            copyLinkBtn.addEventListener('click', () => {
+                accessLinkInput.select();
+                document.execCommand('copy');
+                showAlert('Link copiado para a área de transferência!', 'success');
+            });
             newsScopeContainer.addEventListener('change', handleSettingsChange);
             apiKeyInput.addEventListener('change', handleSettingsChange);
+            apiProviderSelect.addEventListener('change', handleSettingsChange);
             reportAccessToggle.addEventListener('change', handleSettingsChange);
             keywordForm.addEventListener('submit', handleKeywordSubmit);
             adminKeywordList.addEventListener('click', handleKeywordActions);
@@ -419,6 +472,12 @@
             backToSuperAdminKwBtn.addEventListener('click', () => updateView('super-admin'));
             backToSuperAdminSettingsBtn.addEventListener('click', () => updateView('super-admin'));
             backToSuperAdminUsersBtn.addEventListener('click', () => updateView('super-admin'));
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            const companyParam = urlParams.get('company');
+            if (companyParam) {
+                document.getElementById('login-company').value = decodeURIComponent(companyParam);
+            }
             
             updateView('login');
             
