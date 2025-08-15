@@ -457,7 +457,7 @@
             endDateInput.addEventListener('change', updateCharts);
             reportKeywordFilter.addEventListener('change', updateCharts);
         }
-        function renderSourceChart(articles) { const sourceCounts = articles.reduce((acc, article) => { const sourceName = article.source.name; acc[sourceName] = (acc[sourceName] || 0) + 1; return acc; }, {}); const topSources = Object.entries(sourceCounts).sort((a, b) => b[1] - a[1]).slice(0, 10); const labels = topSources.map(entry => entry[0]); const data = topSources.map(entry => entry[1]); const ctx = document.getElementById('source-chart').getContext('2d'); if (sourceChartInstance) sourceChartInstance.destroy(); sourceChartInstance = new Chart(ctx, { type: 'bar', data: { labels: labels, datasets: [{ label: 'Notícias por Veículo', data: data, backgroundColor: '#4F46E5' }] }, options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } } } }); }
+        function renderSourceChart(articles) { const sourceCounts = articles.reduce((acc, article) => { const sourceName = article.source.name; acc[sourceName] = (acc[sourceName] || 0) + 1; return acc; }, {}); const topSources = Object.entries(sourceCounts).sort((a, b) => b[1] - a[1]).slice(0, 10); const labels = topSources.map(entry => entry[0]); const data = topSources.map(entry => entry[1]); const ctx = document.getElementById('source-chart').getContext('2d'); if (sourceChartInstance) sourceChartInstance.destroy(); sourceChartInstance = new Chart(ctx, { type: 'bar', data: { labels: labels, datasets: [{ label: 'Notícias por Veículo', data: data, backgroundColor: '#4F46E5' }] }, options: { indexAxis: 'x', responsive: true, plugins: { legend: { display: false } } } }); }
         function renderDateChart(articles) { const dateCounts = articles.reduce((acc, article) => { const dateStr = article.publishedAt.toDate().toLocaleDateString('pt-BR'); acc[dateStr] = (acc[dateStr] || 0) + 1; return acc; }, {}); const sortedDates = Object.entries(dateCounts).sort((a, b) => new Date(a[0].split('/').reverse().join('-')) - new Date(b[0].split('/').reverse().join('-'))); const labels = sortedDates.map(entry => entry[0]); const data = sortedDates.map(entry => entry[1]); const ctx = document.getElementById('date-chart').getContext('2d'); if (dateChartInstance) dateChartInstance.destroy(); dateChartInstance = new Chart(ctx, { type: 'line', data: { labels: labels, datasets: [{ label: 'Notícias por Dia', data: data, fill: false, borderColor: '#4F46E5', tension: 0.1 }] } }); }
 
         // --- SEARCH PAGE LOGIC ---
@@ -535,7 +535,9 @@
             const urlParams = new URLSearchParams(window.location.search);
             const companyParam = urlParams.get('company');
             if (companyParam) {
-                document.getElementById('login-company').value = decodeURIComponent(companyParam);
+                const companyInput = document.getElementById('login-company');
+                companyInput.value = decodeURIComponent(companyParam);
+                companyInput.parentElement.style.display = 'none';
             }
             
             updateView('login');
