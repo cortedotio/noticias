@@ -9,7 +9,7 @@ const cors = require("cors")({ origin: true });
 admin.initializeApp();
 const db = admin.firestore();
 
-// --- Lógica Principal do Robô (Refatorada) ---
+// --- Lógica Principal do Robô (Refatorada para Multi-API) ---
 const fetchAndStoreNews = async () => {
   logger.info("Iniciando o robô de busca de notícias...");
 
@@ -34,19 +34,8 @@ const fetchAndStoreNews = async () => {
         keywordsRef.get(),
       ]);
 
-      if (!settingsDoc.exists) {
+      if (!settingsDoc.exists()) {
         logger.warn(`Nenhuma configuração encontrada para ${companyName}.`);
-        return;
-      }
-
-      const settings = settingsDoc.data();
-      const apiKey = settings.apiKey;
-      const apiProvider = settings.apiProvider || 'newsapi';
-      const searchScope = settings.searchScope || 'br';
-      const searchState = settings.searchState || '';
-
-      if (!apiKey) {
-        logger.warn(`Nenhuma chave de API configurada para ${companyName}.`);
         return;
       }
 
@@ -55,77 +44,91 @@ const fetchAndStoreNews = async () => {
         return;
       }
 
+      const settings = settingsDoc.data();
+      const { apiKeyNewsApi, apiKeyGNews, apiKeyYoutube, searchScope = 'br', searchState = '' } = settings;
       let newArticlesFoundForCompany = false;
 
       for (const keywordDoc of keywordsSnapshot.docs) {
-        let keyword = keywordDoc.data().word;
+        let originalKeyword = keywordDoc.data().word;
+        let keyword = originalKeyword;
         
         if (searchScope === 'state' && searchState) {
             const states = {"AC": "Acre", "AL": "Alagoas", "AP": "Amapá", "AM": "Amazonas", "BA": "Bahia", "CE": "Ceará", "DF": "Distrito Federal", "ES": "Espírito Santo", "GO": "Goiás", "MA": "Maranhão", "MT": "Mato Grosso", "MS": "Mato Grosso do Sul", "MG": "Minas Gerais", "PA": "Pará", "PB": "Paraíba", "PR": "Paraná", "PE": "Pernambuco", "PI": "Piauí", "RJ": "Rio de Janeiro", "RN": "Rio Grande do Norte", "RS": "Rio Grande do Sul", "RO": "Rondônia", "RR": "Roraima", "SC": "Santa Catarina", "SP": "São Paulo", "SE": "Sergipe", "TO": "Tocantins"};
             keyword = `${keyword} ${states[searchState] || ''}`;
         }
         
-        logger.info(`Buscando notícias para "${keyword}" da empresa ${companyName} via ${apiProvider}...`);
+        const searchPromises = [];
+
+        // Adiciona a busca na NewsAPI se a chave existir
+        if (apiKeyNewsApi) {
+            let url;
+            if (searchScope === 'international') {
+                url = `https://newsapi.org/v2/everything?q="${encodeURIComponent(keyword)}"&language=pt&apiKey=${apiKeyNewsApi}`;
+            } else {
+                url = `https://newsapi.org/v2/top-headlines?q=${encodeURIComponent(keyword)}&country=br&language=pt&apiKey=${apiKeyNewsApi}`;
+            }
+            searchPromises.push(axios.get(url).then(res => res.data.articles || []));
+        }
+
+        // Adiciona a busca na GNews se a chave existir
+        if (apiKeyGNews) {
+            const url = `https://gnews.io/api/v4/search?q="${encodeURIComponent(keyword)}"&lang=pt&country=br&max=10&apikey=${apiKeyGNews}`;
+            searchPromises.push(axios.get(url).then(res => res.data.articles || []));
+        }
+
+        // Adiciona a busca no YouTube se a chave existir
+        if (apiKeyYoutube) {
+            const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(keyword)}&type=video&order=date&maxResults=10&key=${apiKeyYoutube}`;
+            searchPromises.push(axios.get(url).then(res => (res.data.items || []).map(item => ({
+                title: item.snippet.title,
+                description: item.snippet.description,
+                url: `https://www.youtube.com/watch?v=${item.id.videoId}`,
+                source: { name: `YouTube - ${item.snippet.channelTitle}` },
+                publishedAt: new Date(item.snippet.publishedAt),
+            }))));
+        }
+
+        if (searchPromises.length === 0) {
+            logger.info(`Nenhuma chave de API configurada para a palavra-chave "${originalKeyword}" da empresa ${companyName}.`);
+            continue;
+        }
+
+        const results = await Promise.allSettled(searchPromises);
+        let allArticles = [];
+        results.forEach((result, index) => {
+            if (result.status === 'fulfilled') {
+                allArticles = allArticles.concat(result.value);
+            } else {
+                logger.error(`Falha na busca da API ${index + 1} para "${originalKeyword}":`, result.reason.message);
+            }
+        });
+
+        if (allArticles.length === 0) {
+            logger.info(`Nenhum item novo encontrado para "${originalKeyword}".`);
+            continue;
+        }
+
+        const batch = db.batch();
+        allArticles.forEach((article) => {
+            const articleData = {
+              title: article.title,
+              description: article.description,
+              url: article.url,
+              source: { name: article.source.name, url: article.source.url || null },
+              publishedAt: new Date(article.publishedAt),
+              keyword: originalKeyword,
+              companyId: companyId,
+            };
+            const articleId = Buffer.from(article.url).toString("base64");
+            const articleRef = db.collection("companies").doc(companyId).collection("articles").doc(articleId);
+            batch.set(articleRef, articleData, { merge: true });
+        });
+
+        await batch.commit();
+        logger.info(`${allArticles.length} itens salvos para "${originalKeyword}".`);
         
-        let url;
-        let articles = [];
-
-        try {
-            if (apiProvider === 'youtube') {
-                url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(keyword)}&type=video&order=date&maxResults=10&key=${apiKey}`;
-                const response = await axios.get(url);
-                // Adapta a resposta do YouTube para o nosso formato
-                articles = (response.data.items || []).map(item => ({
-                    title: item.snippet.title,
-                    description: item.snippet.description,
-                    url: `https://www.youtube.com/watch?v=${item.id.videoId}`,
-                    source: { name: item.snippet.channelTitle, url: `https://www.youtube.com/channel/${item.snippet.channelId}` },
-                    publishedAt: new Date(item.snippet.publishedAt),
-                }));
-            } else if (apiProvider === 'gnews') {
-                url = `https://gnews.io/api/v4/search?q="${encodeURIComponent(keyword)}"&lang=pt&country=br&max=10&apikey=${apiKey}`;
-                const response = await axios.get(url);
-                articles = response.data.articles || [];
-            } else { // Padrão é newsapi
-                if (searchScope === 'international') {
-                    url = `https://newsapi.org/v2/everything?q="${encodeURIComponent(keyword)}"&language=pt&apiKey=${apiKey}`;
-                } else {
-                    url = `https://newsapi.org/v2/top-headlines?q=${encodeURIComponent(keyword)}&country=br&language=pt&apiKey=${apiKey}`;
-                }
-                const response = await axios.get(url);
-                articles = response.data.articles || [];
-            }
-
-            if (articles.length === 0) {
-                logger.info(`Nenhum item novo encontrado para "${keyword}".`);
-                continue;
-            }
-
-            const batch = db.batch();
-            articles.forEach((article) => {
-                const articleData = {
-                  title: article.title,
-                  description: article.description,
-                  url: article.url,
-                  source: { name: article.source.name, url: article.source.url || null },
-                  publishedAt: new Date(article.publishedAt),
-                  keyword: keywordDoc.data().word, // Salva a palavra-chave original
-                  companyId: companyId,
-                };
-                const articleId = Buffer.from(article.url).toString("base64");
-                const articleRef = db.collection("companies").doc(companyId).collection("articles").doc(articleId);
-                batch.set(articleRef, articleData, { merge: true });
-            });
-
-            await batch.commit();
-            logger.info(`${articles.length} itens salvos para "${keyword}".`);
-            
-            if (articles.length > 0) {
-                newArticlesFoundForCompany = true;
-            }
-
-        } catch (apiError) {
-            logger.error(`Erro ao buscar notícias para a palavra-chave "${keyword}":`, apiError.response ? apiError.response.data : apiError.message);
+        if (allArticles.length > 0) {
+            newArticlesFoundForCompany = true;
         }
       }
 

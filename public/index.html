@@ -202,16 +202,20 @@
                         </div>
                     </div>
                     <div>
-                        <h4 class="text-lg font-semibold mb-2">Provedor de Notícias e Chave de API</h4>
-                        <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-md">
-                            <label for="api-provider-select" class="block text-sm font-medium mb-1">Selecione o Provedor:</label>
-                            <select id="api-provider-select" class="w-full p-2 border border-gray-300 rounded-md mb-2">
-                                <option value="newsapi">NewsAPI.org (Google News)</option>
-                                <option value="gnews">GNews.io</option>
-                                <option value="youtube">YouTube</option>
-                            </select>
-                            <label for="api-key-input" class="block text-sm font-medium mb-1">Chave da API:</label>
-                            <input type="text" id="api-key-input" placeholder="Cole a chave da API aqui" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                        <h4 class="text-lg font-semibold mb-2">Chaves de API dos Provedores</h4>
+                        <div class="space-y-4">
+                            <div class="bg-gray-100 p-3 rounded-md">
+                                <label for="api-key-newsapi" class="block text-sm font-medium text-gray-700 mb-1">Chave da API (NewsAPI.org)</label>
+                                <input type="text" id="api-key-newsapi" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                            </div>
+                            <div class="bg-gray-100 p-3 rounded-md">
+                                <label for="api-key-gnews" class="block text-sm font-medium text-gray-700 mb-1">Chave da API (GNews.io)</label>
+                                <input type="text" id="api-key-gnews" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                            </div>
+                            <div class="bg-gray-100 p-3 rounded-md">
+                                <label for="api-key-youtube" class="block text-sm font-medium text-gray-700 mb-1">Chave da API (YouTube Data API v3)</label>
+                                <input type="text" id="api-key-youtube" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -321,7 +325,7 @@
         const loginPage = document.getElementById('login-page'), dashboardPage = document.getElementById('dashboard-page'), searchPage = document.getElementById('search-page'), superAdminPage = document.getElementById('super-admin-page'), companyKeywordAdminPage = document.getElementById('company-keyword-admin-page'), companySettingsAdminPage = document.getElementById('company-settings-admin-page'), reportPage = document.getElementById('report-page'), companyUserAdminPage = document.getElementById('company-user-admin-page'), configuracoesAdminPage = document.getElementById('configuracoes-admin-page');
         const loginForm = document.getElementById('login-form');
         const dashboardTitle = document.getElementById('dashboard-title'), currentDateTimeEl = document.getElementById('current-datetime'), dashboardKeywordList = document.getElementById('dashboard-keyword-list'), newsAlertsContainer = document.getElementById('news-alerts-container'), newsAlerts = document.getElementById('news-alerts'), alertDateFilter = document.getElementById('alert-date-filter');
-        const apiKeyInput = document.getElementById('api-key-input'), reportAccessToggle = document.getElementById('report-access-toggle'), logoUploadInput = document.getElementById('logo-upload');
+        const reportAccessToggle = document.getElementById('report-access-toggle'), logoUploadInput = document.getElementById('logo-upload');
         const headerLogoContainer = document.getElementById('header-logo-container'), loginLogoContainer = document.getElementById('login-logo-container');
         const filterContainer = document.getElementById('filter-container'), searchInput = document.getElementById('search-input'), searchResults = document.getElementById('search-results');
         const companyForm = document.getElementById('company-form'), companyList = document.getElementById('company-list');
@@ -332,12 +336,14 @@
         const deleteModal = document.getElementById('delete-modal'), confirmDeleteBtn = document.getElementById('confirm-delete-btn'), cancelDeleteBtn = document.getElementById('cancel-delete-btn'), companyNameToDeleteEl = document.getElementById('company-name-to-delete');
         const newsScopeContainer = document.getElementById('news-scope-container');
         const startDateInput = document.getElementById('start-date'), endDateInput = document.getElementById('end-date');
-        const apiProviderSelect = document.getElementById('api-provider-select');
         const linkModal = document.getElementById('link-modal'), accessLinkInput = document.getElementById('access-link-input'), copyLinkBtn = document.getElementById('copy-link-btn'), closeLinkModalBtn = document.getElementById('close-link-modal-btn');
         const reportKeywordFilter = document.getElementById('report-keyword-filter');
         const stateSelectContainer = document.getElementById('state-select-container');
         const stateSelect = document.getElementById('state-select');
         const changePasswordForm = document.getElementById('change-password-form');
+        const apiKeyNewsApiInput = document.getElementById('api-key-newsapi');
+        const apiKeyGNewsInput = document.getElementById('api-key-gnews');
+        const apiKeyYoutubeInput = document.getElementById('api-key-youtube');
         
         // --- APPLICATION STATE ---
         let currentUser = null, clockInterval = null, selectedCompanyForManagement = null, allCompanyArticles = [], companyIdToDelete = null;
@@ -433,8 +439,8 @@
         async function handleKeywordActions(e) { if (!selectedCompanyForManagement) return; const id = e.target.dataset.id; if (!id) return; try { if (e.target.classList.contains('edit-keyword-btn')) { const kwDoc = await getDoc(doc(db, "companies", selectedCompanyForManagement.id, "keywords", id)); if (kwDoc.exists()) { const kw = kwDoc.data(); keywordInput.value = kw.word; keywordIdInput.value = id; keywordInput.focus(); } } if (e.target.classList.contains('delete-keyword-btn')) { await deleteDoc(doc(db, "companies", selectedCompanyForManagement.id, "keywords", id)); renderKeywordsForSelectedCompany(); } } catch (error) { console.error("Error handling keyword action:", error); } }
         
         // --- SETTINGS MANAGEMENT LOGIC (BY SUPER ADMIN) ---
-        async function renderCompanySettingsAdminPage() { if (!selectedCompanyForManagement) return; companySettingsAdminTitle.textContent = `Configurações para: ${selectedCompanyForManagement.name}`; try { const settingsRef = doc(db, "settings", selectedCompanyForManagement.id); const docSnap = await getDoc(settingsRef); if (docSnap.exists()) { const settings = docSnap.data(); apiKeyInput.value = settings.apiKey || ''; apiProviderSelect.value = settings.apiProvider || 'newsapi'; reportAccessToggle.checked = settings.reportAccess !== false; document.querySelector(`input[name="news-scope"][value="${settings.searchScope || 'br'}"]`).checked = true; stateSelect.value = settings.searchState || ''; } else { apiKeyInput.value = ''; apiProviderSelect.value = 'newsapi'; reportAccessToggle.checked = true; document.querySelector('input[name="news-scope"][value="br"]').checked = true; stateSelect.value = ''; } handleScopeChange(); } catch (error) { console.error("Error rendering settings:", error); } }
-        async function handleSettingsChange(e) { if (!selectedCompanyForManagement) return; const settingsRef = doc(db, "settings", selectedCompanyForManagement.id); const key = e.target.id === 'report-access-toggle' ? 'reportAccess' : e.target.name === 'news-scope' ? 'searchScope' : e.target.id === 'api-provider-select' ? 'apiProvider' : e.target.id === 'state-select' ? 'searchState' : 'apiKey'; const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value; try { await setDoc(settingsRef, { [key]: value }, { merge: true }); showAlert('Configuração salva!', 'success'); } catch (error) { console.error("Error saving setting:", error); } }
+        async function renderCompanySettingsAdminPage() { if (!selectedCompanyForManagement) return; companySettingsAdminTitle.textContent = `Configurações para: ${selectedCompanyForManagement.name}`; try { const settingsRef = doc(db, "settings", selectedCompanyForManagement.id); const docSnap = await getDoc(settingsRef); if (docSnap.exists()) { const settings = docSnap.data(); apiKeyNewsApiInput.value = settings.apiKeyNewsApi || ''; apiKeyGNewsInput.value = settings.apiKeyGNews || ''; apiKeyYoutubeInput.value = settings.apiKeyYoutube || ''; reportAccessToggle.checked = settings.reportAccess !== false; document.querySelector(`input[name="news-scope"][value="${settings.searchScope || 'br'}"]`).checked = true; stateSelect.value = settings.searchState || ''; } else { apiKeyNewsApiInput.value = ''; apiKeyGNewsInput.value = ''; apiKeyYoutubeInput.value = ''; reportAccessToggle.checked = true; document.querySelector('input[name="news-scope"][value="br"]').checked = true; stateSelect.value = ''; } handleScopeChange(); } catch (error) { console.error("Error rendering settings:", error); } }
+        async function handleSettingsChange(e) { if (!selectedCompanyForManagement) return; const settingsRef = doc(db, "settings", selectedCompanyForManagement.id); let key, value; if (e.target.id === 'report-access-toggle') { key = 'reportAccess'; value = e.target.checked; } else if (e.target.name === 'news-scope') { key = 'searchScope'; value = e.target.value; } else if (e.target.id === 'state-select') { key = 'searchState'; value = e.target.value; } else { key = e.target.id.replace('api-key-', 'apiKey'); value = e.target.value; } try { await setDoc(settingsRef, { [key]: value }, { merge: true }); showAlert('Configuração salva!', 'success'); } catch (error) { console.error("Error saving setting:", error); } }
         function handleScopeChange() { const selectedScope = document.querySelector('input[name="news-scope"]:checked').value; stateSelectContainer.classList.toggle('hidden', selectedScope !== 'state'); }
 
         // --- NOTIFICATION LOGIC ---
@@ -555,8 +561,9 @@
                 showAlert('Link copiado para a área de transferência!', 'success');
             });
             newsScopeContainer.addEventListener('change', (e) => { handleSettingsChange(e); handleScopeChange(); });
-            apiKeyInput.addEventListener('change', handleSettingsChange);
-            apiProviderSelect.addEventListener('change', handleSettingsChange);
+            apiKeyNewsApiInput.addEventListener('change', handleSettingsChange);
+            apiKeyGNewsInput.addEventListener('change', handleSettingsChange);
+            apiKeyYoutubeInput.addEventListener('change', handleSettingsChange);
             reportAccessToggle.addEventListener('change', handleSettingsChange);
             stateSelect.addEventListener('change', handleSettingsChange);
             keywordForm.addEventListener('submit', handleKeywordSubmit);
