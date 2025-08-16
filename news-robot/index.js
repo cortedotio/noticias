@@ -6,10 +6,12 @@ const axios = require("axios");
 const logger = require("firebase-functions/logger");
 const cors = require("cors")({ origin: true });
 const { LanguageServiceClient } = require('@google-cloud/language');
+const { PubSub } = require('@google-cloud/pubsub');
 
 admin.initializeApp();
 const db = admin.firestore();
 const languageClient = new LanguageServiceClient();
+const pubsub = new PubSub();
 
 // --- Lógica Principal do Robô (Refatorada para Multi-API) ---
 const fetchAndStoreNews = async () => {
@@ -161,6 +163,18 @@ const fetchAndStoreNews = async () => {
       if (newArticlesFoundForCompany) {
         await settingsRef.set({ newAlerts: true }, { merge: true });
         logger.info(`Sinal de notificação ativado para ${companyName}.`);
+        
+        // Publica uma mensagem no Pub/Sub
+        const topic = pubsub.topic('new-alerts');
+        const message = {
+            data: {
+                companyId: companyId,
+                companyName: companyName,
+                timestamp: new Date().toISOString()
+            }
+        };
+        await topic.publishMessage(message);
+        logger.info(`Mensagem de notificação publicada no Pub/Sub para ${companyName}.`);
       }
     });
 
