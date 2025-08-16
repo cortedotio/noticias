@@ -42,7 +42,7 @@
         <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
             <div class="text-2xl font-bold text-indigo-600 flex items-center">
                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline-block mr-2 h-8 w-8"><path d="M2.5 17a2.4 2.4 0 0 1 3 0L12 23l6.5-6.5a2.4 2.4 0 0 1 3 0Z"/><path d="M5 11.5a2.5 2.5 0 0 1 0-5c1.5 0 2.8 1.3 2.8 2.8V13c0 1.4-1.3 2.8-2.8 2.8-1.5 0-2.8-1.3-2.8-2.8V8.5"/><path d="M19 11.5a2.5 2.5 0 0 0 0-5c-1.5 0-2.8 1.3-2.8 2.8V13c0 1.4 1.3 2.8 2.8 2.8 1.5 0-2.8-1.3-2.8-2.8V8.5"/></svg>
-                NewsClip
+                Aurora clipping
             </div>
             <div class="flex items-center">
                 <div id="nav-logged-in" class="hidden items-center">
@@ -71,7 +71,7 @@
                 <h1 class="text-3xl font-bold text-center text-gray-800">Bem-Vindo</h1>
                 <p class="text-center text-gray-500 mt-2 mb-6">Informe seus dados de acesso</p>
                 <form id="login-form">
-                    <div class="mb-4"><label for="login-company" class="block text-sm font-medium text-gray-700 mb-1">Empresa</label><input type="text" id="login-company" class="w-full px-3 py-2 border border-gray-300 rounded-md"></div>
+                    <div id="login-company-wrapper" class="mb-4"><label for="login-company" class="block text-sm font-medium text-gray-700 mb-1">Empresa</label><input type="text" id="login-company" class="w-full px-3 py-2 border border-gray-300 rounded-md"></div>
                     <div class="mb-4"><label for="login-user" class="block text-sm font-medium text-gray-700 mb-1">Usuário</label><input type="text" id="login-user" class="w-full px-3 py-2 border border-gray-300 rounded-md" required></div>
                     <div class="mb-6"><label for="login-password" class="block text-sm font-medium text-gray-700 mb-1">Senha</label><input type="password" id="login-password" class="w-full px-3 py-2 border border-gray-300 rounded-md" required></div>
                     <button type="submit" class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700">Entrar</button>
@@ -129,6 +129,14 @@
                     <h3 class="text-xl font-semibold mb-4">Empresas Cadastradas</h3>
                     <ul id="company-list" class="space-y-2 max-h-96 overflow-y-auto"></ul>
                 </div>
+                <div class="bg-white p-6 rounded-lg shadow-lg lg:col-span-2">
+                    <h3 class="text-xl font-semibold mb-4">Alterar Senha do Super Admin</h3>
+                    <form id="change-password-form" class="space-y-4">
+                        <div><label for="current-password" class="block text-sm font-medium text-gray-700">Senha Atual</label><input type="password" id="current-password" class="w-full px-3 py-2 border border-gray-300 rounded-md" required></div>
+                        <div><label for="new-password" class="block text-sm font-medium text-gray-700">Nova Senha</label><input type="password" id="new-password" class="w-full px-3 py-2 border border-gray-300 rounded-md" required></div>
+                        <button type="submit" class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700">Alterar Senha</button>
+                    </form>
+                </div>
             </div>
         </section>
 
@@ -174,7 +182,11 @@
                         <div id="news-scope-container" class="space-y-2">
                             <div class="flex items-center"><input type="radio" id="scope-nacional" name="news-scope" value="br" class="h-4 w-4 text-indigo-600 border-gray-300"><label for="scope-nacional" class="ml-2 block text-sm text-gray-900">Nacionais (Brasil)</label></div>
                             <div class="flex items-center"><input type="radio" id="scope-internacional" name="news-scope" value="international" class="h-4 w-4 text-indigo-600 border-gray-300"><label for="scope-internacional" class="ml-2 block text-sm text-gray-900">Internacionais</label></div>
-                            <div class="flex items-center"><input type="radio" id="scope-estadual" name="news-scope" value="state" class="h-4 w-4 text-indigo-600 border-gray-300" disabled><label for="scope-estadual" class="ml-2 block text-sm text-gray-500">Estaduais (Em breve)</label></div>
+                            <div class="flex items-center"><input type="radio" id="scope-estadual" name="news-scope" value="state" class="h-4 w-4 text-indigo-600 border-gray-300"><label for="scope-estadual" class="ml-2 block text-sm text-gray-900">Estaduais</label></div>
+                        </div>
+                        <div id="state-select-container" class="hidden mt-2">
+                            <label for="state-select" class="block text-sm font-medium text-gray-700 mb-1">Selecione o Estado:</label>
+                            <select id="state-select" class="w-full p-2 border border-gray-300 rounded-md"></select>
                         </div>
                     </div>
                     <div>
@@ -310,10 +322,14 @@
         const apiProviderSelect = document.getElementById('api-provider-select');
         const linkModal = document.getElementById('link-modal'), accessLinkInput = document.getElementById('access-link-input'), copyLinkBtn = document.getElementById('copy-link-btn'), closeLinkModalBtn = document.getElementById('close-link-modal-btn');
         const reportKeywordFilter = document.getElementById('report-keyword-filter');
+        const stateSelectContainer = document.getElementById('state-select-container');
+        const stateSelect = document.getElementById('state-select');
+        const changePasswordForm = document.getElementById('change-password-form');
         
         // --- APPLICATION STATE ---
         let currentUser = null, clockInterval = null, selectedCompanyForManagement = null, allCompanyArticles = [], companyIdToDelete = null;
         let sourceChartInstance = null, dateChartInstance = null;
+        let superAdminCredentials = { user: 'ulysses', pass: 'adminqwert' };
 
         // --- UTILITY FUNCTIONS ---
         function showAlert(message, type = 'success') { const c = type === 'success' ? 'bg-green-100 border-green-500 text-green-700' : 'bg-red-100 border-red-500 text-red-700'; globalAlert.innerHTML = `<div class="${c} border-l-4 p-4 rounded-md fade-in" role="alert"><p>${message}</p></div>`; setTimeout(() => { globalAlert.innerHTML = ''; }, 4000); }
@@ -352,8 +368,9 @@
         async function loadAndDisplayLogo() { const companyId = currentUser ? currentUser.companyId : null; if (!companyId) { headerLogoContainer.innerHTML = ''; loginLogoContainer.innerHTML = ''; return; } const settingsRef = doc(db, "settings", companyId); try { const docSnap = await getDoc(settingsRef); const logoData = docSnap.exists() ? docSnap.data().logo : null; const logoHtml = logoData ? `<img src="${logoData}" alt="Logo da Empresa" class="h-full w-auto object-contain">` : ''; headerLogoContainer.innerHTML = logoHtml; loginLogoContainer.innerHTML = logoHtml; } catch (error) { console.error("Error loading logo:", error); } }
 
         // --- AUTHENTICATION LOGIC ---
-        async function handleLogin(e) { e.preventDefault(); const companyName = document.getElementById('login-company').value.trim(); const user = document.getElementById('login-user').value.trim(); const pass = document.getElementById('login-password').value.trim(); if (user.toLowerCase() === 'ulysses' && pass === 'adminqwert') { currentUser = { username: 'Ulysses', isSuperAdmin: true, companyId: 'super', companyName: 'Super Admin' }; setStorage('clipping_currentUser', currentUser); updateView('dashboard'); return; } try { const companiesQuery = query(collection(db, "companies"), where("name", "==", companyName.toUpperCase())); const companiesSnapshot = await getDocs(companiesQuery); if (companiesSnapshot.empty) { showAlert('Empresa não encontrada.', 'error'); return; } const companyDoc = companiesSnapshot.docs[0]; const company = { id: companyDoc.id, ...companyDoc.data() }; if (company.status === 'inactive') { showAlert('Esta empresa está inativa e não pode ser acessada.', 'error'); return; } const usersQuery = query(collection(db, "companies", company.id, "users"), where("username", "==", user), where("password", "==", pass)); const usersSnapshot = await getDocs(usersQuery); if(!usersSnapshot.empty) { currentUser = { username: user, companyId: company.id, companyName: company.name, isSuperAdmin: false }; setStorage('clipping_currentUser', currentUser); updateView('dashboard'); } else { showAlert('Usuário ou senha inválidos para esta empresa.', 'error'); } } catch (error) { console.error("Login error:", error); showAlert("Ocorreu um erro durante o login.", "error"); } }
+        async function handleLogin(e) { e.preventDefault(); const companyName = document.getElementById('login-company').value.trim(); const user = document.getElementById('login-user').value.trim(); const pass = document.getElementById('login-password').value.trim(); if (companyName.toLowerCase() === 'newsclip' && user.toLowerCase() === superAdminCredentials.user && pass === superAdminCredentials.pass) { currentUser = { username: 'Ulysses', isSuperAdmin: true, companyId: 'super', companyName: 'Super Admin' }; setStorage('clipping_currentUser', currentUser); updateView('dashboard'); return; } try { const companiesQuery = query(collection(db, "companies"), where("name", "==", companyName.toUpperCase())); const companiesSnapshot = await getDocs(companiesQuery); if (companiesSnapshot.empty) { showAlert('Empresa não encontrada.', 'error'); return; } const companyDoc = companiesSnapshot.docs[0]; const company = { id: companyDoc.id, ...companyDoc.data() }; if (company.status === 'inactive') { showAlert('Esta empresa está inativa e não pode ser acessada.', 'error'); return; } const usersQuery = query(collection(db, "companies", company.id, "users"), where("username", "==", user), where("password", "==", pass)); const usersSnapshot = await getDocs(usersQuery); if(!usersSnapshot.empty) { currentUser = { username: user, companyId: company.id, companyName: company.name, isSuperAdmin: false }; setStorage('clipping_currentUser', currentUser); updateView('dashboard'); } else { showAlert('Usuário ou senha inválidos para esta empresa.', 'error'); } } catch (error) { console.error("Login error:", error); showAlert("Ocorreu um erro durante o login.", "error"); } }
         function handleLogout() { currentUser = null; selectedCompanyForManagement = null; localStorage.removeItem('clipping_currentUser'); if (clockInterval) clearInterval(clockInterval); headerLogoContainer.innerHTML = ''; updateView('login'); }
+        function handleChangePassword(e) { e.preventDefault(); const currentPass = document.getElementById('current-password').value; const newPass = document.getElementById('new-password').value; if (currentPass === superAdminCredentials.pass) { superAdminCredentials.pass = newPass; showAlert('Senha alterada com sucesso para esta sessão.', 'success'); changePasswordForm.reset(); } else { showAlert('Senha atual incorreta.', 'error'); } }
 
         // --- DASHBOARD LOGIC ---
         async function renderDashboard() { if (!currentUser) return; document.getElementById('dashboard-grid').style.display = currentUser.isSuperAdmin ? 'none' : 'grid'; document.getElementById('super-admin-dashboard-message').style.display = currentUser.isSuperAdmin ? 'block' : 'none'; dashboardTitle.textContent = currentUser.isSuperAdmin ? 'Painel Super Admin' : `Notícias do Dia - ${currentUser.companyName}`; if (!currentUser.isSuperAdmin) { renderVerticalKeywordList(); const settingsRef = doc(db, "settings", currentUser.companyId); try { const docSnap = await getDoc(settingsRef); const hasReportAccess = docSnap.exists() ? docSnap.data().reportAccess : true; newsAlertsContainer.style.display = hasReportAccess ? 'block' : 'none'; navRelatorio.classList.toggle('hidden', !hasReportAccess || currentUser.isSuperAdmin); populateInitialAlerts(); checkNotificationStatus(); } catch (error) { console.error("Error rendering dashboard:", error); } } }
@@ -403,9 +420,10 @@
         async function handleKeywordActions(e) { if (!selectedCompanyForManagement) return; const id = e.target.dataset.id; if (!id) return; try { if (e.target.classList.contains('edit-keyword-btn')) { const kwDoc = await getDoc(doc(db, "companies", selectedCompanyForManagement.id, "keywords", id)); if (kwDoc.exists()) { const kw = kwDoc.data(); keywordInput.value = kw.word; keywordIdInput.value = id; keywordInput.focus(); } } if (e.target.classList.contains('delete-keyword-btn')) { await deleteDoc(doc(db, "companies", selectedCompanyForManagement.id, "keywords", id)); renderKeywordsForSelectedCompany(); } } catch (error) { console.error("Error handling keyword action:", error); } }
         
         // --- SETTINGS MANAGEMENT LOGIC (BY SUPER ADMIN) ---
-        async function renderCompanySettingsAdminPage() { if (!selectedCompanyForManagement) return; companySettingsAdminTitle.textContent = `Configurações para: ${selectedCompanyForManagement.name}`; try { const settingsRef = doc(db, "settings", selectedCompanyForManagement.id); const docSnap = await getDoc(settingsRef); if (docSnap.exists()) { const settings = docSnap.data(); apiKeyInput.value = settings.apiKey || ''; apiProviderSelect.value = settings.apiProvider || 'newsapi'; reportAccessToggle.checked = settings.reportAccess !== false; document.querySelector(`input[name="news-scope"][value="${settings.searchScope || 'br'}"]`).checked = true; } else { apiKeyInput.value = ''; apiProviderSelect.value = 'newsapi'; reportAccessToggle.checked = true; document.querySelector('input[name="news-scope"][value="br"]').checked = true; } } catch (error) { console.error("Error rendering settings:", error); } }
-        async function handleSettingsChange(e) { if (!selectedCompanyForManagement) return; const settingsRef = doc(db, "settings", selectedCompanyForManagement.id); const key = e.target.id === 'report-access-toggle' ? 'reportAccess' : e.target.name === 'news-scope' ? 'searchScope' : e.target.id === 'api-provider-select' ? 'apiProvider' : 'apiKey'; const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value; try { await setDoc(settingsRef, { [key]: value }, { merge: true }); showAlert('Configuração salva!', 'success'); } catch (error) { console.error("Error saving setting:", error); } }
-        
+        async function renderCompanySettingsAdminPage() { if (!selectedCompanyForManagement) return; companySettingsAdminTitle.textContent = `Configurações para: ${selectedCompanyForManagement.name}`; try { const settingsRef = doc(db, "settings", selectedCompanyForManagement.id); const docSnap = await getDoc(settingsRef); if (docSnap.exists()) { const settings = docSnap.data(); apiKeyInput.value = settings.apiKey || ''; apiProviderSelect.value = settings.apiProvider || 'newsapi'; reportAccessToggle.checked = settings.reportAccess !== false; document.querySelector(`input[name="news-scope"][value="${settings.searchScope || 'br'}"]`).checked = true; stateSelect.value = settings.searchState || ''; } else { apiKeyInput.value = ''; apiProviderSelect.value = 'newsapi'; reportAccessToggle.checked = true; document.querySelector('input[name="news-scope"][value="br"]').checked = true; stateSelect.value = ''; } handleScopeChange(); } catch (error) { console.error("Error rendering settings:", error); } }
+        async function handleSettingsChange(e) { if (!selectedCompanyForManagement) return; const settingsRef = doc(db, "settings", selectedCompanyForManagement.id); const key = e.target.id === 'report-access-toggle' ? 'reportAccess' : e.target.name === 'news-scope' ? 'searchScope' : e.target.id === 'api-provider-select' ? 'apiProvider' : e.target.id === 'state-select' ? 'searchState' : 'apiKey'; const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value; try { await setDoc(settingsRef, { [key]: value }, { merge: true }); showAlert('Configuração salva!', 'success'); } catch (error) { console.error("Error saving setting:", error); } }
+        function handleScopeChange() { const selectedScope = document.querySelector('input[name="news-scope"]:checked').value; stateSelectContainer.classList.toggle('hidden', selectedScope !== 'state'); }
+
         // --- NOTIFICATION LOGIC ---
         async function checkNotificationStatus() { if (!currentUser) return; try { const settingsRef = doc(db, "settings", currentUser.companyId); const docSnap = await getDoc(settingsRef); const hasNewAlerts = docSnap.exists() ? docSnap.data().newAlerts : false; notificationBadge.classList.toggle('hidden', !hasNewAlerts); } catch (error) { console.error("Error checking notifications:", error); } }
         function triggerNotificationAnimation() { notificationBell.classList.add('animate-ring'); setTimeout(() => { notificationBell.classList.remove('animate-ring'); }, 1000); }
@@ -477,7 +495,6 @@
             document.querySelectorAll('.keyword-filter').forEach(el => el.classList.remove('active'));
 
             if (isAlreadyActive && keywordToFilter !== 'all') {
-                // If clicking the active filter again (and it's not "all"), reset to "all"
                 document.querySelector('.keyword-filter[data-keyword="all"]').classList.add('active');
             } else {
                 target.classList.add('active');
@@ -499,6 +516,14 @@
 
         // --- INITIALIZATION AND EVENT LISTENERS ---
         document.addEventListener('DOMContentLoaded', () => {
+            const states = {"AC": "Acre", "AL": "Alagoas", "AP": "Amapá", "AM": "Amazonas", "BA": "Bahia", "CE": "Ceará", "DF": "Distrito Federal", "ES": "Espírito Santo", "GO": "Goiás", "MA": "Maranhão", "MT": "Mato Grosso", "MS": "Mato Grosso do Sul", "MG": "Minas Gerais", "PA": "Pará", "PB": "Paraíba", "PR": "Paraná", "PE": "Pernambuco", "PI": "Piauí", "RJ": "Rio de Janeiro", "RN": "Rio Grande do Norte", "RS": "Rio Grande do Sul", "RO": "Rondônia", "RR": "Roraima", "SC": "Santa Catarina", "SP": "São Paulo", "SE": "Sergipe", "TO": "Tocantins"};
+            for (const [uf, name] of Object.entries(states)) {
+                const option = document.createElement('option');
+                option.value = uf;
+                option.textContent = name;
+                stateSelect.appendChild(option);
+            }
+
             loginForm.addEventListener('submit', handleLogin);
             navInicio.addEventListener('click', (e) => { e.preventDefault(); updateView('dashboard'); });
             navRelatorio.addEventListener('click', (e) => { e.preventDefault(); updateView('report'); });
@@ -515,10 +540,11 @@
                 document.execCommand('copy');
                 showAlert('Link copiado para a área de transferência!', 'success');
             });
-            newsScopeContainer.addEventListener('change', handleSettingsChange);
+            newsScopeContainer.addEventListener('change', (e) => { handleSettingsChange(e); handleScopeChange(); });
             apiKeyInput.addEventListener('change', handleSettingsChange);
             apiProviderSelect.addEventListener('change', handleSettingsChange);
             reportAccessToggle.addEventListener('change', handleSettingsChange);
+            stateSelect.addEventListener('change', handleSettingsChange);
             keywordForm.addEventListener('submit', handleKeywordSubmit);
             adminKeywordList.addEventListener('click', handleKeywordActions);
             userForm.addEventListener('submit', handleUserSubmit);
@@ -531,13 +557,14 @@
             backToSuperAdminUsersBtn.addEventListener('click', () => updateView('super-admin'));
             dashboardKeywordList.addEventListener('click', handleDashboardKeywordFilter);
             alertDateFilter.addEventListener('change', filterAlertsByDate);
+            changePasswordForm.addEventListener('submit', handleChangePassword);
             
             const urlParams = new URLSearchParams(window.location.search);
             const companyParam = urlParams.get('company');
             if (companyParam) {
                 const companyInput = document.getElementById('login-company');
                 companyInput.value = decodeURIComponent(companyParam);
-                companyInput.parentElement.style.display = 'none';
+                document.getElementById('login-company-wrapper').style.display = 'none';
             }
             
             updateView('login');

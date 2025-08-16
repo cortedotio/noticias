@@ -44,6 +44,7 @@ const fetchAndStoreNews = async () => {
       const apiKey = settings.apiKey;
       const apiProvider = settings.apiProvider || 'newsapi'; // Padrão: newsapi
       const searchScope = settings.searchScope || 'br'; // Padrão: 'br' (nacional)
+      const searchState = settings.searchState || ''; // Novo campo para o estado
 
       if (!apiKey) {
         logger.warn(`Nenhuma chave de API configurada para ${companyName}.`);
@@ -58,7 +59,14 @@ const fetchAndStoreNews = async () => {
       let newArticlesFoundForCompany = false;
 
       for (const keywordDoc of keywordsSnapshot.docs) {
-        const keyword = keywordDoc.data().word;
+        let keyword = keywordDoc.data().word;
+        
+        // Adiciona o nome do estado à palavra-chave se o escopo for estadual
+        if (searchScope === 'state' && searchState) {
+            const states = {"AC": "Acre", "AL": "Alagoas", "AP": "Amapá", "AM": "Amazonas", "BA": "Bahia", "CE": "Ceará", "DF": "Distrito Federal", "ES": "Espírito Santo", "GO": "Goiás", "MA": "Maranhão", "MT": "Mato Grosso", "MS": "Mato Grosso do Sul", "MG": "Minas Gerais", "PA": "Pará", "PB": "Paraíba", "PR": "Paraná", "PE": "Pernambuco", "PI": "Piauí", "RJ": "Rio de Janeiro", "RN": "Rio Grande do Norte", "RS": "Rio Grande do Sul", "RO": "Rondônia", "RR": "Roraima", "SC": "Santa Catarina", "SP": "São Paulo", "SE": "Sergipe", "TO": "Tocantins"};
+            keyword = `${keyword} ${states[searchState] || ''}`;
+        }
+        
         logger.info(`Buscando notícias para "${keyword}" da empresa ${companyName} via ${apiProvider}...`);
         
         let url;
@@ -90,7 +98,7 @@ const fetchAndStoreNews = async () => {
               url: article.url,
               source: { name: article.source.name, url: article.source.url || null },
               publishedAt: new Date(article.publishedAt),
-              keyword: keyword,
+              keyword: keywordDoc.data().word, // Salva a palavra-chave original
               companyId: companyId,
             };
             const articleId = Buffer.from(article.url).toString("base64");
