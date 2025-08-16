@@ -33,6 +33,12 @@
             background-color: #4F46E5 !important;
             color: white !important;
         }
+        #notification-badge {
+            min-width: 1.25rem;
+            height: 1.25rem;
+            padding: 0 0.25rem;
+            line-height: 1.25rem;
+        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
@@ -50,9 +56,10 @@
                     <a href="#" id="nav-relatorio" class="hidden text-gray-600 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">Relatório</a>
                     <a href="#" id="nav-pesquisa" class="text-gray-600 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">Pesquisa</a>
                     <a href="#" id="nav-super-admin" class="hidden text-red-600 hover:text-red-800 px-3 py-2 rounded-md text-sm font-bold">Super Admin</a>
+                    <a href="#" id="nav-configuracoes-admin" class="hidden text-gray-600 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">Configurações</a>
                     <div id="notification-bell-container" class="relative cursor-pointer ml-4">
                         <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
-                        <span id="notification-badge" class="hidden absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white"></span>
+                        <span id="notification-badge" class="hidden absolute -top-2 -right-2 text-white text-xs font-bold text-center rounded-full bg-red-500"></span>
                     </div>
                     <a href="#" id="nav-logout" class="ml-4 bg-indigo-600 text-white hover:bg-indigo-700 px-3 py-2 rounded-md text-sm font-medium">Sair</a>
                 </div>
@@ -129,14 +136,19 @@
                     <h3 class="text-xl font-semibold mb-4">Empresas Cadastradas</h3>
                     <ul id="company-list" class="space-y-2 max-h-96 overflow-y-auto"></ul>
                 </div>
-                <div class="bg-white p-6 rounded-lg shadow-lg lg:col-span-2">
-                    <h3 class="text-xl font-semibold mb-4">Alterar Senha do Super Admin</h3>
-                    <form id="change-password-form" class="space-y-4">
-                        <div><label for="current-password" class="block text-sm font-medium text-gray-700">Senha Atual</label><input type="password" id="current-password" class="w-full px-3 py-2 border border-gray-300 rounded-md" required></div>
-                        <div><label for="new-password" class="block text-sm font-medium text-gray-700">Nova Senha</label><input type="password" id="new-password" class="w-full px-3 py-2 border border-gray-300 rounded-md" required></div>
-                        <button type="submit" class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700">Alterar Senha</button>
-                    </form>
-                </div>
+            </div>
+        </section>
+
+        <!-- Super Admin Settings Section -->
+        <section id="configuracoes-admin-page" class="page-section fade-in">
+            <h2 class="text-3xl font-bold mb-6">Configurações do Super Admin</h2>
+            <div class="max-w-lg mx-auto bg-white p-6 rounded-lg shadow-lg">
+                <h3 class="text-xl font-semibold mb-4">Alterar Senha de Acesso</h3>
+                <form id="change-password-form" class="space-y-4">
+                    <div><label for="current-password" class="block text-sm font-medium text-gray-700">Senha Atual</label><input type="password" id="current-password" class="w-full px-3 py-2 border border-gray-300 rounded-md" required></div>
+                    <div><label for="new-password" class="block text-sm font-medium text-gray-700">Nova Senha</label><input type="password" id="new-password" class="w-full px-3 py-2 border border-gray-300 rounded-md" required></div>
+                    <button type="submit" class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700">Alterar Senha</button>
+                </form>
             </div>
         </section>
 
@@ -303,9 +315,9 @@
         // --- DOM ELEMENTS ---
         const pageSections = document.querySelectorAll('.page-section');
         const navLoggedIn = document.getElementById('nav-logged-in');
-        const navInicio = document.getElementById('nav-inicio'), navRelatorio = document.getElementById('nav-relatorio'), navPesquisa = document.getElementById('nav-pesquisa'), navSuperAdmin = document.getElementById('nav-super-admin'), navLogout = document.getElementById('nav-logout');
+        const navInicio = document.getElementById('nav-inicio'), navRelatorio = document.getElementById('nav-relatorio'), navPesquisa = document.getElementById('nav-pesquisa'), navSuperAdmin = document.getElementById('nav-super-admin'), navLogout = document.getElementById('nav-logout'), navConfiguracoesAdmin = document.getElementById('nav-configuracoes-admin');
         const globalAlert = document.getElementById('global-alert');
-        const loginPage = document.getElementById('login-page'), dashboardPage = document.getElementById('dashboard-page'), searchPage = document.getElementById('search-page'), superAdminPage = document.getElementById('super-admin-page'), companyKeywordAdminPage = document.getElementById('company-keyword-admin-page'), companySettingsAdminPage = document.getElementById('company-settings-admin-page'), reportPage = document.getElementById('report-page'), companyUserAdminPage = document.getElementById('company-user-admin-page');
+        const loginPage = document.getElementById('login-page'), dashboardPage = document.getElementById('dashboard-page'), searchPage = document.getElementById('search-page'), superAdminPage = document.getElementById('super-admin-page'), companyKeywordAdminPage = document.getElementById('company-keyword-admin-page'), companySettingsAdminPage = document.getElementById('company-settings-admin-page'), reportPage = document.getElementById('report-page'), companyUserAdminPage = document.getElementById('company-user-admin-page'), configuracoesAdminPage = document.getElementById('configuracoes-admin-page');
         const loginForm = document.getElementById('login-form');
         const dashboardTitle = document.getElementById('dashboard-title'), currentDateTimeEl = document.getElementById('current-datetime'), dashboardKeywordList = document.getElementById('dashboard-keyword-list'), newsAlertsContainer = document.getElementById('news-alerts-container'), newsAlerts = document.getElementById('news-alerts'), alertDateFilter = document.getElementById('alert-date-filter');
         const apiKeyInput = document.getElementById('api-key-input'), reportAccessToggle = document.getElementById('report-access-toggle'), logoUploadInput = document.getElementById('logo-upload');
@@ -333,7 +345,7 @@
 
         // --- UTILITY FUNCTIONS ---
         function showAlert(message, type = 'success') { const c = type === 'success' ? 'bg-green-100 border-green-500 text-green-700' : 'bg-red-100 border-red-500 text-red-700'; globalAlert.innerHTML = `<div class="${c} border-l-4 p-4 rounded-md fade-in" role="alert"><p>${message}</p></div>`; setTimeout(() => { globalAlert.innerHTML = ''; }, 4000); }
-        function updateView(pageName) { pageSections.forEach(s => s.classList.remove('active')); const i = !!currentUser; navLoggedIn.style.display = i ? 'flex' : 'none'; navSuperAdmin.classList.toggle('hidden', !currentUser || !currentUser.isSuperAdmin); if (clockInterval) clearInterval(clockInterval); loadAndDisplayLogo(); switch (pageName) { case 'login': loginPage.classList.add('active'); break; case 'dashboard': dashboardPage.classList.add('active'); renderDashboard(); updateDateTime(); clockInterval = setInterval(updateDateTime, 60000); break; case 'super-admin': superAdminPage.classList.add('active'); renderSuperAdminPage(); break; case 'search': searchPage.classList.add('active'); setupSearchPage(); break; case 'company-keyword-admin': companyKeywordAdminPage.classList.add('active'); renderCompanyKeywordAdminPage(); break; case 'company-settings-admin': companySettingsAdminPage.classList.add('active'); renderCompanySettingsAdminPage(); break; case 'company-user-admin': companyUserAdminPage.classList.add('active'); renderCompanyUserAdminPage(); break; case 'report': reportPage.classList.add('active'); renderReportPage(); break; } }
+        function updateView(pageName) { pageSections.forEach(s => s.classList.remove('active')); const i = !!currentUser; navLoggedIn.style.display = i ? 'flex' : 'none'; navSuperAdmin.classList.toggle('hidden', !currentUser || !currentUser.isSuperAdmin); navConfiguracoesAdmin.classList.toggle('hidden', !currentUser || !currentUser.isSuperAdmin); if (clockInterval) clearInterval(clockInterval); loadAndDisplayLogo(); switch (pageName) { case 'login': loginPage.classList.add('active'); break; case 'dashboard': dashboardPage.classList.add('active'); renderDashboard(); updateDateTime(); clockInterval = setInterval(updateDateTime, 60000); break; case 'super-admin': superAdminPage.classList.add('active'); renderSuperAdminPage(); break; case 'search': searchPage.classList.add('active'); setupSearchPage(); break; case 'company-keyword-admin': companyKeywordAdminPage.classList.add('active'); renderCompanyKeywordAdminPage(); break; case 'company-settings-admin': companySettingsAdminPage.classList.add('active'); renderCompanySettingsAdminPage(); break; case 'company-user-admin': companyUserAdminPage.classList.add('active'); renderCompanyUserAdminPage(); break; case 'report': reportPage.classList.add('active'); renderReportPage(); break; case 'configuracoes-admin': configuracoesAdminPage.classList.add('active'); break; } }
         function getStorage(key, defaultValue) { try { const d = localStorage.getItem(key); return d ? JSON.parse(d) : defaultValue; } catch (e) { console.error(e); return defaultValue; } }
         function setStorage(key, value) { localStorage.setItem(key, JSON.stringify(value)); }
         function updateDateTime() { if (!currentDateTimeEl) return; const n = new Date(), f = { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }; currentDateTimeEl.textContent = `Data: ${n.toLocaleDateString('pt-BR', f).replace(',', ' -')}`; }
@@ -529,6 +541,7 @@
             navRelatorio.addEventListener('click', (e) => { e.preventDefault(); updateView('report'); });
             navPesquisa.addEventListener('click', (e) => { e.preventDefault(); updateView('search'); });
             navSuperAdmin.addEventListener('click', (e) => { e.preventDefault(); updateView('super-admin'); });
+            navConfiguracoesAdmin.addEventListener('click', (e) => { e.preventDefault(); updateView('configuracoes-admin'); });
             navLogout.addEventListener('click', (e) => { e.preventDefault(); handleLogout(); });
             manualTriggerBtn.addEventListener('click', handleManualTrigger);
             companyList.addEventListener('click', handleCompanyActions);
