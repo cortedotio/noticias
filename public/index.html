@@ -188,6 +188,7 @@
             <div class="bg-white p-6 rounded-lg shadow-lg">
                 <div class="space-y-6">
                     <div class="flex items-center"><input type="checkbox" id="report-access-toggle" class="h-4 w-4 text-indigo-600 border-gray-300 rounded"><label for="report-access-toggle" class="ml-2 block text-sm text-gray-900">Liberar acesso ao relatório de alertas na tela inicial.</label></div>
+                    <div class="flex items-center"><input type="checkbox" id="fetch-only-new-toggle" class="h-4 w-4 text-indigo-600 border-gray-300 rounded"><label for="fetch-only-new-toggle" class="ml-2 block text-sm text-gray-900">Capturar apenas notícias novas (evita duplicatas).</label></div>
                     <div><h4 class="text-lg font-semibold mb-2">Logo da Empresa</h4><input type="file" id="logo-upload" accept="image/*" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"></div>
                     <div>
                         <h4 class="text-lg font-semibold mb-2">Escopo das Notícias</h4>
@@ -344,6 +345,7 @@
         const apiKeyNewsApiInput = document.getElementById('api-key-newsapi');
         const apiKeyGNewsInput = document.getElementById('api-key-gnews');
         const apiKeyYoutubeInput = document.getElementById('api-key-youtube');
+        const fetchOnlyNewToggle = document.getElementById('fetch-only-new-toggle');
         
         // --- APPLICATION STATE ---
         let currentUser = null, clockInterval = null, selectedCompanyForManagement = null, allCompanyArticles = [], companyIdToDelete = null;
@@ -440,8 +442,8 @@
         async function handleKeywordActions(e) { if (!selectedCompanyForManagement) return; const id = e.target.dataset.id; if (!id) return; try { if (e.target.classList.contains('edit-keyword-btn')) { const kwDoc = await getDoc(doc(db, "companies", selectedCompanyForManagement.id, "keywords", id)); if (kwDoc.exists()) { const kw = kwDoc.data(); keywordInput.value = kw.word; keywordIdInput.value = id; keywordInput.focus(); } } if (e.target.classList.contains('delete-keyword-btn')) { await deleteDoc(doc(db, "companies", selectedCompanyForManagement.id, "keywords", id)); renderKeywordsForSelectedCompany(); } } catch (error) { console.error("Error handling keyword action:", error); } }
         
         // --- SETTINGS MANAGEMENT LOGIC (BY SUPER ADMIN) ---
-        async function renderCompanySettingsAdminPage() { if (!selectedCompanyForManagement) return; companySettingsAdminTitle.textContent = `Configurações para: ${selectedCompanyForManagement.name}`; try { const settingsRef = doc(db, "settings", selectedCompanyForManagement.id); const docSnap = await getDoc(settingsRef); if (docSnap.exists()) { const settings = docSnap.data(); apiKeyNewsApiInput.value = settings.apiKeyNewsApi || ''; apiKeyGNewsInput.value = settings.apiKeyGNews || ''; apiKeyYoutubeInput.value = settings.apiKeyYoutube || ''; reportAccessToggle.checked = settings.reportAccess !== false; document.querySelector(`input[name="news-scope"][value="${settings.searchScope || 'br'}"]`).checked = true; stateSelect.value = settings.searchState || ''; } else { apiKeyNewsApiInput.value = ''; apiKeyGNewsInput.value = ''; apiKeyYoutubeInput.value = ''; reportAccessToggle.checked = true; document.querySelector('input[name="news-scope"][value="br"]').checked = true; stateSelect.value = ''; } handleScopeChange(); } catch (error) { console.error("Error rendering settings:", error); } }
-        async function handleSettingsChange(e) { if (!selectedCompanyForManagement) return; const settingsRef = doc(db, "settings", selectedCompanyForManagement.id); let key, value; switch (e.target.id) { case 'report-access-toggle': key = 'reportAccess'; value = e.target.checked; break; case 'state-select': key = 'searchState'; value = e.target.value; break; case 'api-key-newsapi': key = 'apiKeyNewsApi'; value = e.target.value; break; case 'api-key-gnews': key = 'apiKeyGNews'; value = e.target.value; break; case 'api-key-youtube': key = 'apiKeyYoutube'; value = e.target.value; break; default: if (e.target.name === 'news-scope') { key = 'searchScope'; value = e.target.value; } else { return; } } try { await setDoc(settingsRef, { [key]: value }, { merge: true }); showAlert('Configuração salva!', 'success'); } catch (error) { console.error("Error saving setting:", error); } }
+        async function renderCompanySettingsAdminPage() { if (!selectedCompanyForManagement) return; companySettingsAdminTitle.textContent = `Configurações para: ${selectedCompanyForManagement.name}`; try { const settingsRef = doc(db, "settings", selectedCompanyForManagement.id); const docSnap = await getDoc(settingsRef); if (docSnap.exists()) { const settings = docSnap.data(); apiKeyNewsApiInput.value = settings.apiKeyNewsApi || ''; apiKeyGNewsInput.value = settings.apiKeyGNews || ''; apiKeyYoutubeInput.value = settings.apiKeyYoutube || ''; reportAccessToggle.checked = settings.reportAccess !== false; fetchOnlyNewToggle.checked = settings.fetchOnlyNew === true; document.querySelector(`input[name="news-scope"][value="${settings.searchScope || 'br'}"]`).checked = true; stateSelect.value = settings.searchState || ''; } else { apiKeyNewsApiInput.value = ''; apiKeyGNewsInput.value = ''; apiKeyYoutubeInput.value = ''; reportAccessToggle.checked = true; fetchOnlyNewToggle.checked = false; document.querySelector('input[name="news-scope"][value="br"]').checked = true; stateSelect.value = ''; } handleScopeChange(); } catch (error) { console.error("Error rendering settings:", error); } }
+        async function handleSettingsChange(e) { if (!selectedCompanyForManagement) return; const settingsRef = doc(db, "settings", selectedCompanyForManagement.id); let key, value; switch (e.target.id) { case 'report-access-toggle': key = 'reportAccess'; value = e.target.checked; break; case 'fetch-only-new-toggle': key = 'fetchOnlyNew'; value = e.target.checked; break; case 'state-select': key = 'searchState'; value = e.target.value; break; case 'api-key-newsapi': key = 'apiKeyNewsApi'; value = e.target.value; break; case 'api-key-gnews': key = 'apiKeyGNews'; value = e.target.value; break; case 'api-key-youtube': key = 'apiKeyYoutube'; value = e.target.value; break; default: if (e.target.name === 'news-scope') { key = 'searchScope'; value = e.target.value; } else { return; } } try { await setDoc(settingsRef, { [key]: value }, { merge: true }); showAlert('Configuração salva!', 'success'); } catch (error) { console.error("Error saving setting:", error); } }
         function handleScopeChange() { const selectedScope = document.querySelector('input[name="news-scope"]:checked').value; stateSelectContainer.classList.toggle('hidden', selectedScope !== 'state'); }
 
         // --- NOTIFICATION LOGIC ---
@@ -566,6 +568,7 @@
             apiKeyGNewsInput.addEventListener('change', handleSettingsChange);
             apiKeyYoutubeInput.addEventListener('change', handleSettingsChange);
             reportAccessToggle.addEventListener('change', handleSettingsChange);
+            fetchOnlyNewToggle.addEventListener('change', handleSettingsChange);
             stateSelect.addEventListener('change', handleSettingsChange);
             keywordForm.addEventListener('submit', handleKeywordSubmit);
             adminKeywordList.addEventListener('click', handleKeywordActions);
@@ -600,3 +603,4 @@
     </script>
 </body>
 </html>
+

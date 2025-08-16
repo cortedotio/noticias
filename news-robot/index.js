@@ -63,6 +63,7 @@ const fetchAndStoreNews = async () => {
         
         const searchPromises = [];
 
+        // Adiciona a busca na NewsAPI se a chave existir
         if (apiKeyNewsApi) {
             let url;
             if (searchScope === 'international') {
@@ -73,11 +74,13 @@ const fetchAndStoreNews = async () => {
             searchPromises.push(axios.get(url).then(res => res.data.articles || []));
         }
 
+        // Adiciona a busca na GNews se a chave existir
         if (apiKeyGNews) {
             const url = `https://gnews.io/api/v4/search?q="${encodeURIComponent(keyword)}"&lang=pt&country=br&max=10&apikey=${apiKeyGNews}`;
             searchPromises.push(axios.get(url).then(res => res.data.articles || []));
         }
 
+        // Adiciona a busca no YouTube se a chave existir
         if (apiKeyYoutube) {
             const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(keyword)}&type=video&order=date&maxResults=10&key=${apiKeyYoutube}`;
             searchPromises.push(axios.get(url).then(res => (res.data.items || []).map(item => ({
@@ -145,7 +148,6 @@ const fetchAndStoreNews = async () => {
               sentiment: sentiment,
               entities: entities,
             };
-            // CORREÇÃO: Substitui caracteres inválidos no ID do documento
             const articleId = Buffer.from(article.url).toString("base64").replace(/\//g, '_');
             const articleRef = db.collection("companies").doc(companyId).collection("articles").doc(articleId);
             batch.set(articleRef, articleData, { merge: true });
