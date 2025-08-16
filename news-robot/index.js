@@ -5,9 +5,11 @@ const admin = require("firebase-admin");
 const axios = require("axios");
 const logger = require("firebase-functions/logger");
 const cors = require("cors")({ origin: true });
+const { LanguageServiceClient } = require('@google-cloud/language');
 
 admin.initializeApp();
 const db = admin.firestore();
+const languageClient = new LanguageServiceClient();
 
 // --- Lógica Principal do Robô (Refatorada para Multi-API) ---
 const fetchAndStoreNews = async () => {
@@ -34,7 +36,7 @@ const fetchAndStoreNews = async () => {
         keywordsRef.get(),
       ]);
 
-      if (!settingsDoc.exists()) {
+      if (!settingsDoc.exists) {
         logger.warn(`Nenhuma configuração encontrada para ${companyName}.`);
         return;
       }
@@ -109,7 +111,30 @@ const fetchAndStoreNews = async () => {
         }
 
         const batch = db.batch();
-        allArticles.forEach((article) => {
+        for (const article of allArticles) {
+            let sentiment = null;
+            let entities = [];
+
+            if (article.description || article.title) {
+                const document = {
+                    content: `${article.title}. ${article.description || ''}`,
+                    type: 'PLAIN_TEXT',
+                };
+                try {
+                    const [sentimentResult] = await languageClient.analyzeSentiment({ document });
+                    sentiment = sentimentResult.documentSentiment;
+                    
+                    const [entitiesResult] = await languageClient.analyzeEntities({ document });
+                    entities = (entitiesResult.entities || [])
+                        .filter(e => e.type !== 'OTHER' && e.salience > 0.01)
+                        .slice(0, 5)
+                        .map(e => e.name);
+
+                } catch (langError) {
+                    logger.error("Erro na Natural Language API:", langError.message);
+                }
+            }
+
             const articleData = {
               title: article.title,
               description: article.description,
@@ -118,14 +143,15 @@ const fetchAndStoreNews = async () => {
               publishedAt: new Date(article.publishedAt),
               keyword: originalKeyword,
               companyId: companyId,
+              sentiment: sentiment,
+              entities: entities,
             };
             const articleId = Buffer.from(article.url).toString("base64");
             const articleRef = db.collection("companies").doc(companyId).collection("articles").doc(articleId);
             batch.set(articleRef, articleData, { merge: true });
-        });
-
+        }
         await batch.commit();
-        logger.info(`${allArticles.length} itens salvos para "${originalKeyword}".`);
+        logger.info(`${allArticles.length} itens analisados e salvos para "${originalKeyword}".`);
         
         if (allArticles.length > 0) {
             newArticlesFoundForCompany = true;
