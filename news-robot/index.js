@@ -57,10 +57,35 @@ const fetchAndStoreNews = async () => {
         
         const searchPromises = [];
 
-        if (apiKeyNewsApi) { /* ... Lógica da NewsAPI ... */ }
-        if (apiKeyGNews) { /* ... Lógica da GNews ... */ }
-        if (apiKeyYoutube) { /* ... Lógica do YouTube ... */ }
-        
+        // Adiciona a busca na NewsAPI se a chave existir
+        if (apiKeyNewsApi) {
+            let url;
+            if (searchScope === 'international') {
+                url = `https://newsapi.org/v2/everything?q="${encodeURIComponent(keyword)}"&language=pt&apiKey=${apiKeyNewsApi}`;
+            } else {
+                url = `https://newsapi.org/v2/top-headlines?q=${encodeURIComponent(keyword)}&country=br&language=pt&apiKey=${apiKeyNewsApi}`;
+            }
+            searchPromises.push(axios.get(url).then(res => res.data.articles || []));
+        }
+
+        // Adiciona a busca na GNews se a chave existir
+        if (apiKeyGNews) {
+            const url = `https://gnews.io/api/v4/search?q="${encodeURIComponent(keyword)}"&lang=pt&country=br&max=10&apikey=${apiKeyGNews}`;
+            searchPromises.push(axios.get(url).then(res => res.data.articles || []));
+        }
+
+        // Adiciona a busca no YouTube se a chave existir
+        if (apiKeyYoutube) {
+            const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(keyword)}&type=video&order=date&maxResults=10&key=${apiKeyYoutube}`;
+            searchPromises.push(axios.get(url).then(res => (res.data.items || []).map(item => ({
+                title: item.snippet.title,
+                description: item.snippet.description,
+                url: `https://www.youtube.com/watch?v=${item.id.videoId}`,
+                source: { name: `YouTube - ${item.snippet.channelTitle}` },
+                publishedAt: new Date(item.snippet.publishedAt),
+            }))));
+        }
+
         // Adiciona a busca no Blogger se a chave e o ID existirem
         if (apiKeyBlogger && bloggerId) {
             const url = `https://www.googleapis.com/blogger/v3/blogs/${bloggerId}/posts?key=${apiKeyBlogger}`;
@@ -112,7 +137,43 @@ const fetchAndStoreNews = async () => {
 
         const batch = db.batch();
         for (const article of allArticles) {
-            // ... (Lógica de Análise de Sentimento e Entidades) ...
+            let sentiment = null;
+            let entities = [];
+
+            if (article.description || article.title) {
+                const document = {
+                    content: `${article.title}. ${article.description || ''}`,
+                    type: 'PLAIN_TEXT',
+                };
+                try {
+                    const [sentimentResult] = await languageClient.analyzeSentiment({ document });
+                    sentiment = sentimentResult.documentSentiment;
+                    
+                    const [entitiesResult] = await languageClient.analyzeEntities({ document });
+                    entities = (entitiesResult.entities || [])
+                        .filter(e => e.type !== 'OTHER' && e.salience > 0.01)
+                        .slice(0, 5)
+                        .map(e => e.name);
+
+                } catch (langError) {
+                    logger.error("Erro na Natural Language API:", langError.message);
+                }
+            }
+
+            const articleData = {
+              title: article.title,
+              description: article.description,
+              url: article.url,
+              source: { name: article.source.name, url: article.source.url || null },
+              publishedAt: new Date(article.publishedAt),
+              keyword: originalKeyword,
+              companyId: companyId,
+              sentiment: sentiment,
+              entities: entities,
+            };
+            const articleId = Buffer.from(article.url).toString("base64").replace(/\//g, '_');
+            const articleRef = db.collection("companies").doc(companyId).collection("articles").doc(articleId);
+            batch.set(articleRef, articleData, { merge: true });
         }
         await batch.commit();
         logger.info(`${allArticles.length} itens analisados e salvos para "${originalKeyword}".`);
