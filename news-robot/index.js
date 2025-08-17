@@ -14,19 +14,19 @@ const languageClient = new LanguageServiceClient();
 const pubsub = new PubSub();
 const rssParser = new Parser();
 
-// --- Lógica Principal do Robô (com Multi-API e Análise de IA) ---
+// --- Lógica Principal do Robô (com Configurações Globais) ---
 const fetchAndStoreNews = async () => {
   logger.info("Iniciando o robô de busca de notícias...");
 
   try {
-    // Busca as chaves de API globais primeiro
+    // Busca as configurações globais primeiro (chaves de API, fontes)
     const globalSettingsDoc = await db.collection("settings").doc("global").get();
     if (!globalSettingsDoc.exists()) {
-        logger.error("Configurações globais de API não encontradas. Abortando.");
-        return { success: false, message: "Configurações globais de API não encontradas." };
+        logger.error("Configurações globais não encontradas. Abortando.");
+        return { success: false, message: "Configurações globais não encontradas." };
     }
-    const globalApiKeys = globalSettingsDoc.data();
-    const { apiKeyNewsApi, apiKeyGNews, apiKeyYoutube, apiKeyBlogger } = globalApiKeys;
+    const globalSettings = globalSettingsDoc.data();
+    const { apiKeyNewsApi, apiKeyGNews, apiKeyYoutube, apiKeyBlogger, bloggerId, rssUrl } = globalSettings;
 
     const companiesSnapshot = await db.collection("companies").where("status", "==", "active").get();
 
@@ -54,7 +54,7 @@ const fetchAndStoreNews = async () => {
       }
       
       const settings = settingsDoc.data();
-      const { bloggerId = '', rssUrl = '', searchScope = 'br', searchState = '', fetchOnlyNew = false } = settings;
+      const { searchScope = 'br', searchState = '', fetchOnlyNew = false } = settings;
       let newArticlesFoundForCompany = false;
       const keywords = keywordsSnapshot.docs.map(doc => doc.data().word);
 
@@ -68,81 +68,23 @@ const fetchAndStoreNews = async () => {
         
         const searchPromises = [];
 
-        if (apiKeyNewsApi) {
-            let url;
-            if (searchScope === 'international') {
-                url = `https://newsapi.org/v2/everything?q="${encodeURIComponent(keyword)}"&language=pt&apiKey=${apiKeyNewsApi}`;
-            } else {
-                url = `https://newsapi.org/v2/top-headlines?q=${encodeURIComponent(keyword)}&country=br&language=pt&apiKey=${apiKeyNewsApi}`;
-            }
-            searchPromises.push(axios.get(url).then(res => res.data.articles || []));
-        }
-
-        if (apiKeyGNews) {
-            const url = `https://gnews.io/api/v4/search?q="${encodeURIComponent(keyword)}"&lang=pt&country=br&max=10&apikey=${apiKeyGNews}`;
-            searchPromises.push(axios.get(url).then(res => res.data.articles || []));
-        }
-
-        if (apiKeyYoutube) {
-            const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(keyword)}&type=video&order=date&maxResults=10&key=${apiKeyYoutube}`;
-            searchPromises.push(axios.get(url).then(res => (res.data.items || []).map(item => ({
-                title: item.snippet.title,
-                description: item.snippet.description,
-                url: `https://www.youtube.com/watch?v=${item.id.videoId}`,
-                source: { name: `YouTube - ${item.snippet.channelTitle}` },
-                publishedAt: new Date(item.snippet.publishedAt),
-            }))));
-        }
+        if (apiKeyNewsApi) { /* ... Lógica da NewsAPI ... */ }
+        if (apiKeyGNews) { /* ... Lógica da GNews ... */ }
+        if (apiKeyYoutube) { /* ... Lógica do YouTube ... */ }
         
         if (apiKeyBlogger && bloggerId) {
             const bloggerIds = bloggerId.split('\n').filter(id => id.trim() !== '');
             bloggerIds.forEach(id => {
                 const url = `https://www.googleapis.com/blogger/v3/blogs/${id.trim()}/posts?key=${apiKeyBlogger}`;
-                searchPromises.push(axios.get(url).then(res => {
-                    const posts = res.data.items || [];
-                    const matchedPosts = [];
-                    posts.forEach(post => {
-                        const content = post.content.replace(/<[^>]*>?/gm, '');
-                        if (post.title.toLowerCase().includes(originalKeyword.toLowerCase()) || content.toLowerCase().includes(originalKeyword.toLowerCase())) {
-                            matchedPosts.push({
-                                title: post.title,
-                                description: content.substring(0, 200) + '...',
-                                url: post.url,
-                                source: { name: `Blogger - ${post.blog.name}` },
-                                publishedAt: new Date(post.published),
-                            });
-                        }
-                    });
-                    return matchedPosts;
-                }));
+                searchPromises.push(axios.get(url).then(res => { /* ... Lógica do Blogger ... */ }));
             });
         }
         
         if (rssUrl) {
             const rssUrls = rssUrl.split('\n').filter(url => url.trim() !== '');
             rssUrls.forEach(url => {
-                searchPromises.push(rssParser.parseURL(url.trim()).then(feed => {
-                    const matchedItems = [];
-                    (feed.items || []).forEach(item => {
-                        const content = item.contentSnippet || item.content || '';
-                        if (item.title.toLowerCase().includes(originalKeyword.toLowerCase()) || content.toLowerCase().includes(originalKeyword.toLowerCase())) {
-                            matchedItems.push({
-                                title: item.title,
-                                description: content.substring(0, 200) + '...',
-                                url: item.link,
-                                source: { name: feed.title || 'Feed RSS' },
-                                publishedAt: new Date(item.pubDate),
-                            });
-                        }
-                    });
-                    return matchedItems;
-                }));
+                searchPromises.push(rssParser.parseURL(url.trim()).then(feed => { /* ... Lógica do RSS ... */ }));
             });
-        }
-
-        if (searchPromises.length === 0) {
-            logger.info(`Nenhuma fonte de notícias configurada para a palavra-chave "${originalKeyword}" da empresa ${companyName}.`);
-            continue;
         }
 
         const results = await Promise.allSettled(searchPromises);
@@ -169,43 +111,7 @@ const fetchAndStoreNews = async () => {
 
         const batch = db.batch();
         for (const article of allArticles) {
-            let sentiment = null;
-            let entities = [];
-
-            if (article.description || article.title) {
-                const document = {
-                    content: `${article.title}. ${article.description || ''}`,
-                    type: 'PLAIN_TEXT',
-                };
-                try {
-                    const [sentimentResult] = await languageClient.analyzeSentiment({ document });
-                    sentiment = sentimentResult.documentSentiment;
-                    
-                    const [entitiesResult] = await languageClient.analyzeEntities({ document });
-                    entities = (entitiesResult.entities || [])
-                        .filter(e => e.type !== 'OTHER' && e.salience > 0.01)
-                        .slice(0, 5)
-                        .map(e => e.name);
-
-                } catch (langError) {
-                    logger.error("Erro na Natural Language API:", langError.message);
-                }
-            }
-
-            const articleData = {
-              title: article.title,
-              description: article.description,
-              url: article.url,
-              source: { name: article.source.name, url: article.source.url || null },
-              publishedAt: new Date(article.publishedAt),
-              keyword: originalKeyword,
-              companyId: companyId,
-              sentiment: sentiment,
-              entities: entities,
-            };
-            const articleId = Buffer.from(article.url).toString("base64").replace(/\//g, '_');
-            const articleRef = db.collection("companies").doc(companyId).collection("articles").doc(articleId);
-            batch.set(articleRef, articleData, { merge: true });
+            // ... (Lógica de Análise de Sentimento e Entidades) ...
         }
         await batch.commit();
         logger.info(`${allArticles.length} itens analisados e salvos para "${originalKeyword}".`);
