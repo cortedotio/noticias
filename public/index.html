@@ -56,7 +56,7 @@
                     <a href="#" id="nav-relatorio" class="hidden text-gray-600 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">Relatório</a>
                     <a href="#" id="nav-pesquisa" class="text-gray-600 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">Pesquisa</a>
                     <a href="#" id="nav-super-admin" class="hidden text-red-600 hover:text-red-800 px-3 py-2 rounded-md text-sm font-bold">Super Admin</a>
-                    <a href="#" id="nav-opcoes-admin" class="hidden text-gray-600 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">Opções</a>
+                    <a href="#" id="nav-configuracoes-admin" class="hidden text-gray-600 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">Configurações</a>
                     <div id="notification-bell-container" class="relative cursor-pointer ml-4">
                         <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
                         <span id="notification-badge" class="hidden absolute -top-2 -right-2 text-white text-xs font-bold text-center rounded-full bg-red-500"></span>
@@ -139,9 +139,9 @@
             </div>
         </section>
 
-        <!-- Super Admin Options Menu Page -->
-        <section id="opcoes-admin-page" class="page-section fade-in">
-            <h2 class="text-3xl font-bold mb-6">Opções do Super Admin</h2>
+        <!-- Super Admin Settings Menu Page -->
+        <section id="configuracoes-admin-page" class="page-section fade-in">
+            <h2 class="text-3xl font-bold mb-6">Configurações do Super Admin</h2>
             <div class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
                 <button id="btn-change-password" class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow">
                     <h3 class="text-xl font-semibold">Alterar Senha</h3>
@@ -156,7 +156,7 @@
         </section>
         
         <section id="change-password-page" class="page-section fade-in">
-            <button id="back-to-admin-options-1" class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar</button>
+            <button id="back-to-admin-config-1" class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar</button>
             <h2 class="text-3xl font-bold mb-6">Alterar Senha de Acesso</h2>
             <div class="max-w-lg mx-auto bg-white p-6 rounded-lg shadow-lg">
                 <form id="change-password-form" class="space-y-4">
@@ -168,7 +168,7 @@
         </section>
 
         <section id="global-keys-page" class="page-section fade-in">
-            <button id="back-to-admin-options-2" class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar</button>
+            <button id="back-to-admin-config-2" class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar</button>
             <h2 class="text-3xl font-bold mb-6">Chaves de API Globais</h2>
             <div class="max-w-lg mx-auto bg-white p-6 rounded-lg shadow-lg">
                 <div class="space-y-4">
@@ -193,7 +193,7 @@
         </section>
 
         <section id="global-sources-page" class="page-section fade-in">
-            <button id="back-to-admin-options-3" class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar</button>
+            <button id="back-to-admin-config-3" class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar</button>
             <h2 class="text-3xl font-bold mb-6">Fontes de Notícias Globais</h2>
             <div class="max-w-lg mx-auto bg-white p-6 rounded-lg shadow-lg">
                 <div class="space-y-4">
@@ -361,47 +361,6 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const functions = getFunctions(app, 'southamerica-east1');
-
-        // --- DOM ELEMENTS ---
-        const pageSections = document.querySelectorAll('.page-section');
-        const navLoggedIn = document.getElementById('nav-logged-in');
-        const navInicio = document.getElementById('nav-inicio'), navRelatorio = document.getElementById('nav-relatorio'), navPesquisa = document.getElementById('nav-pesquisa'), navSuperAdmin = document.getElementById('nav-super-admin'), navLogout = document.getElementById('nav-logout'), navConfiguracoesAdmin = document.getElementById('nav-opcoes-admin');
-        const globalAlert = document.getElementById('global-alert');
-        const loginPage = document.getElementById('login-page'), dashboardPage = document.getElementById('dashboard-page'), searchPage = document.getElementById('search-page'), superAdminPage = document.getElementById('super-admin-page'), companyKeywordAdminPage = document.getElementById('company-keyword-admin-page'), companySettingsAdminPage = document.getElementById('company-settings-admin-page'), reportPage = document.getElementById('report-page'), companyUserAdminPage = document.getElementById('company-user-admin-page'), configuracoesAdminPage = document.getElementById('opcoes-admin-page');
-        const loginForm = document.getElementById('login-form');
-        const dashboardTitle = document.getElementById('dashboard-title'), currentDateTimeEl = document.getElementById('current-datetime'), dashboardKeywordList = document.getElementById('dashboard-keyword-list'), newsAlertsContainer = document.getElementById('news-alerts-container'), newsAlerts = document.getElementById('news-alerts'), alertDateFilter = document.getElementById('alert-date-filter');
-        const reportAccessToggle = document.getElementById('report-access-toggle'), logoUploadInput = document.getElementById('logo-upload');
-        const headerLogoContainer = document.getElementById('header-logo-container'), loginLogoContainer = document.getElementById('login-logo-container');
-        const filterContainer = document.getElementById('filter-container'), searchInput = document.getElementById('search-input'), searchResults = document.getElementById('search-results');
-        const companyForm = document.getElementById('company-form'), companyList = document.getElementById('company-list');
-        const backToSuperAdminKwBtn = document.getElementById('back-to-super-admin-kw'), backToSuperAdminSettingsBtn = document.getElementById('back-to-super-admin-settings'), backToSuperAdminUsersBtn = document.getElementById('back-to-super-admin-users'), companyKeywordAdminTitle = document.getElementById('company-keyword-admin-title'), companySettingsAdminTitle = document.getElementById('company-settings-admin-title'), companyUserAdminTitle = document.getElementById('company-user-admin-title'), keywordForm = document.getElementById('keyword-form'), keywordInput = document.getElementById('keyword-input'), keywordIdInput = document.getElementById('keyword-id'), adminKeywordList = document.getElementById('admin-keyword-list');
-        const userForm = document.getElementById('user-form'), userInput = document.getElementById('user-input'), userPasswordInput = document.getElementById('user-password-input'), userIdInput = document.getElementById('user-id'), adminUserList = document.getElementById('admin-user-list');
-        const notificationBell = document.getElementById('notification-bell-container'), notificationBadge = document.getElementById('notification-badge');
-        const manualTriggerBtn = document.getElementById('manual-trigger-btn');
-        const deleteModal = document.getElementById('delete-modal'), confirmDeleteBtn = document.getElementById('confirm-delete-btn'), cancelDeleteBtn = document.getElementById('cancel-delete-btn'), companyNameToDeleteEl = document.getElementById('company-name-to-delete');
-        const newsScopeContainer = document.getElementById('news-scope-container');
-        const startDateInput = document.getElementById('start-date'), endDateInput = document.getElementById('end-date');
-        const linkModal = document.getElementById('link-modal'), accessLinkInput = document.getElementById('access-link-input'), copyLinkBtn = document.getElementById('copy-link-btn'), closeLinkModalBtn = document.getElementById('close-link-modal-btn');
-        const reportKeywordFilter = document.getElementById('report-keyword-filter');
-        const stateSelectContainer = document.getElementById('state-select-container');
-        const stateSelect = document.getElementById('state-select');
-        const changePasswordForm = document.getElementById('change-password-form');
-        const apiKeyNewsApiInput = document.getElementById('api-key-newsapi');
-        const apiKeyGNewsInput = document.getElementById('api-key-gnews');
-        const apiKeyYoutubeInput = document.getElementById('api-key-youtube');
-        const apiKeyBloggerInput = document.getElementById('api-key-blogger');
-        const bloggerIdInput = document.getElementById('blogger-id');
-        const rssUrlInput = document.getElementById('rss-url');
-        const fetchOnlyNewToggle = document.getElementById('fetch-only-new-toggle');
-        const changePasswordPage = document.getElementById('change-password-page');
-        const globalKeysPage = document.getElementById('global-keys-page');
-        const globalSourcesPage = document.getElementById('global-sources-page');
-        const btnChangePassword = document.getElementById('btn-change-password');
-        const btnGlobalKeys = document.getElementById('btn-global-keys');
-        const btnNewsSources = document.getElementById('btn-news-sources');
-        const backToAdminConfig1 = document.getElementById('back-to-admin-options-1');
-        const backToAdminConfig2 = document.getElementById('back-to-admin-options-2');
-        const backToAdminConfig3 = document.getElementById('back-to-admin-options-3');
         
         // --- APPLICATION STATE ---
         let currentUser = null, clockInterval = null, selectedCompanyForManagement = null, allCompanyArticles = [], companyIdToDelete = null;
@@ -409,9 +368,12 @@
         let superAdminCredentials = { user: 'ulysses', pass: 'adminqwert' };
         let notificationListener = null;
 
+        // --- DOM ELEMENTS (declared inside DOMContentLoaded) ---
+        let pageSections, navLoggedIn, navInicio, navRelatorio, navPesquisa, navSuperAdmin, navLogout, navConfiguracoesAdmin, globalAlert, loginPage, dashboardPage, searchPage, superAdminPage, companyKeywordAdminPage, companySettingsAdminPage, reportPage, companyUserAdminPage, configuracoesAdminPage, loginForm, dashboardTitle, currentDateTimeEl, dashboardKeywordList, newsAlertsContainer, newsAlerts, alertDateFilter, reportAccessToggle, logoUploadInput, headerLogoContainer, loginLogoContainer, filterContainer, searchInput, searchResults, companyForm, companyList, backToSuperAdminKwBtn, backToSuperAdminSettingsBtn, backToSuperAdminUsersBtn, companyKeywordAdminTitle, companySettingsAdminTitle, companyUserAdminTitle, keywordForm, keywordInput, keywordIdInput, adminKeywordList, userForm, userInput, userPasswordInput, userIdInput, adminUserList, notificationBell, notificationBadge, manualTriggerBtn, deleteModal, confirmDeleteBtn, cancelDeleteBtn, companyNameToDeleteEl, newsScopeContainer, startDateInput, endDateInput, linkModal, accessLinkInput, copyLinkBtn, closeLinkModalBtn, reportKeywordFilter, stateSelectContainer, stateSelect, changePasswordForm, apiKeyNewsApiInput, apiKeyGNewsInput, apiKeyYoutubeInput, apiKeyBloggerInput, bloggerIdInput, rssUrlInput, fetchOnlyNewToggle, changePasswordPage, globalKeysPage, globalSourcesPage, btnChangePassword, btnGlobalKeys, btnNewsSources, backToAdminConfig1, backToAdminConfig2, backToAdminConfig3;
+
         // --- UTILITY FUNCTIONS ---
         function showAlert(message, type = 'success') { const c = type === 'success' ? 'bg-green-100 border-green-500 text-green-700' : 'bg-red-100 border-red-500 text-red-700'; globalAlert.innerHTML = `<div class="${c} border-l-4 p-4 rounded-md fade-in" role="alert"><p>${message}</p></div>`; setTimeout(() => { globalAlert.innerHTML = ''; }, 4000); }
-        function updateView(pageName) { pageSections.forEach(s => s.classList.remove('active')); const i = !!currentUser; navLoggedIn.style.display = i ? 'flex' : 'none'; navSuperAdmin.classList.toggle('hidden', !currentUser || !currentUser.isSuperAdmin); navConfiguracoesAdmin.classList.toggle('hidden', !currentUser || !currentUser.isSuperAdmin); if (clockInterval) clearInterval(clockInterval); loadAndDisplayLogo(); switch (pageName) { case 'login': loginPage.classList.add('active'); break; case 'dashboard': dashboardPage.classList.add('active'); renderDashboard(); updateDateTime(); clockInterval = setInterval(updateDateTime, 60000); break; case 'super-admin': superAdminPage.classList.add('active'); renderSuperAdminPage(); break; case 'search': searchPage.classList.add('active'); setupSearchPage(); break; case 'company-keyword-admin': companyKeywordAdminPage.classList.add('active'); renderCompanyKeywordAdminPage(); break; case 'company-settings-admin': companySettingsAdminPage.classList.add('active'); renderCompanySettingsAdminPage(); break; case 'company-user-admin': companyUserAdminPage.classList.add('active'); renderCompanyUserAdminPage(); break; case 'report': reportPage.classList.add('active'); renderReportPage(); break; case 'opcoes-admin': configuracoesAdminPage.classList.add('active'); break; case 'change-password': changePasswordPage.classList.add('active'); break; case 'global-keys': globalKeysPage.classList.add('active'); renderGlobalKeysPage(); break; case 'global-sources': globalSourcesPage.classList.add('active'); renderGlobalSourcesPage(); break; } }
+        function updateView(pageName) { pageSections.forEach(s => s.classList.remove('active')); const i = !!currentUser; navLoggedIn.style.display = i ? 'flex' : 'none'; navSuperAdmin.classList.toggle('hidden', !currentUser || !currentUser.isSuperAdmin); navConfiguracoesAdmin.classList.toggle('hidden', !currentUser || !currentUser.isSuperAdmin); if (clockInterval) clearInterval(clockInterval); loadAndDisplayLogo(); switch (pageName) { case 'login': loginPage.classList.add('active'); break; case 'dashboard': dashboardPage.classList.add('active'); renderDashboard(); updateDateTime(); clockInterval = setInterval(updateDateTime, 60000); break; case 'super-admin': superAdminPage.classList.add('active'); renderSuperAdminPage(); break; case 'search': searchPage.classList.add('active'); setupSearchPage(); break; case 'company-keyword-admin': companyKeywordAdminPage.classList.add('active'); renderCompanyKeywordAdminPage(); break; case 'company-settings-admin': companySettingsAdminPage.classList.add('active'); renderCompanySettingsAdminPage(); break; case 'company-user-admin': companyUserAdminPage.classList.add('active'); renderCompanyUserAdminPage(); break; case 'report': reportPage.classList.add('active'); renderReportPage(); break; case 'configuracoes-admin': configuracoesAdminPage.classList.add('active'); break; case 'change-password': changePasswordPage.classList.add('active'); break; case 'global-keys': globalKeysPage.classList.add('active'); renderGlobalKeysPage(); break; case 'global-sources': globalSourcesPage.classList.add('active'); renderGlobalSourcesPage(); break; } }
         function getStorage(key, defaultValue) { try { const d = localStorage.getItem(key); return d ? JSON.parse(d) : defaultValue; } catch (e) { console.error(e); return defaultValue; } }
         function setStorage(key, value) { localStorage.setItem(key, JSON.stringify(value)); }
         function updateDateTime() { if (!currentDateTimeEl) return; const n = new Date(), f = { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }; currentDateTimeEl.textContent = `Data: ${n.toLocaleDateString('pt-BR', f).replace(',', ' -')}`; }
@@ -600,6 +562,91 @@
 
         // --- INITIALIZATION AND EVENT LISTENERS ---
         document.addEventListener('DOMContentLoaded', () => {
+            // Assign DOM elements after the DOM is loaded
+            pageSections = document.querySelectorAll('.page-section');
+            navLoggedIn = document.getElementById('nav-logged-in');
+            navInicio = document.getElementById('nav-inicio');
+            navRelatorio = document.getElementById('nav-relatorio');
+            navPesquisa = document.getElementById('nav-pesquisa');
+            navSuperAdmin = document.getElementById('nav-super-admin');
+            navLogout = document.getElementById('nav-logout');
+            navConfiguracoesAdmin = document.getElementById('nav-configuracoes-admin');
+            globalAlert = document.getElementById('global-alert');
+            loginPage = document.getElementById('login-page');
+            dashboardPage = document.getElementById('dashboard-page');
+            searchPage = document.getElementById('search-page');
+            superAdminPage = document.getElementById('super-admin-page');
+            companyKeywordAdminPage = document.getElementById('company-keyword-admin-page');
+            companySettingsAdminPage = document.getElementById('company-settings-admin-page');
+            reportPage = document.getElementById('report-page');
+            companyUserAdminPage = document.getElementById('company-user-admin-page');
+            configuracoesAdminPage = document.getElementById('configuracoes-admin-page');
+            loginForm = document.getElementById('login-form');
+            dashboardTitle = document.getElementById('dashboard-title');
+            currentDateTimeEl = document.getElementById('current-datetime');
+            dashboardKeywordList = document.getElementById('dashboard-keyword-list');
+            newsAlertsContainer = document.getElementById('news-alerts-container');
+            newsAlerts = document.getElementById('news-alerts');
+            alertDateFilter = document.getElementById('alert-date-filter');
+            reportAccessToggle = document.getElementById('report-access-toggle');
+            logoUploadInput = document.getElementById('logo-upload');
+            headerLogoContainer = document.getElementById('header-logo-container');
+            loginLogoContainer = document.getElementById('login-logo-container');
+            filterContainer = document.getElementById('filter-container');
+            searchInput = document.getElementById('search-input');
+            searchResults = document.getElementById('search-results');
+            companyForm = document.getElementById('company-form');
+            companyList = document.getElementById('company-list');
+            backToSuperAdminKwBtn = document.getElementById('back-to-super-admin-kw');
+            backToSuperAdminSettingsBtn = document.getElementById('back-to-super-admin-settings');
+            backToSuperAdminUsersBtn = document.getElementById('back-to-super-admin-users');
+            companyKeywordAdminTitle = document.getElementById('company-keyword-admin-title');
+            companySettingsAdminTitle = document.getElementById('company-settings-admin-title');
+            companyUserAdminTitle = document.getElementById('company-user-admin-title');
+            keywordForm = document.getElementById('keyword-form');
+            keywordInput = document.getElementById('keyword-input');
+            keywordIdInput = document.getElementById('keyword-id');
+            adminKeywordList = document.getElementById('admin-keyword-list');
+            userForm = document.getElementById('user-form');
+            userInput = document.getElementById('user-input');
+            userPasswordInput = document.getElementById('user-password-input');
+            userIdInput = document.getElementById('user-id');
+            adminUserList = document.getElementById('admin-user-list');
+            notificationBell = document.getElementById('notification-bell-container');
+            notificationBadge = document.getElementById('notification-badge');
+            manualTriggerBtn = document.getElementById('manual-trigger-btn');
+            deleteModal = document.getElementById('delete-modal');
+            confirmDeleteBtn = document.getElementById('confirm-delete-btn');
+            cancelDeleteBtn = document.getElementById('cancel-delete-btn');
+            companyNameToDeleteEl = document.getElementById('company-name-to-delete');
+            newsScopeContainer = document.getElementById('news-scope-container');
+            startDateInput = document.getElementById('start-date');
+            endDateInput = document.getElementById('end-date');
+            linkModal = document.getElementById('link-modal');
+            accessLinkInput = document.getElementById('access-link-input');
+            copyLinkBtn = document.getElementById('copy-link-btn');
+            closeLinkModalBtn = document.getElementById('close-link-modal-btn');
+            reportKeywordFilter = document.getElementById('report-keyword-filter');
+            stateSelectContainer = document.getElementById('state-select-container');
+            stateSelect = document.getElementById('state-select');
+            changePasswordForm = document.getElementById('change-password-form');
+            apiKeyNewsApiInput = document.getElementById('api-key-newsapi');
+            apiKeyGNewsInput = document.getElementById('api-key-gnews');
+            apiKeyYoutubeInput = document.getElementById('api-key-youtube');
+            apiKeyBloggerInput = document.getElementById('api-key-blogger');
+            bloggerIdInput = document.getElementById('blogger-id');
+            rssUrlInput = document.getElementById('rss-url');
+            fetchOnlyNewToggle = document.getElementById('fetch-only-new-toggle');
+            changePasswordPage = document.getElementById('change-password-page');
+            globalKeysPage = document.getElementById('global-keys-page');
+            globalSourcesPage = document.getElementById('global-sources-page');
+            btnChangePassword = document.getElementById('btn-change-password');
+            btnGlobalKeys = document.getElementById('btn-global-keys');
+            btnNewsSources = document.getElementById('btn-news-sources');
+            backToAdminConfig1 = document.getElementById('back-to-admin-config-1');
+            backToAdminConfig2 = document.getElementById('back-to-admin-config-2');
+            backToAdminConfig3 = document.getElementById('back-to-admin-config-3');
+
             const states = {"AC": "Acre", "AL": "Alagoas", "AP": "Amapá", "AM": "Amazonas", "BA": "Bahia", "CE": "Ceará", "DF": "Distrito Federal", "ES": "Espírito Santo", "GO": "Goiás", "MA": "Maranhão", "MT": "Mato Grosso", "MS": "Mato Grosso do Sul", "MG": "Minas Gerais", "PA": "Pará", "PB": "Paraíba", "PR": "Paraná", "PE": "Pernambuco", "PI": "Piauí", "RJ": "Rio de Janeiro", "RN": "Rio Grande do Norte", "RS": "Rio Grande do Sul", "RO": "Rondônia", "RR": "Roraima", "SC": "Santa Catarina", "SP": "São Paulo", "SE": "Sergipe", "TO": "Tocantins"};
             for (const [uf, name] of Object.entries(states)) {
                 const option = document.createElement('option');
@@ -613,7 +660,7 @@
             navRelatorio.addEventListener('click', (e) => { e.preventDefault(); updateView('report'); });
             navPesquisa.addEventListener('click', (e) => { e.preventDefault(); updateView('search'); });
             navSuperAdmin.addEventListener('click', (e) => { e.preventDefault(); updateView('super-admin'); });
-            navConfiguracoesAdmin.addEventListener('click', (e) => { e.preventDefault(); updateView('opcoes-admin'); });
+            navConfiguracoesAdmin.addEventListener('click', (e) => { e.preventDefault(); updateView('configuracoes-admin'); });
             navLogout.addEventListener('click', (e) => { e.preventDefault(); handleLogout(); });
             manualTriggerBtn.addEventListener('click', handleManualTrigger);
             companyList.addEventListener('click', handleCompanyActions);
@@ -651,9 +698,9 @@
             btnChangePassword.addEventListener('click', () => updateView('change-password'));
             btnGlobalKeys.addEventListener('click', () => updateView('global-keys'));
             btnNewsSources.addEventListener('click', () => updateView('global-sources'));
-            backToAdminConfig1.addEventListener('click', () => updateView('opcoes-admin'));
-            backToAdminConfig2.addEventListener('click', () => updateView('opcoes-admin'));
-            backToAdminConfig3.addEventListener('click', () => updateView('opcoes-admin'));
+            backToAdminConfig1.addEventListener('click', () => updateView('configuracoes-admin'));
+            backToAdminConfig2.addEventListener('click', () => updateView('configuracoes-admin'));
+            backToAdminConfig3.addEventListener('click', () => updateView('configuracoes-admin'));
             
             const urlParams = new URLSearchParams(window.location.search);
             const companyParam = urlParams.get('company');
