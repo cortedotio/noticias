@@ -203,7 +203,7 @@
                         </div>
                     </div>
                     <div>
-                        <h4 class="text-lg font-semibold mb-2">Chaves de API dos Provedores</h4>
+                        <h4 class="text-lg font-semibold mb-2">Fontes de Notícias</h4>
                         <div class="space-y-4">
                             <div class="bg-gray-100 p-3 rounded-md">
                                 <label for="api-key-newsapi" class="block text-sm font-medium text-gray-700 mb-1">Chave da API (NewsAPI.org)</label>
@@ -224,6 +224,10 @@
                             <div class="bg-gray-100 p-3 rounded-md">
                                 <label for="blogger-id" class="block text-sm font-medium text-gray-700 mb-1">ID do Blog (Blogger)</label>
                                 <input type="text" id="blogger-id" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                            </div>
+                            <div class="bg-gray-100 p-3 rounded-md">
+                                <label for="rss-url" class="block text-sm font-medium text-gray-700 mb-1">Monitorar Site por RSS</label>
+                                <input type="url" id="rss-url" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="https://site.com/feed">
                             </div>
                         </div>
                     </div>
@@ -359,6 +363,7 @@
         const apiKeyYoutubeInput = document.getElementById('api-key-youtube');
         const apiKeyBloggerInput = document.getElementById('api-key-blogger');
         const bloggerIdInput = document.getElementById('blogger-id');
+        const rssUrlInput = document.getElementById('rss-url');
         const fetchOnlyNewToggle = document.getElementById('fetch-only-new-toggle');
         
         // --- APPLICATION STATE ---
@@ -453,7 +458,7 @@
         async function renderCompanyKeywordAdminPage() { if (!selectedCompanyForManagement) return; companyKeywordAdminTitle.textContent = `Gerenciar Palavras-Chave para: ${selectedCompanyForManagement.name}`; renderKeywordsForSelectedCompany(); }
         async function renderKeywordsForSelectedCompany() { try { const keywordsRef = collection(db, "companies", selectedCompanyForManagement.id, "keywords"); const querySnapshot = await getDocs(keywordsRef); const keywords = querySnapshot.docs.map(doc => ({id: doc.id, ...doc.data()})); adminKeywordList.innerHTML = ''; keywords.forEach(kw => { const li = document.createElement('li'); li.className = 'flex justify-between items-center bg-gray-100 p-2 rounded-md'; li.innerHTML = `<span>${kw.word}</span><div><button data-id="${kw.id}" class="edit-keyword-btn text-blue-500 hover:text-blue-700 mr-2">Editar</button><button data-id="${kw.id}" class="delete-keyword-btn text-red-500 hover:text-red-700">Excluir</button></div>`; adminKeywordList.appendChild(li); }); } catch (error) { console.error("Error rendering keywords:", error); } }
         async function handleKeywordSubmit(e) { e.preventDefault(); const word = keywordInput.value.trim(), id = keywordIdInput.value; if (!word || !selectedCompanyForManagement) return; try { const keywordsRef = collection(db, "companies", selectedCompanyForManagement.id, "keywords"); if (id) { await updateDoc(doc(db, "companies", selectedCompanyForManagement.id, "keywords", id), { word }); } else { await addDoc(keywordsRef, { word }); } keywordInput.value = ''; keywordIdInput.value = ''; renderKeywordsForSelectedCompany(); } catch (error) { console.error("Error saving keyword:", error); } }
-        async function handleKeywordActions(e) { if (!selectedCompanyForManagement) return; const id = e.target.dataset.id; if (!id) return; try { if (e.target.classList.contains('edit-keyword-btn')) { const kwDoc = await getDoc(doc(db, "companies", selectedCompanyForManagement.id, "keywords", id)); if (kwDoc.exists()) { const kw = kwDoc.data(); keywordInput.value = kw.word; keywordIdInput.value = id; keywordInput.focus(); } } if (e.target.classList.contains('delete-keyword-btn')) { await deleteDoc(doc(db, "companies", selectedCompanyForManagement.id, "keywords", id)); renderKeywordsForSelectedCompany(); } } catch (error) { console.error("Error handling keyword action:", error); } }
+        async function handleKeywordActions(e) { if (!selectedCompanyForManagement) return; const id = e.target.dataset.id; if (!id) return; try { if (e.target.classList.contains('edit-keyword-btn')) { const kwDoc = await getDoc(doc(db, "companies", selectedCompanyForManagement.id, "keywords", id)); if (kwDoc.exists()) { const kw = kwDoc.data(); keywordInput.value = kw.word; keywordIdInput.value = id; keywordInput.focus(); } } if (e.target.classList.contains('delete-keyword-btn')) { await deleteDoc(doc(db, "companies", selectedCompanyForManagement.id, "keywords", id)); renderKeywordsForSelectedCompany(); } } catch (error) { console.error("Error handling user action:", error); } }
         
         // --- SETTINGS MANAGEMENT LOGIC (BY SUPER ADMIN) ---
         async function renderCompanySettingsAdminPage() { if (!selectedCompanyForManagement) return; companySettingsAdminTitle.textContent = `Configurações para: ${selectedCompanyForManagement.name}`; try { const settingsRef = doc(db, "settings", selectedCompanyForManagement.id); const docSnap = await getDoc(settingsRef); if (docSnap.exists()) { const settings = docSnap.data(); apiKeyNewsApiInput.value = settings.apiKeyNewsApi || ''; apiKeyGNewsInput.value = settings.apiKeyGNews || ''; apiKeyYoutubeInput.value = settings.apiKeyYoutube || ''; apiKeyBloggerInput.value = settings.apiKeyBlogger || ''; bloggerIdInput.value = settings.bloggerId || ''; reportAccessToggle.checked = settings.reportAccess !== false; fetchOnlyNewToggle.checked = settings.fetchOnlyNew === true; document.querySelector(`input[name="news-scope"][value="${settings.searchScope || 'br'}"]`).checked = true; stateSelect.value = settings.searchState || ''; } else { apiKeyNewsApiInput.value = ''; apiKeyGNewsInput.value = ''; apiKeyYoutubeInput.value = ''; apiKeyBloggerInput.value = ''; bloggerIdInput.value = ''; reportAccessToggle.checked = true; fetchOnlyNewToggle.checked = false; document.querySelector('input[name="news-scope"][value="br"]').checked = true; stateSelect.value = ''; } handleScopeChange(); } catch (error) { console.error("Error rendering settings:", error); } }
