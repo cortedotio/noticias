@@ -21,7 +21,7 @@ const fetchAndStoreNews = async () => {
   try {
     // Busca as configurações globais primeiro (chaves de API, fontes)
     const globalSettingsDoc = await db.collection("settings").doc("global").get();
-    if (!globalSettingsDoc.exists()) {
+    if (!globalSettingsDoc.exists) { // CORREÇÃO: .exists é uma propriedade, não uma função
         logger.error("Configurações globais não encontradas. Abortando.");
         return { success: false, message: "Configurações globais não encontradas." };
     }
@@ -48,7 +48,7 @@ const fetchAndStoreNews = async () => {
         keywordsRef.get(),
       ]);
 
-      if (!settingsDoc.exists() || keywordsSnapshot.empty) {
+      if (!settingsDoc.exists || keywordsSnapshot.empty) { // CORREÇÃO: .exists é uma propriedade, não uma função
         logger.warn(`Configurações ou palavras-chave em falta para ${companyName}.`);
         return;
       }
