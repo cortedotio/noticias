@@ -4,14 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Clipping de Notícias - Admin</title>
-    <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Chart.js for graphs -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <style>
@@ -43,7 +40,6 @@
 </head>
 <body class="bg-gray-100 text-gray-800">
 
-    <!-- Header -->
     <header class="bg-white shadow-md">
         <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
             <div class="text-2xl font-bold text-indigo-600 flex items-center">
@@ -71,7 +67,6 @@
     <main class="container mx-auto p-6">
         <div id="global-alert" class="mb-6"></div>
 
-        <!-- Login Section -->
         <section id="login-page" class="page-section fade-in">
             <div class="max-w-md mx-auto bg-gray-50 p-8 rounded-lg shadow-lg mt-10 relative">
                 <div id="login-logo-container" class="absolute top-4 right-4 h-12 w-auto"></div>
@@ -86,7 +81,6 @@
             </div>
         </section>
 
-        <!-- Dashboard Section -->
         <section id="dashboard-page" class="page-section fade-in">
             <div class="flex flex-col md:flex-row justify-between md:items-center mb-6 bg-white p-4 rounded-lg shadow-md">
                 <h2 id="dashboard-title" class="text-2xl font-bold text-gray-800 mb-2 md:mb-0">Notícias do Dia</h2>
@@ -121,7 +115,6 @@
             </div>
         </section>
         
-        <!-- Super Admin Section -->
         <section id="super-admin-page" class="page-section fade-in">
             <h2 class="text-3xl font-bold mb-6 text-red-600">Painel Super-Administrador</h2>
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -139,7 +132,6 @@
             </div>
         </section>
 
-        <!-- Super Admin Settings Menu Page -->
         <section id="configuracoes-admin-page" class="page-section fade-in">
             <h2 class="text-3xl font-bold mb-6">Configurações do Super Admin</h2>
             <div class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -188,6 +180,7 @@
                         <label for="api-key-blogger" class="block text-sm font-medium text-gray-700 mb-1">Chave da API (Blogger API)</label>
                         <input type="text" id="api-key-blogger" class="w-full px-3 py-2 border border-gray-300 rounded-md">
                     </div>
+                    <button id="save-global-keys-btn" class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700">Salvar Chaves</button>
                 </div>
             </div>
         </section>
@@ -205,11 +198,11 @@
                         <label for="rss-url" class="block text-sm font-medium text-gray-700 mb-1">Monitorar Sites por RSS - um por linha</label>
                         <textarea id="rss-url" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="https://site.com/feed"></textarea>
                     </div>
+                    <button id="save-global-sources-btn" class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700">Salvar Fontes</button>
                 </div>
             </div>
         </section>
 
-        <!-- Company User Management Section (by Super Admin) -->
         <section id="company-user-admin-page" class="page-section fade-in">
             <button id="back-to-super-admin-users" class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar para Super Admin</button>
             <h2 id="company-user-admin-title" class="text-3xl font-bold mb-6">Gerenciar Usuários</h2>
@@ -224,7 +217,6 @@
             </div>
         </section>
 
-        <!-- Company Keyword Management Section (by Super Admin) -->
         <section id="company-keyword-admin-page" class="page-section fade-in">
             <button id="back-to-super-admin-kw" class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar para Super Admin</button>
             <h2 id="company-keyword-admin-title" class="text-3xl font-bold mb-6">Gerenciar Palavras-Chave</h2>
@@ -238,7 +230,6 @@
             </div>
         </section>
 
-        <!-- Company Settings Management Section (by Super Admin) -->
         <section id="company-settings-admin-page" class="page-section fade-in">
             <button id="back-to-super-admin-settings" class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar para Super Admin</button>
             <h2 id="company-settings-admin-title" class="text-3xl font-bold mb-6">Opções da Empresa</h2>
@@ -263,7 +254,6 @@
             </div>
         </section>
 
-        <!-- Report Section -->
         <section id="report-page" class="page-section fade-in">
             <div class="bg-white p-8 rounded-lg shadow-lg">
                 <div class="flex flex-col sm:flex-row justify-between items-center mb-6">
@@ -294,7 +284,6 @@
             </div>
         </section>
 
-        <!-- Search Section -->
         <section id="search-page" class="page-section fade-in">
              <div class="bg-white p-6 md:p-8 rounded-lg shadow-lg">
                 <h2 class="text-2xl md:text-3xl font-bold mb-6">Pesquisar nos Alertas Salvos</h2>
@@ -305,7 +294,6 @@
         </section>
     </main>
 
-    <!-- Delete Confirmation Modal -->
     <div id="delete-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
         <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
             <div class="mt-3 text-center">
@@ -324,7 +312,6 @@
         </div>
     </div>
 
-    <!-- Access Link Modal -->
     <div id="link-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
         <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
             <div class="mt-3">
@@ -346,6 +333,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, collection, getDocs, doc, getDoc, setDoc, addDoc, deleteDoc, updateDoc, query, where, orderBy, limit, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
         // --- Your Firebase Configuration ---
         const firebaseConfig = {
@@ -361,6 +349,7 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const functions = getFunctions(app, 'southamerica-east1');
+        const storage = getStorage(app);
         
         // --- APPLICATION STATE ---
         let currentUser = null, clockInterval = null, selectedCompanyForManagement = null, allCompanyArticles = [], companyIdToDelete = null;
@@ -369,7 +358,7 @@
         let notificationListener = null;
 
         // --- DOM ELEMENTS (declared inside DOMContentLoaded) ---
-        let pageSections, navLoggedIn, navInicio, navRelatorio, navPesquisa, navSuperAdmin, navLogout, navConfiguracoesAdmin, globalAlert, loginPage, dashboardPage, searchPage, superAdminPage, companyKeywordAdminPage, companySettingsAdminPage, reportPage, companyUserAdminPage, configuracoesAdminPage, loginForm, dashboardTitle, currentDateTimeEl, dashboardKeywordList, newsAlertsContainer, newsAlerts, alertDateFilter, reportAccessToggle, logoUploadInput, headerLogoContainer, loginLogoContainer, filterContainer, searchInput, searchResults, companyForm, companyList, backToSuperAdminKwBtn, backToSuperAdminSettingsBtn, backToSuperAdminUsersBtn, companyKeywordAdminTitle, companySettingsAdminTitle, companyUserAdminTitle, keywordForm, keywordInput, keywordIdInput, adminKeywordList, userForm, userInput, userPasswordInput, userIdInput, adminUserList, notificationBell, notificationBadge, manualTriggerBtn, deleteModal, confirmDeleteBtn, cancelDeleteBtn, companyNameToDeleteEl, newsScopeContainer, startDateInput, endDateInput, linkModal, accessLinkInput, copyLinkBtn, closeLinkModalBtn, reportKeywordFilter, stateSelectContainer, stateSelect, changePasswordForm, apiKeyNewsApiInput, apiKeyGNewsInput, apiKeyYoutubeInput, apiKeyBloggerInput, bloggerIdInput, rssUrlInput, fetchOnlyNewToggle, changePasswordPage, globalKeysPage, globalSourcesPage, btnChangePassword, btnGlobalKeys, btnNewsSources, backToAdminConfig1, backToAdminConfig2, backToAdminConfig3;
+        let pageSections, navLoggedIn, navInicio, navRelatorio, navPesquisa, navSuperAdmin, navLogout, navConfiguracoesAdmin, globalAlert, loginPage, dashboardPage, searchPage, superAdminPage, companyKeywordAdminPage, companySettingsAdminPage, reportPage, companyUserAdminPage, configuracoesAdminPage, loginForm, dashboardTitle, currentDateTimeEl, dashboardKeywordList, newsAlertsContainer, newsAlerts, alertDateFilter, reportAccessToggle, logoUploadInput, headerLogoContainer, loginLogoContainer, filterContainer, searchInput, searchResults, companyForm, companyList, backToSuperAdminKwBtn, backToSuperAdminSettingsBtn, backToSuperAdminUsersBtn, companyKeywordAdminTitle, companySettingsAdminTitle, companyUserAdminTitle, keywordForm, keywordInput, keywordIdInput, adminKeywordList, userForm, userInput, userPasswordInput, userIdInput, adminUserList, notificationBell, notificationBadge, manualTriggerBtn, deleteModal, confirmDeleteBtn, cancelDeleteBtn, companyNameToDeleteEl, newsScopeContainer, startDateInput, endDateInput, linkModal, accessLinkInput, copyLinkBtn, closeLinkModalBtn, reportKeywordFilter, stateSelectContainer, stateSelect, changePasswordForm, apiKeyNewsApiInput, apiKeyGNewsInput, apiKeyYoutubeInput, apiKeyBloggerInput, bloggerIdInput, rssUrlInput, fetchOnlyNewToggle, changePasswordPage, globalKeysPage, globalSourcesPage, btnChangePassword, btnGlobalKeys, btnNewsSources, backToAdminConfig1, backToAdminConfig2, backToAdminConfig3, saveGlobalKeysBtn, saveGlobalSourcesBtn;
 
         // --- UTILITY FUNCTIONS ---
         function showAlert(message, type = 'success') { const c = type === 'success' ? 'bg-green-100 border-green-500 text-green-700' : 'bg-red-100 border-red-500 text-red-700'; globalAlert.innerHTML = `<div class="${c} border-l-4 p-4 rounded-md fade-in" role="alert"><p>${message}</p></div>`; setTimeout(() => { globalAlert.innerHTML = ''; }, 4000); }
@@ -377,193 +366,586 @@
         function getStorage(key, defaultValue) { try { const d = localStorage.getItem(key); return d ? JSON.parse(d) : defaultValue; } catch (e) { console.error(e); return defaultValue; } }
         function setStorage(key, value) { localStorage.setItem(key, JSON.stringify(value)); }
         function updateDateTime() { if (!currentDateTimeEl) return; const n = new Date(), f = { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }; currentDateTimeEl.textContent = `Data: ${n.toLocaleDateString('pt-BR', f).replace(',', ' -')}`; }
-
+        async function loadAndDisplayLogo() { try { const u = currentUser && currentUser.logoUrl ? currentUser.logoUrl : "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Firebase_Logo.svg/512px-Firebase_Logo.svg.png"; if (headerLogoContainer) headerLogoContainer.innerHTML = `<img src="${u}" alt="Logo" class="h-full w-auto">`; if (loginLogoContainer) loginLogoContainer.innerHTML = `<img src="${u}" alt="Logo" class="h-full w-auto">`; } catch (e) { console.error("Erro ao carregar logo:", e); } }
+        
         // --- MANUAL TRIGGER LOGIC ---
-        async function handleManualTrigger() {
+        async function manualTrigger() {
+            if (!currentUser || !currentUser.isSuperAdmin) {
+                showAlert('Você não tem permissão para executar esta ação.', 'error');
+                return;
+            }
             manualTriggerBtn.disabled = true;
             manualTriggerBtn.textContent = 'Executando...';
-            showAlert('A coleta manual de notícias foi iniciada. Isto pode levar alguns minutos.', 'success');
-
-            const functionUrl = 'https://southamerica-east1-noticias-6e952.cloudfunctions.net/manualFetch';
-
             try {
-                const response = await fetch(functionUrl, { method: 'POST' });
-                const data = await response.json();
-                if (response.ok && data.success) {
-                    showAlert('Robô executado com sucesso! As novas notícias estarão disponíveis em breve.', 'success');
-                } else {
-                    throw new Error(data.message || 'Erro desconhecido na execução do robô.');
-                }
+                const triggerRobo = httpsCallable(functions, 'triggerRobo');
+                const result = await triggerRobo();
+                console.log(result.data.message);
+                showAlert('Robô de coleta de notícias executado com sucesso!', 'success');
             } catch (error) {
-                console.error("Erro ao acionar o robô manual:", error);
-                showAlert(`Erro ao acionar o robô: ${error.message}`, 'error');
+                console.error("Erro ao executar robô:", error);
+                showAlert('Falha ao executar o robô. Verifique o log do console.', 'error');
             } finally {
                 manualTriggerBtn.disabled = false;
                 manualTriggerBtn.textContent = 'Executar Robô Manualmente';
             }
         }
-
-        // --- LOGO LOGIC ---
-        async function handleLogoUpload(e) { const file = e.target.files[0]; if (!file) return; const companyId = currentUser.isSuperAdmin ? selectedCompanyForManagement.id : currentUser.companyId; if (!companyId) return; const reader = new FileReader(); reader.onloadend = async () => { try { const settingsRef = doc(db, "settings", companyId); await setDoc(settingsRef, { logo: reader.result }, { merge: true }); loadAndDisplayLogo(); showAlert('Logo atualizada com sucesso!'); } catch (error) { console.error("Erro ao salvar logo:", error); showAlert("Erro ao salvar logo.", "error"); } }; reader.readAsDataURL(file); }
-        async function loadAndDisplayLogo() { const companyId = currentUser ? currentUser.companyId : null; if (!companyId) { headerLogoContainer.innerHTML = ''; loginLogoContainer.innerHTML = ''; return; } const settingsRef = doc(db, "settings", companyId); try { const docSnap = await getDoc(settingsRef); const logoData = docSnap.exists() ? docSnap.data().logo : null; const logoHtml = logoData ? `<img src="${logoData}" alt="Logo da Empresa" class="h-full w-auto object-contain">` : ''; headerLogoContainer.innerHTML = logoHtml; loginLogoContainer.innerHTML = logoHtml; } catch (error) { console.error("Error loading logo:", error); } }
-
-        // --- AUTHENTICATION LOGIC ---
-        async function handleLogin(e) { e.preventDefault(); const companyName = document.getElementById('login-company').value.trim(); const user = document.getElementById('login-user').value.trim(); const pass = document.getElementById('login-password').value.trim(); if (companyName.toLowerCase() === 'newsclip' && user.toLowerCase() === superAdminCredentials.user && pass === superAdminCredentials.pass) { currentUser = { username: 'Ulysses', isSuperAdmin: true, companyId: 'super', companyName: 'Super Admin' }; setStorage('clipping_currentUser', currentUser); updateView('dashboard'); return; } try { const companiesQuery = query(collection(db, "companies"), where("name", "==", companyName.toUpperCase())); const companiesSnapshot = await getDocs(companiesQuery); if (companiesSnapshot.empty) { showAlert('Empresa não encontrada.', 'error'); return; } const companyDoc = companiesSnapshot.docs[0]; const company = { id: companyDoc.id, ...companyDoc.data() }; if (company.status === 'inactive') { showAlert('Esta empresa está inativa e não pode ser acessada.', 'error'); return; } const usersQuery = query(collection(db, "companies", company.id, "users"), where("username", "==", user), where("password", "==", pass)); const usersSnapshot = await getDocs(usersQuery); if(!usersSnapshot.empty) { currentUser = { username: user, companyId: company.id, companyName: company.name, isSuperAdmin: false }; setStorage('clipping_currentUser', currentUser); updateView('dashboard'); } else { showAlert('Usuário ou senha inválidos para esta empresa.', 'error'); } } catch (error) { console.error("Login error:", error); showAlert("Ocorreu um erro durante o login.", "error"); } }
-        function handleLogout() { if (notificationListener) notificationListener(); currentUser = null; selectedCompanyForManagement = null; localStorage.removeItem('clipping_currentUser'); if (clockInterval) clearInterval(clockInterval); headerLogoContainer.innerHTML = ''; updateView('login'); }
-        function handleChangePassword(e) { e.preventDefault(); const currentPass = document.getElementById('current-password').value; const newPass = document.getElementById('new-password').value; if (currentPass === superAdminCredentials.pass) { superAdminCredentials.pass = newPass; showAlert('Senha alterada com sucesso para esta sessão.', 'success'); changePasswordForm.reset(); } else { showAlert('Senha atual incorreta.', 'error'); } }
-
-        // --- DASHBOARD LOGIC ---
-        async function renderDashboard() { if (!currentUser) return; document.getElementById('dashboard-grid').style.display = currentUser.isSuperAdmin ? 'none' : 'grid'; document.getElementById('super-admin-dashboard-message').style.display = currentUser.isSuperAdmin ? 'block' : 'none'; dashboardTitle.textContent = currentUser.isSuperAdmin ? 'Painel Super Admin' : `Notícias do Dia - ${currentUser.companyName}`; if (!currentUser.isSuperAdmin) { renderVerticalKeywordList(); const settingsRef = doc(db, "settings", currentUser.companyId); try { const docSnap = await getDoc(settingsRef); const hasReportAccess = docSnap.exists() ? docSnap.data().reportAccess : true; newsAlertsContainer.style.display = hasReportAccess ? 'block' : 'none'; navRelatorio.classList.toggle('hidden', !hasReportAccess || currentUser.isSuperAdmin); populateInitialAlerts(); setupNotificationListener(); } catch (error) { console.error("Error rendering dashboard:", error); } } }
-        async function renderVerticalKeywordList() { if (!currentUser || !dashboardKeywordList) return; try { const q = query(collection(db, "companies", currentUser.companyId, "keywords")); const querySnapshot = await getDocs(q); const keywords = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); dashboardKeywordList.innerHTML = ''; const showAllLi = document.createElement('li'); showAllLi.className = 'keyword-filter active bg-indigo-100 text-indigo-800 text-md font-medium px-3 py-2 rounded-md flex justify-between items-center cursor-pointer hover:bg-indigo-200'; showAllLi.dataset.keyword = "all"; showAllLi.innerHTML = `<span>Mostrar Todas</span>`; dashboardKeywordList.appendChild(showAllLi); if (keywords.length === 0) { dashboardKeywordList.insertAdjacentHTML('beforeend', `<p class="text-gray-500 text-sm mt-2">Nenhuma palavra-chave.</p>`); } else { keywords.forEach(kw => { const li = document.createElement('li'); li.className = 'keyword-filter bg-indigo-100 text-indigo-800 text-md font-medium px-3 py-2 rounded-md flex justify-between items-center cursor-pointer hover:bg-indigo-200'; li.dataset.keyword = kw.word; li.innerHTML = `<span>${kw.word}</span>`; dashboardKeywordList.appendChild(li); }); } } catch (error) { console.error("Error fetching keywords:", error); } }
         
-        // --- SUPER ADMIN LOGIC ---
-        async function renderSuperAdminPage() { try { const querySnapshot = await getDocs(collection(db, "companies")); const companies = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); companyList.innerHTML = ''; companies.forEach(c => { const li = document.createElement('li'); li.className = 'flex flex-col sm:flex-row justify-between items-start sm:items-center bg-gray-100 p-3 rounded-md'; const statusClass = c.status === 'inactive' ? 'text-orange-500' : 'text-green-500'; const statusText = c.status === 'inactive' ? 'Inativa' : 'Ativa'; let actionButtons; if (c.status === 'inactive') { actionButtons = `<button data-id="${c.id}" class="reactivate-company-btn bg-yellow-500 text-white px-3 py-1 rounded-md text-sm hover:bg-yellow-600">Reativar</button>`; } else { actionButtons = `<button data-id="${c.id}" class="deactivate-company-btn bg-gray-500 text-white px-3 py-1 rounded-md text-sm hover:bg-gray-600">Inativar</button>`; } li.innerHTML = `<div><span class="font-bold">${c.name}</span> <span class="text-sm ${statusClass}">(${statusText})</span></div><div class="mt-2 sm:mt-0 flex flex-wrap gap-2"><button data-company-name="${c.name}" class="view-access-link-btn bg-teal-500 text-white px-3 py-1 rounded-md text-sm hover:bg-teal-600">Link de Acesso</button><button data-company-id="${c.id}" data-company-name="${c.name}" class="manage-company-users-btn bg-purple-500 text-white px-3 py-1 rounded-md text-sm hover:bg-purple-600">Usuários</button><button data-company-id="${c.id}" data-company-name="${c.name}" class="manage-company-keywords-btn bg-blue-500 text-white px-3 py-1 rounded-md text-sm hover:bg-blue-600">Palavras-Chave</button><button data-company-id="${c.id}" data-company-name="${c.name}" class="manage-company-settings-btn bg-green-500 text-white px-3 py-1 rounded-md text-sm hover:bg-green-600">Opções</button>${actionButtons}<button data-company-id="${c.id}" data-company-name="${c.name}" class="delete-company-btn bg-red-600 text-white px-3 py-1 rounded-md text-sm hover:bg-red-800">Excluir</button></div>`; companyList.appendChild(li); }); } catch (error) { console.error("Error rendering super admin page:", error); } }
-        async function handleCompanySubmit(e) { e.preventDefault(); const name = document.getElementById('company-name-input').value.trim(); if(!name) { showAlert('O nome da empresa é obrigatório.', 'error'); return; } try { const q = query(collection(db, "companies"), where("name", "==", name.toUpperCase())); const querySnapshot = await getDocs(q); if (!querySnapshot.empty) { showAlert('Este nome de empresa já existe.', 'error'); return; } await addDoc(collection(db, "companies"), { name: name.toUpperCase(), status: 'active' }); showAlert('Empresa adicionada com sucesso!'); companyForm.reset(); renderSuperAdminPage(); } catch (error) { console.error("Error adding company:", error); showAlert("Erro ao adicionar empresa.", "error"); } }
-        async function handleCompanyActions(e) { const target = e.target; const companyId = target.dataset.id || target.dataset.companyId; if (target.classList.contains('view-access-link-btn')) { const companyName = target.dataset.companyName; const baseUrl = window.location.origin + window.location.pathname; const accessUrl = `${baseUrl}?company=${encodeURIComponent(companyName)}`; accessLinkInput.value = accessUrl; linkModal.classList.remove('hidden'); return; } if (!companyId) return; const companyRef = doc(db, "companies", companyId); try { if (target.classList.contains('deactivate-company-btn')) { await updateDoc(companyRef, { status: 'inactive', deactivationDate: new Date().toISOString() }); renderSuperAdminPage(); } else if (target.classList.contains('reactivate-company-btn')) { await updateDoc(companyRef, { status: 'active', deactivationDate: null }); renderSuperAdminPage(); } else if (target.classList.contains('delete-company-btn')) { companyIdToDelete = companyId; companyNameToDeleteEl.textContent = target.dataset.companyName; deleteModal.classList.remove('hidden'); } else if (target.classList.contains('manage-company-keywords-btn')) { selectedCompanyForManagement = { id: target.dataset.companyId, name: target.dataset.companyName }; updateView('company-keyword-admin'); } else if (target.classList.contains('manage-company-settings-btn')) { selectedCompanyForManagement = { id: target.dataset.companyId, name: target.dataset.companyName }; updateView('company-settings-admin'); } else if (target.classList.contains('manage-company-users-btn')) { selectedCompanyForManagement = { id: target.dataset.companyId, name: target.dataset.companyName }; updateView('company-user-admin'); } } catch (error) { console.error("Error handling company action:", error); showAlert("Ocorreu um erro.", "error"); } }
-
-        // --- DELETE COMPANY LOGIC ---
-        async function handleConfirmDelete() {
-            if (!companyIdToDelete) return;
-            confirmDeleteBtn.disabled = true;
-            confirmDeleteBtn.textContent = 'Excluindo...';
-
+        // --- AUTHENTICATION & SESSION MANAGEMENT ---
+        function login(user, pass, companyId = null) {
+            if (user === superAdminCredentials.user && pass === superAdminCredentials.pass) {
+                currentUser = {
+                    id: 'super-admin',
+                    name: 'Super Admin',
+                    isSuperAdmin: true
+                };
+                setStorage('currentUser', currentUser);
+                updateView('dashboard');
+            } else if (companyId) {
+                checkUserLogin(companyId, user, pass);
+            } else {
+                showAlert('Usuário ou senha incorretos.', 'error');
+            }
+        }
+        async function checkUserLogin(companyId, user, pass) {
             try {
-                const deleteCompany = httpsCallable(functions, 'deleteCompany');
-                const result = await deleteCompany({ companyId: companyIdToDelete });
-                if (result.data.success) {
-                    showAlert('Empresa e todos os dados associados foram excluídos.');
+                const q = query(collection(db, `companies/${companyId}/users`), where("user", "==", user), where("password", "==", pass), limit(1));
+                const querySnapshot = await getDocs(q);
+                if (!querySnapshot.empty) {
+                    const userData = querySnapshot.docs[0].data();
+                    const companyDoc = await getDoc(doc(db, "companies", companyId));
+                    const companyData = companyDoc.data();
+                    currentUser = {
+                        id: querySnapshot.docs[0].id,
+                        companyId: companyId,
+                        isSuperAdmin: false,
+                        ...userData,
+                        ...companyData
+                    };
+                    setStorage('currentUser', currentUser);
+                    updateView('dashboard');
                 } else {
-                    throw new Error(result.data.message || 'Falha ao excluir empresa.');
+                    showAlert('Usuário ou senha incorretos para esta empresa.', 'error');
                 }
-            } catch (error) {
-                console.error("Erro ao excluir empresa:", error);
-                showAlert(`Erro: ${error.message}`, 'error');
-            } finally {
+            } catch (e) {
+                console.error("Erro ao fazer login:", e);
+                showAlert('Erro ao tentar fazer login. Tente novamente.', 'error');
+            }
+        }
+        function logout() {
+            currentUser = null;
+            selectedCompanyForManagement = null;
+            setStorage('currentUser', null);
+            setStorage('selectedCompany', null);
+            if (notificationListener) notificationListener();
+            updateView('login');
+        }
+        
+        // --- SUPER ADMIN MANAGEMENT (COMPANIES) ---
+        async function addCompany(e) {
+            e.preventDefault();
+            const companyName = companyNameInput.value.trim();
+            if (!companyName) { showAlert('Nome da empresa é obrigatório.', 'error'); return; }
+            try {
+                const docRef = await addDoc(collection(db, "companies"), {
+                    name: companyName,
+                    keywords: [],
+                    users: [],
+                    settings: { reportAccess: false, fetchOnlyNew: false, newsScope: 'br', state: '' }
+                });
+                await setDoc(doc(db, `companies/${docRef.id}/users`, 'default'), { user: 'admin', password: 'password', role: 'admin' });
+                showAlert(`Empresa "${companyName}" adicionada com sucesso!`);
+                companyNameInput.value = '';
+                renderSuperAdminPage();
+            } catch (e) {
+                console.error("Erro ao adicionar empresa:", e);
+                showAlert('Erro ao adicionar empresa.', 'error');
+            }
+        }
+        async function renderSuperAdminPage() {
+            try {
+                const companies = await getDocs(collection(db, "companies"));
+                companyList.innerHTML = '';
+                companies.forEach(doc => {
+                    const company = doc.data();
+                    const li = document.createElement('li');
+                    li.classList.add('bg-gray-100', 'p-3', 'rounded-md', 'flex', 'flex-wrap', 'items-center', 'justify-between', 'gap-2');
+                    li.innerHTML = `
+                        <span class="text-lg font-medium">${company.name}</span>
+                        <div class="flex gap-2 text-sm">
+                            <button class="view-link-btn text-indigo-600 hover:text-indigo-800" data-id="${doc.id}" data-name="${company.name}">Link</button>
+                            <button class="manage-users-btn text-blue-600 hover:text-blue-800" data-id="${doc.id}" data-name="${company.name}">Usuários</button>
+                            <button class="manage-keywords-btn text-blue-600 hover:text-blue-800" data-id="${doc.id}" data-name="${company.name}">Palavras-Chave</button>
+                            <button class="manage-settings-btn text-blue-600 hover:text-blue-800" data-id="${doc.id}" data-name="${company.name}">Opções</button>
+                            <button class="delete-company-btn text-red-600 hover:text-red-800" data-id="${doc.id}" data-name="${company.name}">Excluir</button>
+                        </div>
+                    `;
+                    companyList.appendChild(li);
+                });
+                document.querySelectorAll('.view-link-btn').forEach(btn => btn.addEventListener('click', showAccessLink));
+                document.querySelectorAll('.manage-users-btn').forEach(btn => btn.addEventListener('click', () => { selectedCompanyForManagement = { id: btn.dataset.id, name: btn.dataset.name }; updateView('company-user-admin'); }));
+                document.querySelectorAll('.manage-keywords-btn').forEach(btn => btn.addEventListener('click', () => { selectedCompanyForManagement = { id: btn.dataset.id, name: btn.dataset.name }; updateView('company-keyword-admin'); }));
+                document.querySelectorAll('.manage-settings-btn').forEach(btn => btn.addEventListener('click', () => { selectedCompanyForManagement = { id: btn.dataset.id, name: btn.dataset.name }; updateView('company-settings-admin'); }));
+                document.querySelectorAll('.delete-company-btn').forEach(btn => btn.addEventListener('click', confirmDeleteCompany));
+            } catch (e) {
+                console.error("Erro ao carregar empresas:", e);
+                showAlert('Erro ao carregar empresas.', 'error');
+            }
+        }
+        function showAccessLink(e) {
+            const companyId = e.target.dataset.id;
+            const link = `${window.location.origin}${window.location.pathname}?companyId=${companyId}`;
+            accessLinkInput.value = link;
+            linkModal.classList.remove('hidden');
+        }
+        function confirmDeleteCompany(e) {
+            companyIdToDelete = e.target.dataset.id;
+            const companyName = e.target.dataset.name;
+            companyNameToDeleteEl.textContent = companyName;
+            deleteModal.classList.remove('hidden');
+        }
+        async function deleteCompany() {
+            if (!companyIdToDelete) return;
+            try {
+                // Delete users subcollection
+                const users = await getDocs(collection(db, `companies/${companyIdToDelete}/users`));
+                for (const u of users.docs) { await deleteDoc(u.ref); }
+                // Delete keywords subcollection
+                const keywords = await getDocs(collection(db, `companies/${companyIdToDelete}/keywords`));
+                for (const k of keywords.docs) { await deleteDoc(k.ref); }
+                // Delete articles subcollection
+                const articles = await getDocs(collection(db, `companies/${companyIdToDelete}/articles`));
+                for (const a of articles.docs) { await deleteDoc(a.ref); }
+                // Delete logo from storage
+                const logoRef = ref(storage, `logos/${companyIdToDelete}`);
+                try { await getDownloadURL(logoRef); await deleteObject(logoRef); } catch (e) { console.log('Logo não existe, continuando.'); }
+                // Delete company document
+                await deleteDoc(doc(db, "companies", companyIdToDelete));
+                showAlert('Empresa e todos os seus dados foram excluídos com sucesso!', 'success');
                 deleteModal.classList.add('hidden');
-                confirmDeleteBtn.disabled = false;
-                confirmDeleteBtn.textContent = 'Sim, excluir';
                 companyIdToDelete = null;
                 renderSuperAdminPage();
+            } catch (e) {
+                console.error("Erro ao excluir empresa:", e);
+                showAlert('Erro ao excluir empresa.', 'error');
             }
         }
-
-        // --- USER MANAGEMENT LOGIC (BY SUPER ADMIN) ---
-        async function renderCompanyUserAdminPage() { if (!selectedCompanyForManagement) return; companyUserAdminTitle.textContent = `Gerenciar Usuários para: ${selectedCompanyForManagement.name}`; renderUsersForSelectedCompany(); }
-        async function renderUsersForSelectedCompany() { try { const usersRef = collection(db, "companies", selectedCompanyForManagement.id, "users"); const querySnapshot = await getDocs(usersRef); const companyUsers = querySnapshot.docs.map(doc => ({id: doc.id, ...doc.data()})); adminUserList.innerHTML = ''; companyUsers.forEach(user => { const li = document.createElement('li'); li.className = 'flex justify-between items-center bg-gray-100 p-2 rounded-md'; li.innerHTML = `<span>${user.username}</span><div><button data-id="${user.id}" class="edit-user-btn text-blue-500 hover:text-blue-700 mr-2">Editar</button><button data-id="${user.id}" class="delete-user-btn text-red-500 hover:text-red-700">Excluir</button></div>`; adminUserList.appendChild(li); }); } catch (error) { console.error("Error rendering users:", error); } }
-        async function handleUserSubmit(e) { e.preventDefault(); const username = userInput.value.trim(), password = userPasswordInput.value.trim(), id = userIdInput.value; if (!username || !password || !selectedCompanyForManagement) return; try { const usersRef = collection(db, "companies", selectedCompanyForManagement.id, "users"); const q = query(usersRef, where("username", "==", username)); const querySnapshot = await getDocs(q); if (!querySnapshot.empty && querySnapshot.docs[0].id !== id) { showAlert('Este nome de usuário já está em uso nesta empresa.', 'error'); return; } if (id) { await updateDoc(doc(db, "companies", selectedCompanyForManagement.id, "users", id), { username, password }); } else { await addDoc(usersRef, { username, password }); } userInput.value = ''; userPasswordInput.value = ''; userIdInput.value = ''; renderUsersForSelectedCompany(); } catch (error) { console.error("Error saving user:", error); showAlert("Erro ao salvar usuário.", "error"); } }
-        async function handleUserActions(e) { if (!selectedCompanyForManagement) return; const id = e.target.dataset.id; if (!id) return; try { if (e.target.classList.contains('edit-user-btn')) { const userDoc = await getDoc(doc(db, "companies", selectedCompanyForManagement.id, "users", id)); if (userDoc.exists()) { const user = userDoc.data(); userInput.value = user.username; userPasswordInput.value = user.password; userIdInput.value = id; userInput.focus(); } } if (e.target.classList.contains('delete-user-btn')) { await deleteDoc(doc(db, "companies", selectedCompanyForManagement.id, "users", id)); renderUsersForSelectedCompany(); } } catch (error) { console.error("Error handling user action:", error); } }
-
-        // --- KEYWORD MANAGEMENT LOGIC (BY SUPER ADMIN) ---
-        async function renderCompanyKeywordAdminPage() { if (!selectedCompanyForManagement) return; companyKeywordAdminTitle.textContent = `Gerenciar Palavras-Chave para: ${selectedCompanyForManagement.name}`; renderKeywordsForSelectedCompany(); }
-        async function renderKeywordsForSelectedCompany() { try { const keywordsRef = collection(db, "companies", selectedCompanyForManagement.id, "keywords"); const querySnapshot = await getDocs(keywordsRef); const keywords = querySnapshot.docs.map(doc => ({id: doc.id, ...doc.data()})); adminKeywordList.innerHTML = ''; keywords.forEach(kw => { const li = document.createElement('li'); li.className = 'flex justify-between items-center bg-gray-100 p-2 rounded-md'; li.innerHTML = `<span>${kw.word}</span><div><button data-id="${kw.id}" class="edit-keyword-btn text-blue-500 hover:text-blue-700 mr-2">Editar</button><button data-id="${kw.id}" class="delete-keyword-btn text-red-500 hover:text-red-700">Excluir</button></div>`; adminKeywordList.appendChild(li); }); } catch (error) { console.error("Error rendering keywords:", error); } }
-        async function handleKeywordSubmit(e) { e.preventDefault(); const word = keywordInput.value.trim(), id = keywordIdInput.value; if (!word || !selectedCompanyForManagement) return; try { const keywordsRef = collection(db, "companies", selectedCompanyForManagement.id, "keywords"); if (id) { await updateDoc(doc(db, "companies", selectedCompanyForManagement.id, "keywords", id), { word }); } else { await addDoc(keywordsRef, { word }); } keywordInput.value = ''; keywordIdInput.value = ''; renderKeywordsForSelectedCompany(); } catch (error) { console.error("Error saving keyword:", error); } }
-        async function handleKeywordActions(e) { if (!selectedCompanyForManagement) return; const id = e.target.dataset.id; if (!id) return; try { if (e.target.classList.contains('edit-keyword-btn')) { const kwDoc = await getDoc(doc(db, "companies", selectedCompanyForManagement.id, "keywords", id)); if (kwDoc.exists()) { const kw = kwDoc.data(); keywordInput.value = kw.word; keywordIdInput.value = id; keywordInput.focus(); } } if (e.target.classList.contains('delete-keyword-btn')) { await deleteDoc(doc(db, "companies", selectedCompanyForManagement.id, "keywords", id)); renderKeywordsForSelectedCompany(); } } catch (error) { console.error("Error handling user action:", error); } }
         
-        // --- SETTINGS MANAGEMENT LOGIC ---
-        async function renderCompanySettingsAdminPage() { if (!selectedCompanyForManagement) return; companySettingsAdminTitle.textContent = `Opções para: ${selectedCompanyForManagement.name}`; try { const settingsRef = doc(db, "settings", selectedCompanyForManagement.id); const docSnap = await getDoc(settingsRef); if (docSnap.exists()) { const settings = docSnap.data(); reportAccessToggle.checked = settings.reportAccess !== false; fetchOnlyNewToggle.checked = settings.fetchOnlyNew === true; document.querySelector(`input[name="news-scope"][value="${settings.searchScope || 'br'}"]`).checked = true; stateSelect.value = settings.searchState || ''; } else { reportAccessToggle.checked = true; fetchOnlyNewToggle.checked = false; document.querySelector('input[name="news-scope"][value="br"]').checked = true; stateSelect.value = ''; } handleScopeChange(); } catch (error) { console.error("Error rendering settings:", error); } }
-        async function handleSettingsChange(e) { if (!selectedCompanyForManagement) return; const settingsRef = doc(db, "settings", selectedCompanyForManagement.id); let key, value; switch (e.target.id) { case 'report-access-toggle': key = 'reportAccess'; value = e.target.checked; break; case 'fetch-only-new-toggle': key = 'fetchOnlyNew'; value = e.target.checked; break; case 'state-select': key = 'searchState'; value = e.target.value; break; default: if (e.target.name === 'news-scope') { key = 'searchScope'; value = e.target.value; } else { return; } } try { await setDoc(settingsRef, { [key]: value }, { merge: true }); showAlert('Opção salva!', 'success'); } catch (error) { console.error("Error saving setting:", error); } }
-        function handleScopeChange() { const selectedScope = document.querySelector('input[name="news-scope"]:checked').value; stateSelectContainer.classList.toggle('hidden', selectedScope !== 'state'); }
-        async function renderGlobalKeysPage() { try { const settingsRef = doc(db, "settings", "global"); const docSnap = await getDoc(settingsRef); if (docSnap.exists()) { const settings = docSnap.data(); apiKeyNewsApiInput.value = settings.apiKeyNewsApi || ''; apiKeyGNewsInput.value = settings.apiKeyGNews || ''; apiKeyYoutubeInput.value = settings.apiKeyYoutube || ''; apiKeyBloggerInput.value = settings.apiKeyBlogger || ''; } } catch (error) { console.error("Error loading global API keys:", error); } }
-        async function handleGlobalKeyChange(e) { const settingsRef = doc(db, "settings", "global"); const key = e.target.id.replace('api-key-', 'apiKey'); const value = e.target.value; try { await setDoc(settingsRef, { [key]: value }, { merge: true }); showAlert('Chave de API salva!', 'success'); } catch (error) { console.error("Error saving global API key:", error); } }
-        async function renderGlobalSourcesPage() { try { const settingsRef = doc(db, "settings", "global"); const docSnap = await getDoc(settingsRef); if (docSnap.exists()) { const settings = docSnap.data(); bloggerIdInput.value = settings.bloggerId || ''; rssUrlInput.value = settings.rssUrl || ''; } } catch (error) { console.error("Error loading global sources:", error); } }
-        async function handleGlobalSourceChange(e) { const settingsRef = doc(db, "settings", "global"); const key = e.target.id === 'blogger-id' ? 'bloggerId' : 'rssUrl'; const value = e.target.value; try { await setDoc(settingsRef, { [key]: value }, { merge: true }); showAlert('Fonte salva!', 'success'); } catch (error) { console.error("Error saving global source:", error); } }
-
-        // --- NOTIFICATION LOGIC ---
-        function setupNotificationListener() { if (notificationListener) notificationListener(); if (!currentUser || currentUser.isSuperAdmin) return; const settingsRef = doc(db, "settings", currentUser.companyId); notificationListener = onSnapshot(settingsRef, (doc) => { if (doc.exists() && doc.data().newAlerts) { triggerNotificationAnimation(); } }); }
-        function triggerNotificationAnimation() { notificationBell.classList.add('animate-ring'); setTimeout(() => { notificationBell.classList.remove('animate-ring'); }, 1000); }
-
-        // --- NEWS ALERT DISPLAY LOGIC ---
-        function displayNewsAlert(article, container) { const pubDate = new Date(article.publishedAt.seconds ? article.publishedAt.toDate() : article.publishedAt); const formattedDate = pubDate.toLocaleDateString('pt-BR'); const dateForFilter = pubDate.toISOString().split('T')[0]; const alertEl = document.createElement('div'); alertEl.className = 'bg-white p-4 rounded-lg shadow-md border-l-4 border-green-500 fade-in'; alertEl.dataset.date = dateForFilter; alertEl.dataset.keyword = article.keyword; alertEl.dataset.title = article.title.toLowerCase(); alertEl.dataset.description = article.description ? article.description.toLowerCase() : ''; let sentimentHTML = ''; if (article.sentiment) { const score = article.sentiment.score; let emoji = '😐'; let color = 'gray'; if (score > 0.2) { emoji = '😊'; color = 'green'; } else if (score < -0.2) { emoji = '😠'; color = 'red'; } sentimentHTML = `<span class="text-xs font-semibold text-${color}-600 bg-${color}-100 px-2 py-1 rounded-full ml-2">${emoji} Sentimento</span>`; } let entitiesHTML = ''; if (article.entities && article.entities.length > 0) { entitiesHTML = `<div class="mt-2 flex flex-wrap gap-2">${article.entities.map(e => `<span class="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-full">${e}</span>`).join('')}</div>`; } alertEl.innerHTML = `<div class="flex justify-between items-start"><h4 class="text-lg font-bold text-gray-800 pr-2">${article.title}</h4><div class="flex items-center"><span class="flex-shrink-0 text-xs font-semibold bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full">${article.keyword}</span>${sentimentHTML}</div></div><p class="text-sm text-gray-600 mt-2">${article.description || 'Descrição não disponível.'}</p>${entitiesHTML}<div class="text-xs text-gray-500 mt-3 flex justify-between items-center"><span>Fonte: ${article.source.name} | Publicado: ${formattedDate}</span><a href="${article.url}" target="_blank" rel="noopener noreferrer" class="text-indigo-600 hover:underline font-semibold">Ler mais &rarr;</a></div>`; container.appendChild(alertEl); }
-        async function populateInitialAlerts() { if (!currentUser) return; newsAlerts.innerHTML = '<p class="text-gray-500">Carregando alertas...</p>'; try { const q = query(collection(db, "companies", currentUser.companyId, "articles"), orderBy("publishedAt", "desc"), limit(100)); const articlesSnapshot = await getDocs(q); newsAlerts.innerHTML = ''; if (articlesSnapshot.empty) { newsAlerts.innerHTML = '<p class="text-gray-500">Nenhum alerta encontrado.</p>'; return; } articlesSnapshot.docs.forEach(d => displayNewsAlert(d.data(), newsAlerts)); filterAlertsByDate(); } catch (error) { console.error("Error populating alerts:", error); newsAlerts.innerHTML = '<p class="text-red-500">Erro ao carregar alertas.</p>'; } }
-        function filterAlertsByDate() { const selectedDate = alertDateFilter.value; const allAlerts = newsAlerts.querySelectorAll('.fade-in'); let visibleCount = 0; allAlerts.forEach(alert => { const isVisible = !selectedDate || alert.dataset.date === selectedDate; alert.style.display = isVisible ? 'block' : 'none'; if(isVisible) visibleCount++; }); if(visibleCount === 0 && !newsAlerts.querySelector('.text-gray-500')) { newsAlerts.insertAdjacentHTML('beforeend', `<p class="text-gray-500">Nenhum alerta encontrado para a data selecionada.</p>`); } else if (visibleCount > 0) { const noAlertsMsg = newsAlerts.querySelector('.text-gray-500'); if (noAlertsMsg) noAlertsMsg.remove(); } }
-        
-        // --- REPORT PAGE LOGIC ---
-        async function renderReportPage() {
-            if (!currentUser) return;
-            const articlesQuery = query(collection(db, "companies", currentUser.companyId, "articles"), orderBy("publishedAt", "desc"));
-            const keywordsQuery = query(collection(db, "companies", currentUser.companyId, "keywords"));
-
-            const [articlesSnapshot, keywordsSnapshot] = await Promise.all([getDocs(articlesQuery), getDocs(keywordsQuery)]);
-            
-            const articles = articlesSnapshot.docs.map(doc => doc.data());
-            const keywords = keywordsSnapshot.docs.map(doc => doc.data().word);
-
-            reportKeywordFilter.innerHTML = '<option value="all">Todas as Palavras-Chave</option>';
-            keywords.forEach(kw => {
-                const option = document.createElement('option');
-                option.value = kw;
-                option.textContent = kw;
-                reportKeywordFilter.appendChild(option);
-            });
-            
-            const updateCharts = () => {
-                const startDate = startDateInput.value ? new Date(startDateInput.value) : null;
-                const endDate = endDateInput.value ? new Date(endDateInput.value) : null;
-                const selectedKeyword = reportKeywordFilter.value;
-
-                if (startDate) startDate.setHours(0, 0, 0, 0);
-                if (endDate) endDate.setHours(23, 59, 59, 999);
-
-                const filteredArticles = articles.filter(article => {
-                    const pubDate = article.publishedAt.toDate();
-                    const dateMatch = (!startDate || pubDate >= startDate) && (!endDate || pubDate <= endDate);
-                    const keywordMatch = (selectedKeyword === 'all' || article.keyword === selectedKeyword);
-                    return dateMatch && keywordMatch;
+        // --- COMPANY-SPECIFIC MANAGEMENT (KEYWORDS, USERS, SETTINGS) ---
+        async function renderCompanyKeywordAdminPage() {
+            if (!selectedCompanyForManagement) { updateView('super-admin'); return; }
+            companyKeywordAdminTitle.textContent = `Gerenciar Palavras-Chave para: ${selectedCompanyForManagement.name}`;
+            try {
+                const keywords = await getDocs(collection(db, `companies/${selectedCompanyForManagement.id}/keywords`));
+                adminKeywordList.innerHTML = '';
+                keywords.forEach(doc => {
+                    const keyword = doc.data();
+                    const li = document.createElement('li');
+                    li.classList.add('bg-gray-100', 'p-3', 'rounded-md', 'flex', 'items-center', 'justify-between', 'gap-2');
+                    li.innerHTML = `
+                        <span class="text-lg">${keyword.text}</span>
+                        <div class="flex gap-2 text-sm">
+                            <button class="edit-btn text-blue-600 hover:text-blue-800" data-id="${doc.id}" data-text="${keyword.text}">Editar</button>
+                            <button class="delete-btn text-red-600 hover:text-red-800" data-id="${doc.id}">Excluir</button>
+                        </div>
+                    `;
+                    adminKeywordList.appendChild(li);
                 });
-                renderSourceChart(filteredArticles);
-                renderDateChart(filteredArticles);
-                renderSentimentChart(filteredArticles);
-            };
-            
-            updateCharts();
-            startDateInput.addEventListener('change', updateCharts);
-            endDateInput.addEventListener('change', updateCharts);
-            reportKeywordFilter.addEventListener('change', updateCharts);
-        }
-        function renderSourceChart(articles) { const sourceCounts = articles.reduce((acc, article) => { const sourceName = article.source.name; acc[sourceName] = (acc[sourceName] || 0) + 1; return acc; }, {}); const topSources = Object.entries(sourceCounts).sort((a, b) => b[1] - a[1]).slice(0, 10); const labels = topSources.map(entry => entry[0]); const data = topSources.map(entry => entry[1]); const ctx = document.getElementById('source-chart').getContext('2d'); if (sourceChartInstance) sourceChartInstance.destroy(); sourceChartInstance = new Chart(ctx, { type: 'bar', data: { labels: labels, datasets: [{ label: 'Notícias por Veículo', data: data, backgroundColor: '#4F46E5' }] }, options: { indexAxis: 'x', responsive: true, plugins: { legend: { display: false } } } }); }
-        function renderDateChart(articles) { const dateCounts = articles.reduce((acc, article) => { const dateStr = article.publishedAt.toDate().toLocaleDateString('pt-BR'); acc[dateStr] = (acc[dateStr] || 0) + 1; return acc; }, {}); const sortedDates = Object.entries(dateCounts).sort((a, b) => new Date(a[0].split('/').reverse().join('-')) - new Date(b[0].split('/').reverse().join('-'))); const labels = sortedDates.map(entry => entry[0]); const data = sortedDates.map(entry => entry[1]); const ctx = document.getElementById('date-chart').getContext('2d'); if (dateChartInstance) dateChartInstance.destroy(); dateChartInstance = new Chart(ctx, { type: 'line', data: { labels: labels, datasets: [{ label: 'Notícias por Dia', data: data, fill: false, borderColor: '#4F46E5', tension: 0.1 }] } }); }
-        function renderSentimentChart(articles) { const sentimentCounts = articles.reduce((acc, article) => { if (article.sentiment) { const score = article.sentiment.score; if (score > 0.2) acc.positive++; else if (score < -0.2) acc.negative++; else acc.neutral++; } return acc; }, { positive: 0, neutral: 0, negative: 0 }); const ctx = document.getElementById('sentiment-chart').getContext('2d'); if (sentimentChartInstance) sentimentChartInstance.destroy(); sentimentChartInstance = new Chart(ctx, { type: 'bar', data: { labels: ['Positivo', 'Neutro', 'Negativo'], datasets: [{ label: 'Análise de Sentimento', data: [sentimentCounts.positive, sentimentCounts.neutral, sentimentCounts.negative], backgroundColor: ['#10B981', '#6B7280', '#EF4444'] }] }, options: { indexAxis: 'x', responsive: true, plugins: { legend: { display: false } } } }); }
-
-        // --- SEARCH PAGE LOGIC ---
-        async function setupSearchPage() { if (!currentUser) return; searchInput.value = ''; searchResults.innerHTML = '<p class="text-gray-500">Carregando todos os artigos para pesquisa...</p>'; try { const q = query(collection(db, "companies", currentUser.companyId, "articles"), orderBy("publishedAt", "desc")); const articlesSnapshot = await getDocs(q); allCompanyArticles = articlesSnapshot.docs.map(d => d.data()); searchResults.innerHTML = `<p class="text-gray-500">Pronto para pesquisar em ${allCompanyArticles.length} artigos. Digite um termo ou use os filtros.</p>`; setupFilters(); } catch (error) { console.error("Error fetching articles for search:", error); searchResults.innerHTML = '<p class="text-red-500">Não foi possível carregar os artigos para pesquisa.</p>'; } }
-        function setupFilters() { filterContainer.innerHTML = ''; const keywords = [...new Set(allCompanyArticles.map(a => a.keyword))]; if (keywords.length > 0) { let keywordButtons = keywords.map(kw => `<button class="filter-btn bg-gray-200 hover:bg-indigo-200 text-gray-800 text-sm font-medium px-3 py-1 rounded-full" data-keyword="${kw}">${kw}</button>`).join(''); filterContainer.innerHTML = `<div class="flex flex-wrap gap-2"><span class="font-semibold self-center">Filtar por Palavra-Chave:</span>${keywordButtons}</div>`; } }
-        function handleSearch() { const searchTerm = searchInput.value.toLowerCase().trim(); const activeFilter = filterContainer.querySelector('.bg-indigo-500'); const keywordFilter = activeFilter ? activeFilter.dataset.keyword : null; if (!searchTerm && !keywordFilter) { searchResults.innerHTML = `<p class="text-gray-500">Digite algo para começar a pesquisar ou use os filtros.</p>`; return; } let filteredArticles = allCompanyArticles; if (keywordFilter) { filteredArticles = filteredArticles.filter(a => a.keyword === keywordFilter); } if (searchTerm) { filteredArticles = filteredArticles.filter(a => a.title.toLowerCase().includes(searchTerm) || (a.description && a.description.toLowerCase().includes(searchTerm))); } renderSearchResults(filteredArticles); }
-        function renderSearchResults(articles) { searchResults.innerHTML = ''; if (articles.length === 0) { searchResults.innerHTML = '<p class="text-gray-500">Nenhum resultado encontrado.</p>'; return; } articles.forEach(article => displayNewsAlert(article, searchResults)); }
-
-        // --- DASHBOARD FILTER LOGIC ---
-        function handleDashboardKeywordFilter(e) {
-            const target = e.target.closest('.keyword-filter');
-            if (!target) return;
-
-            const isAlreadyActive = target.classList.contains('active');
-            const keywordToFilter = target.dataset.keyword;
-            
-            document.querySelectorAll('.keyword-filter').forEach(el => el.classList.remove('active'));
-
-            if (isAlreadyActive && keywordToFilter !== 'all') {
-                document.querySelector('.keyword-filter[data-keyword="all"]').classList.add('active');
-            } else {
-                target.classList.add('active');
+                document.querySelectorAll('.edit-btn').forEach(btn => btn.addEventListener('click', () => {
+                    keywordInput.value = btn.dataset.text;
+                    keywordIdInput.value = btn.dataset.id;
+                }));
+                document.querySelectorAll('.delete-btn').forEach(btn => btn.addEventListener('click', async () => {
+                    try {
+                        await deleteDoc(doc(db, `companies/${selectedCompanyForManagement.id}/keywords`, btn.dataset.id));
+                        showAlert('Palavra-chave excluída com sucesso!', 'success');
+                        renderCompanyKeywordAdminPage();
+                    } catch (e) {
+                        console.error("Erro ao excluir palavra-chave:", e);
+                        showAlert('Erro ao excluir palavra-chave.', 'error');
+                    }
+                }));
+            } catch (e) {
+                console.error("Erro ao carregar palavras-chave:", e);
+                showAlert('Erro ao carregar palavras-chave.', 'error');
             }
-            
-            filterDashboardAlerts();
+        }
+        async function saveKeyword(e) {
+            e.preventDefault();
+            const keywordText = keywordInput.value.trim();
+            const keywordId = keywordIdInput.value;
+            if (!keywordText) { showAlert('Palavra-chave é obrigatória.', 'error'); return; }
+            try {
+                if (keywordId) {
+                    await updateDoc(doc(db, `companies/${selectedCompanyForManagement.id}/keywords`, keywordId), { text: keywordText });
+                    showAlert('Palavra-chave atualizada com sucesso!', 'success');
+                } else {
+                    await addDoc(collection(db, `companies/${selectedCompanyForManagement.id}/keywords`), { text: keywordText });
+                    showAlert('Palavra-chave adicionada com sucesso!', 'success');
+                }
+                keywordInput.value = '';
+                keywordIdInput.value = '';
+                renderCompanyKeywordAdminPage();
+            } catch (e) {
+                console.error("Erro ao salvar palavra-chave:", e);
+                showAlert('Erro ao salvar palavra-chave.', 'error');
+            }
+        }
+        async function renderCompanyUserAdminPage() {
+            if (!selectedCompanyForManagement) { updateView('super-admin'); return; }
+            companyUserAdminTitle.textContent = `Gerenciar Usuários para: ${selectedCompanyForManagement.name}`;
+            try {
+                const users = await getDocs(collection(db, `companies/${selectedCompanyForManagement.id}/users`));
+                adminUserList.innerHTML = '';
+                users.forEach(doc => {
+                    const user = doc.data();
+                    const li = document.createElement('li');
+                    li.classList.add('bg-gray-100', 'p-3', 'rounded-md', 'flex', 'items-center', 'justify-between', 'gap-2');
+                    li.innerHTML = `
+                        <span class="text-lg">${user.user}</span>
+                        <div class="flex gap-2 text-sm">
+                            <button class="edit-user-btn text-blue-600 hover:text-blue-800" data-id="${doc.id}" data-user="${user.user}" data-pass="${user.password}">Editar</button>
+                            <button class="delete-user-btn text-red-600 hover:text-red-800" data-id="${doc.id}">Excluir</button>
+                        </div>
+                    `;
+                    adminUserList.appendChild(li);
+                });
+                document.querySelectorAll('.edit-user-btn').forEach(btn => btn.addEventListener('click', () => {
+                    userInput.value = btn.dataset.user;
+                    userPasswordInput.value = btn.dataset.pass;
+                    userIdInput.value = btn.dataset.id;
+                }));
+                document.querySelectorAll('.delete-user-btn').forEach(btn => btn.addEventListener('click', async () => {
+                    try {
+                        if (btn.dataset.id === 'default') { showAlert('O usuário "admin" não pode ser excluído.', 'error'); return; }
+                        await deleteDoc(doc(db, `companies/${selectedCompanyForManagement.id}/users`, btn.dataset.id));
+                        showAlert('Usuário excluído com sucesso!', 'success');
+                        renderCompanyUserAdminPage();
+                    } catch (e) {
+                        console.error("Erro ao excluir usuário:", e);
+                        showAlert('Erro ao excluir usuário.', 'error');
+                    }
+                }));
+            } catch (e) {
+                console.error("Erro ao carregar usuários:", e);
+                showAlert('Erro ao carregar usuários.', 'error');
+            }
+        }
+        async function saveUser(e) {
+            e.preventDefault();
+            const userText = userInput.value.trim();
+            const userPassword = userPasswordInput.value.trim();
+            const userId = userIdInput.value;
+            if (!userText || !userPassword) { showAlert('Usuário e senha são obrigatórios.', 'error'); return; }
+            try {
+                if (userId) {
+                    await updateDoc(doc(db, `companies/${selectedCompanyForManagement.id}/users`, userId), { user: userText, password: userPassword });
+                    showAlert('Usuário atualizado com sucesso!', 'success');
+                } else {
+                    await addDoc(collection(db, `companies/${selectedCompanyForManagement.id}/users`), { user: userText, password: userPassword });
+                    showAlert('Usuário adicionado com sucesso!', 'success');
+                }
+                userInput.value = '';
+                userPasswordInput.value = '';
+                userIdInput.value = '';
+                renderCompanyUserAdminPage();
+            } catch (e) {
+                console.error("Erro ao salvar usuário:", e);
+                showAlert('Erro ao salvar usuário.', 'error');
+            }
+        }
+        async function renderCompanySettingsAdminPage() {
+            if (!selectedCompanyForManagement) { updateView('super-admin'); return; }
+            companySettingsAdminTitle.textContent = `Opções para: ${selectedCompanyForManagement.name}`;
+            try {
+                const companyDoc = await getDoc(doc(db, "companies", selectedCompanyForManagement.id));
+                const settings = companyDoc.data().settings || {};
+                const logoUrl = companyDoc.data().logoUrl;
+                
+                reportAccessToggle.checked = !!settings.reportAccess;
+                fetchOnlyNewToggle.checked = !!settings.fetchOnlyNew;
+
+                if (settings.newsScope === 'br') document.getElementById('scope-nacional').checked = true;
+                else if (settings.newsScope === 'international') document.getElementById('scope-internacional').checked = true;
+                else if (settings.newsScope === 'state') document.getElementById('scope-estadual').checked = true;
+                
+                if (settings.newsScope === 'state') stateSelectContainer.classList.remove('hidden');
+                else stateSelectContainer.classList.add('hidden');
+                
+                stateSelect.value = settings.state || '';
+            } catch (e) {
+                console.error("Erro ao carregar configurações da empresa:", e);
+                showAlert('Erro ao carregar configurações da empresa.', 'error');
+            }
+        }
+        async function saveCompanySettings() {
+            if (!selectedCompanyForManagement) return;
+            const settings = {
+                reportAccess: reportAccessToggle.checked,
+                fetchOnlyNew: fetchOnlyNewToggle.checked,
+                newsScope: document.querySelector('input[name="news-scope"]:checked').value,
+                state: stateSelect.value || ''
+            };
+            try {
+                await updateDoc(doc(db, "companies", selectedCompanyForManagement.id), { settings: settings });
+                showAlert('Configurações salvas com sucesso!', 'success');
+            } catch (e) {
+                console.error("Erro ao salvar configurações:", e);
+                showAlert('Erro ao salvar configurações.', 'error');
+            }
+        }
+        async function uploadLogo(e) {
+            const file = e.target.files[0];
+            if (!file || !selectedCompanyForManagement) return;
+            const logoRef = ref(storage, `logos/${selectedCompanyForManagement.id}`);
+            try {
+                await uploadBytes(logoRef, file);
+                const url = await getDownloadURL(logoRef);
+                await updateDoc(doc(db, "companies", selectedCompanyForManagement.id), { logoUrl: url });
+                showAlert('Logo atualizada com sucesso!', 'success');
+                await loadAndDisplayLogo();
+            } catch (e) {
+                console.error("Erro ao fazer upload da logo:", e);
+                showAlert('Erro ao fazer upload da logo.', 'error');
+            }
+        }
+        
+        // --- GLOBAL ADMIN SETTINGS ---
+        async function renderGlobalKeysPage() {
+            try {
+                const globalKeysDoc = await getDoc(doc(db, "global_settings", "api_keys"));
+                if (globalKeysDoc.exists()) {
+                    const data = globalKeysDoc.data();
+                    apiKeyNewsApiInput.value = data.newsapi || '';
+                    apiKeyGNewsInput.value = data.gnews || '';
+                    apiKeyYoutubeInput.value = data.youtube || '';
+                    apiKeyBloggerInput.value = data.blogger || '';
+                }
+            } catch (error) {
+                console.error("Erro ao carregar chaves globais:", error);
+                showAlert('Erro ao carregar chaves de API globais.', 'error');
+            }
         }
 
-        function filterDashboardAlerts() {
-            const activeKeywordEl = document.querySelector('.keyword-filter.active');
-            const selectedKeyword = activeKeywordEl ? activeKeywordEl.dataset.keyword : 'all';
-            const allAlerts = newsAlerts.querySelectorAll('.fade-in');
+        async function saveGlobalKeys() {
+            try {
+                const newsapiKey = apiKeyNewsApiInput.value;
+                const gnewsKey = apiKeyGNewsInput.value;
+                const youtubeKey = apiKeyYoutubeInput.value;
+                const bloggerKey = apiKeyBloggerInput.value;
+                await setDoc(doc(db, "global_settings", "api_keys"), {
+                    newsapi: newsapiKey,
+                    gnews: gnewsKey,
+                    youtube: youtubeKey,
+                    blogger: bloggerKey
+                });
+                showAlert('Chaves de API globais salvas com sucesso!', 'success');
+            } catch (error) {
+                console.error("Erro ao salvar chaves globais:", error);
+                showAlert('Erro ao salvar as chaves de API.', 'error');
+            }
+        }
+
+        async function renderGlobalSourcesPage() {
+            try {
+                const globalSourcesDoc = await getDoc(doc(db, "global_settings", "news_sources"));
+                if (globalSourcesDoc.exists()) {
+                    const data = globalSourcesDoc.data();
+                    bloggerIdInput.value = (data.bloggerIds || []).join('\n');
+                    rssUrlInput.value = (data.rssUrls || []).join('\n');
+                }
+            } catch (error) {
+                console.error("Erro ao carregar fontes globais:", error);
+                showAlert('Erro ao carregar fontes de notícias globais.', 'error');
+            }
+        }
+        
+        async function saveGlobalSources() {
+            try {
+                const bloggerIds = bloggerIdInput.value.split('\n').map(id => id.trim()).filter(id => id.length > 0);
+                const rssUrls = rssUrlInput.value.split('\n').map(url => url.trim()).filter(url => url.length > 0);
+                await setDoc(doc(db, "global_settings", "news_sources"), {
+                    bloggerIds: bloggerIds,
+                    rssUrls: rssUrls
+                });
+                showAlert('Fontes globais salvas com sucesso!', 'success');
+            } catch (error) {
+                console.error("Erro ao salvar fontes globais:", error);
+                showAlert('Erro ao salvar fontes de notícias globais.', 'error');
+            }
+        }
+
+        // --- DASHBOARD & NEWS DISPLAY ---
+        async function renderDashboard() {
+            newsAlerts.innerHTML = '<div class="text-center text-gray-500 mt-10">Carregando notícias...</div>';
+            if (currentUser.isSuperAdmin) {
+                dashboardGrid.classList.add('hidden');
+                superAdminDashboardMessage.classList.remove('hidden');
+                return;
+            }
+            dashboardGrid.classList.remove('hidden');
+            superAdminDashboardMessage.classList.add('hidden');
+            const keywords = await getDocs(collection(db, `companies/${currentUser.companyId}/keywords`));
+            dashboardKeywordList.innerHTML = keywords.docs.map(doc => `<li class="text-gray-600">${doc.data().text}</li>`).join('');
             
-            allAlerts.forEach(alert => {
-                const keywordMatch = selectedKeyword === 'all' || alert.dataset.keyword === selectedKeyword;
-                alert.style.display = keywordMatch ? 'block' : 'none';
+            await fetchArticles();
+            if (currentUser.reportAccess) navRelatorio.classList.remove('hidden');
+            else navRelatorio.classList.add('hidden');
+        }
+        async function fetchArticles() {
+            try {
+                const date = alertDateFilter.value || new Date().toISOString().split('T')[0];
+                const startOfDay = new Date(date);
+                startOfDay.setHours(0, 0, 0, 0);
+                const endOfDay = new Date(date);
+                endOfDay.setHours(23, 59, 59, 999);
+                const q = query(
+                    collection(db, `companies/${currentUser.companyId}/articles`),
+                    where("publishedAt", ">=", startOfDay.toISOString()),
+                    where("publishedAt", "<=", endOfDay.toISOString()),
+                    orderBy("publishedAt", "desc")
+                );
+                const articlesSnapshot = await getDocs(q);
+                allCompanyArticles = articlesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                displayNews(allCompanyArticles);
+            } catch (e) {
+                console.error("Erro ao carregar artigos:", e);
+                newsAlerts.innerHTML = '<p class="text-center text-red-500 mt-10">Erro ao carregar notícias. Tente novamente.</p>';
+            }
+        }
+        function displayNews(articles) {
+            newsAlerts.innerHTML = '';
+            if (articles.length === 0) {
+                newsAlerts.innerHTML = '<p class="text-center text-gray-500 mt-10">Nenhuma notícia encontrada para a data selecionada.</p>';
+                return;
+            }
+            articles.forEach(article => {
+                const articleDate = new Date(article.publishedAt);
+                const dateStr = articleDate.toLocaleDateString('pt-BR');
+                const timeStr = articleDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                const li = document.createElement('div');
+                li.classList.add('p-4', 'bg-gray-50', 'rounded-lg', 'shadow-sm', 'border', 'border-gray-200');
+                li.innerHTML = `
+                    <h4 class="text-lg font-semibold text-indigo-700 hover:underline"><a href="${article.url}" target="_blank">${article.title}</a></h4>
+                    <p class="text-gray-500 text-sm mt-1">${article.source} - ${dateStr} ${timeStr}</p>
+                    <p class="text-gray-700 mt-2 text-sm">${article.description}</p>
+                    <div class="mt-2 text-xs font-medium text-gray-400">Palavras-chave: ${article.keywords.join(', ')}</div>
+                `;
+                newsAlerts.appendChild(li);
             });
         }
+        
+        // --- SEARCH FUNCTIONALITY ---
+        async function setupSearchPage() {
+            filterContainer.innerHTML = '';
+            searchResults.innerHTML = '<p class="text-gray-500">Digite algo para começar a pesquisar ou use os filtros.</p>';
+            searchInput.value = '';
+            if (!currentUser || currentUser.isSuperAdmin) return;
+            const keywords = await getDocs(collection(db, `companies/${currentUser.companyId}/keywords`));
+            keywords.forEach(doc => {
+                const keyword = doc.data().text;
+                const btn = document.createElement('button');
+                btn.textContent = keyword;
+                btn.classList.add('keyword-filter', 'px-3', 'py-1', 'rounded-full', 'text-sm', 'bg-gray-200', 'text-gray-700', 'mr-2', 'mb-2', 'hover:bg-indigo-200');
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.keyword-filter').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    filterArticles(keyword);
+                });
+                filterContainer.appendChild(btn);
+            });
+            await fetchAllArticlesForSearch();
+        }
+        async function fetchAllArticlesForSearch() {
+            if (!currentUser || currentUser.isSuperAdmin) return;
+            const articles = await getDocs(collection(db, `companies/${currentUser.companyId}/articles`));
+            allCompanyArticles = articles.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        }
+        function filterArticles(keyword = '', searchText = '') {
+            const filtered = allCompanyArticles.filter(article => {
+                const matchesKeyword = !keyword || (article.keywords && article.keywords.includes(keyword));
+                const matchesSearch = !searchText ||
+                    article.title.toLowerCase().includes(searchText.toLowerCase()) ||
+                    article.description.toLowerCase().includes(searchText.toLowerCase());
+                return matchesKeyword && matchesSearch;
+            });
+            displayNews(filtered);
+        }
+        
+        // --- REPORTING (CHARTS) ---
+        async function renderReportPage() {
+            if (!currentUser || currentUser.isSuperAdmin) return;
+            const keywords = await getDocs(collection(db, `companies/${currentUser.companyId}/keywords`));
+            reportKeywordFilter.innerHTML = `<option value="">Todas as palavras-chave</option>` + keywords.docs.map(doc => `<option value="${doc.data().text}">${doc.data().text}</option>`).join('');
+            reportKeywordFilter.value = "";
+            startDateInput.value = "";
+            endDateInput.value = "";
+            await fetchAllArticlesForSearch();
+            updateCharts();
+        }
+        function updateCharts() {
+            const selectedKeyword = reportKeywordFilter.value;
+            const startDate = startDateInput.value ? new Date(startDateInput.value) : null;
+            const endDate = endDateInput.value ? new Date(endDateInput.value) : null;
+            
+            const filteredArticles = allCompanyArticles.filter(article => {
+                const articleDate = new Date(article.publishedAt);
+                const keywordMatch = !selectedKeyword || (article.keywords && article.keywords.includes(selectedKeyword));
+                const dateMatch = (!startDate || articleDate >= startDate) && (!endDate || articleDate <= endDate);
+                return keywordMatch && dateMatch;
+            });
+            
+            // Source Chart
+            const sources = filteredArticles.reduce((acc, article) => { acc[article.source] = (acc[article.source] || 0) + 1; return acc; }, {});
+            if (sourceChartInstance) sourceChartInstance.destroy();
+            sourceChartInstance = new Chart(sourceChart, { type: 'pie', data: { labels: Object.keys(sources), datasets: [{ data: Object.values(sources), backgroundColor: ['#4F46E5', '#3B82F6', '#2563EB', '#6366F1', '#818CF8'] }] } });
 
-        // --- INITIALIZATION AND EVENT LISTENERS ---
+            // Date Chart
+            const dates = filteredArticles.reduce((acc, article) => { const date = new Date(article.publishedAt).toLocaleDateString('pt-BR'); acc[date] = (acc[date] || 0) + 1; return acc; }, {});
+            const sortedDates = Object.keys(dates).sort((a, b) => new Date(a.split('/').reverse().join('-')) - new Date(b.split('/').reverse().join('-')));
+            const sortedData = sortedDates.map(date => dates[date]);
+            if (dateChartInstance) dateChartInstance.destroy();
+            dateChartInstance = new Chart(dateChart, { type: 'line', data: { labels: sortedDates, datasets: [{ label: 'Notícias por dia', data: sortedData, borderColor: '#4F46E5', fill: false }] } });
+            
+            // Sentiment Chart
+            const sentiments = filteredArticles.reduce((acc, article) => { acc[article.sentiment] = (acc[article.sentiment] || 0) + 1; return acc; }, {});
+            if (sentimentChartInstance) sentimentChartInstance.destroy();
+            sentimentChartInstance = new Chart(sentimentChart, { type: 'bar', data: { labels: ['Positivo', 'Neutro', 'Negativo'], datasets: [{ label: 'Análise de Sentimento', data: [sentiments.positive || 0, sentiments.neutral || 0, sentiments.negative || 0], backgroundColor: ['#10B981', '#6B7280', '#EF4444'] }] } });
+        }
+        
+        // --- NOTIFICATION BELL ---
+        function setupNotificationListener() {
+            if (notificationListener) notificationListener();
+            if (!currentUser || currentUser.isSuperAdmin) return;
+            const q = query(collection(db, `companies/${currentUser.companyId}/articles`), where("isRead", "==", false));
+            notificationListener = onSnapshot(q, (snapshot) => {
+                const unreadCount = snapshot.size;
+                if (unreadCount > 0) {
+                    notificationBadge.textContent = unreadCount;
+                    notificationBadge.classList.remove('hidden');
+                    notificationBell.classList.add('animate-ring');
+                } else {
+                    notificationBadge.classList.add('hidden');
+                    notificationBell.classList.remove('animate-ring');
+                }
+            });
+        }
+        async function markAllAsRead() {
+            if (!currentUser || currentUser.isSuperAdmin) return;
+            const q = query(collection(db, `companies/${currentUser.companyId}/articles`), where("isRead", "==", false));
+            const snapshot = await getDocs(q);
+            const batch = writeBatch(db);
+            snapshot.docs.forEach(doc => {
+                batch.update(doc.ref, { isRead: true });
+            });
+            await batch.commit();
+        }
+        
+        // --- INITIALIZATION ---
         document.addEventListener('DOMContentLoaded', () => {
-            // Assign DOM elements after the DOM is loaded
+            // Get all page sections
             pageSections = document.querySelectorAll('.page-section');
+
+            // --- DOM Element Initialization ---
             navLoggedIn = document.getElementById('nav-logged-in');
             navInicio = document.getElementById('nav-inicio');
             navRelatorio = document.getElementById('nav-relatorio');
@@ -612,7 +994,7 @@
             userPasswordInput = document.getElementById('user-password-input');
             userIdInput = document.getElementById('user-id');
             adminUserList = document.getElementById('admin-user-list');
-            notificationBell = document.getElementById('notification-bell-container');
+            notificationBell = document.querySelector('#notification-bell-container svg');
             notificationBadge = document.getElementById('notification-badge');
             manualTriggerBtn = document.getElementById('manual-trigger-btn');
             deleteModal = document.getElementById('delete-modal');
@@ -646,76 +1028,85 @@
             backToAdminConfig1 = document.getElementById('back-to-admin-config-1');
             backToAdminConfig2 = document.getElementById('back-to-admin-config-2');
             backToAdminConfig3 = document.getElementById('back-to-admin-config-3');
+            saveGlobalKeysBtn = document.getElementById('save-global-keys-btn');
+            saveGlobalSourcesBtn = document.getElementById('save-global-sources-btn');
+            const dashboardGrid = document.getElementById('dashboard-grid');
+            const superAdminDashboardMessage = document.getElementById('super-admin-dashboard-message');
+            
+            const states = ["AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS", "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO"];
+            stateSelect.innerHTML = states.map(s => `<option value="${s}">${s}</option>`).join('');
 
-            const states = {"AC": "Acre", "AL": "Alagoas", "AP": "Amapá", "AM": "Amazonas", "BA": "Bahia", "CE": "Ceará", "DF": "Distrito Federal", "ES": "Espírito Santo", "GO": "Goiás", "MA": "Maranhão", "MT": "Mato Grosso", "MS": "Mato Grosso do Sul", "MG": "Minas Gerais", "PA": "Pará", "PB": "Paraíba", "PR": "Paraná", "PE": "Pernambuco", "PI": "Piauí", "RJ": "Rio de Janeiro", "RN": "Rio Grande do Norte", "RS": "Rio Grande do Sul", "RO": "Rondônia", "RR": "Roraima", "SC": "Santa Catarina", "SP": "São Paulo", "SE": "Sergipe", "TO": "Tocantins"};
-            for (const [uf, name] of Object.entries(states)) {
-                const option = document.createElement('option');
-                option.value = uf;
-                option.textContent = name;
-                stateSelect.appendChild(option);
-            }
-
-            loginForm.addEventListener('submit', handleLogin);
-            navInicio.addEventListener('click', (e) => { e.preventDefault(); updateView('dashboard'); });
-            navRelatorio.addEventListener('click', (e) => { e.preventDefault(); updateView('report'); });
-            navPesquisa.addEventListener('click', (e) => { e.preventDefault(); updateView('search'); });
-            navSuperAdmin.addEventListener('click', (e) => { e.preventDefault(); updateView('super-admin'); });
-            navConfiguracoesAdmin.addEventListener('click', (e) => { e.preventDefault(); updateView('configuracoes-admin'); });
-            navLogout.addEventListener('click', (e) => { e.preventDefault(); handleLogout(); });
-            manualTriggerBtn.addEventListener('click', handleManualTrigger);
-            companyList.addEventListener('click', handleCompanyActions);
-            confirmDeleteBtn.addEventListener('click', handleConfirmDelete);
-            cancelDeleteBtn.addEventListener('click', () => deleteModal.classList.add('hidden'));
-            closeLinkModalBtn.addEventListener('click', () => linkModal.classList.add('hidden'));
-            copyLinkBtn.addEventListener('click', () => {
-                accessLinkInput.select();
-                document.execCommand('copy');
-                showAlert('Link copiado para a área de transferência!', 'success');
+            // --- Event Listeners ---
+            loginForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const user = document.getElementById('login-user').value;
+                const pass = document.getElementById('login-password').value;
+                const companyId = document.getElementById('login-company').value || null;
+                login(user, pass, companyId);
             });
-            newsScopeContainer.addEventListener('change', (e) => { handleSettingsChange(e); handleScopeChange(); });
-            apiKeyNewsApiInput.addEventListener('change', handleGlobalKeyChange);
-            apiKeyGNewsInput.addEventListener('change', handleGlobalKeyChange);
-            apiKeyYoutubeInput.addEventListener('change', handleGlobalKeyChange);
-            apiKeyBloggerInput.addEventListener('change', handleGlobalKeyChange);
-            bloggerIdInput.addEventListener('change', handleGlobalSourceChange);
-            rssUrlInput.addEventListener('change', handleGlobalSourceChange);
-            reportAccessToggle.addEventListener('change', handleSettingsChange);
-            fetchOnlyNewToggle.addEventListener('change', handleSettingsChange);
-            stateSelect.addEventListener('change', handleSettingsChange);
-            keywordForm.addEventListener('submit', handleKeywordSubmit);
-            adminKeywordList.addEventListener('click', handleKeywordActions);
-            userForm.addEventListener('submit', handleUserSubmit);
-            adminUserList.addEventListener('click', handleUserActions);
-            searchInput.addEventListener('input', handleSearch);
-            filterContainer.addEventListener('click', (e) => { if (e.target.classList.contains('filter-btn')) { document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('bg-indigo-500', 'text-white')); e.target.classList.add('bg-indigo-500', 'text-white'); handleSearch(); } });
-            notificationBell.addEventListener('click', async () => { if (!currentUser) return; try { await setDoc(doc(db, "settings", currentUser.companyId), { newAlerts: false }, { merge: true }); notificationBadge.classList.add('hidden'); notificationBadge.textContent = ''; } catch (error) { console.error("Error clearing notification:", error); } });
-            backToSuperAdminKwBtn.addEventListener('click', () => updateView('super-admin'));
-            backToSuperAdminSettingsBtn.addEventListener('click', () => updateView('super-admin'));
-            backToSuperAdminUsersBtn.addEventListener('click', () => updateView('super-admin'));
-            dashboardKeywordList.addEventListener('click', handleDashboardKeywordFilter);
-            alertDateFilter.addEventListener('change', filterAlertsByDate);
-            changePasswordForm.addEventListener('submit', handleChangePassword);
+            navInicio.addEventListener('click', (e) => { e.preventDefault(); updateView('dashboard'); });
+            navLogout.addEventListener('click', (e) => { e.preventDefault(); logout(); });
+            navSuperAdmin.addEventListener('click', (e) => { e.preventDefault(); updateView('super-admin'); });
+            navPesquisa.addEventListener('click', (e) => { e.preventDefault(); updateView('search'); });
+            navRelatorio.addEventListener('click', (e) => { e.preventDefault(); updateView('report'); });
+            navConfiguracoesAdmin.addEventListener('click', (e) => { e.preventDefault(); updateView('configuracoes-admin'); });
             btnChangePassword.addEventListener('click', () => updateView('change-password'));
             btnGlobalKeys.addEventListener('click', () => updateView('global-keys'));
             btnNewsSources.addEventListener('click', () => updateView('global-sources'));
             backToAdminConfig1.addEventListener('click', () => updateView('configuracoes-admin'));
             backToAdminConfig2.addEventListener('click', () => updateView('configuracoes-admin'));
             backToAdminConfig3.addEventListener('click', () => updateView('configuracoes-admin'));
+            companyForm.addEventListener('submit', addCompany);
+            keywordForm.addEventListener('submit', saveKeyword);
+            userForm.addEventListener('submit', saveUser);
+            if (saveGlobalKeysBtn) saveGlobalKeysBtn.addEventListener('click', saveGlobalKeys);
+            if (saveGlobalSourcesBtn) saveGlobalSourcesBtn.addEventListener('click', saveGlobalSources);
+            backToSuperAdminKwBtn.addEventListener('click', () => { selectedCompanyForManagement = null; updateView('super-admin'); });
+            backToSuperAdminSettingsBtn.addEventListener('click', () => { selectedCompanyForManagement = null; updateView('super-admin'); });
+            backToSuperAdminUsersBtn.addEventListener('click', () => { selectedCompanyForManagement = null; updateView('super-admin'); });
+            confirmDeleteBtn.addEventListener('click', deleteCompany);
+            cancelDeleteBtn.addEventListener('click', () => { deleteModal.classList.add('hidden'); companyIdToDelete = null; });
+            closeLinkModalBtn.addEventListener('click', () => linkModal.classList.add('hidden'));
+            copyLinkBtn.addEventListener('click', () => { accessLinkInput.select(); document.execCommand('copy'); showAlert('Link copiado para a área de transferência!', 'success'); });
+            logoUploadInput.addEventListener('change', uploadLogo);
+            newsScopeContainer.addEventListener('change', () => {
+                const selectedScope = document.querySelector('input[name="news-scope"]:checked').value;
+                if (selectedScope === 'state') stateSelectContainer.classList.remove('hidden');
+                else stateSelectContainer.classList.add('hidden');
+                saveCompanySettings();
+            });
+            reportAccessToggle.addEventListener('change', saveCompanySettings);
+            fetchOnlyNewToggle.addEventListener('change', saveCompanySettings);
+            alertDateFilter.addEventListener('change', fetchArticles);
+            searchInput.addEventListener('input', (e) => filterArticles(document.querySelector('.keyword-filter.active')?.dataset.text, e.target.value));
+            reportKeywordFilter.addEventListener('change', updateCharts);
+            startDateInput.addEventListener('change', updateCharts);
+            endDateInput.addEventListener('change', updateCharts);
+            if (notificationBell) notificationBell.addEventListener('click', markAllAsRead);
+            if (manualTriggerBtn) manualTriggerBtn.addEventListener('click', manualTrigger);
             
-            const urlParams = new URLSearchParams(window.location.search);
-            const companyParam = urlParams.get('company');
-            if (companyParam) {
-                const companyInput = document.getElementById('login-company');
-                companyInput.value = decodeURIComponent(companyParam);
-                document.getElementById('login-company-wrapper').style.display = 'none';
-            }
-            
-            updateView('login');
-            
-            const savedUser = getStorage('clipping_currentUser', null);
-            if (savedUser) { 
-                currentUser = savedUser; 
-                updateView('dashboard'); 
+            // Initial load
+            currentUser = getStorage('currentUser', null);
+            selectedCompanyForManagement = getStorage('selectedCompany', null);
+            if (currentUser) {
+                if (currentUser.companyId && !currentUser.logoUrl) {
+                    const companyIdEl = document.getElementById('login-company-wrapper');
+                    if (companyIdEl) companyIdEl.classList.add('hidden');
+                }
+                updateView('dashboard');
+                setupNotificationListener();
+            } else {
+                updateView('login');
+                const urlParams = new URLSearchParams(window.location.search);
+                const companyId = urlParams.get('companyId');
+                if (companyId) {
+                    document.getElementById('login-company').value = companyId;
+                    const companyIdEl = document.getElementById('login-company-wrapper');
+                    if (companyIdEl) companyIdEl.classList.add('hidden');
+                } else {
+                    const companyIdEl = document.getElementById('login-company-wrapper');
+                    if (companyIdEl) companyIdEl.classList.remove('hidden');
+                }
             }
         });
     </script>
