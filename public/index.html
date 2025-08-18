@@ -4,14 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Clipping de Notícias - Admin</title>
-    <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Chart.js for graphs -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <style>
@@ -43,7 +40,6 @@
 </head>
 <body class="bg-gray-100 text-gray-800">
 
-    <!-- Header -->
     <header class="bg-white shadow-md">
         <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
             <div class="text-2xl font-bold text-indigo-600 flex items-center">
@@ -71,7 +67,6 @@
     <main class="container mx-auto p-6">
         <div id="global-alert" class="mb-6"></div>
 
-        <!-- Login Section -->
         <section id="login-page" class="page-section fade-in">
             <div class="max-w-md mx-auto bg-gray-50 p-8 rounded-lg shadow-lg mt-10 relative">
                 <div id="login-logo-container" class="absolute top-4 right-4 h-12 w-auto"></div>
@@ -86,7 +81,6 @@
             </div>
         </section>
 
-        <!-- Dashboard Section -->
         <section id="dashboard-page" class="page-section fade-in">
             <div class="flex flex-col md:flex-row justify-between md:items-center mb-6 bg-white p-4 rounded-lg shadow-md">
                 <h2 id="dashboard-title" class="text-2xl font-bold text-gray-800 mb-2 md:mb-0">Notícias do Dia</h2>
@@ -121,7 +115,6 @@
             </div>
         </section>
         
-        <!-- Super Admin Section -->
         <section id="super-admin-page" class="page-section fade-in">
             <h2 class="text-3xl font-bold mb-6 text-red-600">Painel Super-Administrador</h2>
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -139,7 +132,6 @@
             </div>
         </section>
 
-        <!-- Super Admin Options Menu Page -->
         <section id="opcoes-admin-page" class="page-section fade-in">
             <h2 class="text-3xl font-bold mb-6">Opções do Super Admin</h2>
             <div class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -209,7 +201,6 @@
             </div>
         </section>
 
-        <!-- Company User Management Section (by Super Admin) -->
         <section id="company-user-admin-page" class="page-section fade-in">
             <button id="back-to-super-admin-users" class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar para Super Admin</button>
             <h2 id="company-user-admin-title" class="text-3xl font-bold mb-6">Gerenciar Usuários</h2>
@@ -224,7 +215,6 @@
             </div>
         </section>
 
-        <!-- Company Keyword Management Section (by Super Admin) -->
         <section id="company-keyword-admin-page" class="page-section fade-in">
             <button id="back-to-super-admin-kw" class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar para Super Admin</button>
             <h2 id="company-keyword-admin-title" class="text-3xl font-bold mb-6">Gerenciar Palavras-Chave</h2>
@@ -238,7 +228,6 @@
             </div>
         </section>
 
-        <!-- Company Settings Management Section (by Super Admin) -->
         <section id="company-settings-admin-page" class="page-section fade-in">
             <button id="back-to-super-admin-settings" class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar para Super Admin</button>
             <h2 id="company-settings-admin-title" class="text-3xl font-bold mb-6">Opções da Empresa</h2>
@@ -263,7 +252,6 @@
             </div>
         </section>
 
-        <!-- Report Section -->
         <section id="report-page" class="page-section fade-in">
             <div class="bg-white p-8 rounded-lg shadow-lg">
                 <div class="flex flex-col sm:flex-row justify-between items-center mb-6">
@@ -294,7 +282,6 @@
             </div>
         </section>
 
-        <!-- Search Section -->
         <section id="search-page" class="page-section fade-in">
              <div class="bg-white p-6 md:p-8 rounded-lg shadow-lg">
                 <h2 class="text-2xl md:text-3xl font-bold mb-6">Pesquisar nos Alertas Salvos</h2>
@@ -305,7 +292,6 @@
         </section>
     </main>
 
-    <!-- Delete Confirmation Modal -->
     <div id="delete-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
         <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
             <div class="mt-3 text-center">
@@ -324,7 +310,6 @@
         </div>
     </div>
 
-    <!-- Access Link Modal -->
     <div id="link-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
         <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
             <div class="mt-3">
@@ -502,7 +487,31 @@
         async function handleSettingsChange(e) { if (!selectedCompanyForManagement) return; const settingsRef = doc(db, "settings", selectedCompanyForManagement.id); let key, value; switch (e.target.id) { case 'report-access-toggle': key = 'reportAccess'; value = e.target.checked; break; case 'fetch-only-new-toggle': key = 'fetchOnlyNew'; value = e.target.checked; break; case 'state-select': key = 'searchState'; value = e.target.value; break; default: if (e.target.name === 'news-scope') { key = 'searchScope'; value = e.target.value; } else { return; } } try { await setDoc(settingsRef, { [key]: value }, { merge: true }); showAlert('Opção salva!', 'success'); } catch (error) { console.error("Error saving setting:", error); } }
         function handleScopeChange() { const selectedScope = document.querySelector('input[name="news-scope"]:checked').value; stateSelectContainer.classList.toggle('hidden', selectedScope !== 'state'); }
         async function renderGlobalKeysPage() { try { const settingsRef = doc(db, "settings", "global"); const docSnap = await getDoc(settingsRef); if (docSnap.exists()) { const settings = docSnap.data(); apiKeyNewsApiInput.value = settings.apiKeyNewsApi || ''; apiKeyGNewsInput.value = settings.apiKeyGNews || ''; apiKeyYoutubeInput.value = settings.apiKeyYoutube || ''; apiKeyBloggerInput.value = settings.apiKeyBlogger || ''; } } catch (error) { console.error("Error loading global API keys:", error); } }
-        async function handleGlobalKeyChange(e) { const settingsRef = doc(db, "settings", "global"); const key = e.target.id.replace('api-key-', 'apiKey'); const value = e.target.value; try { await setDoc(settingsRef, { [key]: value }, { merge: true }); showAlert('Chave de API salva!', 'success'); } catch (error) { console.error("Error saving global API key:", error); } }
+
+        // --- FUNÇÃO DE SALVAR CHAVES DE API GLOBAIS CORRIGIDA ---
+        async function handleGlobalKeyChange(e) {
+            const settingsRef = doc(db, "settings", "global");
+            
+            // Pega o id do elemento que mudou
+            const id = e.target.id;
+            
+            // Remove "api-key-" e capitaliza a primeira letra do que sobrou
+            const keyName = id.replace('api-key-', '');
+            const capitalizedKey = keyName.charAt(0).toUpperCase() + keyName.slice(1);
+            const key = 'apiKey' + capitalizedKey; // Adiciona "apiKey" no início
+            
+            const value = e.target.value;
+            
+            try {
+                await setDoc(settingsRef, { [key]: value }, { merge: true });
+                showAlert('Chave de API salva!', 'success');
+            } catch (error) {
+                console.error("Erro ao salvar chave de API global:", error);
+                showAlert('Erro ao salvar chave de API.', 'error');
+            }
+        }
+        // --- FIM DA FUNÇÃO CORRIGIDA ---
+
         async function renderGlobalSourcesPage() { try { const settingsRef = doc(db, "settings", "global"); const docSnap = await getDoc(settingsRef); if (docSnap.exists()) { const settings = docSnap.data(); bloggerIdInput.value = settings.bloggerId || ''; rssUrlInput.value = settings.rssUrl || ''; } } catch (error) { console.error("Error loading global sources:", error); } }
         async function handleGlobalSourceChange(e) { const settingsRef = doc(db, "settings", "global"); const key = e.target.id === 'blogger-id' ? 'bloggerId' : 'rssUrl'; const value = e.target.value; try { await setDoc(settingsRef, { [key]: value }, { merge: true }); showAlert('Fonte salva!', 'success'); } catch (error) { console.error("Error saving global source:", error); } }
 
