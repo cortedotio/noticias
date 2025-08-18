@@ -173,20 +173,20 @@
             <div class="max-w-lg mx-auto bg-white p-6 rounded-lg shadow-lg">
                 <div class="space-y-4">
                     <div class="bg-gray-100 p-3 rounded-md">
-                        <label for="api-key-newsapi" class="block text-sm font-medium text-gray-700 mb-1">Chave da API (NewsAPI.org)</label>
-                        <input type="text" id="api-key-newsapi" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                        <label for="apiKeyNewsApi" class="block text-sm font-medium text-gray-700 mb-1">Chave da API (NewsAPI.org)</label>
+                        <input type="text" id="apiKeyNewsApi" class="w-full px-3 py-2 border border-gray-300 rounded-md">
                     </div>
                     <div class="bg-gray-100 p-3 rounded-md">
-                        <label for="api-key-gnews" class="block text-sm font-medium text-gray-700 mb-1">Chave da API (GNews.io)</label>
-                        <input type="text" id="api-key-gnews" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                        <label for="apiKeyGNews" class="block text-sm font-medium text-gray-700 mb-1">Chave da API (GNews.io)</label>
+                        <input type="text" id="apiKeyGNews" class="w-full px-3 py-2 border border-gray-300 rounded-md">
                     </div>
                     <div class="bg-gray-100 p-3 rounded-md">
-                        <label for="api-key-youtube" class="block text-sm font-medium text-gray-700 mb-1">Chave da API (YouTube Data API v3)</label>
-                        <input type="text" id="api-key-youtube" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                        <label for="apiKeyYoutube" class="block text-sm font-medium text-gray-700 mb-1">Chave da API (YouTube Data API v3)</label>
+                        <input type="text" id="apiKeyYoutube" class="w-full px-3 py-2 border border-gray-300 rounded-md">
                     </div>
                     <div class="bg-gray-100 p-3 rounded-md">
-                        <label for="api-key-blogger" class="block text-sm font-medium text-gray-700 mb-1">Chave da API (Blogger API)</label>
-                        <input type="text" id="api-key-blogger" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                        <label for="apiKeyBlogger" class="block text-sm font-medium text-gray-700 mb-1">Chave da API (Blogger API)</label>
+                        <input type="text" id="apiKeyBlogger" class="w-full px-3 py-2 border border-gray-300 rounded-md">
                     </div>
                 </div>
             </div>
@@ -198,12 +198,12 @@
             <div class="max-w-lg mx-auto bg-white p-6 rounded-lg shadow-lg">
                 <div class="space-y-4">
                     <div class="bg-gray-100 p-3 rounded-md">
-                        <label for="blogger-id" class="block text-sm font-medium text-gray-700 mb-1">IDs de Blogs (Blogger) - um por linha</label>
-                        <textarea id="blogger-id" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md"></textarea>
+                        <label for="bloggerId" class="block text-sm font-medium text-gray-700 mb-1">IDs de Blogs (Blogger) - um por linha</label>
+                        <textarea id="bloggerId" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md"></textarea>
                     </div>
                     <div class="bg-gray-100 p-3 rounded-md">
-                        <label for="rss-url" class="block text-sm font-medium text-gray-700 mb-1">Monitorar Sites por RSS - um por linha</label>
-                        <textarea id="rss-url" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="https://site.com/feed"></textarea>
+                        <label for="rssUrl" class="block text-sm font-medium text-gray-700 mb-1">Monitorar Sites por RSS - um por linha</label>
+                        <textarea id="rssUrl" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="https://site.com/feed"></textarea>
                     </div>
                 </div>
             </div>
@@ -630,12 +630,12 @@
             stateSelectContainer = document.getElementById('state-select-container');
             stateSelect = document.getElementById('state-select');
             changePasswordForm = document.getElementById('change-password-form');
-            apiKeyNewsApiInput = document.getElementById('api-key-newsapi');
-            apiKeyGNewsInput = document.getElementById('api-key-gnews');
-            apiKeyYoutubeInput = document.getElementById('api-key-youtube');
-            apiKeyBloggerInput = document.getElementById('api-key-blogger');
-            bloggerIdInput = document.getElementById('blogger-id');
-            rssUrlInput = document.getElementById('rss-url');
+            apiKeyNewsApiInput = document.getElementById('apiKeyNewsApi');
+            apiKeyGNewsInput = document.getElementById('apiKeyGNews');
+            apiKeyYoutubeInput = document.getElementById('apiKeyYoutube');
+            apiKeyBloggerInput = document.getElementById('apiKeyBlogger');
+            bloggerIdInput = document.getElementById('bloggerId');
+            rssUrlInput = document.getElementById('rssUrl');
             fetchOnlyNewToggle = document.getElementById('fetch-only-new-toggle');
             changePasswordPage = document.getElementById('change-password-page');
             globalKeysPage = document.getElementById('global-keys-page');
