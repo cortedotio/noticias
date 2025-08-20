@@ -5,6 +5,7 @@ const axios = require("axios");
 const logger = require("firebase-functions/logger");
 const cors = require("cors")({ origin: true });
 const { LanguageServiceClient } = require('@google-cloud/language');
+const { SpeechClient } = require('@google-cloud/speech');
 const { PubSub } = require('@google-cloud/pubsub');
 const Parser = require('rss-parser');
 const vision = require('@google-cloud/vision');
@@ -15,6 +16,7 @@ const db = admin.firestore();
 const languageClient = new LanguageServiceClient();
 const visionClient = new vision.ImageAnnotatorClient();
 const videoClient = new video.VideoIntelligenceServiceClient();
+const speechClient = new SpeechClient();
 const pubsub = new PubSub();
 const rssParser = new Parser();
 
@@ -342,4 +344,42 @@ exports.deleteKeyword = onCall({ region: "southamerica-east1" }, async (request)
     logger.info(`${articlesSnapshot.size} alertas associados à palavra-chave ${keyword} foram excluídos.`);
 
     return { success: true, message: 'Palavra-chave e alertas associados foram excluídos com sucesso.' };
+});
+
+// --- Trigger 5: Transcrever Áudio com Speech-to-Text ---
+exports.transcribeAudio = onCall({ region: "southamerica-east1" }, async (request) => {
+    const { gcsUri } = request.data;
+    if (!gcsUri) {
+        throw new HttpsError('invalid-argument', 'O URI do Google Cloud Storage é obrigatório.');
+    }
+
+    logger.info(`Iniciando transcrição para o ficheiro: ${gcsUri}`);
+
+    const audio = {
+        uri: gcsUri,
+    };
+    const config = {
+        encoding: 'MP3',
+        sampleRateHertz: 16000,
+        languageCode: 'pt-BR',
+    };
+    const requestSpec = {
+        audio: audio,
+        config: config,
+    };
+
+    try {
+        const [operation] = await speechClient.longRunningRecognize(requestSpec);
+        const [response] = await operation.promise();
+        const transcription = response.results
+            .map(result => result.alternatives[0].transcript)
+            .join('\n');
+        
+        logger.info(`Transcrição concluída: ${transcription.substring(0, 100)}...`);
+        return { success: true, transcription: transcription };
+
+    } catch (error) {
+        logger.error("Erro na API Speech-to-Text:", error);
+        throw new HttpsError('internal', 'Erro ao transcrever o áudio.');
+    }
 });
