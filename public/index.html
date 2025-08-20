@@ -41,6 +41,8 @@
         }
         .sentiment-menu {
             display: none;
+            position: absolute;
+            z-index: 10;
         }
         .sentiment-container:hover .sentiment-menu {
             display: block;
@@ -285,6 +287,10 @@
                         <canvas id="source-chart"></canvas>
                     </div>
                     <div class="p-4 border rounded-lg">
+                        <h3 class="text-xl font-semibold mb-4 text-center">Notícias por Canal</h3>
+                        <canvas id="channel-chart"></canvas>
+                    </div>
+                    <div class="p-4 border rounded-lg lg:col-span-2">
                         <h3 class="text-xl font-semibold mb-4 text-center">Notícias por Período</h3>
                         <div class="flex justify-center items-center gap-4 mb-4">
                             <div><label for="start-date" class="text-sm">De:</label><input type="date" id="start-date" class="px-2 py-1 border rounded-md"></div>
@@ -370,7 +376,7 @@
         
         // --- APPLICATION STATE ---
         let currentUser = null, clockInterval = null, selectedCompanyForManagement = null, allCompanyArticles = [], companyIdToDelete = null;
-        let sourceChartInstance = null, dateChartInstance = null, sentimentChartInstance = null;
+        let sourceChartInstance = null, dateChartInstance = null, sentimentChartInstance = null, channelChartInstance = null;
         let superAdminCredentials = { user: 'ulysses', pass: 'adminqwert' };
         let notificationListener = null;
 

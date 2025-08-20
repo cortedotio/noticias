@@ -21,7 +21,7 @@ const fetchAndStoreNews = async () => {
   try {
     // Busca as configurações globais primeiro (chaves de API, fontes)
     const globalSettingsDoc = await db.collection("settings").doc("global").get();
-    if (!globalSettingsDoc.exists) { // CORREÇÃO: .exists é uma propriedade, não uma função
+    if (!globalSettingsDoc.exists) {
         logger.error("Configurações globais não encontradas. Abortando.");
         return { success: false, message: "Configurações globais não encontradas." };
     }
@@ -48,7 +48,7 @@ const fetchAndStoreNews = async () => {
         keywordsRef.get(),
       ]);
 
-      if (!settingsDoc.exists || keywordsSnapshot.empty) { // CORREÇÃO: .exists é uma propriedade, não uma função
+      if (!settingsDoc.exists || keywordsSnapshot.empty) {
         logger.warn(`Configurações ou palavras-chave em falta para ${companyName}.`);
         return;
       }
@@ -292,4 +292,38 @@ exports.deleteCompany = onCall({ region: "southamerica-east1" }, async (request)
     logger.info(`Empresa ${companyId} excluída com sucesso.`);
 
     return { success: true, message: 'Empresa e todos os dados associados foram excluídos.' };
+});
+
+// --- Trigger 4: Excluir Palavra-Chave e Alertas Associados ---
+exports.deleteKeyword = onCall({ region: "southamerica-east1" }, async (request) => {
+    const { companyId, keywordId, keyword } = request.data;
+    if (!companyId || !keywordId || !keyword) {
+        throw new HttpsError('invalid-argument', 'Dados insuficientes para excluir a palavra-chave.');
+    }
+
+    logger.info(`Iniciando exclusão da palavra-chave ${keyword} para a empresa ${companyId}...`);
+    
+    // Exclui a palavra-chave
+    const keywordRef = db.collection('companies').doc(companyId).collection('keywords').doc(keywordId);
+    await keywordRef.delete();
+    logger.info(`Palavra-chave ${keyword} excluída.`);
+
+    // Exclui os alertas associados
+    const articlesRef = db.collection('companies').doc(companyId).collection('articles');
+    const articlesQuery = articlesRef.where('keyword', '==', keyword);
+    const articlesSnapshot = await articlesQuery.get();
+    
+    if (articlesSnapshot.empty) {
+        logger.info(`Nenhum alerta encontrado para a palavra-chave ${keyword}.`);
+        return { success: true, message: 'Palavra-chave excluída com sucesso.' };
+    }
+
+    const batch = db.batch();
+    articlesSnapshot.docs.forEach(doc => {
+        batch.delete(doc.ref);
+    });
+    await batch.commit();
+    logger.info(`${articlesSnapshot.size} alertas associados à palavra-chave ${keyword} foram excluídos.`);
+
+    return { success: true, message: 'Palavra-chave e alertas associados foram excluídos com sucesso.' };
 });
