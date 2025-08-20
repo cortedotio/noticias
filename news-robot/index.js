@@ -7,14 +7,18 @@ const cors = require("cors")({ origin: true });
 const { LanguageServiceClient } = require('@google-cloud/language');
 const { PubSub } = require('@google-cloud/pubsub');
 const Parser = require('rss-parser');
+const vision = require('@google-cloud/vision');
+const video = require('@google-cloud/video-intelligence');
 
 admin.initializeApp();
 const db = admin.firestore();
 const languageClient = new LanguageServiceClient();
+const visionClient = new vision.ImageAnnotatorClient();
+const videoClient = new video.VideoIntelligenceServiceClient();
 const pubsub = new PubSub();
 const rssParser = new Parser();
 
-// --- Lógica Principal do Robô (com Configurações Globais) ---
+// --- Lógica Principal do Robô (com Multi-API e Análise de IA) ---
 const fetchAndStoreNews = async () => {
   logger.info("Iniciando o robô de busca de notícias...");
 
@@ -166,6 +170,7 @@ const fetchAndStoreNews = async () => {
         for (const article of allArticles) {
             let sentiment = null;
             let entities = [];
+            let visionLabels = [];
 
             if (article.description || article.title) {
                 const document = {
@@ -187,6 +192,16 @@ const fetchAndStoreNews = async () => {
                 }
             }
 
+            if (article.urlToImage) {
+                try {
+                    const [result] = await visionClient.labelDetection(article.urlToImage);
+                    const labels = result.labelAnnotations;
+                    visionLabels = labels.map(label => label.description);
+                } catch (visionError) {
+                    logger.error("Erro na Vision API:", visionError.message);
+                }
+            }
+
             const articleData = {
               title: article.title,
               description: article.description,
@@ -197,6 +212,7 @@ const fetchAndStoreNews = async () => {
               companyId: companyId,
               sentiment: sentiment,
               entities: entities,
+              visionLabels: visionLabels,
             };
             const articleId = Buffer.from(article.url).toString("base64").replace(/\//g, '_');
             const articleRef = db.collection("companies").doc(companyId).collection("articles").doc(articleId);
