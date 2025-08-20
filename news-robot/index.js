@@ -348,9 +348,9 @@ exports.deleteKeyword = onCall({ region: "southamerica-east1" }, async (request)
 
 // --- Trigger 5: Transcrever Áudio com Speech-to-Text ---
 exports.transcribeAudio = onCall({ region: "southamerica-east1" }, async (request) => {
-    const { gcsUri } = request.data;
-    if (!gcsUri) {
-        throw new HttpsError('invalid-argument', 'O URI do Google Cloud Storage é obrigatório.');
+    const { gcsUri, companyId } = request.data;
+    if (!gcsUri || !companyId) {
+        throw new HttpsError('invalid-argument', 'O URI do Google Cloud Storage e o ID da empresa são obrigatórios.');
     }
 
     logger.info(`Iniciando transcrição para o ficheiro: ${gcsUri}`);
@@ -376,7 +376,45 @@ exports.transcribeAudio = onCall({ region: "southamerica-east1" }, async (reques
             .join('\n');
         
         logger.info(`Transcrição concluída: ${transcription.substring(0, 100)}...`);
-        return { success: true, transcription: transcription };
+
+        const keywordsRef = db.collection("companies").doc(companyId).collection("keywords");
+        const keywordsSnapshot = await keywordsRef.get();
+        const keywords = keywordsSnapshot.docs.map(doc => doc.data().word);
+
+        let foundKeywords = [];
+        for (const keyword of keywords) {
+            if (transcription.toLowerCase().includes(keyword.toLowerCase())) {
+                foundKeywords.push(keyword);
+            }
+        }
+
+        if (foundKeywords.length > 0) {
+            const batch = db.batch();
+            for (const keyword of foundKeywords) {
+                const articleData = {
+                    title: `Transcrição de Rádio - ${new Date().toLocaleDateString()}`,
+                    description: transcription,
+                    url: gcsUri,
+                    source: { name: 'Rádio' },
+                    publishedAt: new Date(),
+                    keyword: keyword,
+                    companyId: companyId,
+                    sentiment: null,
+                    entities: [],
+                    visionLabels: [],
+                };
+                const articleId = Buffer.from(gcsUri + keyword).toString("base64").replace(/\//g, '_');
+                const articleRef = db.collection("companies").doc(companyId).collection("articles").doc(articleId);
+                batch.set(articleRef, articleData, { merge: true });
+            }
+            await batch.commit();
+
+            const settingsRef = db.collection("settings").doc(companyId);
+            await settingsRef.set({ newAlerts: true }, { merge: true });
+            logger.info(`Novos alertas de rádio salvos para a empresa ${companyId}.`);
+        }
+
+        return { success: true, transcription: transcription, foundKeywords: foundKeywords };
 
     } catch (error) {
         logger.error("Erro na API Speech-to-Text:", error);
