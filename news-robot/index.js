@@ -4,8 +4,9 @@
  * Funcionalidades:
  * 1. Robô agendado e manual para recolha e análise de notícias.
  * 2. Análise de imagens com a Cloud Vision API.
- * 3. Análise de vídeos com a Video Intelligence API (funcionalidade base).
- * 4. Função para apagar empresas e todos os seus dados associados.
+ * 3. Análise de vídeos com a Video Intelligence API.
+ * 4. Análise de sentimento com a Natural Language API.
+ * 5. Função para apagar empresas e todos os seus dados associados.
  */
 
 // Importação dos módulos necessários
@@ -16,14 +17,17 @@ const axios = require("axios"); // Para fazer pedidos HTTP para APIs de notícia
 // Importação dos clientes das APIs de Inteligência Artificial da Google
 const { ImageAnnotatorClient } = require("@google-cloud/vision");
 const { VideoIntelligenceServiceClient } = require("@google-cloud/video-intelligence");
+const { LanguageServiceClient } = require("@google-cloud/language");
 
 // Inicialização do Firebase Admin SDK
 admin.initializeApp();
-
-// Inicialização dos clientes das APIs de IA
-const visionClient = new ImageAnnotatorClient();
-const videoClient = new VideoIntelligenceServiceClient();
 const db = admin.firestore();
+
+// CORREÇÃO: Declara os clientes no escopo global, mas não os inicializa.
+// Isto é conhecido como "lazy initialization" e previne erros de deploy.
+let visionClient;
+let videoClient;
+let languageClient;
 
 // --- LÓGICA PRINCIPAL DO ROBÔ DE NOTÍCIAS ---
 
@@ -32,6 +36,11 @@ const db = admin.firestore();
  */
 async function executarRoboDeNoticias() {
     console.log("Iniciando execução do robô de notícias.");
+
+    // CORREÇÃO: Inicializa os clientes de API apenas na primeira vez que a função é executada.
+    if (!visionClient) visionClient = new ImageAnnotatorClient();
+    if (!videoClient) videoClient = new VideoIntelligenceServiceClient();
+    if (!languageClient) languageClient = new LanguageServiceClient();
 
     // Busca as chaves de API globais e fontes de notícias
     const globalSettingsDoc = await db.collection("settings").doc("global").get();
@@ -54,7 +63,6 @@ async function executarRoboDeNoticias() {
         const companyData = companyDoc.data();
         console.log(`Processando empresa: ${companyData.name} (${companyId})`);
 
-        // Busca as palavras-chave e configurações específicas da empresa
         const keywordsSnapshot = await db.collection("companies").doc(companyId).collection("keywords").get();
         const keywords = keywordsSnapshot.docs.map(doc => doc.data().word);
 
@@ -63,15 +71,11 @@ async function executarRoboDeNoticias() {
             return;
         }
 
-        // AQUI ENTRA A SUA LÓGICA PARA BUSCAR NOTÍCIAS
-        // Exemplo: buscar de um feed RSS
         let artigosEncontrados = [];
         if (globalSettings.rssUrl) {
             const urlsRSS = globalSettings.rssUrl.split('\n');
-            // Para cada URL de RSS, você faria uma busca pelas palavras-chave
-            // Esta parte é uma simplificação e deve ser adaptada à sua fonte de notícias
             console.log(`Buscando em ${urlsRSS.length} feeds RSS para as palavras: ${keywords.join(", ")}`);
-            // artigosEncontrados = await buscarEmFontes(urlsRSS, keywords, globalSettings.apiKeyGNews1);
+            // A sua lógica real de busca de notícias entraria aqui.
         }
         
         // --- SIMULAÇÃO DE ARTIGOS ENCONTRADOS (substitua pela sua lógica real) ---
@@ -83,7 +87,7 @@ async function executarRoboDeNoticias() {
                 source: { name: "Exemplo News" },
                 publishedAt: new Date(),
                 keyword: keywords[0] || "tecnologia",
-                imageUrl: "https://storage.googleapis.com/cloud-samples-data/vision/label/wakeupcat.jpg", // Imagem de exemplo
+                imageUrl: "https://storage.googleapis.com/cloud-samples-data/vision/label/wakeupcat.jpg",
             }
         ];
         // --- FIM DA SIMULAÇÃO ---
@@ -96,6 +100,20 @@ async function executarRoboDeNoticias() {
         let novosAlertasContador = 0;
 
         for (const artigo of artigosEncontrados) {
+            // Análise de Sentimento (Natural Language API)
+            try {
+                const textContent = `${artigo.title}. ${artigo.description}`;
+                const [sentimentResult] = await languageClient.analyzeSentiment({
+                    document: { content: textContent, type: 'PLAIN_TEXT' },
+                });
+                artigo.sentiment = {
+                    score: sentimentResult.documentSentiment.score,
+                    magnitude: sentimentResult.documentSentiment.magnitude,
+                };
+            } catch (error) {
+                console.error(`Erro na API Natural Language:`, error.message);
+            }
+
             // Análise de Imagem (Cloud Vision)
             if (artigo.imageUrl) {
                 try {
@@ -108,9 +126,7 @@ async function executarRoboDeNoticias() {
             }
 
             // Análise de Vídeo (Video Intelligence)
-            // Nota: Esta API funciona melhor com vídeos no Google Cloud Storage (gs://).
-            // A análise de URLs públicas pode ser limitada.
-            if (artigo.videoUrl) {
+            if (artigo.videoUrl && artigo.videoUrl.startsWith('gs://')) {
                 try {
                     console.log(`Analisando vídeo: ${artigo.videoUrl}`);
                     const [operation] = await videoClient.annotateVideo({
@@ -120,7 +136,7 @@ async function executarRoboDeNoticias() {
                     const [results] = await operation.promise();
                     const videoLabels = results.annotationResults[0].segmentLabelAnnotations;
                     artigo.tagsDeVideo = videoLabels.map(label => label.entity.description);
-                } catch (error)                    {
+                } catch (error) {
                     console.error(`Erro na API Video Intelligence para o vídeo ${artigo.videoUrl}:`, error.message);
                 }
             }
@@ -129,7 +145,6 @@ async function executarRoboDeNoticias() {
             await db.collection("companies").doc(companyId).collection("articles").add({
                 ...artigo,
                 publishedAt: admin.firestore.Timestamp.fromDate(new Date(artigo.publishedAt)),
-                // O sentimento inicial pode ser adicionado aqui se usar a Natural Language API
             });
             novosAlertasContador++;
         }
@@ -155,7 +170,6 @@ async function executarRoboDeNoticias() {
 exports.manualFetch = functions
     .region("southamerica-east1")
     .https.onRequest(async (req, res) => {
-        // Adicione uma verificação de segurança se necessário (ex: verificar se o chamador é um admin)
         console.log("Acionamento manual recebido.");
         try {
             await executarRoboDeNoticias();
@@ -185,11 +199,6 @@ exports.scheduledFetch = functions
 exports.deleteCompany = functions
     .region("southamerica-east1")
     .https.onCall(async (data, context) => {
-        // Verificação de autenticação (ex: garantir que é um super admin)
-        // if (!context.auth || !context.auth.token.superAdmin) {
-        //     throw new functions.https.HttpsError('permission-denied', 'Apenas super admins podem executar esta ação.');
-        // }
-
         const companyId = data.companyId;
         if (!companyId) {
             throw new functions.https.HttpsError('invalid-argument', 'O ID da empresa é obrigatório.');
@@ -198,15 +207,11 @@ exports.deleteCompany = functions
         console.log(`Iniciando exclusão da empresa: ${companyId}`);
         const companyRef = db.collection("companies").doc(companyId);
 
-        // Apagar subcoleções recursivamente
         await deleteCollection(db, `companies/${companyId}/users`, 100);
         await deleteCollection(db, `companies/${companyId}/keywords`, 100);
         await deleteCollection(db, `companies/${companyId}/articles`, 100);
         
-        // Apagar documento de configurações
         await db.collection("settings").doc(companyId).delete();
-
-        // Apagar o documento principal da empresa
         await companyRef.delete();
 
         console.log(`Empresa ${companyId} excluída com sucesso.`);
@@ -231,19 +236,16 @@ async function deleteQueryBatch(db, query, resolve) {
 
     const batchSize = snapshot.size;
     if (batchSize === 0) {
-        // Sem mais documentos para apagar
         resolve();
         return;
     }
 
-    // Apaga os documentos num lote
     const batch = db.batch();
     snapshot.docs.forEach((doc) => {
         batch.delete(doc.ref);
     });
     await batch.commit();
 
-    // Continua para o próximo lote
     process.nextTick(() => {
         deleteQueryBatch(db, query, resolve);
     });
