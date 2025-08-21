@@ -1,252 +1,446 @@
-/**
- * Ficheiro: index.js
- * Descrição: Firebase Cloud Functions para o backend do projeto Aurora Clipping.
- * Funcionalidades:
- * 1. Robô agendado e manual para recolha e análise de notícias.
- * 2. Análise de imagens com a Cloud Vision API.
- * 3. Análise de vídeos com a Video Intelligence API.
- * 4. Análise de sentimento com a Natural Language API.
- * 5. Função para apagar empresas e todos os seus dados associados.
- */
-
-// Importação dos módulos necessários
-const functions = require("firebase-functions");
+const { onSchedule } = require("firebase-functions/v2/scheduler");
+const { onRequest, onCall, HttpsError } = require("firebase-functions/v2/https");
 const admin = require("firebase-admin");
-const axios = require("axios"); // Para fazer pedidos HTTP para APIs de notícias/RSS
+const axios = require("axios");
+const logger = require("firebase-functions/logger");
+const cors = require("cors")({ origin: true });
+const { LanguageServiceClient } = require('@google-cloud/language');
+const { SpeechClient } = require('@google-cloud/speech');
+const { PubSub } = require('@google-cloud/pubsub');
+const Parser = require('rss-parser');
+const vision = require('@google-cloud/vision');
+const video = require('@google-cloud/video-intelligence');
 
-// Importação dos clientes das APIs de Inteligência Artificial da Google
-const { ImageAnnotatorClient } = require("@google-cloud/vision");
-const { VideoIntelligenceServiceClient } = require("@google-cloud/video-intelligence");
-const { LanguageServiceClient } = require("@google-cloud/language");
-
-// Inicialização do Firebase Admin SDK
 admin.initializeApp();
 const db = admin.firestore();
+const languageClient = new LanguageServiceClient();
+const visionClient = new vision.ImageAnnotatorClient();
+const videoClient = new video.VideoIntelligenceServiceClient();
+const speechClient = new SpeechClient();
+const pubsub = new PubSub();
+const rssParser = new Parser();
 
-// CORREÇÃO: Declara os clientes no escopo global, mas não os inicializa.
-// Isto é conhecido como "lazy initialization" e previne erros de deploy.
-let visionClient;
-let videoClient;
-let languageClient;
+// --- Lógica Principal do Robô (com Multi-API e Análise de IA) ---
+const fetchAndStoreNews = async () => {
+  logger.info("Iniciando o robô de busca de notícias...");
 
-// --- LÓGICA PRINCIPAL DO ROBÔ DE NOTÍCIAS ---
-
-/**
- * Função principal que busca e processa notícias para todas as empresas ativas.
- */
-async function executarRoboDeNoticias() {
-    console.log("Iniciando execução do robô de notícias.");
-
-    // CORREÇÃO: Inicializa os clientes de API apenas na primeira vez que a função é executada.
-    if (!visionClient) visionClient = new ImageAnnotatorClient();
-    if (!videoClient) videoClient = new VideoIntelligenceServiceClient();
-    if (!languageClient) languageClient = new LanguageServiceClient();
-
-    // Busca as chaves de API globais e fontes de notícias
+  try {
+    // Busca as configurações globais primeiro (chaves de API, fontes)
     const globalSettingsDoc = await db.collection("settings").doc("global").get();
     if (!globalSettingsDoc.exists) {
-        console.error("Configurações globais (chaves de API, fontes) não encontradas.");
-        return;
+        logger.error("Configurações globais não encontradas. Abortando.");
+        return { success: false, message: "Configurações globais não encontradas." };
     }
     const globalSettings = globalSettingsDoc.data();
+    const { 
+        apiKeyNewsApi, 
+        apiKeyGNews1, apiKeyGNews2, apiKeyGNews3, apiKeyGNews4, 
+        apiKeyYoutube, 
+        apiKeyBlogger, 
+        bloggerId, 
+        rssUrl 
+    } = globalSettings;
 
-    // Busca todas as empresas ativas
     const companiesSnapshot = await db.collection("companies").where("status", "==", "active").get();
+
     if (companiesSnapshot.empty) {
-        console.log("Nenhuma empresa ativa encontrada para processar.");
-        return;
+      logger.info("Nenhuma empresa ativa encontrada.");
+      return { success: true, message: "Nenhuma empresa ativa encontrada." };
     }
 
-    // Processa cada empresa em paralelo
-    const processamentoPromises = companiesSnapshot.docs.map(async (companyDoc) => {
-        const companyId = companyDoc.id;
-        const companyData = companyDoc.data();
-        console.log(`Processando empresa: ${companyData.name} (${companyId})`);
+    const promises = companiesSnapshot.docs.map(async (companyDoc) => {
+      const companyId = companyDoc.id;
+      const companyName = companyDoc.data().name;
+      logger.info(`Buscando configurações para a empresa: ${companyName}`);
 
-        const keywordsSnapshot = await db.collection("companies").doc(companyId).collection("keywords").get();
-        const keywords = keywordsSnapshot.docs.map(doc => doc.data().word);
+      const settingsRef = db.collection("settings").doc(companyId);
+      const keywordsRef = db.collection("companies").doc(companyId).collection("keywords");
 
-        if (keywords.length === 0) {
-            console.log(`Nenhuma palavra-chave para a empresa ${companyData.name}.`);
-            return;
-        }
+      const [settingsDoc, keywordsSnapshot] = await Promise.all([
+        settingsRef.get(),
+        keywordsRef.get(),
+      ]);
 
-        let artigosEncontrados = [];
-        if (globalSettings.rssUrl) {
-            const urlsRSS = globalSettings.rssUrl.split('\n');
-            console.log(`Buscando em ${urlsRSS.length} feeds RSS para as palavras: ${keywords.join(", ")}`);
-            // A sua lógica real de busca de notícias entraria aqui.
-        }
-        
-        // --- SIMULAÇÃO DE ARTIGOS ENCONTRADOS (substitua pela sua lógica real) ---
-        artigosEncontrados = [
-            {
-                title: "Nova tecnologia de IA revoluciona o mercado de carros",
-                description: "Uma startup apresentou um novo sistema de visão computacional para veículos autónomos.",
-                url: "https://exemplo.com/noticia1",
-                source: { name: "Exemplo News" },
-                publishedAt: new Date(),
-                keyword: keywords[0] || "tecnologia",
-                imageUrl: "https://storage.googleapis.com/cloud-samples-data/vision/label/wakeupcat.jpg",
-            }
-        ];
-        // --- FIM DA SIMULAÇÃO ---
-
-        if (artigosEncontrados.length === 0) {
-            console.log(`Nenhum artigo novo encontrado para ${companyData.name}.`);
-            return;
-        }
-
-        let novosAlertasContador = 0;
-
-        for (const artigo of artigosEncontrados) {
-            // Análise de Sentimento (Natural Language API)
-            try {
-                const textContent = `${artigo.title}. ${artigo.description}`;
-                const [sentimentResult] = await languageClient.analyzeSentiment({
-                    document: { content: textContent, type: 'PLAIN_TEXT' },
-                });
-                artigo.sentiment = {
-                    score: sentimentResult.documentSentiment.score,
-                    magnitude: sentimentResult.documentSentiment.magnitude,
-                };
-            } catch (error) {
-                console.error(`Erro na API Natural Language:`, error.message);
-            }
-
-            // Análise de Imagem (Cloud Vision)
-            if (artigo.imageUrl) {
-                try {
-                    console.log(`Analisando imagem: ${artigo.imageUrl}`);
-                    const [result] = await visionClient.labelDetection(artigo.imageUrl);
-                    artigo.tagsDeImagem = result.labelAnnotations.map(label => label.description);
-                } catch (error) {
-                    console.error(`Erro na API Vision para a imagem ${artigo.imageUrl}:`, error.message);
-                }
-            }
-
-            // Análise de Vídeo (Video Intelligence)
-            if (artigo.videoUrl && artigo.videoUrl.startsWith('gs://')) {
-                try {
-                    console.log(`Analisando vídeo: ${artigo.videoUrl}`);
-                    const [operation] = await videoClient.annotateVideo({
-                        inputUri: artigo.videoUrl,
-                        features: ["LABEL_DETECTION"],
-                    });
-                    const [results] = await operation.promise();
-                    const videoLabels = results.annotationResults[0].segmentLabelAnnotations;
-                    artigo.tagsDeVideo = videoLabels.map(label => label.entity.description);
-                } catch (error) {
-                    console.error(`Erro na API Video Intelligence para o vídeo ${artigo.videoUrl}:`, error.message);
-                }
-            }
-            
-            // Salva o artigo enriquecido no Firestore
-            await db.collection("companies").doc(companyId).collection("articles").add({
-                ...artigo,
-                publishedAt: admin.firestore.Timestamp.fromDate(new Date(artigo.publishedAt)),
-            });
-            novosAlertasContador++;
-        }
-
-        // Atualiza o contador de novos alertas para a empresa
-        if (novosAlertasContador > 0) {
-            const settingsRef = db.collection("settings").doc(companyId);
-            await settingsRef.set({
-                newAlerts: true,
-                newAlertsCount: admin.firestore.FieldValue.increment(novosAlertasContador)
-            }, { merge: true });
-            console.log(`${novosAlertasContador} novos alertas adicionados para ${companyData.name}.`);
-        }
-    });
-
-    await Promise.all(processamentoPromises);
-    console.log("Execução do robô de notícias finalizada.");
-}
-
-// --- CLOUD FUNCTIONS EXPOSTAS ---
-
-// 1. Função acionada manualmente a partir do painel de Super Admin
-exports.manualFetch = functions
-    .region("southamerica-east1")
-    .https.onRequest(async (req, res) => {
-        console.log("Acionamento manual recebido.");
-        try {
-            await executarRoboDeNoticias();
-            res.status(200).json({ success: true, message: "Robô executado com sucesso." });
-        } catch (error) {
-            console.error("Erro na execução manual do robô:", error);
-            res.status(500).json({ success: false, message: "Ocorreu um erro no servidor." });
-        }
-    });
-
-// 2. Função agendada para executar o robô periodicamente (ex: a cada 30 minutos)
-exports.scheduledFetch = functions
-    .region("southamerica-east1")
-    .pubsub.schedule("every 30 minutes")
-    .onRun(async (context) => {
-        console.log("Execução agendada do robô iniciada.");
-        try {
-            await executarRoboDeNoticias();
-            return null;
-        } catch (error) {
-            console.error("Erro na execução agendada do robô:", error);
-            return null;
-        }
-    });
-
-// 3. Função para apagar uma empresa e todas as suas subcoleções
-exports.deleteCompany = functions
-    .region("southamerica-east1")
-    .https.onCall(async (data, context) => {
-        const companyId = data.companyId;
-        if (!companyId) {
-            throw new functions.https.HttpsError('invalid-argument', 'O ID da empresa é obrigatório.');
-        }
-
-        console.log(`Iniciando exclusão da empresa: ${companyId}`);
-        const companyRef = db.collection("companies").doc(companyId);
-
-        await deleteCollection(db, `companies/${companyId}/users`, 100);
-        await deleteCollection(db, `companies/${companyId}/keywords`, 100);
-        await deleteCollection(db, `companies/${companyId}/articles`, 100);
-        
-        await db.collection("settings").doc(companyId).delete();
-        await companyRef.delete();
-
-        console.log(`Empresa ${companyId} excluída com sucesso.`);
-        return { success: true, message: "Empresa e dados associados foram excluídos." };
-    });
-
-
-/**
- * Função auxiliar para apagar uma coleção em lotes.
- */
-async function deleteCollection(db, collectionPath, batchSize) {
-    const collectionRef = db.collection(collectionPath);
-    const query = collectionRef.orderBy('__name__').limit(batchSize);
-
-    return new Promise((resolve, reject) => {
-        deleteQueryBatch(db, query, resolve).catch(reject);
-    });
-}
-
-async function deleteQueryBatch(db, query, resolve) {
-    const snapshot = await query.get();
-
-    const batchSize = snapshot.size;
-    if (batchSize === 0) {
-        resolve();
+      if (!settingsDoc.exists || keywordsSnapshot.empty) {
+        logger.warn(`Configurações ou palavras-chave em falta para ${companyName}.`);
         return;
+      }
+      
+      const settings = settingsDoc.data();
+      const { searchScope = 'br', searchState = '', fetchOnlyNew = false } = settings;
+      let newArticlesFoundForCompany = false;
+      const keywords = keywordsSnapshot.docs.map(doc => doc.data().word);
+
+      for (const originalKeyword of keywords) {
+        let keyword = originalKeyword;
+        
+        if (searchScope === 'state' && searchState) {
+            const states = {"AC": "Acre", "AL": "Alagoas", "AP": "Amapá", "AM": "Amazonas", "BA": "Bahia", "CE": "Ceará", "DF": "Distrito Federal", "ES": "Espírito Santo", "GO": "Goiás", "MA": "Maranhão", "MT": "Mato Grosso", "MS": "Mato Grosso do Sul", "MG": "Minas Gerais", "PA": "Pará", "PB": "Paraíba", "PR": "Paraná", "PE": "Pernambuco", "PI": "Piauí", "RJ": "Rio de Janeiro", "RN": "Rio Grande do Norte", "RS": "Rio Grande do Sul", "RO": "Rondônia", "RR": "Roraima", "SC": "Santa Catarina", "SP": "São Paulo", "SE": "Sergipe", "TO": "Tocantins"};
+            keyword = `${keyword} ${states[searchState] || ''}`;
+        }
+        
+        const searchPromises = [];
+
+        if (apiKeyNewsApi) {
+            let url;
+            if (searchScope === 'international') {
+                url = `https://newsapi.org/v2/everything?q="${encodeURIComponent(keyword)}"&language=pt&apiKey=${apiKeyNewsApi}`;
+            } else {
+                url = `https://newsapi.org/v2/top-headlines?q=${encodeURIComponent(keyword)}&country=br&language=pt&apiKey=${apiKeyNewsApi}`;
+            }
+            searchPromises.push(axios.get(url).then(res => res.data.articles || []));
+        }
+
+        // Seleciona a chave GNews com base no horário
+        const now = new Date();
+        const utcHour = now.getUTCHours();
+        const brasíliaHour = (utcHour - 3 + 24) % 24;
+        let apiKeyGNews;
+
+        if (brasíliaHour >= 0 && brasíliaHour < 6) {
+            apiKeyGNews = apiKeyGNews1;
+        } else if (brasíliaHour >= 6 && brasíliaHour < 12) {
+            apiKeyGNews = apiKeyGNews2;
+        } else if (brasíliaHour >= 12 && brasíliaHour < 18) {
+            apiKeyGNews = apiKeyGNews3;
+        } else {
+            apiKeyGNews = apiKeyGNews4;
+        }
+
+        if (apiKeyGNews) {
+            const url = `https://gnews.io/api/v4/search?q="${encodeURIComponent(keyword)}"&lang=pt&country=br&max=10&apikey=${apiKeyGNews}`;
+            searchPromises.push(axios.get(url).then(res => res.data.articles || []));
+        }
+
+        if (apiKeyYoutube) {
+            const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(keyword)}&type=video&order=date&maxResults=10&key=${apiKeyYoutube}`;
+            searchPromises.push(axios.get(url).then(res => (res.data.items || []).map(item => ({
+                title: item.snippet.title,
+                description: item.snippet.description,
+                url: `https://www.youtube.com/watch?v=${item.id.videoId}`,
+                source: { name: `YouTube - ${item.snippet.channelTitle}` },
+                publishedAt: new Date(item.snippet.publishedAt),
+            }))));
+        }
+        
+        if (apiKeyBlogger && bloggerId) {
+            const bloggerIds = bloggerId.split('\n').filter(id => id.trim() !== '');
+            bloggerIds.forEach(id => {
+                const url = `https://www.googleapis.com/blogger/v3/blogs/${id.trim()}/posts?key=${apiKeyBlogger}`;
+                searchPromises.push(axios.get(url).then(res => {
+                    const posts = res.data.items || [];
+                    const matchedPosts = [];
+                    posts.forEach(post => {
+                        const content = post.content.replace(/<[^>]*>?/gm, ''); // Remove HTML
+                        if (post.title.toLowerCase().includes(originalKeyword.toLowerCase()) || content.toLowerCase().includes(originalKeyword.toLowerCase())) {
+                            matchedPosts.push({
+                                title: post.title,
+                                description: content.substring(0, 200) + '...',
+                                url: post.url,
+                                source: { name: `Blogger - ${post.blog.name}` },
+                                publishedAt: new Date(post.published),
+                            });
+                        }
+                    });
+                    return matchedPosts;
+                }));
+            });
+        }
+        
+        if (rssUrl) {
+            const rssUrls = rssUrl.split('\n').filter(url => url.trim() !== '');
+            rssUrls.forEach(url => {
+                searchPromises.push(rssParser.parseURL(url.trim()).then(feed => {
+                    const matchedItems = [];
+                    (feed.items || []).forEach(item => {
+                        const content = item.contentSnippet || item.content || '';
+                        if (item.title.toLowerCase().includes(originalKeyword.toLowerCase()) || content.toLowerCase().includes(originalKeyword.toLowerCase())) {
+                            matchedItems.push({
+                                title: item.title,
+                                description: content.substring(0, 200) + '...',
+                                url: item.link,
+                                source: { name: feed.title || 'Feed RSS' },
+                                publishedAt: new Date(item.pubDate),
+                            });
+                        }
+                    });
+                    return matchedItems;
+                }));
+            });
+        }
+
+        const results = await Promise.allSettled(searchPromises);
+        let allArticles = [];
+        results.forEach((result, index) => {
+            if (result.status === 'fulfilled') {
+                allArticles = allArticles.concat(result.value);
+            } else {
+                logger.error(`Falha na busca da fonte ${index + 1} para "${originalKeyword}":`, result.reason.message);
+            }
+        });
+
+        if (fetchOnlyNew && allArticles.length > 0) {
+            const articleIds = allArticles.map(article => Buffer.from(article.url).toString("base64").replace(/\//g, '_'));
+            const existingDocs = await db.collection("companies").doc(companyId).collection("articles").where(admin.firestore.FieldPath.documentId(), 'in', articleIds).get();
+            const existingIds = new Set(existingDocs.docs.map(doc => doc.id));
+            allArticles = allArticles.filter(article => !existingIds.has(Buffer.from(article.url).toString("base64").replace(/\//g, '_')));
+        }
+
+        if (allArticles.length === 0) {
+            logger.info(`Nenhum item novo encontrado para "${originalKeyword}".`);
+            continue;
+        }
+
+        const batch = db.batch();
+        for (const article of allArticles) {
+            let sentiment = null;
+            let entities = [];
+            let visionLabels = [];
+
+            if (article.description || article.title) {
+                const document = {
+                    content: `${article.title}. ${article.description || ''}`,
+                    type: 'PLAIN_TEXT',
+                };
+                try {
+                    const [sentimentResult] = await languageClient.analyzeSentiment({ document });
+                    sentiment = sentimentResult.documentSentiment;
+                    
+                    const [entitiesResult] = await languageClient.analyzeEntities({ document });
+                    entities = (entitiesResult.entities || [])
+                        .filter(e => e.type !== 'OTHER' && e.salience > 0.01)
+                        .slice(0, 5)
+                        .map(e => e.name);
+
+                } catch (langError) {
+                    logger.error("Erro na Natural Language API:", langError.message);
+                }
+            }
+
+            if (article.urlToImage) {
+                try {
+                    const [result] = await visionClient.labelDetection(article.urlToImage);
+                    const labels = result.labelAnnotations;
+                    visionLabels = labels.map(label => label.description);
+                } catch (visionError) {
+                    logger.error("Erro na Vision API:", visionError.message);
+                }
+            }
+
+            const articleData = {
+              title: article.title,
+              description: article.description,
+              url: article.url,
+              source: { name: article.source.name, url: article.source.url || null },
+              publishedAt: new Date(article.publishedAt),
+              keyword: originalKeyword,
+              companyId: companyId,
+              sentiment: sentiment,
+              entities: entities,
+              visionLabels: visionLabels,
+            };
+            const articleId = Buffer.from(article.url).toString("base64").replace(/\//g, '_');
+            const articleRef = db.collection("companies").doc(companyId).collection("articles").doc(articleId);
+            batch.set(articleRef, articleData, { merge: true });
+        }
+        await batch.commit();
+        logger.info(`${allArticles.length} itens analisados e salvos para "${originalKeyword}".`);
+        
+        if (allArticles.length > 0) {
+            newArticlesFoundForCompany = true;
+        }
+      }
+
+      if (newArticlesFoundForCompany) {
+        await settingsRef.set({ newAlerts: true }, { merge: true });
+        logger.info(`Sinal de notificação ativado para ${companyName}.`);
+        
+        const topic = pubsub.topic('new-alerts');
+        const message = {
+            data: {
+                companyId: companyId,
+                companyName: companyName,
+                timestamp: new Date().toISOString()
+            }
+        };
+        await topic.publishMessage(message);
+        logger.info(`Mensagem de notificação publicada no Pub/Sub para ${companyName}.`);
+      }
+    });
+
+    await Promise.all(promises);
+    logger.info("Robô de busca de notícias finalizado com sucesso.");
+    return { success: true, message: "Busca de notícias finalizada com sucesso." };
+
+  } catch (error) {
+    logger.error("Erro geral na execução do robô de notícias:", error);
+    throw new HttpsError('internal', 'Erro interno ao executar o robô.');
+  }
+};
+
+
+// --- Trigger 1: Agendamento Automático ---
+exports.scheduledFetch = onSchedule({
+  schedule: "every 30 minutes",
+  timeoutSeconds: 540,
+  memory: "1GiB",
+  region: "southamerica-east1"
+}, async (event) => {
+  return await fetchAndStoreNews();
+});
+
+
+// --- Trigger 2: Execução Manual (HTTP) ---
+exports.manualFetch = onRequest({
+    region: "southamerica-east1",
+    timeoutSeconds: 540,
+    memory: "1GiB",
+}, (req, res) => {
+    cors(req, res, async () => {
+        try {
+            const result = await fetchAndStoreNews();
+            res.status(200).send(result);
+        } catch (error) {
+            logger.error("Erro na execução manual:", error);
+            res.status(500).send({ success: false, message: "Ocorreu um erro." });
+        }
+    });
+});
+
+// --- Trigger 3: Excluir Empresa e Subcoleções ---
+exports.deleteCompany = onCall({ region: "southamerica-east1" }, async (request) => {
+    const companyId = request.data.companyId;
+    if (!companyId) {
+        throw new HttpsError('invalid-argument', 'O ID da empresa é obrigatório.');
+    }
+
+    logger.info(`Iniciando exclusão da empresa ${companyId} e seus dados...`);
+    const companyRef = db.collection('companies').doc(companyId);
+
+    const collections = ['articles', 'keywords', 'users'];
+    for (const collection of collections) {
+        const snapshot = await companyRef.collection(collection).get();
+        const batch = db.batch();
+        snapshot.docs.forEach(doc => batch.delete(doc.ref));
+        await batch.commit();
+        logger.info(`Subcoleção ${collection} da empresa ${companyId} excluída.`);
+    }
+
+    await db.collection('settings').doc(companyId).delete();
+    logger.info(`Configurações da empresa ${companyId} excluídas.`);
+
+    await companyRef.delete();
+    logger.info(`Empresa ${companyId} excluída com sucesso.`);
+
+    return { success: true, message: 'Empresa e todos os dados associados foram excluídos.' };
+});
+
+// --- Trigger 4: Excluir Palavra-Chave e Alertas Associados ---
+exports.deleteKeyword = onCall({ region: "southamerica-east1" }, async (request) => {
+    const { companyId, keywordId, keyword } = request.data;
+    if (!companyId || !keywordId || !keyword) {
+        throw new HttpsError('invalid-argument', 'Dados insuficientes para excluir a palavra-chave.');
+    }
+
+    logger.info(`Iniciando exclusão da palavra-chave ${keyword} para a empresa ${companyId}...`);
+    
+    // Exclui a palavra-chave
+    const keywordRef = db.collection('companies').doc(companyId).collection('keywords').doc(keywordId);
+    await keywordRef.delete();
+    logger.info(`Palavra-chave ${keyword} excluída.`);
+
+    // Exclui os alertas associados
+    const articlesRef = db.collection('companies').doc(companyId).collection('articles');
+    const articlesQuery = articlesRef.where('keyword', '==', keyword);
+    const articlesSnapshot = await articlesQuery.get();
+    
+    if (articlesSnapshot.empty) {
+        logger.info(`Nenhum alerta encontrado para a palavra-chave ${keyword}.`);
+        return { success: true, message: 'Palavra-chave excluída com sucesso.' };
     }
 
     const batch = db.batch();
-    snapshot.docs.forEach((doc) => {
+    articlesSnapshot.docs.forEach(doc => {
         batch.delete(doc.ref);
     });
     await batch.commit();
+    logger.info(`${articlesSnapshot.size} alertas associados à palavra-chave ${keyword} foram excluídos.`);
 
-    process.nextTick(() => {
-        deleteQueryBatch(db, query, resolve);
-    });
-}
+    return { success: true, message: 'Palavra-chave e alertas associados foram excluídos com sucesso.' };
+});
+
+// --- Trigger 5: Transcrever Áudio com Speech-to-Text ---
+exports.transcribeAudio = onCall({ region: "southamerica-east1" }, async (request) => {
+    const { gcsUri, companyId } = request.data;
+    if (!gcsUri || !companyId) {
+        throw new HttpsError('invalid-argument', 'O URI do Google Cloud Storage e o ID da empresa são obrigatórios.');
+    }
+
+    logger.info(`Iniciando transcrição para o ficheiro: ${gcsUri}`);
+
+    const audio = {
+        uri: gcsUri,
+    };
+    const config = {
+        encoding: 'MP3',
+        sampleRateHertz: 16000,
+        languageCode: 'pt-BR',
+    };
+    const requestSpec = {
+        audio: audio,
+        config: config,
+    };
+
+    try {
+        const [operation] = await speechClient.longRunningRecognize(requestSpec);
+        const [response] = await operation.promise();
+        const transcription = response.results
+            .map(result => result.alternatives[0].transcript)
+            .join('\n');
+        
+        logger.info(`Transcrição concluída: ${transcription.substring(0, 100)}...`);
+
+        const keywordsRef = db.collection("companies").doc(companyId).collection("keywords");
+        const keywordsSnapshot = await keywordsRef.get();
+        const keywords = keywordsSnapshot.docs.map(doc => doc.data().word);
+
+        let foundKeywords = [];
+        for (const keyword of keywords) {
+            if (transcription.toLowerCase().includes(keyword.toLowerCase())) {
+                foundKeywords.push(keyword);
+            }
+        }
+
+        if (foundKeywords.length > 0) {
+            const batch = db.batch();
+            for (const keyword of foundKeywords) {
+                const articleData = {
+                    title: `Transcrição de Rádio - ${new Date().toLocaleDateString()}`,
+                    description: transcription,
+                    url: gcsUri,
+                    source: { name: 'Rádio' },
+                    publishedAt: new Date(),
+                    keyword: keyword,
+                    companyId: companyId,
+                    sentiment: null,
+                    entities: [],
+                    visionLabels: [],
+                };
+                const articleId = Buffer.from(gcsUri + keyword).toString("base64").replace(/\//g, '_');
+                const articleRef = db.collection("companies").doc(companyId).collection("articles").doc(articleId);
+                batch.set(articleRef, articleData, { merge: true });
+            }
+            await batch.commit();
+
+            const settingsRef = db.collection("settings").doc(companyId);
+            await settingsRef.set({ newAlerts: true }, { merge: true });
+            logger.info(`Novos alertas de rádio salvos para a empresa ${companyId}.`);
+        }
+
+        return { success: true, transcription: transcription, foundKeywords: foundKeywords };
+
+    } catch (error) {
+        logger.error("Erro na API Speech-to-Text:", error);
+        throw new HttpsError('internal', 'Erro ao transcrever o áudio.');
+    }
+});
