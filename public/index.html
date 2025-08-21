@@ -401,7 +401,7 @@
         let notificationListener = null;
 
         // --- DOM ELEMENTS (declared inside DOMContentLoaded) ---
-        let pageSections, navLoggedIn, navInicio, navRelatorio, navPesquisa, navSuperAdmin, navLogout, navConfiguracoesAdmin, globalAlert, loginPage, dashboardPage, searchPage, superAdminPage, companyKeywordAdminPage, companySettingsAdminPage, reportPage, companyUserAdminPage, configuracoesAdminPage, loginForm, dashboardTitle, currentDateTimeEl, dashboardKeywordList, newsAlertsContainer, newsAlerts, alertDateFilter, reportAccessToggle, logoUploadInput, headerLogoContainer, loginLogoContainer, filterContainer, searchInput, searchResults, companyForm, companyList, backToSuperAdminKwBtn, backToSuperAdminSettingsBtn, backToSuperAdminUsersBtn, companyKeywordAdminTitle, companySettingsAdminTitle, companyUserAdminTitle, keywordForm, keywordInput, keywordIdInput, adminKeywordList, userForm, userInput, userPasswordInput, userIdInput, adminUserList, notificationBell, notificationBadge, manualTriggerBtn, deleteModal, confirmDeleteBtn, cancelDeleteBtn, companyNameToDeleteEl, newsScopeContainer, startDateInput, endDateInput, linkModal, accessLinkInput, copyLinkBtn, closeLinkModalBtn, reportKeywordFilter, stateSelectContainer, stateSelect, changePasswordForm, apiKeyNewsApiInput, apiKeyGNewsInput, apiKeyYoutubeInput, apiKeyBloggerInput, bloggerIdInput, rssUrlInput, fetchOnlyNewToggle, changePasswordPage, globalKeysPage, globalSourcesPage, btnChangePassword, btnGlobalKeys, btnNewsSources, backToAdminConfig1, backToAdminConfig2, backToAdminConfig3, apiKeyVisionInput, apiKeyVideoIntelligenceInput;
+        let pageSections, navLoggedIn, navInicio, navRelatorio, navPesquisa, navSuperAdmin, navLogout, navConfiguracoesAdmin, globalAlert, loginPage, dashboardPage, searchPage, superAdminPage, companyKeywordAdminPage, companySettingsAdminPage, reportPage, companyUserAdminPage, configuracoesAdminPage, loginForm, dashboardTitle, currentDateTimeEl, dashboardKeywordList, newsAlertsContainer, newsAlerts, alertDateFilter, reportAccessToggle, logoUploadInput, headerLogoContainer, loginLogoContainer, filterContainer, searchInput, searchResults, companyForm, companyList, backToSuperAdminKwBtn, backToSuperAdminSettingsBtn, backToSuperAdminUsersBtn, companyKeywordAdminTitle, companySettingsAdminTitle, companyUserAdminTitle, keywordForm, keywordInput, keywordIdInput, adminKeywordList, userForm, userInput, userPasswordInput, userIdInput, adminUserList, notificationBell, notificationBadge, manualTriggerBtn, deleteModal, confirmDeleteBtn, cancelDeleteBtn, companyNameToDeleteEl, newsScopeContainer, startDateInput, endDateInput, linkModal, accessLinkInput, copyLinkBtn, closeLinkModalBtn, reportKeywordFilter, stateSelectContainer, stateSelect, changePasswordForm, apiKeyNewsApiInput, apiKeyGNewsInput1, apiKeyGNewsInput2, apiKeyGNewsInput3, apiKeyGNewsInput4, apiKeyYoutubeInput, apiKeyBloggerInput, bloggerIdInput, rssUrlInput, fetchOnlyNewToggle, changePasswordPage, globalKeysPage, globalSourcesPage, btnChangePassword, btnGlobalKeys, btnNewsSources, backToAdminConfig1, backToAdminConfig2, backToAdminConfig3, apiKeyVisionInput, apiKeyVideoIntelligenceInput;
 
         // --- UTILITY FUNCTIONS ---
         function showAlert(message, type = 'success') { const c = type === 'success' ? 'bg-green-100 border-green-500 text-green-700' : 'bg-red-100 border-red-500 text-red-700'; globalAlert.innerHTML = `<div class="${c} border-l-4 p-4 rounded-md fade-in" role="alert"><p>${message}</p></div>`; setTimeout(() => { globalAlert.innerHTML = ''; }, 4000); }
@@ -663,7 +663,10 @@
             stateSelect = document.getElementById('state-select');
             changePasswordForm = document.getElementById('change-password-form');
             apiKeyNewsApiInput = document.getElementById('apiKeyNewsApi');
-            apiKeyGNewsInput = document.getElementById('apiKeyGNews');
+            apiKeyGNewsInput1 = document.getElementById('apiKeyGNews1');
+            apiKeyGNewsInput2 = document.getElementById('apiKeyGNews2');
+            apiKeyGNewsInput3 = document.getElementById('apiKeyGNews3');
+            apiKeyGNewsInput4 = document.getElementById('apiKeyGNews4');
             apiKeyYoutubeInput = document.getElementById('apiKeyYoutube');
             apiKeyBloggerInput = document.getElementById('apiKeyBlogger');
             apiKeyVisionInput = document.getElementById('apiKeyVision');
@@ -708,7 +711,10 @@
             });
             newsScopeContainer.addEventListener('change', (e) => { handleSettingsChange(e); handleScopeChange(); });
             apiKeyNewsApiInput.addEventListener('change', handleGlobalKeyChange);
-            apiKeyGNewsInput.addEventListener('change', handleGlobalKeyChange);
+            apiKeyGNewsInput1.addEventListener('change', handleGlobalKeyChange);
+            apiKeyGNewsInput2.addEventListener('change', handleGlobalKeyChange);
+            apiKeyGNewsInput3.addEventListener('change', handleGlobalKeyChange);
+            apiKeyGNewsInput4.addEventListener('change', handleGlobalKeyChange);
             apiKeyYoutubeInput.addEventListener('change', handleGlobalKeyChange);
             apiKeyBloggerInput.addEventListener('change', handleGlobalKeyChange);
             apiKeyVisionInput.addEventListener('change', handleGlobalKeyChange);
@@ -757,3 +763,4 @@
     </script>
 </body>
 </html>
+
