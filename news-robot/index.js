@@ -32,7 +32,14 @@ const fetchAndStoreNews = async () => {
         return { success: false, message: "Configurações globais não encontradas." };
     }
     const globalSettings = globalSettingsDoc.data();
-    const { apiKeyNewsApi, apiKeyGNews, apiKeyYoutube, apiKeyBlogger, bloggerId, rssUrl } = globalSettings;
+    const { 
+        apiKeyNewsApi, 
+        apiKeyGNews1, apiKeyGNews2, apiKeyGNews3, apiKeyGNews4, 
+        apiKeyYoutube, 
+        apiKeyBlogger, 
+        bloggerId, 
+        rssUrl 
+    } = globalSettings;
 
     const companiesSnapshot = await db.collection("companies").where("status", "==", "active").get();
 
@@ -82,6 +89,22 @@ const fetchAndStoreNews = async () => {
                 url = `https://newsapi.org/v2/top-headlines?q=${encodeURIComponent(keyword)}&country=br&language=pt&apiKey=${apiKeyNewsApi}`;
             }
             searchPromises.push(axios.get(url).then(res => res.data.articles || []));
+        }
+
+        // Seleciona a chave GNews com base no horário
+        const now = new Date();
+        const utcHour = now.getUTCHours();
+        const brasíliaHour = (utcHour - 3 + 24) % 24;
+        let apiKeyGNews;
+
+        if (brasíliaHour >= 0 && brasíliaHour < 6) {
+            apiKeyGNews = apiKeyGNews1;
+        } else if (brasíliaHour >= 6 && brasíliaHour < 12) {
+            apiKeyGNews = apiKeyGNews2;
+        } else if (brasíliaHour >= 12 && brasíliaHour < 18) {
+            apiKeyGNews = apiKeyGNews3;
+        } else {
+            apiKeyGNews = apiKeyGNews4;
         }
 
         if (apiKeyGNews) {
