@@ -136,7 +136,7 @@
                 </div>
                 <div id="news-alerts-container" class="md:col-span-2">
                     <div class="bg-white p-6 rounded-lg shadow-lg">
-                        <div class="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4">
+                        <div class="flex justify-between items-center mb-4">
                             <h3 class="text-xl font-semibold text-gray-700">Relatório de Alertas</h3>
                             <div class="flex items-center gap-4">
                                 <button id="show-all-alerts-btn" class="hidden bg-gray-200 text-gray-700 px-3 py-1 rounded-md text-sm hover:bg-gray-300">Mostrar Todos</button>
@@ -554,7 +554,6 @@
         let sourceChartInstance = null, dateChartInstance = null, sentimentChartInstance = null, channelChartInstance = null;
         let superAdminCredentials = { user: 'ulysses', pass: 'adminqwert' };
         let notificationListener = null, companiesListener = null, deletionRequestsListener = null;
-        let currentFontSize = 16; // Base font size in pixels
 
         // --- DOM ELEMENTS (declared inside DOMContentLoaded) ---
         let pageSections, navLoggedIn, navInicio, navRelatorio, navPesquisa, navSuperAdmin, navLogout, navConfiguracoesAdmin, globalAlert, loginPage, dashboardPage, searchPage, superAdminPage, companyKeywordAdminPage, companySettingsAdminPage, reportPage, companyUserAdminPage, configuracoesAdminPage, loginForm, dashboardTitle, currentDateTimeEl, dashboardKeywordList, newsAlertsContainer, newsAlerts, alertDateFilter, reportAccessToggle, logoUploadInput, headerLogoContainer, loginLogoContainer, filterContainer, searchInput, searchResults, companyForm, companyList, backToSuperAdminKwBtn, backToSuperAdminSettingsBtn, backToSuperAdminUsersBtn, companyKeywordAdminTitle, companySettingsAdminTitle, companyUserAdminTitle, keywordForm, keywordInput, keywordIdInput, adminKeywordList, userForm, userInput, userPasswordInput, userIdInput, adminUserList, notificationBell, notificationBadge, manualTriggerBtn, deleteModal, confirmDeleteBtn, cancelDeleteBtn, companyNameToDeleteEl, newsScopeContainer, startDateInput, endDateInput, linkModal, accessLinkInput, copyLinkBtn, closeLinkModalBtn, reportKeywordFilter, stateSelectContainer, stateSelect, changePasswordForm, apiKeyNewsApiInput, apiKeyGNewsInput1, apiKeyGNewsInput2, apiKeyGNewsInput3, apiKeyGNewsInput4, apiKeyYoutubeInput, apiKeyBloggerInput, bloggerIdInput, rssUrlInput, fetchOnlyNewToggle, changePasswordPage, globalKeysPage, globalSourcesPage, btnChangePassword, btnGlobalKeys, btnNewsSources, backToAdminConfig1, backToAdminConfig2, backToAdminConfig3, apiKeyVisionInput, apiKeyVideoIntelligenceInput, showAllAlertsBtn, deletionAccessToggle, justificationModal, justificationText, submitJustificationBtn, cancelJustificationBtn, btnManualAlert, btnDeletionRequests, btnSuperAdminReport, manualAlertPage, deletionRequestsPage, superAdminReportPage, backToDashboard1, backToDashboard2, backToDashboard3, manualAlertForm, deletionRequestsList, superAdminReportBody, deletionRequestsBadge, articleViewPage, articleViewContent, articleViewControls, fontDecreaseBtn, fontIncreaseBtn, whatsappShareBtn, emailShareBtn, printBtn, closeArticleViewBtn, articleCompanyLogo, articleTitle, articleChannel, articleCity, articleAuthor, articleDate, articleText;
@@ -786,24 +785,58 @@
         // --- NEWS ALERT DISPLAY & SENTIMENT LOGIC ---
         function displayNewsAlert(article, container) {
             const pubDate = new Date(article.publishedAt.seconds ? article.publishedAt.toDate() : article.publishedAt);
-            const formattedDate = pubDate.toLocaleString('pt-BR');
+            const formattedDate = pubDate.toLocaleDateString('pt-BR');
+            const dateForFilter = pubDate.toISOString().split('T')[0];
             
             const alertEl = document.createElement('div');
-            alertEl.className = 'bg-white p-4 rounded-lg shadow-md border-l-4 border-indigo-500';
+            alertEl.className = 'bg-white p-4 rounded-lg shadow-md border-l-4 border-green-500 fade-in';
             alertEl.dataset.id = article.id;
-            
-            alertEl.innerHTML = `
-                <div class="flex flex-col sm:flex-row justify-between sm:items-center">
-                    <h4 class="text-lg font-bold text-gray-800 pr-2 cursor-pointer hover:text-indigo-600">${article.title}</h4>
-                    <div class="flex items-center gap-2 mt-2 sm:mt-0">
-                        <span class="flex-shrink-0 text-xs font-semibold bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full">${article.keyword}</span>
-                    </div>
-                </div>
-                <div class="text-xs text-gray-500 mt-3 flex justify-between items-center">
-                    <span>Fonte: ${article.source.name} | ${formattedDate}</span>
+            alertEl.dataset.date = dateForFilter;
+            alertEl.dataset.keyword = article.keyword;
+            alertEl.dataset.title = article.title.toLowerCase();
+            alertEl.dataset.description = article.description ? article.description.toLowerCase() : '';
+
+            const getSentimentHTML = (score) => {
+                let emoji = '😐'; let color = 'gray'; let text = 'Neutro';
+                if (score > 0.2) { emoji = '😊'; color = 'green'; text = 'Positivo'; } 
+                else if (score < -0.2) { emoji = '😠'; color = 'red'; text = 'Negativo'; }
+                return `<button class="sentiment-btn text-xs font-semibold text-${color}-600 bg-${color}-100 px-2 py-1 rounded-full">${emoji} ${text}</button>`;
+            };
+
+            const sentimentMenuHTML = `
+                <div class="sentiment-menu p-1 space-y-1">
+                    <button data-sentiment="0.5" class="sentiment-option w-full text-left text-xs px-2 py-1 rounded hover:bg-gray-100">😊 Positivo</button>
+                    <button data-sentiment="0.0" class="sentiment-option w-full text-left text-xs px-2 py-1 rounded hover:bg-gray-100">😐 Neutro</button>
+                    <button data-sentiment="-0.5" class="sentiment-option w-full text-left text-xs px-2 py-1 rounded hover:bg-gray-100">😠 Negativo</button>
                 </div>`;
 
-            alertEl.querySelector('h4').addEventListener('click', () => openArticleView(article.id));
+            let entitiesHTML = '';
+            if (article.entities && article.entities.length > 0) {
+                entitiesHTML = `<div class="mt-2 flex flex-wrap gap-2">${article.entities.map(e => `<span class="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-full">${e}</span>`).join('')}</div>`;
+            }
+
+            const deleteButtonHTML = currentUser.canRequestDeletion ? `<button class="request-delete-btn text-red-500 hover:text-red-700 ml-4" title="Solicitar Exclusão">🗑️</button>` : '';
+
+            alertEl.innerHTML = `
+                <div class="flex justify-between items-start">
+                    <h4 class="text-lg font-bold text-gray-800 pr-2">${article.title}</h4>
+                    <div class="flex items-center gap-2">
+                        <span class="flex-shrink-0 text-xs font-semibold bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full">${article.keyword}</span>
+                        <div class="sentiment-container relative">
+                            ${getSentimentHTML(article.sentiment ? article.sentiment.score : 0)}
+                            ${sentimentMenuHTML}
+                        </div>
+                    </div>
+                </div>
+                <p class="text-sm text-gray-600 mt-2">${article.description || 'Descrição não disponível.'}</p>
+                ${entitiesHTML}
+                <div class="text-xs text-gray-500 mt-3 flex justify-between items-center">
+                    <span>Fonte: ${article.source.name} | Publicado: ${formattedDate}</span>
+                    <div>
+                        <a href="${article.url}" target="_blank" rel="noopener noreferrer" class="text-indigo-600 hover:underline font-semibold">Ler mais &rarr;</a>
+                        ${deleteButtonHTML}
+                    </div>
+                </div>`;
             container.appendChild(alertEl);
         }
 
@@ -934,7 +967,7 @@
         }
         
         function getChannelCategory(sourceName) {
-            const name = (sourceName || "").toLowerCase();
+            const name = sourceName.toLowerCase();
             if (name.includes('youtube')) return 'YouTube';
             if (name.includes('globo') || name.includes('g1') || name.includes('uol') || name.includes('terra') || name.includes('r7')) return 'Sites';
             if (name.includes('veja') || name.includes('istoé') || name.includes('exame')) return 'Revistas';
