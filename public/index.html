@@ -17,28 +17,20 @@
     <style>
         body { font-family: 'Inter', sans-serif; }
         header { position: fixed; top: 0; left: 0; width: 100%; z-index: 1000; }
-        /* FIX: Increased padding-top to prevent content from hiding behind the fixed header */
         main { padding-top: 96px; } 
         .page-section { display: none; }
         .page-section.active { display: block; }
         .fade-in { animation: fadeIn 0.5s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
         
-        @keyframes ring {
-            0%, 100% { transform: rotate(0); }
-            10%, 30%, 50%, 70%, 90% { transform: rotate(-10deg); }
-            20%, 40%, 60%, 80% { transform: rotate(10deg); }
-        }
-        .animate-ring { animation: ring 1s ease-in-out; }
-
         @keyframes blinking-bell {
-            0% { background-color: transparent; color: #4B5563; /* gray-600 */ }
-            50% { background-color: #10B981; /* green-500 */ color: white; }
+            0% { background-color: transparent; color: #4B5563; }
+            50% { background-color: #10B981; color: white; }
             100% { background-color: transparent; color: #4B5563; }
         }
         .animate-blinking-bell {
             animation: blinking-bell 1.5s infinite;
-            border-radius: 9999px; /* to make the background round */
+            border-radius: 9999px;
         }
 
         .keyword-filter.active {
@@ -64,7 +56,6 @@
         .sentiment-container:hover .sentiment-menu {
             display: block;
         }
-        /* Styling for multi-select */
         #report-keyword-filter {
             height: 100px;
         }
@@ -144,10 +135,22 @@
             </div>
              <div id="super-admin-dashboard-message" class="hidden bg-white p-8 rounded-lg shadow-lg text-center">
                 <h3 class="text-2xl font-bold">Bem-vindo, Super Admin!</h3>
-                <p class="mt-4 text-gray-600">Use o menu "Super Admin" no topo da página para gerenciar empresas e usuários.</p>
+                <p class="mt-4 text-gray-600">Use o menu "Super Admin" no topo da página para gerenciar as opções.</p>
+                <div class="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <button id="btn-manual-alert" class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow">
+                        <h3 class="text-xl font-semibold text-gray-700">Inserir Alerta Manual</h3>
+                    </button>
+                     <button id="btn-deletion-requests" class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow relative">
+                        <h3 class="text-xl font-semibold text-gray-700">Solicitações de Exclusão</h3>
+                        <span id="deletion-requests-badge" class="hidden absolute top-2 right-2 text-white text-xs font-bold w-5 h-5 text-center rounded-full bg-red-500"></span>
+                    </button>
+                     <button id="btn-super-admin-report" class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow">
+                        <h3 class="text-xl font-semibold text-gray-700">Relatório Geral</h3>
+                    </button>
+                </div>
                 <div class="mt-6 p-4 bg-blue-100 border-l-4 border-blue-500 text-blue-800 rounded-md text-left">
                     <p class="font-bold">Execução Manual do Robô</p>
-                    <p class="mt-2 text-sm">Use o botão abaixo para disparar a coleta de notícias imediatamente. Isso é útil para testes e para obter as notícias mais recentes sem esperar pelo agendamento automático de 30 minutos.</p>
+                    <p class="mt-2 text-sm">Use o botão abaixo para disparar a coleta de notícias imediatamente.</p>
                     <button id="manual-trigger-btn" class="mt-4 w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:bg-blue-300">Executar Robô Manualmente</button>
                 </div>
             </div>
@@ -298,6 +301,7 @@
                 <div class="space-y-6">
                     <div class="flex items-center"><input type="checkbox" id="report-access-toggle" class="h-4 w-4 text-indigo-600 border-gray-300 rounded"><label for="report-access-toggle" class="ml-2 block text-sm text-gray-900">Liberar acesso ao relatório de alertas na tela inicial.</label></div>
                     <div class="flex items-center"><input type="checkbox" id="fetch-only-new-toggle" class="h-4 w-4 text-indigo-600 border-gray-300 rounded"><label for="fetch-only-new-toggle" class="ml-2 block text-sm text-gray-900">Capturar apenas notícias novas (evita duplicatas).</label></div>
+                    <div class="flex items-center"><input type="checkbox" id="deletion-access-toggle" class="h-4 w-4 text-indigo-600 border-gray-300 rounded"><label for="deletion-access-toggle" class="ml-2 block text-sm text-gray-900">Permitir que usuários solicitem a exclusão de alertas.</label></div>
                     <div><h4 class="text-lg font-semibold mb-2">Logo da Empresa</h4><input type="file" id="logo-upload" accept="image/*" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"></div>
                     <div>
                         <h4 class="text-lg font-semibold mb-2">Escopo das Notícias</h4>
@@ -344,11 +348,11 @@
                         <h3 class="text-xl font-semibold mb-4 text-center">Notícias por Canal</h3>
                         <canvas id="channel-chart"></canvas>
                     </div>
-                    <div class="p-4 border rounded-lg lg:col-span-2">
+                    <div class="p-4 border rounded-lg">
                         <h3 class="text-xl font-semibold mb-4 text-center">Notícias por Período</h3>
                          <canvas id="date-chart"></canvas>
                     </div>
-                    <div class="p-4 border rounded-lg lg:col-span-2">
+                    <div class="p-4 border rounded-lg">
                         <h3 class="text-xl font-semibold mb-4 text-center">Análise de Sentimento</h3>
                         <canvas id="sentiment-chart"></canvas>
                     </div>
@@ -365,9 +369,78 @@
                 <div id="search-results" class="space-y-4 max-h-[60vh] overflow-y-auto"><p class="text-gray-500">Digite algo para começar a pesquisar ou use os filtros.</p></div>
             </div>
         </section>
+
+        <!-- NEW: Manual Alert Page -->
+        <section id="manual-alert-page" class="page-section fade-in">
+            <button id="back-to-dashboard-1" class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar</button>
+            <h2 class="text-3xl font-bold mb-6">Inserir Alerta Manualmente</h2>
+            <div class="max-w-2xl mx-auto bg-white p-6 rounded-lg shadow-lg">
+                <form id="manual-alert-form" class="space-y-4">
+                    <div>
+                        <label for="manual-alert-company" class="block text-sm font-medium text-gray-700">Empresa</label>
+                        <select id="manual-alert-company" class="w-full px-3 py-2 border border-gray-300 rounded-md" required></select>
+                    </div>
+                    <div><label for="manual-alert-title" class="block text-sm font-medium text-gray-700">Título</label><input type="text" id="manual-alert-title" class="w-full px-3 py-2 border border-gray-300 rounded-md" required></div>
+                    <div><label for="manual-alert-desc" class="block text-sm font-medium text-gray-700">Descrição</label><textarea id="manual-alert-desc" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md"></textarea></div>
+                    <div><label for="manual-alert-url" class="block text-sm font-medium text-gray-700">URL</label><input type="url" id="manual-alert-url" class="w-full px-3 py-2 border border-gray-300 rounded-md" required></div>
+                    <div><label for="manual-alert-source" class="block text-sm font-medium text-gray-700">Fonte (Veículo)</label><input type="text" id="manual-alert-source" class="w-full px-3 py-2 border border-gray-300 rounded-md" required></div>
+                    <div><label for="manual-alert-keyword" class="block text-sm font-medium text-gray-700">Palavra-Chave</label><input type="text" id="manual-alert-keyword" class="w-full px-3 py-2 border border-gray-300 rounded-md" required></div>
+                    <button type="submit" class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700">Adicionar Alerta</button>
+                </form>
+            </div>
+        </section>
+
+        <!-- NEW: Deletion Requests Page -->
+        <section id="deletion-requests-page" class="page-section fade-in">
+            <button id="back-to-dashboard-2" class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar</button>
+            <h2 class="text-3xl font-bold mb-6">Solicitações de Exclusão de Alertas</h2>
+            <div id="deletion-requests-list" class="space-y-4">
+                <p class="text-gray-500">A carregar solicitações...</p>
+            </div>
+        </section>
+
+        <!-- NEW: Super Admin Report Page -->
+        <section id="super-admin-report-page" class="page-section fade-in">
+             <button id="back-to-dashboard-3" class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar</button>
+            <h2 class="text-3xl font-bold mb-6">Relatório Geral de Empresas</h2>
+            <div class="bg-white p-6 rounded-lg shadow-lg overflow-x-auto">
+                <table class="w-full whitespace-nowrap">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Empresa</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total de Alertas</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Sentimento (%)</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Sentimento Predominante</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Canal Principal</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Veículo Principal</th>
+                        </tr>
+                    </thead>
+                    <tbody id="super-admin-report-body" class="bg-white divide-y divide-gray-200">
+                        <tr><td colspan="6" class="text-center py-4">A gerar relatório...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
     </main>
 
-    <!-- Delete Confirmation Modal -->
+    <!-- Modals -->
+    <div id="justification-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+                <h3 class="text-lg leading-6 font-medium text-gray-900">Justificar Exclusão</h3>
+                <div class="mt-2 py-3">
+                    <p class="text-sm text-gray-500 mb-2">Por favor, informe o motivo pelo qual deseja excluir este alerta. A sua solicitação será enviada para aprovação.</p>
+                    <textarea id="justification-text" rows="4" class="w-full p-2 border border-gray-300 rounded-md" required></textarea>
+                </div>
+                <div class="items-center px-4 py-3 flex gap-2">
+                    <button id="submit-justification-btn" class="px-4 py-2 bg-red-600 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-red-700 disabled:bg-red-300" disabled>Enviar Solicitação</button>
+                    <button id="cancel-justification-btn" class="px-4 py-2 bg-gray-200 text-gray-900 text-base font-medium rounded-md w-full shadow-sm hover:bg-gray-300">Cancelar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="delete-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
         <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
             <div class="mt-3 text-center">
@@ -386,7 +459,6 @@
         </div>
     </div>
 
-    <!-- Access Link Modal -->
     <div id="link-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
         <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
             <div class="mt-3">
@@ -425,18 +497,17 @@
         const functions = getFunctions(app, 'southamerica-east1');
         
         // --- APPLICATION STATE ---
-        let currentUser = null, clockInterval = null, selectedCompanyForManagement = null, allCompanyArticles = [], companyIdToDelete = null;
+        let currentUser = null, clockInterval = null, selectedCompanyForManagement = null, allCompanyArticles = [], companyIdToDelete = null, articleToDeleteInfo = null;
         let sourceChartInstance = null, dateChartInstance = null, sentimentChartInstance = null, channelChartInstance = null;
         let superAdminCredentials = { user: 'ulysses', pass: 'adminqwert' };
-        let notificationListener = null;
-        let companiesListener = null; 
+        let notificationListener = null, companiesListener = null, deletionRequestsListener = null;
 
         // --- DOM ELEMENTS (declared inside DOMContentLoaded) ---
-        let pageSections, navLoggedIn, navInicio, navRelatorio, navPesquisa, navSuperAdmin, navLogout, navConfiguracoesAdmin, globalAlert, loginPage, dashboardPage, searchPage, superAdminPage, companyKeywordAdminPage, companySettingsAdminPage, reportPage, companyUserAdminPage, configuracoesAdminPage, loginForm, dashboardTitle, currentDateTimeEl, dashboardKeywordList, newsAlertsContainer, newsAlerts, alertDateFilter, reportAccessToggle, logoUploadInput, headerLogoContainer, loginLogoContainer, filterContainer, searchInput, searchResults, companyForm, companyList, backToSuperAdminKwBtn, backToSuperAdminSettingsBtn, backToSuperAdminUsersBtn, companyKeywordAdminTitle, companySettingsAdminTitle, companyUserAdminTitle, keywordForm, keywordInput, keywordIdInput, adminKeywordList, userForm, userInput, userPasswordInput, userIdInput, adminUserList, notificationBell, notificationBadge, manualTriggerBtn, deleteModal, confirmDeleteBtn, cancelDeleteBtn, companyNameToDeleteEl, newsScopeContainer, startDateInput, endDateInput, linkModal, accessLinkInput, copyLinkBtn, closeLinkModalBtn, reportKeywordFilter, stateSelectContainer, stateSelect, changePasswordForm, apiKeyNewsApiInput, apiKeyGNewsInput1, apiKeyGNewsInput2, apiKeyGNewsInput3, apiKeyGNewsInput4, apiKeyYoutubeInput, apiKeyBloggerInput, bloggerIdInput, rssUrlInput, fetchOnlyNewToggle, changePasswordPage, globalKeysPage, globalSourcesPage, btnChangePassword, btnGlobalKeys, btnNewsSources, backToAdminConfig1, backToAdminConfig2, backToAdminConfig3, apiKeyVisionInput, apiKeyVideoIntelligenceInput, showAllAlertsBtn;
+        let pageSections, navLoggedIn, navInicio, navRelatorio, navPesquisa, navSuperAdmin, navLogout, navConfiguracoesAdmin, globalAlert, loginPage, dashboardPage, searchPage, superAdminPage, companyKeywordAdminPage, companySettingsAdminPage, reportPage, companyUserAdminPage, configuracoesAdminPage, loginForm, dashboardTitle, currentDateTimeEl, dashboardKeywordList, newsAlertsContainer, newsAlerts, alertDateFilter, reportAccessToggle, logoUploadInput, headerLogoContainer, loginLogoContainer, filterContainer, searchInput, searchResults, companyForm, companyList, backToSuperAdminKwBtn, backToSuperAdminSettingsBtn, backToSuperAdminUsersBtn, companyKeywordAdminTitle, companySettingsAdminTitle, companyUserAdminTitle, keywordForm, keywordInput, keywordIdInput, adminKeywordList, userForm, userInput, userPasswordInput, userIdInput, adminUserList, notificationBell, notificationBadge, manualTriggerBtn, deleteModal, confirmDeleteBtn, cancelDeleteBtn, companyNameToDeleteEl, newsScopeContainer, startDateInput, endDateInput, linkModal, accessLinkInput, copyLinkBtn, closeLinkModalBtn, reportKeywordFilter, stateSelectContainer, stateSelect, changePasswordForm, apiKeyNewsApiInput, apiKeyGNewsInput1, apiKeyGNewsInput2, apiKeyGNewsInput3, apiKeyGNewsInput4, apiKeyYoutubeInput, apiKeyBloggerInput, bloggerIdInput, rssUrlInput, fetchOnlyNewToggle, changePasswordPage, globalKeysPage, globalSourcesPage, btnChangePassword, btnGlobalKeys, btnNewsSources, backToAdminConfig1, backToAdminConfig2, backToAdminConfig3, apiKeyVisionInput, apiKeyVideoIntelligenceInput, showAllAlertsBtn, deletionAccessToggle, justificationModal, justificationText, submitJustificationBtn, cancelJustificationBtn, btnManualAlert, btnDeletionRequests, btnSuperAdminReport, manualAlertPage, deletionRequestsPage, superAdminReportPage, backToDashboard1, backToDashboard2, backToDashboard3, manualAlertForm, deletionRequestsList, superAdminReportBody, deletionRequestsBadge;
 
         // --- UTILITY FUNCTIONS ---
         function showAlert(message, type = 'success') { const c = type === 'success' ? 'bg-green-100 border-green-500 text-green-700' : 'bg-red-100 border-red-500 text-red-700'; globalAlert.innerHTML = `<div class="${c} border-l-4 p-4 rounded-md fade-in" role="alert"><p>${message}</p></div>`; setTimeout(() => { globalAlert.innerHTML = ''; }, 4000); }
-        function updateView(pageName) { pageSections.forEach(s => s.classList.remove('active')); const i = !!currentUser; navLoggedIn.style.display = i ? 'flex' : 'none'; navSuperAdmin.classList.toggle('hidden', !currentUser || !currentUser.isSuperAdmin); navConfiguracoesAdmin.classList.toggle('hidden', !currentUser || !currentUser.isSuperAdmin); if (clockInterval) clearInterval(clockInterval); loadAndDisplayLogo(); switch (pageName) { case 'login': loginPage.classList.add('active'); break; case 'dashboard': dashboardPage.classList.add('active'); renderDashboard(); updateDateTime(); clockInterval = setInterval(updateDateTime, 60000); break; case 'super-admin': superAdminPage.classList.add('active'); setupCompaniesListener(); break; case 'search': searchPage.classList.add('active'); setupSearchPage(); break; case 'company-keyword-admin': companyKeywordAdminPage.classList.add('active'); renderCompanyKeywordAdminPage(); break; case 'company-settings-admin': companySettingsAdminPage.classList.add('active'); renderCompanySettingsAdminPage(); break; case 'company-user-admin': companyUserAdminPage.classList.add('active'); renderCompanyUserAdminPage(); break; case 'report': reportPage.classList.add('active'); renderReportPage(); break; case 'configuracoes-admin': configuracoesAdminPage.classList.add('active'); break; case 'change-password': changePasswordPage.classList.add('active'); break; case 'global-keys': globalKeysPage.classList.add('active'); renderGlobalKeysPage(); break; case 'global-sources': globalSourcesPage.classList.add('active'); renderGlobalSourcesPage(); break; } }
+        function updateView(pageName) { pageSections.forEach(s => s.classList.remove('active')); const i = !!currentUser; navLoggedIn.style.display = i ? 'flex' : 'none'; navSuperAdmin.classList.toggle('hidden', !currentUser || !currentUser.isSuperAdmin); navConfiguracoesAdmin.classList.toggle('hidden', !currentUser || !currentUser.isSuperAdmin); if (clockInterval) clearInterval(clockInterval); loadAndDisplayLogo(); switch (pageName) { case 'login': loginPage.classList.add('active'); break; case 'dashboard': dashboardPage.classList.add('active'); renderDashboard(); updateDateTime(); clockInterval = setInterval(updateDateTime, 60000); break; case 'super-admin': superAdminPage.classList.add('active'); setupCompaniesListener(); break; case 'search': searchPage.classList.add('active'); setupSearchPage(); break; case 'company-keyword-admin': companyKeywordAdminPage.classList.add('active'); renderCompanyKeywordAdminPage(); break; case 'company-settings-admin': companySettingsAdminPage.classList.add('active'); renderCompanySettingsAdminPage(); break; case 'company-user-admin': companyUserAdminPage.classList.add('active'); renderCompanyUserAdminPage(); break; case 'report': reportPage.classList.add('active'); renderReportPage(); break; case 'configuracoes-admin': configuracoesAdminPage.classList.add('active'); break; case 'change-password': changePasswordPage.classList.add('active'); break; case 'global-keys': globalKeysPage.classList.add('active'); renderGlobalKeysPage(); break; case 'global-sources': globalSourcesPage.classList.add('active'); renderGlobalSourcesPage(); break; case 'manual-alert': manualAlertPage.classList.add('active'); renderManualAlertPage(); break; case 'deletion-requests': deletionRequestsPage.classList.add('active'); setupDeletionRequestsListener(); break; case 'super-admin-report': superAdminReportPage.classList.add('active'); renderSuperAdminReport(); break; } }
         function getStorage(key, defaultValue) { try { const d = localStorage.getItem(key); return d ? JSON.parse(d) : defaultValue; } catch (e) { console.error(e); return defaultValue; } }
         function setStorage(key, value) { localStorage.setItem(key, JSON.stringify(value)); }
         function updateDateTime() { if (!currentDateTimeEl) return; const n = new Date(), f = { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }; currentDateTimeEl.textContent = `Data: ${n.toLocaleDateString('pt-BR', f).replace(',', ' -')}`; }
@@ -469,8 +540,8 @@
         async function loadAndDisplayLogo() { const companyId = currentUser ? currentUser.companyId : null; if (!companyId) { headerLogoContainer.innerHTML = ''; loginLogoContainer.innerHTML = ''; return; } const settingsRef = doc(db, "settings", companyId); try { const docSnap = await getDoc(settingsRef); const logoData = docSnap.exists() ? docSnap.data().logo : null; const logoHtml = logoData ? `<img src="${logoData}" alt="Logo da Empresa" class="h-full w-auto object-contain">` : ''; headerLogoContainer.innerHTML = logoHtml; loginLogoContainer.innerHTML = logoHtml; } catch (error) { console.error("Error loading logo:", error); } }
 
         // --- AUTHENTICATION LOGIC ---
-        async function handleLogin(e) { e.preventDefault(); const companyName = document.getElementById('login-company').value.trim(); const user = document.getElementById('login-user').value.trim(); const pass = document.getElementById('login-password').value.trim(); if (companyName.toLowerCase() === 'newsclip' && user.toLowerCase() === superAdminCredentials.user && pass === superAdminCredentials.pass) { currentUser = { username: 'Ulysses', isSuperAdmin: true, companyId: 'super', companyName: 'Super Admin' }; setStorage('clipping_currentUser', currentUser); updateView('dashboard'); return; } try { const companiesQuery = query(collection(db, "companies"), where("name", "==", companyName.toUpperCase())); const companiesSnapshot = await getDocs(companiesQuery); if (companiesSnapshot.empty) { showAlert('Empresa não encontrada.', 'error'); return; } const companyDoc = companiesSnapshot.docs[0]; const company = { id: companyDoc.id, ...companyDoc.data() }; if (company.status === 'inactive') { showAlert('Esta empresa está inativa e não pode ser acessada.', 'error'); return; } const usersQuery = query(collection(db, "companies", company.id, "users"), where("username", "==", user), where("password", "==", pass)); const usersSnapshot = await getDocs(usersQuery); if(!usersSnapshot.empty) { currentUser = { username: user, companyId: company.id, companyName: company.name, isSuperAdmin: false }; setStorage('clipping_currentUser', currentUser); updateView('dashboard'); } else { showAlert('Usuário ou senha inválidos para esta empresa.', 'error'); } } catch (error) { console.error("Login error:", error); showAlert("Ocorreu um erro durante o login.", "error"); } }
-        function handleLogout() { if (notificationListener) notificationListener(); if (companiesListener) companiesListener(); currentUser = null; selectedCompanyForManagement = null; localStorage.removeItem('clipping_currentUser'); if (clockInterval) clearInterval(clockInterval); headerLogoContainer.innerHTML = ''; updateView('login'); }
+        async function handleLogin(e) { e.preventDefault(); const companyName = document.getElementById('login-company').value.trim(); const user = document.getElementById('login-user').value.trim(); const pass = document.getElementById('login-password').value.trim(); if (companyName.toLowerCase() === 'newsclip' && user.toLowerCase() === superAdminCredentials.user && pass === superAdminCredentials.pass) { currentUser = { username: 'Ulysses', isSuperAdmin: true, companyId: 'super', companyName: 'Super Admin' }; setStorage('clipping_currentUser', currentUser); updateView('dashboard'); return; } try { const companiesQuery = query(collection(db, "companies"), where("name", "==", companyName.toUpperCase())); const companiesSnapshot = await getDocs(companiesQuery); if (companiesSnapshot.empty) { showAlert('Empresa não encontrada.', 'error'); return; } const companyDoc = companiesSnapshot.docs[0]; const company = { id: companyDoc.id, ...companyDoc.data() }; if (company.status === 'inactive') { showAlert('Esta empresa está inativa e não pode ser acessada.', 'error'); return; } const usersQuery = query(collection(db, "companies", company.id, "users"), where("username", "==", user), where("password", "==", pass)); const usersSnapshot = await getDocs(usersQuery); if(!usersSnapshot.empty) { const settingsDoc = await getDoc(doc(db, "settings", company.id)); const canRequestDeletion = settingsDoc.exists() ? settingsDoc.data().canRequestDeletion : false; currentUser = { username: user, companyId: company.id, companyName: company.name, isSuperAdmin: false, canRequestDeletion }; setStorage('clipping_currentUser', currentUser); updateView('dashboard'); } else { showAlert('Usuário ou senha inválidos para esta empresa.', 'error'); } } catch (error) { console.error("Login error:", error); showAlert("Ocorreu um erro durante o login.", "error"); } }
+        function handleLogout() { if (notificationListener) notificationListener(); if (companiesListener) companiesListener(); if (deletionRequestsListener) deletionRequestsListener(); currentUser = null; selectedCompanyForManagement = null; localStorage.removeItem('clipping_currentUser'); if (clockInterval) clearInterval(clockInterval); headerLogoContainer.innerHTML = ''; updateView('login'); }
         function handleChangePassword(e) { e.preventDefault(); const currentPass = document.getElementById('current-password').value; const newPass = document.getElementById('new-password').value; if (currentPass === superAdminCredentials.pass) { superAdminCredentials.pass = newPass; showAlert('Senha alterada com sucesso para esta sessão.', 'success'); changePasswordForm.reset(); } else { showAlert('Senha atual incorreta.', 'error'); } }
 
         // --- DASHBOARD LOGIC ---
@@ -538,13 +609,42 @@
 
         // --- KEYWORD MANAGEMENT LOGIC (BY SUPER ADMIN) ---
         async function renderCompanyKeywordAdminPage() { if (!selectedCompanyForManagement) return; companyKeywordAdminTitle.textContent = `Gerenciar Palavras-Chave para: ${selectedCompanyForManagement.name}`; renderKeywordsForSelectedCompany(); }
-        async function renderKeywordsForSelectedCompany() { try { const keywordsRef = collection(db, "companies", selectedCompanyForManagement.id, "keywords"); const querySnapshot = await getDocs(keywordsRef); const keywords = querySnapshot.docs.map(doc => ({id: doc.id, ...doc.data()})); adminKeywordList.innerHTML = ''; keywords.forEach(kw => { const li = document.createElement('li'); li.className = 'flex justify-between items-center bg-gray-100 p-2 rounded-md'; li.innerHTML = `<span>${kw.word}</span><div><button data-id="${kw.id}" class="edit-keyword-btn text-blue-500 hover:text-blue-700 mr-2">Editar</button><button data-id="${kw.id}" class="delete-keyword-btn text-red-500 hover:text-red-700">Excluir</button></div>`; adminKeywordList.appendChild(li); }); } catch (error) { console.error("Error rendering keywords:", error); } }
+        async function renderKeywordsForSelectedCompany() { try { const keywordsRef = collection(db, "companies", selectedCompanyForManagement.id, "keywords"); const querySnapshot = await getDocs(keywordsRef); const keywords = querySnapshot.docs.map(doc => ({id: doc.id, ...doc.data()})); adminKeywordList.innerHTML = ''; keywords.forEach(kw => { const li = document.createElement('li'); li.className = 'flex justify-between items-center bg-gray-100 p-2 rounded-md'; li.innerHTML = `<span>${kw.word}</span><div><button data-id="${kw.id}" class="edit-keyword-btn text-blue-500 hover:text-blue-700 mr-2">Editar</button><button data-id="${kw.id}" data-word="${kw.word}" class="delete-keyword-btn text-red-500 hover:text-red-700">Excluir</button></div>`; adminKeywordList.appendChild(li); }); } catch (error) { console.error("Error rendering keywords:", error); } }
         async function handleKeywordSubmit(e) { e.preventDefault(); const word = keywordInput.value.trim(), id = keywordIdInput.value; if (!word || !selectedCompanyForManagement) return; try { const keywordsRef = collection(db, "companies", selectedCompanyForManagement.id, "keywords"); if (id) { await updateDoc(doc(db, "companies", selectedCompanyForManagement.id, "keywords", id), { word }); } else { await addDoc(keywordsRef, { word }); } keywordInput.value = ''; keywordIdInput.value = ''; renderKeywordsForSelectedCompany(); } catch (error) { console.error("Error saving keyword:", error); } }
-        async function handleKeywordActions(e) { if (!selectedCompanyForManagement) return; const id = e.target.dataset.id; if (!id) return; try { if (e.target.classList.contains('edit-keyword-btn')) { const kwDoc = await getDoc(doc(db, "companies", selectedCompanyForManagement.id, "keywords", id)); if (kwDoc.exists()) { const kw = kwDoc.data(); keywordInput.value = kw.word; keywordIdInput.value = id; keywordInput.focus(); } } if (e.target.classList.contains('delete-keyword-btn')) { await deleteDoc(doc(db, "companies", selectedCompanyForManagement.id, "keywords", id)); renderKeywordsForSelectedCompany(); } } catch (error) { console.error("Error handling user action:", error); } }
+        async function handleKeywordActions(e) { 
+            if (!selectedCompanyForManagement) return; 
+            const target = e.target.closest('button');
+            if (!target) return;
+            const id = target.dataset.id; 
+            if (!id) return; 
+            try { 
+                if (target.classList.contains('edit-keyword-btn')) { 
+                    const kwDoc = await getDoc(doc(db, "companies", selectedCompanyForManagement.id, "keywords", id)); 
+                    if (kwDoc.exists()) { 
+                        const kw = kwDoc.data(); 
+                        keywordInput.value = kw.word; 
+                        keywordIdInput.value = id; 
+                        keywordInput.focus(); 
+                    } 
+                } 
+                if (target.classList.contains('delete-keyword-btn')) { 
+                    const word = target.dataset.word;
+                    if (confirm(`Tem a certeza que deseja excluir a palavra-chave "${word}"? Todos os alertas associados a ela também serão removidos.`)) {
+                        const deleteKeyword = httpsCallable(functions, 'deleteKeywordAndArticles');
+                        await deleteKeyword({ companyId: selectedCompanyForManagement.id, keyword: word });
+                        showAlert('Palavra-chave e alertas associados foram excluídos.');
+                        renderKeywordsForSelectedCompany();
+                    }
+                } 
+            } catch (error) { 
+                console.error("Error handling keyword action:", error);
+                showAlert(`Erro: ${error.message}`, 'error');
+            } 
+        }
         
         // --- SETTINGS MANAGEMENT LOGIC ---
-        async function renderCompanySettingsAdminPage() { if (!selectedCompanyForManagement) return; companySettingsAdminTitle.textContent = `Opções para: ${selectedCompanyForManagement.name}`; try { const settingsRef = doc(db, "settings", selectedCompanyForManagement.id); const docSnap = await getDoc(settingsRef); if (docSnap.exists()) { const settings = docSnap.data(); reportAccessToggle.checked = settings.reportAccess !== false; fetchOnlyNewToggle.checked = settings.fetchOnlyNew === true; document.querySelector(`input[name="news-scope"][value="${settings.searchScope || 'br'}"]`).checked = true; stateSelect.value = settings.searchState || ''; } else { reportAccessToggle.checked = true; fetchOnlyNewToggle.checked = false; document.querySelector('input[name="news-scope"][value="br"]').checked = true; stateSelect.value = ''; } handleScopeChange(); } catch (error) { console.error("Error rendering settings:", error); } }
-        async function handleSettingsChange(e) { if (!selectedCompanyForManagement) return; const settingsRef = doc(db, "settings", selectedCompanyForManagement.id); let key, value; switch (e.target.id) { case 'report-access-toggle': key = 'reportAccess'; value = e.target.checked; break; case 'fetch-only-new-toggle': key = 'fetchOnlyNew'; value = e.target.checked; break; case 'state-select': key = 'searchState'; value = e.target.value; break; default: if (e.target.name === 'news-scope') { key = 'searchScope'; value = e.target.value; } else { return; } } try { await setDoc(settingsRef, { [key]: value }, { merge: true }); showAlert('Opção salva!', 'success'); } catch (error) { console.error("Error saving setting:", error); } }
+        async function renderCompanySettingsAdminPage() { if (!selectedCompanyForManagement) return; companySettingsAdminTitle.textContent = `Opções para: ${selectedCompanyForManagement.name}`; try { const settingsRef = doc(db, "settings", selectedCompanyForManagement.id); const docSnap = await getDoc(settingsRef); if (docSnap.exists()) { const settings = docSnap.data(); reportAccessToggle.checked = settings.reportAccess !== false; fetchOnlyNewToggle.checked = settings.fetchOnlyNew === true; deletionAccessToggle.checked = settings.canRequestDeletion === true; document.querySelector(`input[name="news-scope"][value="${settings.searchScope || 'br'}"]`).checked = true; stateSelect.value = settings.searchState || ''; } else { reportAccessToggle.checked = true; fetchOnlyNewToggle.checked = false; deletionAccessToggle.checked = false; document.querySelector('input[name="news-scope"][value="br"]').checked = true; stateSelect.value = ''; } handleScopeChange(); } catch (error) { console.error("Error rendering settings:", error); } }
+        async function handleSettingsChange(e) { if (!selectedCompanyForManagement) return; const settingsRef = doc(db, "settings", selectedCompanyForManagement.id); let key, value; switch (e.target.id) { case 'report-access-toggle': key = 'reportAccess'; value = e.target.checked; break; case 'fetch-only-new-toggle': key = 'fetchOnlyNew'; value = e.target.checked; break; case 'deletion-access-toggle': key = 'canRequestDeletion'; value = e.target.checked; break; case 'state-select': key = 'searchState'; value = e.target.value; break; default: if (e.target.name === 'news-scope') { key = 'searchScope'; value = e.target.value; } else { return; } } try { await setDoc(settingsRef, { [key]: value }, { merge: true }); showAlert('Opção salva!', 'success'); } catch (error) { console.error("Error saving setting:", error); } }
         function handleScopeChange() { const selectedScope = document.querySelector('input[name="news-scope"]:checked').value; stateSelectContainer.classList.toggle('hidden', selectedScope !== 'state'); }
         async function renderGlobalKeysPage() { try { const settingsRef = doc(db, "settings", "global"); const docSnap = await getDoc(settingsRef); if (docSnap.exists()) { const settings = docSnap.data(); apiKeyNewsApiInput.value = settings.apiKeyNewsApi || ''; apiKeyGNewsInput1.value = settings.apiKeyGNews1 || ''; apiKeyGNewsInput2.value = settings.apiKeyGNews2 || ''; apiKeyGNewsInput3.value = settings.apiKeyGNews3 || ''; apiKeyGNewsInput4.value = settings.apiKeyGNews4 || ''; apiKeyYoutubeInput.value = settings.apiKeyYoutube || ''; apiKeyBloggerInput.value = settings.apiKeyBlogger || ''; apiKeyVisionInput.value = settings.apiKeyVision || ''; apiKeyVideoIntelligenceInput.value = settings.apiKeyVideoIntelligence || ''; } } catch (error) { console.error("Error loading global API keys:", error); } }
         async function handleGlobalKeyChange(e) { const settingsRef = doc(db, "settings", "global"); const key = e.target.id; const value = e.target.value; try { await setDoc(settingsRef, { [key]: value }, { merge: true }); showAlert('Chave de API salva!', 'success'); } catch (error) { console.error("Error saving global API key:", error); } }
@@ -619,7 +719,6 @@
                 }
                 showAllAlertsBtn.classList.remove('hidden');
 
-                // Clear notification status
                 await setDoc(settingsRef, { newAlerts: false, newAlertsCount: 0 }, { merge: true });
                 notificationBadge.classList.add('hidden');
                 notificationBell.classList.remove('animate-blinking-bell');
@@ -663,6 +762,8 @@
                 entitiesHTML = `<div class="mt-2 flex flex-wrap gap-2">${article.entities.map(e => `<span class="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-full">${e}</span>`).join('')}</div>`;
             }
 
+            const deleteButtonHTML = currentUser.canRequestDeletion ? `<button class="request-delete-btn text-red-500 hover:text-red-700 ml-4" title="Solicitar Exclusão">🗑️</button>` : '';
+
             alertEl.innerHTML = `
                 <div class="flex justify-between items-start">
                     <h4 class="text-lg font-bold text-gray-800 pr-2">${article.title}</h4>
@@ -678,14 +779,15 @@
                 ${entitiesHTML}
                 <div class="text-xs text-gray-500 mt-3 flex justify-between items-center">
                     <span>Fonte: ${article.source.name} | Publicado: ${formattedDate}</span>
-                    <a href="${article.url}" target="_blank" rel="noopener noreferrer" class="text-indigo-600 hover:underline font-semibold">Ler mais &rarr;</a>
+                    <div>
+                        <a href="${article.url}" target="_blank" rel="noopener noreferrer" class="text-indigo-600 hover:underline font-semibold">Ler mais &rarr;</a>
+                        ${deleteButtonHTML}
+                    </div>
                 </div>`;
             container.appendChild(alertEl);
         }
 
         async function handleSentimentChange(e) {
-            if (!e.target.classList.contains('sentiment-option')) return;
-            
             const newScore = parseFloat(e.target.dataset.sentiment);
             const alertEl = e.target.closest('.fade-in');
             const articleId = alertEl.dataset.id;
@@ -766,10 +868,11 @@
                     const keywordMatch = (selectedKeywords.length === 0 || selectedKeywords.includes(article.keyword));
                     return dateMatch && keywordMatch;
                 });
-                renderSourceChart(filteredArticles, selectedKeywords.length > 0 ? selectedKeywords : keywords);
-                renderDateChart(filteredArticles, selectedKeywords.length > 0 ? selectedKeywords : keywords);
-                renderSentimentChart(filteredArticles, selectedKeywords.length > 0 ? selectedKeywords : keywords);
-                renderChannelChart(filteredArticles, selectedKeywords.length > 0 ? selectedKeywords : keywords);
+                const keywordsToDisplay = selectedKeywords.length > 0 ? selectedKeywords : keywords;
+                renderSourceChart(filteredArticles, keywordsToDisplay);
+                renderDateChart(filteredArticles, keywordsToDisplay);
+                renderSentimentChart(filteredArticles, keywordsToDisplay);
+                renderChannelChart(filteredArticles, keywordsToDisplay);
             };
             
             updateCharts();
@@ -794,10 +897,7 @@
 
         function renderSourceChart(articles, selectedKeywords) {
             const datasets = [];
-            if (selectedKeywords.length === 0) {
-                if(sourceChartInstance) sourceChartInstance.destroy();
-                return;
-            }
+            if (selectedKeywords.length === 0) { if(sourceChartInstance) sourceChartInstance.destroy(); return; }
             const allSources = [...new Set(articles.map(a => a.source.name))].sort();
             
             selectedKeywords.forEach((keyword, index) => {
@@ -824,10 +924,7 @@
 
         function renderChannelChart(articles, selectedKeywords) {
             const datasets = [];
-            if (selectedKeywords.length === 0) {
-                if(channelChartInstance) channelChartInstance.destroy();
-                return;
-            };
+            if (selectedKeywords.length === 0) { if(channelChartInstance) channelChartInstance.destroy(); return; };
             const allChannels = ['YouTube', 'Sites', 'Revistas', 'Rádios'];
 
             selectedKeywords.forEach((keyword, index) => {
@@ -845,10 +942,7 @@
 
         function renderDateChart(articles, selectedKeywords) {
             const datasets = [];
-            if (selectedKeywords.length === 0) {
-                if(dateChartInstance) dateChartInstance.destroy();
-                return;
-            };
+            if (selectedKeywords.length === 0) { if(dateChartInstance) dateChartInstance.destroy(); return; };
 
             const allDates = [...new Set(articles.map(a => a.publishedAt.toDate().toLocaleDateString('pt-BR')))]
                 .sort((a, b) => new Date(a.split('/').reverse().join('-')) - new Date(b.split('/').reverse().join('-')));
@@ -869,10 +963,7 @@
         
         function renderSentimentChart(articles, selectedKeywords) {
             const datasets = [];
-            if (selectedKeywords.length === 0) {
-                if(sentimentChartInstance) sentimentChartInstance.destroy();
-                return;
-            };
+            if (selectedKeywords.length === 0) { if(sentimentChartInstance) sentimentChartInstance.destroy(); return; };
             const allSentiments = ['Positivo', 'Neutro', 'Negativo'];
 
             selectedKeywords.forEach((keyword, index) => {
@@ -972,6 +1063,192 @@
             });
         }
 
+        // FIX: Define handleAlertCardActions
+        function handleAlertCardActions(e) {
+            const target = e.target;
+
+            if (target.closest('.sentiment-option')) {
+                handleSentimentChange(e);
+                return;
+            }
+
+            if (target.closest('.request-delete-btn')) {
+                const alertEl = target.closest('.fade-in');
+                articleToDeleteInfo = {
+                    id: alertEl.dataset.id,
+                    title: alertEl.querySelector('h4').textContent
+                };
+                justificationText.value = '';
+                submitJustificationBtn.disabled = true; // Disable button on open
+                justificationModal.classList.remove('hidden');
+            }
+        }
+
+        // --- NEW SUPER ADMIN FUNCTIONS ---
+
+        async function renderManualAlertPage() {
+            const companySelect = document.getElementById('manual-alert-company');
+            companySelect.innerHTML = '<option value="">Selecione uma empresa</option>';
+            const companiesSnapshot = await getDocs(query(collection(db, "companies"), where("status", "==", "active")));
+            companiesSnapshot.forEach(doc => {
+                const option = document.createElement('option');
+                option.value = doc.id;
+                option.textContent = doc.data().name;
+                companySelect.appendChild(option);
+            });
+        }
+
+        async function handleManualAlertSubmit(e) {
+            e.preventDefault();
+            const companyId = document.getElementById('manual-alert-company').value;
+            const title = document.getElementById('manual-alert-title').value;
+            const description = document.getElementById('manual-alert-desc').value;
+            const url = document.getElementById('manual-alert-url').value;
+            const source = document.getElementById('manual-alert-source').value;
+            const keyword = document.getElementById('manual-alert-keyword').value;
+
+            if (!companyId) {
+                showAlert('Por favor, selecione uma empresa.', 'error');
+                return;
+            }
+
+            try {
+                const manualAddAlert = httpsCallable(functions, 'manualAddAlert');
+                await manualAddAlert({ companyId, title, description, url, source, keyword });
+                showAlert('Alerta manual adicionado com sucesso!', 'success');
+                manualAlertForm.reset();
+            } catch (error) {
+                console.error("Erro ao adicionar alerta manual:", error);
+                showAlert(`Erro: ${error.message}`, 'error');
+            }
+        }
+
+        function setupDeletionRequestsListener() {
+            if (deletionRequestsListener) deletionRequestsListener();
+            const q = query(collection(db, "deletionRequests"), orderBy("requestedAt", "desc"));
+            deletionRequestsListener = onSnapshot(q, (snapshot) => {
+                renderDeletionRequests(snapshot.docs);
+                const pendingCount = snapshot.docs.filter(doc => doc.data().status === 'pending').length;
+                deletionRequestsBadge.textContent = pendingCount;
+                deletionRequestsBadge.classList.toggle('hidden', pendingCount === 0);
+            }, (error) => {
+                console.error("Erro ao ouvir solicitações de exclusão:", error);
+                deletionRequestsList.innerHTML = '<p class="text-red-500">Erro ao carregar solicitações.</p>';
+            });
+        }
+
+        function renderDeletionRequests(docs) {
+            deletionRequestsList.innerHTML = '';
+            if (docs.empty) {
+                deletionRequestsList.innerHTML = '<p class="text-gray-500">Nenhuma solicitação de exclusão encontrada.</p>';
+                return;
+            }
+            docs.forEach(doc => {
+                const request = doc.data();
+                const reqEl = document.createElement('div');
+                reqEl.className = 'bg-white p-4 rounded-lg shadow';
+                const statusColor = request.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : (request.status === 'approved' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800');
+                
+                let buttonsHTML = '';
+                if (request.status === 'pending') {
+                    buttonsHTML = `
+                        <div class="mt-4 flex gap-2">
+                            <button data-id="${doc.id}" class="approve-request-btn bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600">Aprovar</button>
+                            <button data-id="${doc.id}" class="deny-request-btn bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600">Negar</button>
+                        </div>`;
+                }
+
+                reqEl.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <h4 class="font-bold text-gray-800">${request.companyName}</h4>
+                        <span class="text-xs font-medium px-2 py-1 rounded-full ${statusColor}">${request.status}</span>
+                    </div>
+                    <p class="text-sm text-gray-600 mt-2"><strong>Alerta:</strong> ${request.articleTitle}</p>
+                    <p class="text-sm text-gray-500 mt-2 bg-gray-50 p-2 rounded"><strong>Justificativa:</strong> ${request.justification}</p>
+                    ${buttonsHTML}
+                `;
+                deletionRequestsList.appendChild(reqEl);
+            });
+        }
+
+        async function handleDeletionRequestAction(e) {
+            const target = e.target.closest('button');
+            if (!target) return;
+
+            const requestId = target.dataset.id;
+            const approve = target.classList.contains('approve-request-btn');
+
+            try {
+                const manageDeletionRequest = httpsCallable(functions, 'manageDeletionRequest');
+                await manageDeletionRequest({ requestId, approve });
+                showAlert(`Solicitação ${approve ? 'aprovada' : 'negada'} com sucesso.`, 'success');
+            } catch (error) {
+                console.error("Erro ao gerir solicitação:", error);
+                showAlert(`Erro: ${error.message}`, 'error');
+            }
+        }
+
+        async function handleSubmitJustification() {
+            const justification = justificationText.value.trim();
+            if (!justification) {
+                showAlert('Por favor, forneça uma justificativa.', 'error');
+                return;
+            }
+
+            try {
+                const requestAlertDeletion = httpsCallable(functions, 'requestAlertDeletion');
+                await requestAlertDeletion({
+                    companyId: currentUser.companyId,
+                    companyName: currentUser.companyName,
+                    articleId: articleToDeleteInfo.id,
+                    articleTitle: articleToDeleteInfo.title,
+                    justification: justification
+                });
+                showAlert('Solicitação de exclusão enviada com sucesso!', 'success');
+                justificationModal.classList.add('hidden');
+                articleToDeleteInfo = null;
+            } catch (error) {
+                console.error("Erro ao enviar solicitação:", error);
+                showAlert(`Erro: ${error.message}`, 'error');
+            }
+        }
+
+        async function renderSuperAdminReport() {
+            superAdminReportBody.innerHTML = '<tr><td colspan="6" class="text-center py-4">A gerar relatório...</td></tr>';
+            try {
+                const generateReport = httpsCallable(functions, 'generateSuperAdminReport');
+                const result = await generateReport();
+                const reportData = result.data;
+
+                superAdminReportBody.innerHTML = '';
+                if (reportData.length === 0) {
+                    superAdminReportBody.innerHTML = '<tr><td colspan="6" class="text-center py-4">Nenhum dado para exibir.</td></tr>';
+                    return;
+                }
+
+                reportData.forEach(item => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="px-4 py-3 font-medium">${item.companyName}</td>
+                        <td class="px-4 py-3">${item.totalAlerts}</td>
+                        <td class="px-4 py-3 text-xs">
+                            <span class="text-green-600">P: ${item.sentimentPercentage.positive}%</span>, 
+                            <span class="text-gray-600">N: ${item.sentimentPercentage.neutral}%</span>, 
+                            <span class="text-red-600">Ng: ${item.sentimentPercentage.negative}%</span>
+                        </td>
+                        <td class="px-4 py-3">${item.predominantSentiment}</td>
+                        <td class="px-4 py-3">${item.topChannel}</td>
+                        <td class="px-4 py-3">${item.topVehicle}</td>
+                    `;
+                    superAdminReportBody.appendChild(row);
+                });
+            } catch (error) {
+                console.error("Erro ao gerar relatório:", error);
+                superAdminReportBody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-red-500">Erro: ${error.message}</td></tr>`;
+            }
+        }
+
+
         // --- INITIALIZATION AND EVENT LISTENERS ---
         document.addEventListener('DOMContentLoaded', () => {
             // Assign DOM elements after the DOM is loaded
@@ -1064,6 +1341,24 @@
             backToAdminConfig2 = document.getElementById('back-to-admin-config-2');
             backToAdminConfig3 = document.getElementById('back-to-admin-config-3');
             showAllAlertsBtn = document.getElementById('show-all-alerts-btn');
+            deletionAccessToggle = document.getElementById('deletion-access-toggle');
+            justificationModal = document.getElementById('justification-modal');
+            justificationText = document.getElementById('justification-text');
+            submitJustificationBtn = document.getElementById('submit-justification-btn');
+            cancelJustificationBtn = document.getElementById('cancel-justification-btn');
+            btnManualAlert = document.getElementById('btn-manual-alert');
+            btnDeletionRequests = document.getElementById('btn-deletion-requests');
+            btnSuperAdminReport = document.getElementById('btn-super-admin-report');
+            manualAlertPage = document.getElementById('manual-alert-page');
+            deletionRequestsPage = document.getElementById('deletion-requests-page');
+            superAdminReportPage = document.getElementById('super-admin-report-page');
+            backToDashboard1 = document.getElementById('back-to-dashboard-1');
+            backToDashboard2 = document.getElementById('back-to-dashboard-2');
+            backToDashboard3 = document.getElementById('back-to-dashboard-3');
+            manualAlertForm = document.getElementById('manual-alert-form');
+            deletionRequestsList = document.getElementById('deletion-requests-list');
+            superAdminReportBody = document.getElementById('super-admin-report-body');
+            deletionRequestsBadge = document.getElementById('deletion-requests-badge');
 
             const states = {"AC": "Acre", "AL": "Alagoas", "AP": "Amapá", "AM": "Amazonas", "BA": "Bahia", "CE": "Ceará", "DF": "Distrito Federal", "ES": "Espírito Santo", "GO": "Goiás", "MA": "Maranhão", "MT": "Mato Grosso", "MS": "Mato Grosso do Sul", "MG": "Minas Gerais", "PA": "Pará", "PB": "Paraíba", "PR": "Paraná", "PE": "Pernambuco", "PI": "Piauí", "RJ": "Rio de Janeiro", "RN": "Rio Grande do Norte", "RS": "Rio Grande do Sul", "RO": "Rondônia", "RR": "Roraima", "SC": "Santa Catarina", "SP": "São Paulo", "SE": "Sergipe", "TO": "Tocantins"};
             for (const [uf, name] of Object.entries(states)) {
@@ -1105,6 +1400,7 @@
             rssUrlInput.addEventListener('change', handleGlobalSourceChange);
             reportAccessToggle.addEventListener('change', handleSettingsChange);
             fetchOnlyNewToggle.addEventListener('change', handleSettingsChange);
+            deletionAccessToggle.addEventListener('change', handleSettingsChange);
             stateSelect.addEventListener('change', handleSettingsChange);
             keywordForm.addEventListener('submit', handleKeywordSubmit);
             adminKeywordList.addEventListener('click', handleKeywordActions);
@@ -1118,8 +1414,8 @@
             backToSuperAdminSettingsBtn.addEventListener('click', () => updateView('super-admin'));
             backToSuperAdminUsersBtn.addEventListener('click', () => updateView('super-admin'));
             dashboardKeywordList.addEventListener('click', handleDashboardKeywordFilter);
-            newsAlerts.addEventListener('click', handleSentimentChange);
-            searchResults.addEventListener('click', handleSentimentChange);
+            newsAlerts.addEventListener('click', handleAlertCardActions);
+            searchResults.addEventListener('click', handleAlertCardActions);
             alertDateFilter.addEventListener('change', filterAlertsByDate);
             changePasswordForm.addEventListener('submit', handleChangePassword);
             btnChangePassword.addEventListener('click', () => updateView('change-password'));
@@ -1129,6 +1425,19 @@
             backToAdminConfig2.addEventListener('click', () => updateView('configuracoes-admin'));
             backToAdminConfig3.addEventListener('click', () => updateView('configuracoes-admin'));
             logoUploadInput.addEventListener('change', handleLogoUpload);
+            btnManualAlert.addEventListener('click', () => updateView('manual-alert'));
+            btnDeletionRequests.addEventListener('click', () => updateView('deletion-requests'));
+            btnSuperAdminReport.addEventListener('click', () => updateView('super-admin-report'));
+            backToDashboard1.addEventListener('click', () => updateView('dashboard'));
+            backToDashboard2.addEventListener('click', () => updateView('dashboard'));
+            backToDashboard3.addEventListener('click', () => updateView('dashboard'));
+            manualAlertForm.addEventListener('submit', handleManualAlertSubmit);
+            cancelJustificationBtn.addEventListener('click', () => justificationModal.classList.add('hidden'));
+            submitJustificationBtn.addEventListener('click', handleSubmitJustification);
+            deletionRequestsList.addEventListener('click', handleDeletionRequestAction);
+            justificationText.addEventListener('input', () => {
+                submitJustificationBtn.disabled = justificationText.value.trim() === '';
+            });
             
             const urlParams = new URLSearchParams(window.location.search);
             const companyParam = urlParams.get('company');
