@@ -2,7 +2,7 @@
  * Ficheiro: index.js
  * Descrição: Firebase Cloud Functions (2ª Geração) para o backend do projeto Aurora Clipping.
  * Funcionalidades:
- * 1. Robô agendado e manual para recolha e análise de notícias.
+ * 1. Robô agendado e manual para recolha e análise de notícias da GNews.
  * 2. Análise de imagens com a Cloud Vision API.
  * 3. Análise de vídeos com a Video Intelligence API.
  * 4. Análise de sentimento com a Natural Language API.
@@ -27,6 +27,64 @@ const { LanguageServiceClient } = require("@google-cloud/language");
 // Inicialização do Firebase Admin SDK
 admin.initializeApp();
 const db = admin.firestore();
+
+// --- FUNÇÕES AUXILIARES DO ROBÔ ---
+
+/**
+ * Seleciona a chave de API correta da GNews com base na hora atual.
+ * @param {object} globalSettings - As configurações globais com as chaves de API.
+ * @returns {string|null} A chave de API ou nulo se não for encontrada.
+ */
+function getGNewsApiKey(globalSettings) {
+    const currentHour = new Date().getHours();
+    if (currentHour >= 0 && currentHour < 6) return globalSettings.apiKeyGNews1;
+    if (currentHour >= 6 && currentHour < 12) return globalSettings.apiKeyGNews2;
+    if (currentHour >= 12 && currentHour < 18) return globalSettings.apiKeyGNews3;
+    return globalSettings.apiKeyGNews4; // 18:00 - 23:59
+}
+
+/**
+ * Busca artigos na API da GNews.
+ * @param {string[]} keywords - Lista de palavras-chave a pesquisar.
+ * @param {string} apiKey - A chave de API da GNews a ser usada.
+ * @param {string} searchScope - O escopo da pesquisa ('br', 'international').
+ * @returns {Promise<object[]>} Uma lista de artigos formatados.
+ */
+async function buscarArtigosGNews(keywords, apiKey, searchScope) {
+    if (!apiKey) {
+        logger.warn("Nenhuma chave de API da GNews encontrada para o horário atual.");
+        return [];
+    }
+
+    const query = keywords.map(k => `"${k}"`).join(" OR ");
+    let url = `https://gnews.io/api/v4/search?q=${encodeURIComponent(query)}&token=${apiKey}&lang=pt`;
+
+    if (searchScope === 'br' || searchScope === 'state') {
+        url += '&country=br';
+    }
+
+    try {
+        const response = await axios.get(url);
+        if (response.data && response.data.articles) {
+            return response.data.articles.map(article => ({
+                title: article.title,
+                description: article.description,
+                url: article.url,
+                source: { name: article.source.name },
+                publishedAt: new Date(article.publishedAt),
+                imageUrl: article.image,
+                keyword: keywords.find(k => 
+                    article.title.toLowerCase().includes(k.toLowerCase()) || 
+                    article.description.toLowerCase().includes(k.toLowerCase())
+                ) || keywords[0],
+            }));
+        }
+        return [];
+    } catch (error) {
+        logger.error("Erro ao buscar notícias da GNews API:", error.response ? error.response.data : error.message);
+        return [];
+    }
+}
 
 // --- LÓGICA PRINCIPAL DO ROBÔ DE NOTÍCIAS ---
 
@@ -66,26 +124,11 @@ async function executarRoboDeNoticias() {
             return;
         }
 
-        let artigosEncontrados = [];
-        if (globalSettings.rssUrl) {
-            const urlsRSS = globalSettings.rssUrl.split('\n');
-            logger.info(`Buscando em ${urlsRSS.length} feeds RSS para as palavras: ${keywords.join(", ")}`);
-            // A sua lógica real de busca de notícias entraria aqui.
-        }
+        const settingsDoc = await db.collection("settings").doc(companyId).get();
+        const companySettings = settingsDoc.exists() ? settingsDoc.data() : {};
         
-        // --- SIMULAÇÃO DE ARTIGOS ENCONTRADOS (substitua pela sua lógica real) ---
-        artigosEncontrados = [
-            {
-                title: "Nova tecnologia de IA revoluciona o mercado de carros",
-                description: "Uma startup apresentou um novo sistema de visão computacional para veículos autónomos.",
-                url: "https://exemplo.com/noticia1",
-                source: { name: "Exemplo News" },
-                publishedAt: new Date(),
-                keyword: keywords[0] || "tecnologia",
-                imageUrl: "https://storage.googleapis.com/cloud-samples-data/vision/label/wakeupcat.jpg",
-            }
-        ];
-        // --- FIM DA SIMULAÇÃO ---
+        const gnewsApiKey = getGNewsApiKey(globalSettings);
+        const artigosEncontrados = await buscarArtigosGNews(keywords, gnewsApiKey, companySettings.searchScope);
 
         if (artigosEncontrados.length === 0) {
             logger.info(`Nenhum artigo novo encontrado para ${companyData.name}.`);
@@ -140,7 +183,6 @@ async function executarRoboDeNoticias() {
 
 // --- CLOUD FUNCTIONS EXPOSTAS ---
 
-// 1. Função acionada manualmente
 exports.manualFetch = onRequest({ region: "southamerica-east1" }, async (req, res) => {
     logger.info("Acionamento manual recebido.");
     try {
@@ -152,7 +194,6 @@ exports.manualFetch = onRequest({ region: "southamerica-east1" }, async (req, re
     }
 });
 
-// 2. Função agendada
 exports.scheduledFetch = onSchedule({ region: "southamerica-east1", schedule: "every 30 minutes" }, async (event) => {
     logger.info("Execução agendada do robô iniciada.");
     try {
@@ -163,7 +204,6 @@ exports.scheduledFetch = onSchedule({ region: "southamerica-east1", schedule: "e
     return null;
 });
 
-// 3. Função para apagar uma empresa
 exports.deleteCompany = onCall({ region: "southamerica-east1" }, async (request) => {
     const companyId = request.data.companyId;
     if (!companyId) {
