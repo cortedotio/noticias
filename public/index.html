@@ -59,36 +59,67 @@
         #report-keyword-filter {
             height: 100px;
         }
+        /* Article View Styles */
+        #article-view-page {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: white;
+            z-index: 2000;
+            overflow-y: auto;
+        }
+        @media print {
+            body * { visibility: hidden; }
+            #article-view-content, #article-view-content * { visibility: visible; }
+            #article-view-content { position: absolute; left: 0; top: 0; width: 100%; }
+            #article-view-controls { display: none; }
+        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
 
     <!-- Header -->
     <header class="bg-white shadow-md">
-        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
-            <div class="text-2xl font-bold text-indigo-600 flex items-center">
-               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline-block mr-2 h-8 w-8"><path d="M2.5 17a2.4 2.4 0 0 1 3 0L12 23l6.5-6.5a2.4 2.4 0 0 1 3 0Z"/><path d="M5 11.5a2.5 2.5 0 0 1 0-5c1.5 0 2.8 1.3 2.8 2.8V13c0 1.4-1.3 2.8-2.8 2.8-1.5 0-2.8-1.3-2.8-2.8V8.5"/><path d="M19 11.5a2.5 2.5 0 0 0 0-5c-1.5 0-2.8 1.3-2.8 2.8V13c0 1.4 1.3 2.8 2.8 2.8 1.5 0-2.8-1.3-2.8-2.8V8.5"/></svg>
+        <nav class="container mx-auto px-4 sm:px-6 py-4 flex justify-between items-center">
+            <div class="text-xl sm:text-2xl font-bold text-indigo-600 flex items-center">
+               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden sm:inline-block mr-2 h-8 w-8"><path d="M2.5 17a2.4 2.4 0 0 1 3 0L12 23l6.5-6.5a2.4 2.4 0 0 1 3 0Z"/><path d="M5 11.5a2.5 2.5 0 0 1 0-5c1.5 0 2.8 1.3 2.8 2.8V13c0 1.4-1.3 2.8-2.8 2.8-1.5 0-2.8-1.3-2.8-2.8V8.5"/><path d="M19 11.5a2.5 2.5 0 0 0 0-5c-1.5 0-2.8 1.3-2.8 2.8V13c0 1.4 1.3 2.8 2.8 2.8 1.5 0-2.8-1.3-2.8-2.8V8.5"/></svg>
                 Aurora clipping
             </div>
             <div class="flex items-center">
-                <div id="nav-logged-in" class="hidden items-center">
+                <div id="nav-logged-in" class="hidden md:flex items-center">
                     <a href="#" id="nav-inicio" class="text-gray-600 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">Início</a>
                     <a href="#" id="nav-relatorio" class="hidden text-gray-600 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">Relatório</a>
                     <a href="#" id="nav-pesquisa" class="text-gray-600 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">Pesquisa</a>
                     <a href="#" id="nav-super-admin" class="hidden text-red-600 hover:text-red-800 px-3 py-2 rounded-md text-sm font-bold">Super Admin</a>
                     <a href="#" id="nav-configuracoes-admin" class="hidden text-gray-600 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">Configurações</a>
+                </div>
+                <div id="user-actions-container" class="flex items-center">
                     <div id="notification-bell-container" class="relative cursor-pointer ml-4 p-1">
                         <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
                         <span id="notification-badge" class="hidden absolute -top-1 -right-1 text-white text-xs font-bold text-center rounded-full bg-red-500"></span>
                     </div>
-                    <a href="#" id="nav-logout" class="ml-4 bg-indigo-600 text-white hover:bg-indigo-700 px-3 py-2 rounded-md text-sm font-medium">Sair</a>
+                    <a href="#" id="nav-logout" class="hidden md:block ml-4 bg-indigo-600 text-white hover:bg-indigo-700 px-3 py-2 rounded-md text-sm font-medium">Sair</a>
                 </div>
                 <div id="header-logo-container" class="ml-4 h-10 w-auto"></div>
+                <button id="mobile-menu-button" class="md:hidden ml-4 p-2 text-gray-600 hover:text-indigo-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                </button>
             </div>
         </nav>
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="hidden md:hidden bg-white shadow-md">
+            <a href="#" id="mobile-nav-inicio" class="block text-gray-600 hover:text-indigo-600 px-4 py-2 text-sm font-medium">Início</a>
+            <a href="#" id="mobile-nav-relatorio" class="hidden text-gray-600 hover:text-indigo-600 px-4 py-2 text-sm font-medium">Relatório</a>
+            <a href="#" id="mobile-nav-pesquisa" class="block text-gray-600 hover:text-indigo-600 px-4 py-2 text-sm font-medium">Pesquisa</a>
+            <a href="#" id="mobile-nav-super-admin" class="hidden text-red-600 hover:text-red-800 px-4 py-2 text-sm font-bold">Super Admin</a>
+            <a href="#" id="mobile-nav-configuracoes-admin" class="hidden text-gray-600 hover:text-indigo-600 px-4 py-2 text-sm font-medium">Configurações</a>
+            <a href="#" id="mobile-nav-logout" class="block bg-indigo-600 text-white hover:bg-indigo-700 px-4 py-2 text-sm font-medium">Sair</a>
+        </div>
     </header>
 
-    <main class="container mx-auto p-6">
+    <main class="container mx-auto p-4 sm:p-6">
         <div id="global-alert" class="mb-6"></div>
 
         <!-- Login Section -->
@@ -119,7 +150,7 @@
                 </div>
                 <div id="news-alerts-container" class="md:col-span-2">
                     <div class="bg-white p-6 rounded-lg shadow-lg">
-                        <div class="flex justify-between items-center mb-4">
+                        <div class="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4">
                             <h3 class="text-xl font-semibold text-gray-700">Relatório de Alertas</h3>
                             <div class="flex items-center gap-4">
                                 <button id="show-all-alerts-btn" class="hidden bg-gray-200 text-gray-700 px-3 py-1 rounded-md text-sm hover:bg-gray-300">Mostrar Todos</button>
@@ -424,6 +455,42 @@
 
     </main>
 
+    <!-- NEW: Article View Page -->
+    <section id="article-view-page" class="page-section p-4 sm:p-6 md:p-8">
+        <div id="article-view-controls" class="fixed top-4 right-4 flex items-center gap-2 bg-white p-2 rounded-full shadow-lg">
+            <button id="font-decrease-btn" class="w-8 h-8 rounded-full hover:bg-gray-200">-A</button>
+            <button id="font-increase-btn" class="w-8 h-8 rounded-full hover:bg-gray-200">+A</button>
+            <a id="whatsapp-share-btn" href="#" target="_blank" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-200">
+                <svg class="w-5 h-5" fill="#25D366" viewBox="0 0 24 24"><path d="M12.04 2.01C6.58 2.01 2.13 6.46 2.13 11.92c0 1.77.46 3.45 1.32 4.95L2 22l5.25-1.38c1.45.77 3.06 1.18 4.79 1.18h.01c5.46 0 9.91-4.45 9.91-9.91c0-5.46-4.45-9.91-9.92-9.91zM12.04 20.2c-1.56 0-3.06-.4-4.38-1.15l-.31-.18l-3.26.86l.88-3.18l-.2-.33c-.83-1.38-1.27-2.99-1.27-4.68c0-4.54 3.7-8.24 8.24-8.24c4.54 0 8.24 3.7 8.24 8.24c0 4.54-3.7 8.24-8.24 8.24zm4.52-6.2c-.25-.12-1.47-.72-1.7-.8c-.23-.08-.39-.12-.56.12c-.17.25-.64.8-.79.97c-.15.17-.29.19-.54.06c-.25-.12-1.06-.39-2.02-1.25c-.75-.67-1.25-1.5-1.4-1.75c-.15-.25-.02-.38.11-.51c.11-.11.25-.29.37-.44c.13-.15.17-.25.25-.42c.08-.17.04-.31-.02-.43c-.06-.12-.56-1.34-.76-1.84c-.2-.48-.41-.42-.56-.43h-.48c-.17 0-.44.06-.67.31c-.23.25-.87.85-.87 2.07c0 1.22.89 2.4 1.01 2.56c.12.17 1.76 2.68 4.27 3.77c.59.26 1.05.41 1.41.52c.59.19 1.13.16 1.56.1c.48-.07 1.47-.6 1.67-1.18c.21-.58.21-1.07.15-1.18c-.07-.11-.22-.18-.47-.3z"/></svg>
+            </a>
+            <a id="email-share-btn" href="#" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-200">
+                <svg class="w-5 h-5" fill="#4285F4" viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5l-8-5V6l8 5l8-5v2z"/></svg>
+            </a>
+            <button id="print-btn" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-200">
+                <svg class="w-5 h-5" fill="#333" viewBox="0 0 24 24"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1s1 .45 1 1s-.45 1-1 1zm-1-9H6v4h12V3z"/></svg>
+            </button>
+            <button id="close-article-view-btn" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-200 font-bold">X</button>
+        </div>
+        <div id="article-view-content" class="max-w-4xl mx-auto py-16">
+            <header class="flex justify-between items-center border-b pb-4 mb-4">
+                <div id="article-company-logo" class="h-12"></div>
+                <div id="article-aurora-logo" class="h-12">
+                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-full w-auto text-indigo-600"><path d="M2.5 17a2.4 2.4 0 0 1 3 0L12 23l6.5-6.5a2.4 2.4 0 0 1 3 0Z"/><path d="M5 11.5a2.5 2.5 0 0 1 0-5c1.5 0 2.8 1.3 2.8 2.8V13c0 1.4-1.3 2.8-2.8 2.8-1.5 0-2.8-1.3-2.8-2.8V8.5"/><path d="M19 11.5a2.5 2.5 0 0 0 0-5c-1.5 0-2.8 1.3-2.8 2.8V13c0 1.4 1.3 2.8 2.8 2.8 1.5 0-2.8-1.3-2.8-2.8V8.5"/></svg>
+                </div>
+            </header>
+            <div id="article-body" class="prose lg:prose-xl max-w-none">
+                <h1 id="article-title" class="text-3xl md:text-4xl font-bold mb-4"></h1>
+                <div class="text-sm text-gray-500 mb-6 space-y-1">
+                    <p><strong>Canal:</strong> <span id="article-channel"></span></p>
+                    <p><strong>Cidade:</strong> <span id="article-city"></span></p>
+                    <p><strong>Autor:</strong> <span id="article-author"></span></p>
+                    <p><strong>Publicado em:</strong> <span id="article-date"></span></p>
+                </div>
+                <div id="article-text" class="text-base leading-relaxed"></div>
+            </div>
+        </div>
+    </section>
+
     <!-- Modals -->
     <div id="justification-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
         <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
@@ -501,13 +568,14 @@
         let sourceChartInstance = null, dateChartInstance = null, sentimentChartInstance = null, channelChartInstance = null;
         let superAdminCredentials = { user: 'ulysses', pass: 'adminqwert' };
         let notificationListener = null, companiesListener = null, deletionRequestsListener = null;
+        let currentFontSize = 16; // Base font size in pixels
 
         // --- DOM ELEMENTS (declared inside DOMContentLoaded) ---
-        let pageSections, navLoggedIn, navInicio, navRelatorio, navPesquisa, navSuperAdmin, navLogout, navConfiguracoesAdmin, globalAlert, loginPage, dashboardPage, searchPage, superAdminPage, companyKeywordAdminPage, companySettingsAdminPage, reportPage, companyUserAdminPage, configuracoesAdminPage, loginForm, dashboardTitle, currentDateTimeEl, dashboardKeywordList, newsAlertsContainer, newsAlerts, alertDateFilter, reportAccessToggle, logoUploadInput, headerLogoContainer, loginLogoContainer, filterContainer, searchInput, searchResults, companyForm, companyList, backToSuperAdminKwBtn, backToSuperAdminSettingsBtn, backToSuperAdminUsersBtn, companyKeywordAdminTitle, companySettingsAdminTitle, companyUserAdminTitle, keywordForm, keywordInput, keywordIdInput, adminKeywordList, userForm, userInput, userPasswordInput, userIdInput, adminUserList, notificationBell, notificationBadge, manualTriggerBtn, deleteModal, confirmDeleteBtn, cancelDeleteBtn, companyNameToDeleteEl, newsScopeContainer, startDateInput, endDateInput, linkModal, accessLinkInput, copyLinkBtn, closeLinkModalBtn, reportKeywordFilter, stateSelectContainer, stateSelect, changePasswordForm, apiKeyNewsApiInput, apiKeyGNewsInput1, apiKeyGNewsInput2, apiKeyGNewsInput3, apiKeyGNewsInput4, apiKeyYoutubeInput, apiKeyBloggerInput, bloggerIdInput, rssUrlInput, fetchOnlyNewToggle, changePasswordPage, globalKeysPage, globalSourcesPage, btnChangePassword, btnGlobalKeys, btnNewsSources, backToAdminConfig1, backToAdminConfig2, backToAdminConfig3, apiKeyVisionInput, apiKeyVideoIntelligenceInput, showAllAlertsBtn, deletionAccessToggle, justificationModal, justificationText, submitJustificationBtn, cancelJustificationBtn, btnManualAlert, btnDeletionRequests, btnSuperAdminReport, manualAlertPage, deletionRequestsPage, superAdminReportPage, backToDashboard1, backToDashboard2, backToDashboard3, manualAlertForm, deletionRequestsList, superAdminReportBody, deletionRequestsBadge;
+        let pageSections, navLoggedIn, navInicio, navRelatorio, navPesquisa, navSuperAdmin, navLogout, navConfiguracoesAdmin, globalAlert, loginPage, dashboardPage, searchPage, superAdminPage, companyKeywordAdminPage, companySettingsAdminPage, reportPage, companyUserAdminPage, configuracoesAdminPage, loginForm, dashboardTitle, currentDateTimeEl, dashboardKeywordList, newsAlertsContainer, newsAlerts, alertDateFilter, reportAccessToggle, logoUploadInput, headerLogoContainer, loginLogoContainer, filterContainer, searchInput, searchResults, companyForm, companyList, backToSuperAdminKwBtn, backToSuperAdminSettingsBtn, backToSuperAdminUsersBtn, companyKeywordAdminTitle, companySettingsAdminTitle, companyUserAdminTitle, keywordForm, keywordInput, keywordIdInput, adminKeywordList, userForm, userInput, userPasswordInput, userIdInput, adminUserList, notificationBell, notificationBadge, manualTriggerBtn, deleteModal, confirmDeleteBtn, cancelDeleteBtn, companyNameToDeleteEl, newsScopeContainer, startDateInput, endDateInput, linkModal, accessLinkInput, copyLinkBtn, closeLinkModalBtn, reportKeywordFilter, stateSelectContainer, stateSelect, changePasswordForm, apiKeyNewsApiInput, apiKeyGNewsInput1, apiKeyGNewsInput2, apiKeyGNewsInput3, apiKeyGNewsInput4, apiKeyYoutubeInput, apiKeyBloggerInput, bloggerIdInput, rssUrlInput, fetchOnlyNewToggle, changePasswordPage, globalKeysPage, globalSourcesPage, btnChangePassword, btnGlobalKeys, btnNewsSources, backToAdminConfig1, backToAdminConfig2, backToAdminConfig3, apiKeyVisionInput, apiKeyVideoIntelligenceInput, showAllAlertsBtn, deletionAccessToggle, justificationModal, justificationText, submitJustificationBtn, cancelJustificationBtn, btnManualAlert, btnDeletionRequests, btnSuperAdminReport, manualAlertPage, deletionRequestsPage, superAdminReportPage, backToDashboard1, backToDashboard2, backToDashboard3, manualAlertForm, deletionRequestsList, superAdminReportBody, deletionRequestsBadge, articleViewPage, articleViewContent, articleViewControls, fontDecreaseBtn, fontIncreaseBtn, whatsappShareBtn, emailShareBtn, printBtn, closeArticleViewBtn, articleCompanyLogo, articleTitle, articleChannel, articleCity, articleAuthor, articleDate, articleText, mobileMenuButton, mobileMenu, userActionsContainer;
 
         // --- UTILITY FUNCTIONS ---
         function showAlert(message, type = 'success') { const c = type === 'success' ? 'bg-green-100 border-green-500 text-green-700' : 'bg-red-100 border-red-500 text-red-700'; globalAlert.innerHTML = `<div class="${c} border-l-4 p-4 rounded-md fade-in" role="alert"><p>${message}</p></div>`; setTimeout(() => { globalAlert.innerHTML = ''; }, 4000); }
-        function updateView(pageName) { pageSections.forEach(s => s.classList.remove('active')); const i = !!currentUser; navLoggedIn.style.display = i ? 'flex' : 'none'; navSuperAdmin.classList.toggle('hidden', !currentUser || !currentUser.isSuperAdmin); navConfiguracoesAdmin.classList.toggle('hidden', !currentUser || !currentUser.isSuperAdmin); if (clockInterval) clearInterval(clockInterval); loadAndDisplayLogo(); switch (pageName) { case 'login': loginPage.classList.add('active'); break; case 'dashboard': dashboardPage.classList.add('active'); renderDashboard(); updateDateTime(); clockInterval = setInterval(updateDateTime, 60000); break; case 'super-admin': superAdminPage.classList.add('active'); setupCompaniesListener(); break; case 'search': searchPage.classList.add('active'); setupSearchPage(); break; case 'company-keyword-admin': companyKeywordAdminPage.classList.add('active'); renderCompanyKeywordAdminPage(); break; case 'company-settings-admin': companySettingsAdminPage.classList.add('active'); renderCompanySettingsAdminPage(); break; case 'company-user-admin': companyUserAdminPage.classList.add('active'); renderCompanyUserAdminPage(); break; case 'report': reportPage.classList.add('active'); renderReportPage(); break; case 'configuracoes-admin': configuracoesAdminPage.classList.add('active'); break; case 'change-password': changePasswordPage.classList.add('active'); break; case 'global-keys': globalKeysPage.classList.add('active'); renderGlobalKeysPage(); break; case 'global-sources': globalSourcesPage.classList.add('active'); renderGlobalSourcesPage(); break; case 'manual-alert': manualAlertPage.classList.add('active'); renderManualAlertPage(); break; case 'deletion-requests': deletionRequestsPage.classList.add('active'); setupDeletionRequestsListener(); break; case 'super-admin-report': superAdminReportPage.classList.add('active'); renderSuperAdminReport(); break; } }
+        function updateView(pageName) { pageSections.forEach(s => s.classList.remove('active')); const i = !!currentUser; navLoggedIn.style.display = i ? 'flex' : 'none'; userActionsContainer.style.display = i ? 'flex' : 'none'; navSuperAdmin.classList.toggle('hidden', !currentUser || !currentUser.isSuperAdmin); navConfiguracoesAdmin.classList.toggle('hidden', !currentUser || !currentUser.isSuperAdmin); if (clockInterval) clearInterval(clockInterval); loadAndDisplayLogo(); switch (pageName) { case 'login': loginPage.classList.add('active'); navLoggedIn.style.display = 'none'; userActionsContainer.style.display = 'none'; break; case 'dashboard': dashboardPage.classList.add('active'); renderDashboard(); updateDateTime(); clockInterval = setInterval(updateDateTime, 60000); break; case 'super-admin': superAdminPage.classList.add('active'); setupCompaniesListener(); break; case 'search': searchPage.classList.add('active'); setupSearchPage(); break; case 'company-keyword-admin': companyKeywordAdminPage.classList.add('active'); renderCompanyKeywordAdminPage(); break; case 'company-settings-admin': companySettingsAdminPage.classList.add('active'); renderCompanySettingsAdminPage(); break; case 'company-user-admin': companyUserAdminPage.classList.add('active'); renderCompanyUserAdminPage(); break; case 'report': reportPage.classList.add('active'); renderReportPage(); break; case 'configuracoes-admin': configuracoesAdminPage.classList.add('active'); break; case 'change-password': changePasswordPage.classList.add('active'); break; case 'global-keys': globalKeysPage.classList.add('active'); renderGlobalKeysPage(); break; case 'global-sources': globalSourcesPage.classList.add('active'); renderGlobalSourcesPage(); break; case 'manual-alert': manualAlertPage.classList.add('active'); renderManualAlertPage(); break; case 'deletion-requests': deletionRequestsPage.classList.add('active'); setupDeletionRequestsListener(); break; case 'super-admin-report': superAdminReportPage.classList.add('active'); renderSuperAdminReport(); break; } }
         function getStorage(key, defaultValue) { try { const d = localStorage.getItem(key); return d ? JSON.parse(d) : defaultValue; } catch (e) { console.error(e); return defaultValue; } }
         function setStorage(key, value) { localStorage.setItem(key, JSON.stringify(value)); }
         function updateDateTime() { if (!currentDateTimeEl) return; const n = new Date(), f = { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }; currentDateTimeEl.textContent = `Data: ${n.toLocaleDateString('pt-BR', f).replace(',', ' -')}`; }
@@ -732,58 +800,24 @@
         // --- NEWS ALERT DISPLAY & SENTIMENT LOGIC ---
         function displayNewsAlert(article, container) {
             const pubDate = new Date(article.publishedAt.seconds ? article.publishedAt.toDate() : article.publishedAt);
-            const formattedDate = pubDate.toLocaleDateString('pt-BR');
-            const dateForFilter = pubDate.toISOString().split('T')[0];
+            const formattedDate = pubDate.toLocaleString('pt-BR');
             
             const alertEl = document.createElement('div');
-            alertEl.className = 'bg-white p-4 rounded-lg shadow-md border-l-4 border-green-500 fade-in';
+            alertEl.className = 'bg-white p-4 rounded-lg shadow-md border-l-4 border-indigo-500';
             alertEl.dataset.id = article.id;
-            alertEl.dataset.date = dateForFilter;
-            alertEl.dataset.keyword = article.keyword;
-            alertEl.dataset.title = article.title.toLowerCase();
-            alertEl.dataset.description = article.description ? article.description.toLowerCase() : '';
-
-            const getSentimentHTML = (score) => {
-                let emoji = '😐'; let color = 'gray'; let text = 'Neutro';
-                if (score > 0.2) { emoji = '😊'; color = 'green'; text = 'Positivo'; } 
-                else if (score < -0.2) { emoji = '😠'; color = 'red'; text = 'Negativo'; }
-                return `<button class="sentiment-btn text-xs font-semibold text-${color}-600 bg-${color}-100 px-2 py-1 rounded-full">${emoji} ${text}</button>`;
-            };
-
-            const sentimentMenuHTML = `
-                <div class="sentiment-menu p-1 space-y-1">
-                    <button data-sentiment="0.5" class="sentiment-option w-full text-left text-xs px-2 py-1 rounded hover:bg-gray-100">😊 Positivo</button>
-                    <button data-sentiment="0.0" class="sentiment-option w-full text-left text-xs px-2 py-1 rounded hover:bg-gray-100">😐 Neutro</button>
-                    <button data-sentiment="-0.5" class="sentiment-option w-full text-left text-xs px-2 py-1 rounded hover:bg-gray-100">😠 Negativo</button>
-                </div>`;
-
-            let entitiesHTML = '';
-            if (article.entities && article.entities.length > 0) {
-                entitiesHTML = `<div class="mt-2 flex flex-wrap gap-2">${article.entities.map(e => `<span class="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-full">${e}</span>`).join('')}</div>`;
-            }
-
-            const deleteButtonHTML = currentUser.canRequestDeletion ? `<button class="request-delete-btn text-red-500 hover:text-red-700 ml-4" title="Solicitar Exclusão">🗑️</button>` : '';
-
+            
             alertEl.innerHTML = `
-                <div class="flex justify-between items-start">
-                    <h4 class="text-lg font-bold text-gray-800 pr-2">${article.title}</h4>
-                    <div class="flex items-center gap-2">
+                <div class="flex flex-col sm:flex-row justify-between sm:items-center">
+                    <h4 class="text-lg font-bold text-gray-800 pr-2 cursor-pointer hover:text-indigo-600">${article.title}</h4>
+                    <div class="flex items-center gap-2 mt-2 sm:mt-0">
                         <span class="flex-shrink-0 text-xs font-semibold bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full">${article.keyword}</span>
-                        <div class="sentiment-container relative">
-                            ${getSentimentHTML(article.sentiment ? article.sentiment.score : 0)}
-                            ${sentimentMenuHTML}
-                        </div>
                     </div>
                 </div>
-                <p class="text-sm text-gray-600 mt-2">${article.description || 'Descrição não disponível.'}</p>
-                ${entitiesHTML}
                 <div class="text-xs text-gray-500 mt-3 flex justify-between items-center">
-                    <span>Fonte: ${article.source.name} | Publicado: ${formattedDate}</span>
-                    <div>
-                        <a href="${article.url}" target="_blank" rel="noopener noreferrer" class="text-indigo-600 hover:underline font-semibold">Ler mais &rarr;</a>
-                        ${deleteButtonHTML}
-                    </div>
+                    <span>Fonte: ${article.source.name} | ${formattedDate}</span>
                 </div>`;
+
+            alertEl.querySelector('h4').addEventListener('click', () => openArticleView(article.id));
             container.appendChild(alertEl);
         }
 
@@ -914,7 +948,7 @@
         }
         
         function getChannelCategory(sourceName) {
-            const name = sourceName.toLowerCase();
+            const name = (sourceName || "").toLowerCase();
             if (name.includes('youtube')) return 'YouTube';
             if (name.includes('globo') || name.includes('g1') || name.includes('uol') || name.includes('terra') || name.includes('r7')) return 'Sites';
             if (name.includes('veja') || name.includes('istoé') || name.includes('exame')) return 'Revistas';
@@ -1359,6 +1393,25 @@
             deletionRequestsList = document.getElementById('deletion-requests-list');
             superAdminReportBody = document.getElementById('super-admin-report-body');
             deletionRequestsBadge = document.getElementById('deletion-requests-badge');
+            articleViewPage = document.getElementById('article-view-page');
+            articleViewContent = document.getElementById('article-view-content');
+            articleViewControls = document.getElementById('article-view-controls');
+            fontDecreaseBtn = document.getElementById('font-decrease-btn');
+            fontIncreaseBtn = document.getElementById('font-increase-btn');
+            whatsappShareBtn = document.getElementById('whatsapp-share-btn');
+            emailShareBtn = document.getElementById('email-share-btn');
+            printBtn = document.getElementById('print-btn');
+            closeArticleViewBtn = document.getElementById('close-article-view-btn');
+            articleCompanyLogo = document.getElementById('article-company-logo');
+            articleTitle = document.getElementById('article-title');
+            articleChannel = document.getElementById('article-channel');
+            articleCity = document.getElementById('article-city');
+            articleAuthor = document.getElementById('article-author');
+            articleDate = document.getElementById('article-date');
+            articleText = document.getElementById('article-text');
+            mobileMenuButton = document.getElementById('mobile-menu-button');
+            mobileMenu = document.getElementById('mobile-menu');
+            userActionsContainer = document.getElementById('user-actions-container');
 
             const states = {"AC": "Acre", "AL": "Alagoas", "AP": "Amapá", "AM": "Amazonas", "BA": "Bahia", "CE": "Ceará", "DF": "Distrito Federal", "ES": "Espírito Santo", "GO": "Goiás", "MA": "Maranhão", "MT": "Mato Grosso", "MS": "Mato Grosso do Sul", "MG": "Minas Gerais", "PA": "Pará", "PB": "Paraíba", "PR": "Paraná", "PE": "Pernambuco", "PI": "Piauí", "RJ": "Rio de Janeiro", "RN": "Rio Grande do Norte", "RS": "Rio Grande do Sul", "RO": "Rondônia", "RR": "Roraima", "SC": "Santa Catarina", "SP": "São Paulo", "SE": "Sergipe", "TO": "Tocantins"};
             for (const [uf, name] of Object.entries(states)) {
