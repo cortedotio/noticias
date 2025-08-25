@@ -15,6 +15,7 @@
   "dependencies": {
     "@google-cloud/language": "^6.3.0",
     "@google-cloud/pubsub": "^4.0.0",
+    "@google-cloud/speech": "^5.6.0",
     "@google-cloud/video-intelligence": "^5.3.0",
     "@google-cloud/vision": "^4.3.0",
     "axios": "^1.11.0",
