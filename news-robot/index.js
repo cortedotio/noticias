@@ -5,11 +5,14 @@ const cors = require('cors')({origin: true});
 const admin = require("firebase-admin");
 const axios = require('axios');
 const Parser = require('rss-parser');
+const { PubSub } = require("@google-cloud/pubsub");
 
-// Inicialize o Firebase Admin SDK
+// Initialize Firebase Admin SDK
 admin.initializeApp();
 const db = admin.firestore();
-
+const pubsub = new PubSub();
+const rssParser = new Parser();
+    
 // Importe as classes para os clientes de API, se não estiverem no seu código
 // const { SpeechClient } = require("@google-cloud/speech");
 // const { PubSub } = require("@google-cloud/pubsub");
