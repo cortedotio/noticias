@@ -120,7 +120,7 @@
                                 <div class="flex items-center gap-2">
                                     <label for="alert-date-filter" class="text-sm font-medium">Filtrar por data:</label>
                                     <input type="date" id="alert-date-filter" class="px-2 py-1 border border-gray-300 rounded-md text-sm">
-                            </div>
+                        </div>
                         </div>
                     </div>
                     <div id="news-alerts" class="space-y-4 max-h-[70vh] overflow-y-auto"></div>
@@ -341,7 +341,6 @@
                         <h3 class="text-xl font-semibold mb-4 text-center">Análise de Sentimento</h3>
                         <canvas id="sentiment-chart"></canvas>
                     </div>
-                </div>
             </div>
         </section>
 
@@ -759,7 +758,7 @@
                 <div class="text-xs text-gray-500 mt-3 flex justify-between items-center">
                     <span>Fonte: ${article.source.name} | Publicado: ${formattedDate}</span>
                     <div>
-                        <a href="${article.url}" target="_blank" rel="noopener noreferrer" class="text-indigo-600 hover:underline font-semibold">Ler mais &rarr;</a>
+                        <a href="${article.url}" target="_blank" rel="noopener noreferrer" class="text-indigo-600 hover:underline font-semibold">Ler mais →</a>
                         ${deleteButtonHTML}
                     </div>
                 </div>`;
@@ -1323,6 +1322,89 @@
             btnNewsSources = document.getElementById('btn-news-sources');
             backToAdminConfig1 = document.getElementById('back-to-admin-config-1');
             backToAdminConfig2 = document.getElementById('back-to-admin-config-2');
+            backToAdminConfig3 = document.getElementById('back-to-admin-config-3');
+            showAllAlertsBtn = document.getElementById('show-all-alerts-btn');
+            deletionAccessToggle = document.getElementById('deletion-access-toggle');
+            justificationModal = document.getElementById('justification-modal');
+            justificationText = document.getElementById('justification-text');
+            submitJustificationBtn = document.getElementById('submit-justification-btn');
+            cancelJustificationBtn = document.getElementById('cancel-justification-btn');
+            btnManualAlert = document.getElementById('btn-manual-alert');
+            btnDeletionRequests = document.getElementById('btn-deletion-requests');
+            btnSuperAdminReport = document.getElementById('btn-super-admin-report');
+            manualAlertPage = document.getElementById('manual-alert-page');
+            deletionRequestsPage = document.getElementById('deletion-requests-page');
+            superAdminReportPage = document.getElementById('super-admin-report-page');
+            backToDashboard1 = document.getElementById('back-to-dashboard-1');
+            backToDashboard2 = document.getElementById('back-to-dashboard-2');
+            backToDashboard3 = document.getElementById('back-to-dashboard-3');
+            manualAlertForm = document.getElementById('manual-alert-form');
+            deletionRequestsList = document.getElementById('deletion-requests-list');
+            superAdminReportBody = document.getElementById('super-admin-report-body');
+            deletionRequestsBadge = document.getElementById('deletion-requests-badge');
+
+            const states = {"AC": "Acre", "AL": "Alagoas", "AP": "Amapá", "AM": "Amazonas", "BA": "Bahia", "CE": "Ceará", "DF": "Distrito Federal", "ES": "Espírito Santo", "GO": "Goiás", "MA": "Maranhão", "MT": "Mato Grosso", "MS": "Mato Grosso do Sul", "MG": "Minas Gerais", "PA": "Pará", "PB": "Paraíba", "PR": "Paraná", "PE": "Pernambuco", "PI": "Piauí", "RJ": "Rio de Janeiro", "RN": "Rio Grande do Norte", "RS": "Rio Grande do Sul", "RO": "Rondônia", "RR": "Roraima", "SC": "Santa Catarina", "SP": "São Paulo", "SE": "Sergipe", "TO": "Tocantins"};
+            for (const [uf, name] of Object.entries(states)) {
+                const option = document.createElement('option');
+                option.value = uf;
+                option.textContent = name;
+            }
+
+            loginForm.addEventListener('submit', handleLogin);
+            navInicio.addEventListener('click', (e) => { e.preventDefault(); updateView('dashboard'); });
+            navRelatorio.addEventListener('click', (e) => { e.preventDefault(); updateView('report'); });
+            navPesquisa.addEventListener('click', (e) => { e.preventDefault(); updateView('search'); });
+            navSuperAdmin.addEventListener('click', (e) => { e.preventDefault(); updateView('super-admin'); });
+            navConfiguracoesAdmin.addEventListener('click', (e) => { e.preventDefault(); updateView('configuracoes-admin'); });
+            navLogout.addEventListener('click', (e) => { e.preventDefault(); handleLogout(); });
+            manualTriggerBtn.addEventListener('click', handleManualTrigger);
+            companyForm.addEventListener('submit', handleCompanySubmit);
+            companyList.addEventListener('click', handleCompanyActions);
+            confirmDeleteBtn.addEventListener('click', handleConfirmDelete);
+            cancelDeleteBtn.addEventListener('click', () => deleteModal.classList.add('hidden'));
+            closeLinkModalBtn.addEventListener('click', () => linkModal.classList.add('hidden'));
+            copyLinkBtn.addEventListener('click', () => {
+                accessLinkInput.select();
+                document.execCommand('copy');
+                showAlert('Link copiado para a área de transferência!', 'success');
+            });
+            newsScopeContainer.addEventListener('change', (e) => { handleSettingsChange(e); handleScopeChange(); });
+            apiKeyNewsApiInput.addEventListener('change', handleGlobalKeyChange);
+            apiKeyGNewsInput1.addEventListener('change', handleGlobalKeyChange);
+            apiKeyGNewsInput2.addEventListener('change', handleGlobalKeyChange);
+            apiKeyGNewsInput3.addEventListener('change', handleGlobalKeyChange);
+            apiKeyGNewsInput4.addEventListener('change', handleGlobalKeyChange);
+            apiKeyYoutubeInput.addEventListener('change', handleGlobalKeyChange);
+            apiKeyBloggerInput.addEventListener('change', handleGlobalKeyChange);
+            apiKeyVisionInput.addEventListener('change', handleGlobalKeyChange);
+            apiKeyVideoIntelligenceInput.addEventListener('change', handleGlobalKeyChange);
+            bloggerIdInput.addEventListener('change', handleGlobalSourceChange);
+            rssUrlInput.addEventListener('change', handleGlobalSourceChange);
+            reportAccessToggle.addEventListener('change', handleSettingsChange);
+            fetchOnlyNewToggle.addEventListener('change', handleSettingsChange);
+            deletionAccessToggle.addEventListener('change', handleSettingsChange);
+            stateSelect.addEventListener('change', handleSettingsChange);
+            keywordForm.addEventListener('submit', handleKeywordSubmit);
+            adminKeywordList.addEventListener('click', handleKeywordActions);
+            userForm.addEventListener('submit', handleUserSubmit);
+            adminUserList.addEventListener('click', handleUserActions);
+            searchInput.addEventListener('input', handleSearch);
+            filterContainer.addEventListener('click', (e) => { if (e.target.classList.contains('filter-btn')) { document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('bg-indigo-500', 'text-white')); e.target.classList.add('bg-indigo-500', 'text-white'); handleSearch(); } });
+            notificationBell.addEventListener('click', showOnlyNewAlerts);
+            showAllAlertsBtn.addEventListener('click', populateInitialAlerts);
+            backToSuperAdminKwBtn.addEventListener('click', () => updateView('super-admin'));
+            backToSuperAdminSettingsBtn.addEventListener('click', () => updateView('super-admin'));
+            backToSuperAdminUsersBtn.addEventListener('click', () => updateView('super-admin'));
+            dashboardKeywordList.addEventListener('click', handleDashboardKeywordFilter);
+            newsAlerts.addEventListener('click', handleAlertCardActions);
+            searchResults.addEventListener('click', handleAlertCardActions);
+            alertDateFilter.addEventListener('change', filterAlertsByDate);
+            changePasswordForm.addEventListener('submit', handleChangePassword);
+            btnChangePassword.addEventListener('click', () => updateView('change-password'));
+            btnGlobalKeys.addEventListener('click', () => updateView('global-keys'));
+            btnNewsSources.addEventListener('click', () => updateView('global-sources'));
+            backToAdminConfig1.addEventListener('click', () => updateView('configuracoes-admin'));
+            backToAdminConfig2.addEventListener('click', () => updateView('configuracoes-admin'));
             backToAdminConfig3 = document.getElementById('back-to-admin-config-3');
             showAllAlertsBtn = document.getElementById('show-all-alerts-btn');
             deletionAccessToggle = document.getElementById('deletion-access-toggle');
