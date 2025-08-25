@@ -1,38 +1,33 @@
+const { onRequest, HttpsError } = require("firebase-functions/v2/https");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
-const { onRequest, onCall, HttpsError } = require("firebase-functions/v2/https");
-const admin = require("firebase-admin");
-const axios = require("axios");
 const logger = require("firebase-functions/logger");
-const cors = require("cors")({ origin: true });
-const { LanguageServiceClient } = require('@google-cloud/language');
-const { PubSub } = require('@google-cloud/pubsub');
-const Parser = require('rss-parser');
-const vision = require('@google-cloud/vision');
-const video = require('@google-cloud/video-intelligence');
-const { onSchedule } = require("firebase-functions/v2/scheduler");
-const { onRequest, onCall, HttpsError } = require("firebase-functions/v2/https");
+const cors = require('cors')({origin: true});
 const admin = require("firebase-admin");
-const axios = require("axios");
-const logger = require("firebase-functions/logger");
-const cors = require("cors")({ origin: true });
-const { LanguageServiceClient } = require('@google-cloud/language');
-const { SpeechClient } = require('@google-cloud/speech');
-const { PubSub } = require('@google-cloud/pubsub');
+const axios = require('axios');
 const Parser = require('rss-parser');
-const vision = require('@google-cloud/vision');
-const video = require('@google-cloud/video-intelligence');
-admin.initializeApp();
+
+// Inicialize o Firebase Admin SDK
+admin.initializeApp();
 const db = admin.firestore();
-const languageClient = new LanguageServiceClient();
-const visionClient = new vision.ImageAnnotatorClient();
-const videoClient = new video.VideoIntelligenceServiceClient();
-const speechClient = new SpeechClient();
+
+// Importe as classes para os clientes de API, se não estiverem no seu código
+// const { SpeechClient } = require("@google-cloud/speech");
+// const { PubSub } = require("@google-cloud/pubsub");
+// const { LanguageServiceClient } = require("@google-cloud/language");
+// const { VisionClient } = require("@google-cloud/vision");
+
+// Aqui você precisaria inicializar os clientes
+// const languageClient = new LanguageServiceClient();
+// const visionClient = new VisionClient();
+// const speechClient = new SpeechClient();
 const pubsub = new PubSub();
 const rssParser = new Parser();
-// --- Lógica Principal do Robô (com Multi-API e Análise de IA) ---
+
+// --- Lógica Principal do Robô (com Multi-API e Análise de IA) ---
 const fetchAndStoreNews = async () => {
   logger.info("Iniciando o robô de busca de notícias...");
-  try {
+
+  try {
     // Busca as configurações globais primeiro (chaves de API, fontes)
     const globalSettingsDoc = await db.collection("settings").doc("global").get();
     if (!globalSettingsDoc.exists) {
@@ -48,22 +43,28 @@ const fetchAndStoreNews = async () => {
         bloggerId, 
         rssUrl 
     } = globalSettings;
-    const companiesSnapshot = await db.collection("companies").where("status", "==", "active").get();
-    if (companiesSnapshot.empty) {
+
+    const companiesSnapshot = await db.collection("companies").where("status", "==", "active").get();
+
+    if (companiesSnapshot.empty) {
       logger.info("Nenhuma empresa ativa encontrada.");
       return { success: true, message: "Nenhuma empresa ativa encontrada." };
     }
-    const promises = companiesSnapshot.docs.map(async (companyDoc) => {
+
+    const promises = companiesSnapshot.docs.map(async (companyDoc) => {
       const companyId = companyDoc.id;
       const companyName = companyDoc.data().name;
       logger.info(`Buscando configurações para a empresa: ${companyName}`);
-      const settingsRef = db.collection("settings").doc(companyId);
+
+      const settingsRef = db.collection("settings").doc(companyId);
       const keywordsRef = db.collection("companies").doc(companyId).collection("keywords");
-      const [settingsDoc, keywordsSnapshot] = await Promise.all([
+
+      const [settingsDoc, keywordsSnapshot] = await Promise.all([
         settingsRef.get(),
         keywordsRef.get(),
       ]);
-      if (!settingsDoc.exists || keywordsSnapshot.empty) {
+
+      if (!settingsDoc.exists || keywordsSnapshot.empty) {
         logger.warn(`Configurações ou palavras-chave em falta para ${companyName}.`);
         return;
       }
@@ -72,7 +73,8 @@ const fetchAndStoreNews = async () => {
       const { searchScope = 'br', searchState = '', fetchOnlyNew = false } = settings;
       let newArticlesFoundForCompany = false;
       const keywords = keywordsSnapshot.docs.map(doc => doc.data().word);
-      for (const originalKeyword of keywords) {
+
+      for (const originalKeyword of keywords) {
         let keyword = originalKeyword;
         
         if (searchScope === 'state' && searchState) {
@@ -81,7 +83,8 @@ const fetchAndStoreNews = async () => {
         }
         
         const searchPromises = [];
-        if (apiKeyNewsApi) {
+
+        if (apiKeyNewsApi) {
             let url;
             if (searchScope === 'international') {
                 url = `https://newsapi.org/v2/everything?q="${encodeURIComponent(keyword)}"&language=pt&apiKey=${apiKeyNewsApi}`;
@@ -90,12 +93,14 @@ const fetchAndStoreNews = async () => {
             }
             searchPromises.push(axios.get(url).then(res => res.data.articles || []));
         }
-        // Seleciona a chave GNews com base no horário
+
+        // Seleciona a chave GNews com base no horário
         const now = new Date();
         const utcHour = now.getUTCHours();
         const brasíliaHour = (utcHour - 3 + 24) % 24;
         let apiKeyGNews;
-        if (brasíliaHour >= 0 && brasíliaHour < 6) {
+
+        if (brasíliaHour >= 0 && brasíliaHour < 6) {
             apiKeyGNews = apiKeyGNews1;
         } else if (brasíliaHour >= 6 && brasíliaHour < 12) {
             apiKeyGNews = apiKeyGNews2;
@@ -104,11 +109,13 @@ const fetchAndStoreNews = async () => {
         } else {
             apiKeyGNews = apiKeyGNews4;
         }
-        if (apiKeyGNews) {
+
+        if (apiKeyGNews) {
             const url = `https://gnews.io/api/v4/search?q="${encodeURIComponent(keyword)}"&lang=pt&country=br&max=10&apikey=${apiKeyGNews}`;
             searchPromises.push(axios.get(url).then(res => res.data.articles || []));
         }
-        if (apiKeyYoutube) {
+
+        if (apiKeyYoutube) {
             const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(keyword)}&type=video&order=date&maxResults=10&key=${apiKeyYoutube}`;
             searchPromises.push(axios.get(url).then(res => (res.data.items || []).map(item => ({
                 title: item.snippet.title,
@@ -119,7 +126,7 @@ const fetchAndStoreNews = async () => {
             }))));
         }
         
-        if (apiKeyBlogger && bloggerId) {
+        if (apiKeyBlogger) {
             const bloggerIds = bloggerId.split('\n').filter(id => id.trim() !== '');
             bloggerIds.forEach(id => {
                 const url = `https://www.googleapis.com/blogger/v3/blogs/${id.trim()}/posts?key=${apiKeyBlogger}`;
@@ -164,7 +171,8 @@ const fetchAndStoreNews = async () => {
                 }));
             });
         }
-        const results = await Promise.allSettled(searchPromises);
+
+        const results = await Promise.allSettled(searchPromises);
         let allArticles = [];
         results.forEach((result, index) => {
             if (result.status === 'fulfilled') {
@@ -173,22 +181,26 @@ const fetchAndStoreNews = async () => {
                 logger.error(`Falha na busca da fonte ${index + 1} para "${originalKeyword}":`, result.reason.message);
             }
         });
-        if (fetchOnlyNew && allArticles.length > 0) {
+
+        if (fetchOnlyNew && allArticles.length > 0) {
             const articleIds = allArticles.map(article => Buffer.from(article.url).toString("base64").replace(/\//g, '_'));
             const existingDocs = await db.collection("companies").doc(companyId).collection("articles").where(admin.firestore.FieldPath.documentId(), 'in', articleIds).get();
             const existingIds = new Set(existingDocs.docs.map(doc => doc.id));
             allArticles = allArticles.filter(article => !existingIds.has(Buffer.from(article.url).toString("base64").replace(/\//g, '_')));
         }
-        if (allArticles.length === 0) {
+
+        if (allArticles.length === 0) {
             logger.info(`Nenhum item novo encontrado para "${originalKeyword}".`);
             continue;
         }
-        const batch = db.batch();
+
+        const batch = db.batch();
         for (const article of allArticles) {
             let sentiment = null;
             let entities = [];
             let visionLabels = [];
-            if (article.description || article.title) {
+
+            if (article.description || article.title) {
                 const document = {
                     content: `${article.title}. ${article.description || ''}`,
                     type: 'PLAIN_TEXT',
@@ -202,11 +214,13 @@ const fetchAndStoreNews = async () => {
                         .filter(e => e.type !== 'OTHER' && e.salience > 0.01)
                         .slice(0, 5)
                         .map(e => e.name);
-                } catch (langError) {
+
+                } catch (langError) {
                     logger.error("Erro na Natural Language API:", langError.message);
                 }
             }
-            if (article.urlToImage) {
+
+            if (article.urlToImage) {
                 try {
                     const [result] = await visionClient.labelDetection(article.urlToImage);
                     const labels = result.labelAnnotations;
@@ -215,7 +229,8 @@ const fetchAndStoreNews = async () => {
                     logger.error("Erro na Vision API:", visionError.message);
                 }
             }
-            const articleData = {
+
+            const articleData = {
               title: article.title,
               description: article.description,
               url: article.url,
@@ -238,7 +253,8 @@ const fetchAndStoreNews = async () => {
             newArticlesFoundForCompany = true;
         }
       }
-      if (newArticlesFoundForCompany) {
+
+      if (newArticlesFoundForCompany) {
         await settingsRef.set({ newAlerts: true }, { merge: true });
         logger.info(`Sinal de notificação ativado para ${companyName}.`);
         
@@ -254,15 +270,19 @@ const fetchAndStoreNews = async () => {
         logger.info(`Mensagem de notificação publicada no Pub/Sub para ${companyName}.`);
       }
     });
-    await Promise.all(promises);
+
+    await Promise.all(promises);
     logger.info("Robô de busca de notícias finalizado com sucesso.");
     return { success: true, message: "Busca de notícias finalizada com sucesso." };
-  } catch (error) {
+
+  } catch (error) {
     logger.error("Erro geral na execução do robô de notícias:", error);
     throw new HttpsError('internal', 'Erro interno ao executar o robô.');
   }
 };
-// --- Trigger 1: Agendamento Automático ---
+
+
+// --- Trigger 1: Agendamento Automático ---
 exports.scheduledFetch = onSchedule({
   schedule: "every 30 minutes",
   timeoutSeconds: 540,
@@ -271,7 +291,9 @@ exports.scheduledFetch = onSchedule({
 }, async (event) => {
   return await fetchAndStoreNews();
 });
-// --- Trigger 2: Execução Manual (HTTP) ---
+
+
+// --- Trigger 2: Execução Manual (HTTP) ---
 exports.manualFetch = onRequest({
     region: "southamerica-east1",
     timeoutSeconds: 540,
@@ -287,122 +309,196 @@ exports.manualFetch = onRequest({
         }
     });
 });
-// --- Trigger 3: Excluir Empresa e Subcoleções ---
-exports.deleteCompany = onCall({ region: "southamerica-east1" }, async (request) => {
-    const companyId = request.data.companyId;
-    if (!companyId) {
-        throw new HttpsError('invalid-argument', 'O ID da empresa é obrigatório.');
-    }
-    logger.info(`Iniciando exclusão da empresa ${companyId} e seus dados...`);
-    const companyRef = db.collection('companies').doc(companyId);
-    const collections = ['articles', 'keywords', 'users'];
-    for (const collection of collections) {
-        const snapshot = await companyRef.collection(collection).get();
-        const batch = db.batch();
-        snapshot.docs.forEach(doc => batch.delete(doc.ref));
-        await batch.commit();
-        logger.info(`Subcoleção ${collection} da empresa ${companyId} excluída.`);
-    }
-    await db.collection('settings').doc(companyId).delete();
-    logger.info(`Configurações da empresa ${companyId} excluídas.`);
-    await companyRef.delete();
-    logger.info(`Empresa ${companyId} excluída com sucesso.`);
-    return { success: true, message: 'Empresa e todos os dados associados foram excluídos.' };
-});
-// --- Trigger 4: Excluir Palavra-Chave e Alertas Associados ---
-exports.deleteKeyword = onCall({ region: "southamerica-east1" }, async (request) => {
-    const { companyId, keywordId, keyword } = request.data;
-    if (!companyId || !keywordId || !keyword) {
-        throw new HttpsError('invalid-argument', 'Dados insuficientes para excluir a palavra-chave.');
-    }
-    logger.info(`Iniciando exclusão da palavra-chave ${keyword} para a empresa ${companyId}...`);
-    
-    // Exclui a palavra-chave
-    const keywordRef = db.collection('companies').doc(companyId).collection('keywords').doc(keywordId);
-    await keywordRef.delete();
-    logger.info(`Palavra-chave ${keyword} excluída.`);
-    // Exclui os alertas associados
-    const articlesRef = db.collection('companies').doc(companyId).collection('articles');
-    const articlesQuery = articlesRef.where('keyword', '==', keyword);
-    const articlesSnapshot = await articlesQuery.get();
-    
-    if (articlesSnapshot.empty) {
-        logger.info(`Nenhum alerta encontrado para a palavra-chave ${keyword}.`);
-        return { success: true, message: 'Palavra-chave excluída com sucesso.' };
-    }
-    const batch = db.batch();
-    articlesSnapshot.docs.forEach(doc => {
-        batch.delete(doc.ref);
-    });
-    await batch.commit();
-    logger.info(`${articlesSnapshot.size} alertas associados à palavra-chave ${keyword} foram excluídos.`);
-    return { success: true, message: 'Palavra-chave e alertas associados foram excluídos com sucesso.' };
-});
-// --- Trigger 5: Transcrever Áudio com Speech-to-Text ---
-exports.transcribeAudio = onCall({ region: "southamerica-east1" }, async (request) => {
-    const { gcsUri, companyId } = request.data;
-    if (!gcsUri || !companyId) {
-        throw new HttpsError('invalid-argument', 'O URI do Google Cloud Storage e o ID da empresa são obrigatórios.');
-    }
-    logger.info(`Iniciando transcrição para o ficheiro: ${gcsUri}`);
-    const audio = {
-        uri: gcsUri,
-    };
-    const config = {
-        encoding: 'MP3',
-        sampleRateHertz: 16000,
-        languageCode: 'pt-BR',
-    };
-    const requestSpec = {
-        audio: audio,
-        config: config,
-    };
-    try {
-        const [operation] = await speechClient.longRunningRecognize(requestSpec);
-        const [response] = await operation.promise();
-        const transcription = response.results
-            .map(result => result.alternatives[0].transcript)
-            .join('\n');
-        
-        logger.info(`Transcrição concluída: ${transcription.substring(0, 100)}...`);
-        const keywordsRef = db.collection("companies").doc(companyId).collection("keywords");
-        const keywordsSnapshot = await keywordsRef.get();
-        const keywords = keywordsSnapshot.docs.map(doc => doc.data().word);
-        let foundKeywords = [];
-        for (const keyword of keywords) {
-            if (transcription.toLowerCase().includes(keyword.toLowerCase())) {
-                foundKeywords.push(keyword);
-            }
-        }
-        if (foundKeywords.length > 0) {
-            const batch = db.batch();
-            for (const keyword of foundKeywords) {
-                const articleData = {
-                    title: `Transcrição de Rádio - ${new Date().toLocaleDateString()}`,
-                    description: transcription,
-                    url: gcsUri,
-                    source: { name: 'Rádio' },
-                    publishedAt: new Date(),
-                    keyword: keyword,
-                    companyId: companyId,
-                    sentiment: null,
-                    entities: [],
-                    visionLabels: [],
-                };
-                const articleId = Buffer.from(gcsUri + keyword).toString("base64").replace(/\//g, '_');
-                const articleRef = db.collection("companies").doc(companyId).collection("articles").doc(articleId);
-                batch.set(articleRef, articleData, { merge: true });
-            }
-            await batch.commit();
-            const settingsRef = db.collection("settings").doc(companyId);
-            await settingsRef.set({ newAlerts: true }, { merge: true });
-            logger.info(`Novos alertas de rádio salvos para a empresa ${companyId}.`);
-        }
-        return { success: true, transcription: transcription, foundKeywords: foundKeywords };
-    } catch (error) {
-        logger.error("Erro na API Speech-to-Text:", error);
-        throw new HttpsError('internal', 'Erro ao transcrever o áudio.');
-    }
-});
-
 
+// --- Trigger 3: Excluir Empresa e Subcoleções ---
+exports.deleteCompany = onRequest({ region: "southamerica-east1" }, async (request, response) => {
+    cors(request, response, async () => {
+      const companyId = request.body.data.companyId;
+      if (!companyId) {
+        response.status(400).send({ success: false, message: 'O ID da empresa é obrigatório.' });
+        return;
+      }
+      
+      logger.info(`Iniciando exclusão da empresa ${companyId} e seus dados...`);
+      const companyRef = db.collection('companies').doc(companyId);
+      
+      const collections = ['articles', 'keywords', 'users'];
+      for (const collection of collections) {
+        const snapshot = await companyRef.collection(collection).get();
+        const batch = db.batch();
+        snapshot.docs.forEach(doc => batch.delete(doc.ref));
+        await batch.commit();
+        logger.info(`Subcoleção ${collection} da empresa ${companyId} excluída.`);
+      }
+      
+      await db.collection('settings').doc(companyId).delete();
+      logger.info(`Configurações da empresa ${companyId} excluídas.`);
+      
+      await companyRef.delete();
+      logger.info(`Empresa ${companyId} excluída com sucesso.`);
+      
+      response.status(200).send({ success: true, message: 'Empresa e todos os dados associados foram excluídos.' });
+    });
+});
+
+// --- Trigger 4: Excluir Palavra-Chave e Alertas Associados ---
+exports.deleteKeyword = onRequest({ region: "southamerica-east1" }, async (request, response) => {
+    cors(request, response, async () => {
+      const { companyId, keywordId, keyword } = request.body.data;
+      if (!companyId || !keywordId || !keyword) {
+        response.status(400).send({ success: false, message: 'Dados insuficientes para excluir a palavra-chave.' });
+        return;
+      }
+      
+      logger.info(`Iniciando exclusão da palavra-chave ${keyword} para a empresa ${companyId}...`);
+      
+      // Exclui a palavra-chave
+      const keywordRef = db.collection('companies').doc(companyId).collection('keywords').doc(keywordId);
+      await keywordRef.delete();
+      logger.info(`Palavra-chave ${keyword} excluída.`);
+      
+      // Exclui os alertas associados
+      const articlesRef = db.collection('companies').doc(companyId).collection('articles');
+      const articlesQuery = articlesRef.where('keyword', '==', keyword);
+      const articlesSnapshot = await articlesQuery.get();
+      
+      if (articlesSnapshot.empty) {
+        logger.info(`Nenhum alerta encontrado para a palavra-chave ${keyword}.`);
+        response.status(200).send({ success: true, message: 'Palavra-chave excluída com sucesso.' });
+        return;
+      }
+      
+      const batch = db.batch();
+      articlesSnapshot.docs.forEach(doc => {
+        batch.delete(doc.ref);
+      });
+      await batch.commit();
+      logger.info(`${articlesSnapshot.size} alertas associados à palavra-chave ${keyword} foram excluídos.`);
+      
+      response.status(200).send({ success: true, message: 'Palavra-chave e alertas associados foram excluídos com sucesso.' });
+    });
+});
+
+// --- Trigger 5: Transcrever Áudio com Speech-to-Text ---
+exports.transcribeAudio = onRequest({ region: "southamerica-east1" }, async (request, response) => {
+    cors(request, response, async () => {
+      const { gcsUri, companyId } = request.body.data;
+      if (!gcsUri || !companyId) {
+        response.status(400).send({ success: false, message: 'O URI do Google Cloud Storage e o ID da empresa são obrigatórios.' });
+        return;
+      }
+      
+      logger.info(`Iniciando transcrição para o ficheiro: ${gcsUri}`);
+      
+      const audio = {
+        uri: gcsUri,
+      };
+      const config = {
+        encoding: 'MP3',
+        sampleRateHertz: 16000,
+        languageCode: 'pt-BR',
+      };
+      const requestSpec = {
+        audio: audio,
+        config: config,
+      };
+      
+      try {
+        const [operation] = await speechClient.longRunningRecognize(requestSpec);
+        const [transcriptionResponse] = await operation.promise();
+        const transcription = transcriptionResponse.results
+          .map(result => result.alternatives[0].transcript)
+          .join('\n');
+        
+        logger.info(`Transcrição concluída: ${transcription.substring(0, 100)}...`);
+        
+        const keywordsRef = db.collection("companies").doc(companyId).collection("keywords");
+        
+        response.status(200).send({ success: true, transcription });
+      } catch (error) {
+        logger.error("Erro na transcrição de áudio:", error);
+        response.status(500).send({ success: false, message: `Erro na transcrição de áudio: ${error.message}` });
+      }
+    });
+});
+
+// --- Trigger 6: Gerar Relatório Geral (Super Admin) ---
+exports.generateSuperAdminReport = onRequest({ region: "southamerica-east1" }, async (request, response) => {
+    cors(request, response, async () => {
+      try {
+        const companiesSnapshot = await db.collection("companies").get();
+        const reportData = [];
+        
+        for (const companyDoc of companiesSnapshot.docs) {
+          const companyId = companyDoc.id;
+          const companyName = companyDoc.data().name;
+          
+          const articlesSnapshot = await db.collection("companies").doc(companyId).collection("articles").get();
+          const totalAlerts = articlesSnapshot.size;
+          
+          if (totalAlerts === 0) {
+            reportData.push({
+              companyName,
+              totalAlerts: 0,
+              sentimentPercentage: { positive: 0, neutral: 0, negative: 0 },
+              predominantSentiment: 'N/A',
+              topChannel: 'N/A',
+              topVehicle: 'N/A'
+            });
+            continue;
+          }
+          
+          // Análise de Sentimento
+          let sentimentCounts = { positive: 0, neutral: 0, negative: 0 };
+          articlesSnapshot.docs.forEach(doc => {
+            const article = doc.data();
+            if (article.sentiment) {
+              const score = article.sentiment.score;
+              if (score > 0.2) sentimentCounts.positive++;
+              else if (score < -0.2) sentimentCounts.negative++;
+              else sentimentCounts.neutral++;
+            } else {
+              sentimentCounts.neutral++;
+            }
+          });
+          
+          const predominantSentiment = Object.keys(sentimentCounts).reduce((a, b) => sentimentCounts[a] > sentimentCounts[b] ? a : b);
+          
+          const totalSentiments = sentimentCounts.positive + sentimentCounts.neutral + sentimentCounts.negative;
+          const sentimentPercentage = {
+            positive: ((sentimentCounts.positive / totalSentiments) * 100).toFixed(2),
+            neutral: ((sentimentCounts.neutral / totalSentiments) * 100).toFixed(2),
+            negative: ((sentimentCounts.negative / totalSentiments) * 100).toFixed(2)
+          };
+          
+          // Análise de Canais e Veículos
+          const channelCounts = {};
+          const vehicleCounts = {};
+          articlesSnapshot.docs.forEach(doc => {
+            const article = doc.data();
+            const channel = article.source.name.toLowerCase().includes('youtube') ? 'YouTube' : 'Outros'; // Simplificado
+            const vehicle = article.source.name;
+            channelCounts[channel] = (channelCounts[channel] || 0) + 1;
+            vehicleCounts[vehicle] = (vehicleCounts[vehicle] || 0) + 1;
+          });
+          
+          const topChannel = Object.keys(channelCounts).reduce((a, b) => channelCounts[a] > channelCounts[b] ? a : b);
+          const topVehicle = Object.keys(vehicleCounts).reduce((a, b) => vehicleCounts[a] > vehicleCounts[b] ? a : b);
+          
+          reportData.push({
+            companyName,
+            totalAlerts,
+            sentimentPercentage,
+            predominantSentiment: predominantSentiment.charAt(0).toUpperCase() + predominantSentiment.slice(1),
+            topChannel,
+            topVehicle
+          });
+        }
+        
+        response.status(200).send({ success: true, data: reportData });
+      } catch (error) {
+        logger.error("Erro ao gerar relatório geral:", error);
+        response.status(500).send({ success: false, message: `Erro interno: ${error.message}` });
+      }
+    });
+});
