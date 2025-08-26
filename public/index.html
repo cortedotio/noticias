@@ -524,6 +524,7 @@
 
         // --- LÓGICA DO ACIONAMENTO MANUAL ---
         async function handleManualTrigger() {
+            if (!manualTriggerBtn) return;
             manualTriggerBtn.disabled = true;
             manualTriggerBtn.textContent = 'Executando...';
             showAlert('A coleta manual de notícias foi iniciada. Isto pode levar alguns minutos.', 'success');
@@ -542,37 +543,37 @@
 
         // --- LÓGICA DO LOGO ---
         async function handleLogoUpload(e) { const file = e.target.files[0]; if (!file) return; const companyId = currentUser.isSuperAdmin ? selectedCompanyForManagement.id : currentUser.companyId; if (!companyId) return; const reader = new FileReader(); reader.onloadend = async () => { try { const settingsRef = doc(db, "settings", companyId); await setDoc(settingsRef, { logo: reader.result }, { merge: true }); loadAndDisplayLogo(); showAlert('Logo atualizada com sucesso!'); } catch (error) { console.error("Erro ao salvar logo:", error); showAlert("Erro ao salvar logo.", "error"); } }; reader.readAsDataURL(file); }
-        async function loadAndDisplayLogo() { const companyId = currentUser ? currentUser.companyId : null; if (!companyId) { headerLogoContainer.innerHTML = ''; loginLogoContainer.innerHTML = ''; return; } const settingsRef = doc(db, "settings", companyId); try { const docSnap = await getDoc(settingsRef); const logoData = docSnap.exists() ? docSnap.data().logo : null; const logoHtml = logoData ? `<img src="${logoData}" alt="Logo da Empresa" class="h-full w-auto object-contain">` : ''; headerLogoContainer.innerHTML = logoHtml; loginLogoContainer.innerHTML = logoHtml; } catch (error) { console.error("Error loading logo:", error); } }
+        async function loadAndDisplayLogo() { const companyId = currentUser ? currentUser.companyId : null; if (!companyId) { if(headerLogoContainer) headerLogoContainer.innerHTML = ''; if(loginLogoContainer) loginLogoContainer.innerHTML = ''; return; } const settingsRef = doc(db, "settings", companyId); try { const docSnap = await getDoc(settingsRef); const logoData = docSnap.exists() ? docSnap.data().logo : null; const logoHtml = logoData ? `<img src="${logoData}" alt="Logo da Empresa" class="h-full w-auto object-contain">` : ''; if(headerLogoContainer) headerLogoContainer.innerHTML = logoHtml; if(loginLogoContainer) loginLogoContainer.innerHTML = logoHtml; } catch (error) { console.error("Error loading logo:", error); } }
 
         // --- LÓGICA DE AUTENTICAÇÃO ---
         async function handleLogin(e) { e.preventDefault(); const companyName = document.getElementById('login-company').value.trim(); const user = document.getElementById('login-user').value.trim(); const pass = document.getElementById('login-password').value.trim(); if (companyName.toLowerCase() === 'newsclip' && user.toLowerCase() === superAdminCredentials.user && pass === superAdminCredentials.pass) { currentUser = { username: 'Ulysses', isSuperAdmin: true, companyId: 'super', companyName: 'Super Admin' }; setStorage('clipping_currentUser', currentUser); updateView('dashboard'); return; } try { const companiesQuery = query(collection(db, "companies"), where("name", "==", companyName.toUpperCase())); const companiesSnapshot = await getDocs(companiesQuery); if (companiesSnapshot.empty) { showAlert('Empresa não encontrada.', 'error'); return; } const companyDoc = companiesSnapshot.docs[0]; const company = { id: companyDoc.id, ...companyDoc.data() }; if (company.status === 'inactive') { showAlert('Esta empresa está inativa e não pode ser acessada.', 'error'); return; } const usersQuery = query(collection(db, "companies", company.id, "users"), where("username", "==", user), where("password", "==", pass)); const usersSnapshot = await getDocs(usersQuery); if(!usersSnapshot.empty) { const settingsDoc = await getDoc(doc(db, "settings", company.id)); const canRequestDeletion = settingsDoc.exists() ? settingsDoc.data().canRequestDeletion : false; currentUser = { username: user, companyId: company.id, companyName: company.name, isSuperAdmin: false, canRequestDeletion }; setStorage('clipping_currentUser', currentUser); updateView('dashboard'); } else { showAlert('Usuário ou senha inválidos para esta empresa.', 'error'); } } catch (error) { console.error("Login error:", error); showAlert("Ocorreu um erro durante o login.", "error"); } }
-        function handleLogout() { if (notificationListener) notificationListener(); if (companiesListener) companiesListener(); if (deletionRequestsListener) deletionRequestsListener(); if (pendingAlertsListener) pendingAlertsListener(); currentUser = null; selectedCompanyForManagement = null; localStorage.removeItem('clipping_currentUser'); if (clockInterval) clearInterval(clockInterval); headerLogoContainer.innerHTML = ''; updateView('login'); }
-        function handleChangePassword(e) { e.preventDefault(); const currentPass = document.getElementById('current-password').value; const newPass = document.getElementById('new-password').value; if (currentPass === superAdminCredentials.pass) { superAdminCredentials.pass = newPass; showAlert('Senha alterada com sucesso para esta sessão.', 'success'); changePasswordForm.reset(); } else { showAlert('Senha atual incorreta.', 'error'); } }
+        function handleLogout() { if (notificationListener) notificationListener(); if (companiesListener) companiesListener(); if (deletionRequestsListener) deletionRequestsListener(); if (pendingAlertsListener) pendingAlertsListener(); currentUser = null; selectedCompanyForManagement = null; localStorage.removeItem('clipping_currentUser'); if (clockInterval) clearInterval(clockInterval); if(headerLogoContainer) headerLogoContainer.innerHTML = ''; updateView('login'); }
+        function handleChangePassword(e) { e.preventDefault(); const currentPass = document.getElementById('current-password').value; const newPass = document.getElementById('new-password').value; if (currentPass === superAdminCredentials.pass) { superAdminCredentials.pass = newPass; showAlert('Senha alterada com sucesso para esta sessão.', 'success'); if(changePasswordForm) changePasswordForm.reset(); } else { showAlert('Senha atual incorreta.', 'error'); } }
 
         // --- LÓGICA DO DASHBOARD ---
         async function renderDashboard() { 
             if (!currentUser) return; 
             if (currentUser.isSuperAdmin) {
-                document.getElementById('dashboard-grid').style.display = 'none';
-                document.getElementById('super-admin-dashboard-message').style.display = 'block';
+                if(document.getElementById('dashboard-grid')) document.getElementById('dashboard-grid').style.display = 'none';
+                if(document.getElementById('super-admin-dashboard-message')) document.getElementById('super-admin-dashboard-message').style.display = 'block';
                 setupPendingAlertsListener();
             } else {
-                document.getElementById('dashboard-grid').style.display = 'grid';
-                document.getElementById('super-admin-dashboard-message').style.display = 'none';
+                if(document.getElementById('dashboard-grid')) document.getElementById('dashboard-grid').style.display = 'grid';
+                if(document.getElementById('super-admin-dashboard-message')) document.getElementById('super-admin-dashboard-message').style.display = 'none';
                 renderVerticalKeywordList(); 
                 const settingsRef = doc(db, "settings", currentUser.companyId); 
                 try { 
                     const docSnap = await getDoc(settingsRef); 
                     const hasReportAccess = docSnap.exists() ? docSnap.data().reportAccess : true; 
-                    newsAlertsContainer.style.display = hasReportAccess ? 'block' : 'none'; 
-                    navRelatorio.classList.toggle('hidden', !hasReportAccess || currentUser.isSuperAdmin); 
+                    if(newsAlertsContainer) newsAlertsContainer.style.display = hasReportAccess ? 'block' : 'none'; 
+                    if(navRelatorio) navRelatorio.classList.toggle('hidden', !hasReportAccess || currentUser.isSuperAdmin); 
                     populateInitialAlerts(); 
                     setupNotificationListener(); 
                 } catch (error) { 
                     console.error("Error rendering dashboard:", error); 
                 }
             }
-            dashboardTitle.textContent = currentUser.isSuperAdmin ? 'Painel Super Admin' : `Notícias do Dia - ${currentUser.companyName}`;
+            if(dashboardTitle) dashboardTitle.textContent = currentUser.isSuperAdmin ? 'Painel Super Admin' : `Notícias do Dia - ${currentUser.companyName}`;
         }
         async function renderVerticalKeywordList() { if (!currentUser || !dashboardKeywordList) return; try { const q = query(collection(db, "companies", currentUser.companyId, "keywords")); const querySnapshot = await getDocs(q); const keywords = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); dashboardKeywordList.innerHTML = ''; const showAllLi = document.createElement('li'); showAllLi.className = 'keyword-filter active bg-indigo-100 text-indigo-800 text-md font-medium px-3 py-2 rounded-md flex justify-between items-center cursor-pointer hover:bg-indigo-200'; showAllLi.dataset.keyword = "all"; showAllLi.innerHTML = `<span>Mostrar Todas</span>`; dashboardKeywordList.appendChild(showAllLi); if (keywords.length === 0) { dashboardKeywordList.insertAdjacentHTML('beforeend', `<p class="text-gray-500 text-sm mt-2">Nenhuma palavra-chave.</p>`); } else { keywords.forEach(kw => { const li = document.createElement('li'); li.className = 'keyword-filter bg-indigo-100 text-indigo-800 text-md font-medium px-3 py-2 rounded-md flex justify-content-between items-center cursor-pointer hover:bg-indigo-200'; li.dataset.keyword = kw.word; li.innerHTML = `<span>${kw.word}</span>`; dashboardKeywordList.appendChild(li); }); } } catch (error) { console.error("Error fetching keywords:", error); } }
         
@@ -582,6 +583,7 @@
             const companiesQuery = query(collection(db, "companies"));
             companiesListener = onSnapshot(companiesQuery, (querySnapshot) => {
                 const companies = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                if (!companyList) return;
                 companyList.innerHTML = '';
                 companies.forEach(c => {
                     const li = document.createElement('li');
@@ -602,12 +604,12 @@
                 showAlert("Erro ao carregar lista de empresas.", "error");
             });
         }
-        async function handleCompanySubmit(e) { e.preventDefault(); const name = document.getElementById('company-name-input').value.trim(); if(!name) { showAlert('O nome da empresa é obrigatório.', 'error'); return; } try { const q = query(collection(db, "companies"), where("name", "==", name.toUpperCase())); const querySnapshot = await getDocs(q); if (!querySnapshot.empty) { showAlert('Este nome de empresa já existe.', 'error'); return; } await addDoc(collection(db, "companies"), { name: name.toUpperCase(), status: 'active' }); showAlert('Empresa adicionada com sucesso!'); companyForm.reset(); } catch (error) { console.error("Error adding company:", error); showAlert("Erro ao adicionar empresa.", "error"); } }
-        async function handleCompanyActions(e) { const target = e.target; const companyId = target.dataset.id || target.dataset.companyId; if (target.classList.contains('view-access-link-btn')) { const companyName = target.dataset.companyName; const baseUrl = window.location.origin + window.location.pathname; const accessUrl = `${baseUrl}?company=${encodeURIComponent(companyName)}`; accessLinkInput.value = accessUrl; linkModal.classList.remove('hidden'); return; } if (!companyId) return; const companyRef = doc(db, "companies", companyId); try { if (target.classList.contains('deactivate-company-btn')) { await updateDoc(companyRef, { status: 'inactive', deactivationDate: new Date().toISOString() }); } else if (target.classList.contains('reactivate-company-btn')) { await updateDoc(companyRef, { status: 'active', deactivationDate: null }); } else if (target.classList.contains('delete-company-btn')) { companyIdToDelete = companyId; companyNameToDeleteEl.textContent = target.dataset.companyName; deleteModal.classList.remove('hidden'); } else if (target.classList.contains('manage-company-keywords-btn')) { selectedCompanyForManagement = { id: target.dataset.companyId, name: target.dataset.companyName }; updateView('company-keyword-admin'); } else if (target.classList.contains('manage-company-settings-btn')) { selectedCompanyForManagement = { id: target.dataset.companyId, name: target.dataset.companyName }; updateView('company-settings-admin'); } else if (target.classList.contains('manage-company-users-btn')) { selectedCompanyForManagement = { id: target.dataset.companyId, name: target.dataset.companyName }; updateView('company-user-admin'); } } catch (error) { console.error("Error handling company action:", error); showAlert("Ocorreu um erro.", "error"); } }
+        async function handleCompanySubmit(e) { e.preventDefault(); const name = document.getElementById('company-name-input').value.trim(); if(!name) { showAlert('O nome da empresa é obrigatório.', 'error'); return; } try { const q = query(collection(db, "companies"), where("name", "==", name.toUpperCase())); const querySnapshot = await getDocs(q); if (!querySnapshot.empty) { showAlert('Este nome de empresa já existe.', 'error'); return; } await addDoc(collection(db, "companies"), { name: name.toUpperCase(), status: 'active' }); showAlert('Empresa adicionada com sucesso!'); if(companyForm) companyForm.reset(); } catch (error) { console.error("Error adding company:", error); showAlert("Erro ao adicionar empresa.", "error"); } }
+        async function handleCompanyActions(e) { const target = e.target; const companyId = target.dataset.id || target.dataset.companyId; if (target.classList.contains('view-access-link-btn')) { const companyName = target.dataset.companyName; const baseUrl = window.location.origin + window.location.pathname; const accessUrl = `${baseUrl}?company=${encodeURIComponent(companyName)}`; if(accessLinkInput) accessLinkInput.value = accessUrl; if(linkModal) linkModal.classList.remove('hidden'); return; } if (!companyId) return; const companyRef = doc(db, "companies", companyId); try { if (target.classList.contains('deactivate-company-btn')) { await updateDoc(companyRef, { status: 'inactive', deactivationDate: new Date().toISOString() }); } else if (target.classList.contains('reactivate-company-btn')) { await updateDoc(companyRef, { status: 'active', deactivationDate: null }); } else if (target.classList.contains('delete-company-btn')) { companyIdToDelete = companyId; if(companyNameToDeleteEl) companyNameToDeleteEl.textContent = target.dataset.companyName; if(deleteModal) deleteModal.classList.remove('hidden'); } else if (target.classList.contains('manage-company-keywords-btn')) { selectedCompanyForManagement = { id: target.dataset.companyId, name: target.dataset.companyName }; updateView('company-keyword-admin'); } else if (target.classList.contains('manage-company-settings-btn')) { selectedCompanyForManagement = { id: target.dataset.companyId, name: target.dataset.companyName }; updateView('company-settings-admin'); } else if (target.classList.contains('manage-company-users-btn')) { selectedCompanyForManagement = { id: target.dataset.companyId, name: target.dataset.companyName }; updateView('company-user-admin'); } } catch (error) { console.error("Error handling company action:", error); showAlert("Ocorreu um erro.", "error"); } }
 
         // --- LÓGICA DE EXCLUSÃO DE EMPRESA ---
         async function handleConfirmDelete() {
-            if (!companyIdToDelete) return;
+            if (!companyIdToDelete || !confirmDeleteBtn || !deleteModal) return;
             confirmDeleteBtn.disabled = true;
             confirmDeleteBtn.textContent = 'Excluindo...';
             try {
@@ -630,15 +632,15 @@
         }
 
         // --- LÓGICA DE GERENCIAMENTO DE USUÁRIOS (PELO SUPER ADMIN) ---
-        async function renderCompanyUserAdminPage() { if (!selectedCompanyForManagement) return; companyUserAdminTitle.textContent = `Gerenciar Usuários para: ${selectedCompanyForManagement.name}`; renderUsersForSelectedCompany(); }
-        async function renderUsersForSelectedCompany() { try { const usersRef = collection(db, "companies", selectedCompanyForManagement.id, "users"); const querySnapshot = await getDocs(usersRef); const companyUsers = querySnapshot.docs.map(doc => ({id: doc.id, ...doc.data()})); adminUserList.innerHTML = ''; companyUsers.forEach(user => { const li = document.createElement('li'); li.className = 'flex justify-between items-center bg-gray-100 p-2 rounded-md'; li.innerHTML = `<span>${user.username}</span><div><button data-id="${user.id}" class="edit-user-btn text-blue-500 hover:text-blue-700 mr-2">Editar</button><button data-id="${user.id}" class="delete-user-btn text-red-500 hover:text-red-700">Excluir</button></div>`; adminUserList.appendChild(li); }); } catch (error) { console.error("Error rendering users:", error); } }
-        async function handleUserSubmit(e) { e.preventDefault(); const username = userInput.value.trim(), password = userPasswordInput.value.trim(), id = userIdInput.value; if (!username || !password || !selectedCompanyForManagement) return; try { const usersRef = collection(db, "companies", selectedCompanyForManagement.id, "users"); const q = query(usersRef, where("username", "==", username)); const querySnapshot = await getDocs(q); if (!querySnapshot.empty && querySnapshot.docs[0].id !== id) { showAlert('Este nome de usuário já está em uso nesta empresa.', 'error'); return; } if (id) { await updateDoc(doc(db, "companies", selectedCompanyForManagement.id, "users", id), { username, password }); } else { await addDoc(usersRef, { username, password }); } userInput.value = ''; userPasswordInput.value = ''; userIdInput.value = ''; renderUsersForSelectedCompany(); } catch (error) { console.error("Error saving user:", error); showAlert("Erro ao salvar usuário.", "error"); } }
-        async function handleUserActions(e) { if (!selectedCompanyForManagement) return; const id = e.target.dataset.id; if (!id) return; try { if (e.target.classList.contains('edit-user-btn')) { const userDoc = await getDoc(doc(db, "companies", selectedCompanyForManagement.id, "users", id)); if (userDoc.exists()) { const user = userDoc.data(); userInput.value = user.username; userPasswordInput.value = user.password; userIdInput.value = id; userInput.focus(); } } if (e.target.classList.contains('delete-user-btn')) { await deleteDoc(doc(db, "companies", selectedCompanyForManagement.id, "users", id)); renderUsersForSelectedCompany(); } } catch (error) { console.error("Error handling user action:", error); } }
+        async function renderCompanyUserAdminPage() { if (!selectedCompanyForManagement || !companyUserAdminTitle) return; companyUserAdminTitle.textContent = `Gerenciar Usuários para: ${selectedCompanyForManagement.name}`; renderUsersForSelectedCompany(); }
+        async function renderUsersForSelectedCompany() { try { const usersRef = collection(db, "companies", selectedCompanyForManagement.id, "users"); const querySnapshot = await getDocs(usersRef); const companyUsers = querySnapshot.docs.map(doc => ({id: doc.id, ...doc.data()})); if(!adminUserList) return; adminUserList.innerHTML = ''; companyUsers.forEach(user => { const li = document.createElement('li'); li.className = 'flex justify-between items-center bg-gray-100 p-2 rounded-md'; li.innerHTML = `<span>${user.username}</span><div><button data-id="${user.id}" class="edit-user-btn text-blue-500 hover:text-blue-700 mr-2">Editar</button><button data-id="${user.id}" class="delete-user-btn text-red-500 hover:text-red-700">Excluir</button></div>`; adminUserList.appendChild(li); }); } catch (error) { console.error("Error rendering users:", error); } }
+        async function handleUserSubmit(e) { e.preventDefault(); const username = userInput.value.trim(), password = userPasswordInput.value.trim(), id = userIdInput.value; if (!username || !password || !selectedCompanyForManagement) return; try { const usersRef = collection(db, "companies", selectedCompanyForManagement.id, "users"); const q = query(usersRef, where("username", "==", username)); const querySnapshot = await getDocs(q); if (!querySnapshot.empty && querySnapshot.docs[0].id !== id) { showAlert('Este nome de usuário já está em uso nesta empresa.', 'error'); return; } if (id) { await updateDoc(doc(db, "companies", selectedCompanyForManagement.id, "users", id), { username, password }); } else { await addDoc(usersRef, { username, password }); } if(userInput) userInput.value = ''; if(userPasswordInput) userPasswordInput.value = ''; if(userIdInput) userIdInput.value = ''; renderUsersForSelectedCompany(); } catch (error) { console.error("Error saving user:", error); showAlert("Erro ao salvar usuário.", "error"); } }
+        async function handleUserActions(e) { if (!selectedCompanyForManagement) return; const id = e.target.dataset.id; if (!id) return; try { if (e.target.classList.contains('edit-user-btn')) { const userDoc = await getDoc(doc(db, "companies", selectedCompanyForManagement.id, "users", id)); if (userDoc.exists()) { const user = userDoc.data(); if(userInput) userInput.value = user.username; if(userPasswordInput) userPasswordInput.value = user.password; if(userIdInput) userIdInput.value = id; if(userInput) userInput.focus(); } } if (e.target.classList.contains('delete-user-btn')) { await deleteDoc(doc(db, "companies", selectedCompanyForManagement.id, "users", id)); renderUsersForSelectedCompany(); } } catch (error) { console.error("Error handling user action:", error); } }
 
         // --- LÓGICA DE GERENCIAMENTO DE PALAVRAS-CHAVE (PELO SUPER ADMIN) ---
-        async function renderCompanyKeywordAdminPage() { if (!selectedCompanyForManagement) return; companyKeywordAdminTitle.textContent = `Gerenciar Palavras-Chave para: ${selectedCompanyForManagement.name}`; renderKeywordsForSelectedCompany(); }
-        async function renderKeywordsForSelectedCompany() { try { const keywordsRef = collection(db, "companies", selectedCompanyForManagement.id, "keywords"); const querySnapshot = await getDocs(keywordsRef); const keywords = querySnapshot.docs.map(doc => ({id: doc.id, ...doc.data()})); adminKeywordList.innerHTML = ''; keywords.forEach(kw => { const li = document.createElement('li'); li.className = 'flex justify-between items-center bg-gray-100 p-2 rounded-md'; li.innerHTML = `<span>${kw.word}</span><div><button data-id="${kw.id}" class="edit-keyword-btn text-blue-500 hover:text-blue-700 mr-2">Editar</button><button data-id="${kw.id}" data-word="${kw.word}" class="delete-keyword-btn text-red-500 hover:text-red-700">Excluir</button></div>`; adminKeywordList.appendChild(li); }); } catch (error) { console.error("Error rendering keywords:", error); } }
-        async function handleKeywordSubmit(e) { e.preventDefault(); const word = keywordInput.value.trim(), id = keywordIdInput.value; if (!word || !selectedCompanyForManagement) return; try { const keywordsRef = collection(db, "companies", selectedCompanyForManagement.id, "keywords"); if (id) { await updateDoc(doc(db, "companies", selectedCompanyForManagement.id, "keywords", id), { word }); } else { await addDoc(keywordsRef, { word }); } keywordInput.value = ''; keywordIdInput.value = ''; renderKeywordsForSelectedCompany(); } catch (error) { console.error("Error saving keyword:", error); } }
+        async function renderCompanyKeywordAdminPage() { if (!selectedCompanyForManagement || !companyKeywordAdminTitle) return; companyKeywordAdminTitle.textContent = `Gerenciar Palavras-Chave para: ${selectedCompanyForManagement.name}`; renderKeywordsForSelectedCompany(); }
+        async function renderKeywordsForSelectedCompany() { try { const keywordsRef = collection(db, "companies", selectedCompanyForManagement.id, "keywords"); const querySnapshot = await getDocs(keywordsRef); const keywords = querySnapshot.docs.map(doc => ({id: doc.id, ...doc.data()})); if(!adminKeywordList) return; adminKeywordList.innerHTML = ''; keywords.forEach(kw => { const li = document.createElement('li'); li.className = 'flex justify-between items-center bg-gray-100 p-2 rounded-md'; li.innerHTML = `<span>${kw.word}</span><div><button data-id="${kw.id}" class="edit-keyword-btn text-blue-500 hover:text-blue-700 mr-2">Editar</button><button data-id="${kw.id}" data-word="${kw.word}" class="delete-keyword-btn text-red-500 hover:text-red-700">Excluir</button></div>`; adminKeywordList.appendChild(li); }); } catch (error) { console.error("Error rendering keywords:", error); } }
+        async function handleKeywordSubmit(e) { e.preventDefault(); const word = keywordInput.value.trim(), id = keywordIdInput.value; if (!word || !selectedCompanyForManagement) return; try { const keywordsRef = collection(db, "companies", selectedCompanyForManagement.id, "keywords"); if (id) { await updateDoc(doc(db, "companies", selectedCompanyForManagement.id, "keywords", id), { word }); } else { await addDoc(keywordsRef, { word }); } if(keywordInput) keywordInput.value = ''; if(keywordIdInput) keywordIdInput.value = ''; renderKeywordsForSelectedCompany(); } catch (error) { console.error("Error saving keyword:", error); } }
         async function handleKeywordActions(e) { 
             if (!selectedCompanyForManagement) return; 
             const target = e.target.closest('button');
@@ -650,9 +652,9 @@
                     const kwDoc = await getDoc(doc(db, "companies", selectedCompanyForManagement.id, "keywords", id)); 
                     if (kwDoc.exists()) { 
                         const kw = kwDoc.data(); 
-                        keywordInput.value = kw.word; 
-                        keywordIdInput.value = id; 
-                        keywordInput.focus(); 
+                        if(keywordInput) keywordInput.value = kw.word; 
+                        if(keywordIdInput) keywordIdInput.value = id; 
+                        if(keywordInput) keywordInput.focus(); 
                     } 
                 } 
                 if (target.classList.contains('delete-keyword-btn')) { 
@@ -671,12 +673,12 @@
         }
         
         // --- LÓGICA DE GERENCIAMENTO DE CONFIGURAÇÕES ---
-        async function renderCompanySettingsAdminPage() { if (!selectedCompanyForManagement) return; companySettingsAdminTitle.textContent = `Opções para: ${selectedCompanyForManagement.name}`; try { const settingsRef = doc(db, "settings", selectedCompanyForManagement.id); const docSnap = await getDoc(settingsRef); if (docSnap.exists()) { const settings = docSnap.data(); reportAccessToggle.checked = settings.reportAccess !== false; fetchOnlyNewToggle.checked = settings.fetchOnlyNew === true; deletionAccessToggle.checked = settings.canRequestDeletion === true; document.querySelector(`input[name="news-scope"][value="${settings.searchScope || 'br'}"]`).checked = true; stateSelect.value = settings.searchState || ''; } else { reportAccessToggle.checked = true; fetchOnlyNewToggle.checked = false; deletionAccessToggle.checked = false; document.querySelector('input[name="news-scope"][value="br"]').checked = true; stateSelect.value = ''; } handleScopeChange(); } catch (error) { console.error("Error rendering settings:", error); } }
+        async function renderCompanySettingsAdminPage() { if (!selectedCompanyForManagement || !companySettingsAdminTitle) return; companySettingsAdminTitle.textContent = `Opções para: ${selectedCompanyForManagement.name}`; try { const settingsRef = doc(db, "settings", selectedCompanyForManagement.id); const docSnap = await getDoc(settingsRef); if (docSnap.exists()) { const settings = docSnap.data(); if(reportAccessToggle) reportAccessToggle.checked = settings.reportAccess !== false; if(fetchOnlyNewToggle) fetchOnlyNewToggle.checked = settings.fetchOnlyNew === true; if(deletionAccessToggle) deletionAccessToggle.checked = settings.canRequestDeletion === true; if(document.querySelector(`input[name="news-scope"][value="${settings.searchScope || 'br'}"]`)) document.querySelector(`input[name="news-scope"][value="${settings.searchScope || 'br'}"]`).checked = true; if(stateSelect) stateSelect.value = settings.searchState || ''; } else { if(reportAccessToggle) reportAccessToggle.checked = true; if(fetchOnlyNewToggle) fetchOnlyNewToggle.checked = false; if(deletionAccessToggle) deletionAccessToggle.checked = false; if(document.querySelector('input[name="news-scope"][value="br"]')) document.querySelector('input[name="news-scope"][value="br"]').checked = true; if(stateSelect) stateSelect.value = ''; } handleScopeChange(); } catch (error) { console.error("Error rendering settings:", error); } }
         async function handleSettingsChange(e) { if (!selectedCompanyForManagement) return; const settingsRef = doc(db, "settings", selectedCompanyForManagement.id); let key, value; switch (e.target.id) { case 'report-access-toggle': key = 'reportAccess'; value = e.target.checked; break; case 'fetch-only-new-toggle': key = 'fetchOnlyNew'; value = e.target.checked; break; case 'deletion-access-toggle': key = 'canRequestDeletion'; value = e.target.checked; break; case 'state-select': key = 'searchState'; value = e.target.value; break; default: if (e.target.name === 'news-scope') { key = 'searchScope'; value = e.target.value; } else { return; } } try { await setDoc(settingsRef, { [key]: value }, { merge: true }); showAlert('Opção salva!', 'success'); } catch (error) { console.error("Error saving setting:", error); } }
-        function handleScopeChange() { const selectedScope = document.querySelector('input[name="news-scope"]:checked').value; stateSelectContainer.classList.toggle('hidden', selectedScope !== 'state'); }
-        async function renderGlobalKeysPage() { try { const settingsRef = doc(db, "settings", "global"); const docSnap = await getDoc(settingsRef); if (docSnap.exists()) { const settings = docSnap.data(); apiKeyNewsApiInput.value = settings.apiKeyNewsApi || ''; apiKeyGNewsInput1.value = settings.apiKeyGNews1 || ''; apiKeyGNewsInput2.value = settings.apiKeyGNews2 || ''; apiKeyGNewsInput3.value = settings.apiKeyGNews3 || ''; apiKeyGNewsInput4.value = settings.apiKeyGNews4 || ''; apiKeyYoutubeInput.value = settings.apiKeyYoutube || ''; apiKeyBloggerInput.value = settings.apiKeyBlogger || ''; apiKeyVisionInput.value = settings.apiKeyVision || ''; apiKeyVideoIntelligenceInput.value = settings.apiKeyVideoIntelligence || ''; } } catch (error) { console.error("Error loading global API keys:", error); } }
+        function handleScopeChange() { if(!stateSelectContainer || !document.querySelector('input[name="news-scope"]:checked')) return; const selectedScope = document.querySelector('input[name="news-scope"]:checked').value; stateSelectContainer.classList.toggle('hidden', selectedScope !== 'state'); }
+        async function renderGlobalKeysPage() { try { const settingsRef = doc(db, "settings", "global"); const docSnap = await getDoc(settingsRef); if (docSnap.exists()) { const settings = docSnap.data(); if(apiKeyNewsApiInput) apiKeyNewsApiInput.value = settings.apiKeyNewsApi || ''; if(apiKeyGNewsInput1) apiKeyGNewsInput1.value = settings.apiKeyGNews1 || ''; if(apiKeyGNewsInput2) apiKeyGNewsInput2.value = settings.apiKeyGNews2 || ''; if(apiKeyGNewsInput3) apiKeyGNewsInput3.value = settings.apiKeyGNews3 || ''; if(apiKeyGNewsInput4) apiKeyGNewsInput4.value = settings.apiKeyGNews4 || ''; if(apiKeyYoutubeInput) apiKeyYoutubeInput.value = settings.apiKeyYoutube || ''; if(apiKeyBloggerInput) apiKeyBloggerInput.value = settings.apiKeyBlogger || ''; if(apiKeyVisionInput) apiKeyVisionInput.value = settings.apiKeyVision || ''; if(apiKeyVideoIntelligenceInput) apiKeyVideoIntelligenceInput.value = settings.apiKeyVideoIntelligence || ''; } } catch (error) { console.error("Error loading global API keys:", error); } }
         async function handleGlobalKeyChange(e) { const settingsRef = doc(db, "settings", "global"); const key = e.target.id; const value = e.target.value; try { await setDoc(settingsRef, { [key]: value }, { merge: true }); showAlert('Chave de API salva!', 'success'); } catch (error) { console.error("Error saving global API key:", error); } }
-        async function renderGlobalSourcesPage() { try { const settingsRef = doc(db, "settings", "global"); const docSnap = await getDoc(settingsRef); if (docSnap.exists()) { const settings = docSnap.data(); bloggerIdInput.value = settings.bloggerId || ''; rssUrlInput.value = settings.rssUrl || ''; } } catch (error) { console.error("Error loading global sources:", error); } }
+        async function renderGlobalSourcesPage() { try { const settingsRef = doc(db, "settings", "global"); const docSnap = await getDoc(settingsRef); if (docSnap.exists()) { const settings = docSnap.data(); if(bloggerIdInput) bloggerIdInput.value = settings.bloggerId || ''; if(rssUrlInput) rssUrlInput.value = settings.rssUrl || ''; } } catch (error) { console.error("Error loading global sources:", error); } }
         
         function cleanAndSaveTextarea(e) {
             const textarea = e.target;
@@ -711,12 +713,12 @@
                     const data = doc.data();
                     const count = data.newAlertsCount || 0;
                     if (count > 0) {
-                        notificationBadge.textContent = count;
-                        notificationBadge.classList.remove('hidden');
-                        notificationBell.classList.add('animate-blinking-bell');
+                        if(notificationBadge) notificationBadge.textContent = count;
+                        if(notificationBadge) notificationBadge.classList.remove('hidden');
+                        if(notificationBell) notificationBell.classList.add('animate-blinking-bell');
                     } else {
-                        notificationBadge.classList.add('hidden');
-                        notificationBell.classList.remove('animate-blinking-bell');
+                        if(notificationBadge) notificationBadge.classList.add('hidden');
+                        if(notificationBell) notificationBell.classList.remove('animate-blinking-bell');
                     }
                 }
             });
@@ -734,26 +736,26 @@
                 return;
             }
 
-            newsAlerts.innerHTML = '<p class="text-gray-500">A carregar novos alertas...</p>';
+            if(newsAlerts) newsAlerts.innerHTML = '<p class="text-gray-500">A carregar novos alertas...</p>';
             try {
                 const q = query(collection(db, "companies", currentUser.companyId, "articles"), orderBy("publishedAt", "desc"), limit(count));
                 const articlesSnapshot = await getDocs(q);
-                newsAlerts.innerHTML = '';
+                if(newsAlerts) newsAlerts.innerHTML = '';
                 if (articlesSnapshot.empty) {
-                    newsAlerts.innerHTML = '<p class="text-gray-500">Nenhum alerta novo encontrado.</p>';
+                    if(newsAlerts) newsAlerts.innerHTML = '<p class="text-gray-500">Nenhum alerta novo encontrado.</p>';
                 } else {
                     const articles = articlesSnapshot.docs.map(d => ({...d.data(), id: d.id}));
                     articles.forEach(article => displayNewsAlert(article, newsAlerts));
                 }
-                showAllAlertsBtn.classList.remove('hidden');
+                if(showAllAlertsBtn) showAllAlertsBtn.classList.remove('hidden');
 
                 await setDoc(settingsRef, { newAlerts: false, newAlertsCount: 0 }, { merge: true });
-                notificationBadge.classList.add('hidden');
-                notificationBell.classList.remove('animate-blinking-bell');
+                if(notificationBadge) notificationBadge.classList.add('hidden');
+                if(notificationBell) notificationBell.classList.remove('animate-blinking-bell');
 
             } catch (error) {
                 console.error("Error fetching new alerts:", error);
-                newsAlerts.innerHTML = '<p class="text-red-500">Erro ao carregar novos alertas.</p>';
+                if(newsAlerts) newsAlerts.innerHTML = '<p class="text-red-500">Erro ao carregar novos alertas.</p>';
             }
         }
 
@@ -790,7 +792,7 @@
                 entitiesHTML = `<div class="mt-2 flex flex-wrap gap-2">${article.entities.map(e => `<span class="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-full">${e}</span>`).join('')}</div>`;
             }
 
-            const deleteButtonHTML = currentUser.canRequestDeletion ? `<button class="request-delete-btn text-red-500 hover:text-red-700 ml-4" title="Solicitar Exclusão">🗑️</button>` : '';
+            const deleteButtonHTML = currentUser && currentUser.canRequestDeletion ? `<button class="request-delete-btn text-red-500 hover:text-red-700 ml-4" title="Solicitar Exclusão">🗑️</button>` : '';
 
             alertEl.innerHTML = `
                 <div class="flex justify-between items-start">
@@ -842,8 +844,8 @@
         }
 
         async function populateInitialAlerts() {
-            if (!currentUser) return;
-            showAllAlertsBtn.classList.add('hidden');
+            if (!currentUser || !newsAlerts) return;
+            if (showAllAlertsBtn) showAllAlertsBtn.classList.add('hidden');
             newsAlerts.innerHTML = '<p class="text-gray-500">Carregando alertas...</p>';
             try {
                 const q = query(collection(db, "companies", currentUser.companyId, "articles"), orderBy("publishedAt", "desc"), limit(100));
@@ -861,7 +863,7 @@
                 newsAlerts.innerHTML = '<p class="text-red-500">Erro ao carregar alertas.</p>';
             }
         }
-        function filterAlertsByDate() { const selectedDate = alertDateFilter.value; const allAlerts = newsAlerts.querySelectorAll('.fade-in'); let visibleCount = 0; allAlerts.forEach(alert => { const isVisible = !selectedDate || alert.dataset.date === selectedDate; alert.style.display = isVisible ? 'block' : 'none'; if(isVisible) visibleCount++; }); if(visibleCount === 0 && !newsAlerts.querySelector('.text-gray-500')) { newsAlerts.insertAdjacentHTML('beforeend', `<p class="text-gray-500">Nenhum alerta encontrado para a data selecionada.</p>`); } else if (visibleCount > 0) { const noAlertsMsg = newsAlerts.querySelector('.text-gray-500'); if (noAlertsMsg) noAlertsMsg.remove(); } }
+        function filterAlertsByDate() { if(!newsAlerts || !alertDateFilter) return; const selectedDate = alertDateFilter.value; const allAlerts = newsAlerts.querySelectorAll('.fade-in'); let visibleCount = 0; allAlerts.forEach(alert => { const isVisible = !selectedDate || alert.dataset.date === selectedDate; alert.style.display = isVisible ? 'block' : 'none'; if(isVisible) visibleCount++; }); if(visibleCount === 0 && !newsAlerts.querySelector('.text-gray-500')) { newsAlerts.insertAdjacentHTML('beforeend', `<p class="text-gray-500">Nenhum alerta encontrado para a data selecionada.</p>`); } else if (visibleCount > 0) { const noAlertsMsg = newsAlerts.querySelector('.text-gray-500'); if (noAlertsMsg) noAlertsMsg.remove(); } }
         
         // --- LÓGICA DA PÁGINA DE RELATÓRIO ---
         async function renderReportPage() {
@@ -874,18 +876,20 @@
             allCompanyArticles = articlesSnapshot.docs.map(doc => doc.data());
             const keywords = keywordsSnapshot.docs.map(doc => doc.data().word);
 
-            reportKeywordFilter.innerHTML = '';
-            keywords.forEach(kw => {
-                const option = document.createElement('option');
-                option.value = kw;
-                option.textContent = kw;
-                reportKeywordFilter.appendChild(option);
-            });
+            if (reportKeywordFilter) {
+              reportKeywordFilter.innerHTML = '';
+              keywords.forEach(kw => {
+                  const option = document.createElement('option');
+                  option.value = kw;
+                  option.textContent = kw;
+                  reportKeywordFilter.appendChild(option);
+              });
+            }
             
             const updateCharts = () => {
-                const startDate = startDateInput.value ? new Date(startDateInput.value) : null;
-                const endDate = endDateInput.value ? new Date(endDateInput.value) : null;
-                const selectedKeywords = Array.from(reportKeywordFilter.selectedOptions).map(option => option.value);
+                const startDate = startDateInput && startDateInput.value ? new Date(startDateInput.value) : null;
+                const endDate = endDateInput && endDateInput.value ? new Date(endDateInput.value) : null;
+                const selectedKeywords = reportKeywordFilter ? Array.from(reportKeywordFilter.selectedOptions).map(option => option.value) : [];
 
                 if (startDate) startDate.setHours(0, 0, 0, 0);
                 if (endDate) endDate.setHours(23, 59, 59, 999);
@@ -903,17 +907,19 @@
                 renderChannelChart(filteredArticles, keywordsToDisplay);
             };
             
+            if (startDateInput) startDateInput.addEventListener('change', updateCharts);
+            if (endDateInput) endDateInput.addEventListener('change', updateCharts);
+            if (reportKeywordFilter) reportKeywordFilter.addEventListener('change', updateCharts);
             updateCharts();
-            startDateInput.addEventListener('change', updateCharts);
-            endDateInput.addEventListener('change', updateCharts);
-            reportKeywordFilter.addEventListener('change', updateCharts);
         }
         
         const chartColors = ['#4F46E5', '#06B6D4', '#F59E0B', '#10B981', '#EF4444', '#8B5CF6', '#EC4899'];
 
         function createChart(canvasId, instanceVar, type, data, customOptions = {}) {
+            const canvasEl = document.getElementById(canvasId);
+            if (!canvasEl) return;
             if (instanceVar) instanceVar.destroy();
-            const ctx = document.getElementById(canvasId).getContext('2d');
+            const ctx = canvasEl.getContext('2d');
             const defaultOptions = { 
                 responsive: true, 
                 interaction: { mode: 'index', intersect: false }, 
@@ -1056,10 +1062,10 @@
         }
 
         // --- LÓGICA DA PÁGINA DE PESQUISA ---
-        async function setupSearchPage() { if (!currentUser) return; searchInput.value = ''; searchResults.innerHTML = '<p class="text-gray-500">Carregando todos os artigos para pesquisa...</p>'; try { const q = query(collection(db, "companies", currentUser.companyId, "articles"), orderBy("publishedAt", "desc")); const articlesSnapshot = await getDocs(q); allCompanyArticles = articlesSnapshot.docs.map(d => ({...d.data(), id: d.id})); searchResults.innerHTML = `<p class="text-gray-500">Pronto para pesquisar em ${allCompanyArticles.length} artigos. Digite um termo ou use os filtros.</p>`; setupFilters(); } catch (error) { console.error("Error fetching articles for search:", error); searchResults.innerHTML = '<p class="text-red-500">Não foi possível carregar os artigos para pesquisa.</p>'; } }
-        function setupFilters() { filterContainer.innerHTML = ''; const keywords = [...new Set(allCompanyArticles.map(a => a.keyword))]; if (keywords.length > 0) { let keywordButtons = keywords.map(kw => `<button class="filter-btn bg-gray-200 hover:bg-indigo-200 text-gray-800 text-sm font-medium px-3 py-1 rounded-full" data-keyword="${kw}">${kw}</button>`).join(''); filterContainer.innerHTML = `<div class="flex flex-wrap gap-2"><span class="font-semibold self-center">Filtar por Palavra-Chave:</span>${keywordButtons}</div>`; } }
-        function handleSearch() { const searchTerm = searchInput.value.toLowerCase().trim(); const activeFilter = filterContainer.querySelector('.bg-indigo-500'); const keywordFilter = activeFilter ? activeFilter.dataset.keyword : null; if (!searchTerm && !keywordFilter) { searchResults.innerHTML = `<p class="text-gray-500">Digite algo para começar a pesquisar ou use os filtros.</p>`; return; } let filteredArticles = allCompanyArticles; if (keywordFilter) { filteredArticles = filteredArticles.filter(a => a.keyword === keywordFilter); } if (searchTerm) { filteredArticles = filteredArticles.filter(a => a.title.toLowerCase().includes(searchTerm) || (a.description && a.description.toLowerCase().includes(searchTerm))); } renderSearchResults(filteredArticles); }
-        function renderSearchResults(articles) { searchResults.innerHTML = ''; if (articles.length === 0) { searchResults.innerHTML = '<p class="text-gray-500">Nenhum resultado encontrado.</p>'; return; } articles.forEach(article => displayNewsAlert(article, searchResults)); }
+        async function setupSearchPage() { if (!currentUser) return; if(searchInput) searchInput.value = ''; if(searchResults) searchResults.innerHTML = '<p class="text-gray-500">Carregando todos os artigos para pesquisa...</p>'; try { const q = query(collection(db, "companies", currentUser.companyId, "articles"), orderBy("publishedAt", "desc")); const articlesSnapshot = await getDocs(q); allCompanyArticles = articlesSnapshot.docs.map(d => ({...d.data(), id: d.id})); if(searchResults) searchResults.innerHTML = `<p class="text-gray-500">Pronto para pesquisar em ${allCompanyArticles.length} artigos. Digite um termo ou use os filtros.</p>`; setupFilters(); } catch (error) { console.error("Error fetching articles for search:", error); if(searchResults) searchResults.innerHTML = '<p class="text-red-500">Não foi possível carregar os artigos para pesquisa.</p>'; } }
+        function setupFilters() { if(!filterContainer) return; filterContainer.innerHTML = ''; const keywords = [...new Set(allCompanyArticles.map(a => a.keyword))]; if (keywords.length > 0) { let keywordButtons = keywords.map(kw => `<button class="filter-btn bg-gray-200 hover:bg-indigo-200 text-gray-800 text-sm font-medium px-3 py-1 rounded-full" data-keyword="${kw}">${kw}</button>`).join(''); filterContainer.innerHTML = `<div class="flex flex-wrap gap-2"><span class="font-semibold self-center">Filtar por Palavra-Chave:</span>${keywordButtons}</div>`; } }
+        function handleSearch() { if(!searchInput || !searchResults || !filterContainer) return; const searchTerm = searchInput.value.toLowerCase().trim(); const activeFilter = filterContainer.querySelector('.bg-indigo-500'); const keywordFilter = activeFilter ? activeFilter.dataset.keyword : null; if (!searchTerm && !keywordFilter) { searchResults.innerHTML = `<p class="text-gray-500">Digite algo para começar a pesquisar ou use os filtros.</p>`; return; } let filteredArticles = allCompanyArticles; if (keywordFilter) { filteredArticles = filteredArticles.filter(a => a.keyword === keywordFilter); } if (searchTerm) { filteredArticles = filteredArticles.filter(a => a.title.toLowerCase().includes(searchTerm) || (a.description && a.description.toLowerCase().includes(searchTerm))); } renderSearchResults(filteredArticles); }
+        function renderSearchResults(articles) { if(!searchResults) return; searchResults.innerHTML = ''; if (articles.length === 0) { searchResults.innerHTML = '<p class="text-gray-500">Nenhum resultado encontrado.</p>'; return; } articles.forEach(article => displayNewsAlert(article, searchResults)); }
 
         // --- LÓGICA DE FILTRO DO DASHBOARD ---
         function handleDashboardKeywordFilter(e) {
@@ -1081,7 +1087,8 @@
         }
 
         function filterDashboardAlerts() {
-            const activeKeywordEl = document.querySelector('.keyword-filter.active');
+            if(!dashboardKeywordList || !newsAlerts) return;
+            const activeKeywordEl = dashboardKeywordList.querySelector('.keyword-filter.active');
             const selectedKeyword = activeKeywordEl ? activeKeywordEl.dataset.keyword : 'all';
             const allAlerts = newsAlerts.querySelectorAll('.fade-in');
             
@@ -1094,6 +1101,7 @@
         // --- AÇÕES DO CARTÃO DE ALERTA ---
         function handleAlertCardActions(e) {
             const target = e.target;
+            if(!target) return;
 
             if (target.closest('.sentiment-option')) {
                 handleSentimentChange(e);
@@ -1102,13 +1110,14 @@
 
             if (target.closest('.request-delete-btn')) {
                 const alertEl = target.closest('.fade-in');
+                if(!alertEl) return;
                 articleToDeleteInfo = {
                     id: alertEl.dataset.id,
                     title: alertEl.querySelector('h4').textContent
                 };
-                justificationText.value = '';
-                submitJustificationBtn.disabled = true; // Desabilita o botão ao abrir
-                justificationModal.classList.remove('hidden');
+                if(justificationText) justificationText.value = '';
+                if(submitJustificationBtn) submitJustificationBtn.disabled = true; // Desabilita o botão ao abrir
+                if(justificationModal) justificationModal.classList.remove('hidden');
             }
         }
         
@@ -1508,10 +1517,10 @@
             if (companyForm) companyForm.addEventListener('submit', handleCompanySubmit);
             if (companyList) companyList.addEventListener('click', handleCompanyActions);
             if (confirmDeleteBtn) confirmDeleteBtn.addEventListener('click', handleConfirmDelete);
-            if (cancelDeleteBtn) cancelDeleteBtn.addEventListener('click', () => deleteModal.classList.add('hidden'));
-            if (closeLinkModalBtn) closeLinkModalBtn.addEventListener('click', () => linkModal.classList.add('hidden'));
+            if (cancelDeleteBtn) cancelDeleteBtn.addEventListener('click', () => { if(deleteModal) deleteModal.classList.add('hidden')});
+            if (closeLinkModalBtn) closeLinkModalBtn.addEventListener('click', () => { if(linkModal) linkModal.classList.add('hidden')});
             if (copyLinkBtn) copyLinkBtn.addEventListener('click', () => {
-                accessLinkInput.select();
+                if(accessLinkInput) accessLinkInput.select();
                 document.execCommand('copy');
                 showAlert('Link copiado para a área de transferência!', 'success');
             });
@@ -1561,10 +1570,10 @@
             if (backToDashboard2) backToDashboard2.addEventListener('click', () => updateView('dashboard'));
             if (backToDashboard3) backToDashboard3.addEventListener('click', () => updateView('dashboard'));
             if (manualAlertForm) manualAlertForm.addEventListener('submit', handleManualAlertSubmit);
-            if (cancelJustificationBtn) cancelJustificationBtn.addEventListener('click', () => justificationModal.classList.add('hidden'));
+            if (cancelJustificationBtn) cancelJustificationBtn.addEventListener('click', () => { if(justificationModal) justificationModal.classList.add('hidden')});
             if (submitJustificationBtn) submitJustificationBtn.addEventListener('click', handleSubmitJustification);
             if (deletionRequestsList) deletionRequestsList.addEventListener('click', handleDeletionRequestAction);
-            if (justificationText) justificationText.addEventListener('input', () => {
+            if (justificationText && submitJustificationBtn) justificationText.addEventListener('input', () => {
                 submitJustificationBtn.disabled = justificationText.value.trim() === '';
             });
             if (btnPendingAlerts) btnPendingAlerts.addEventListener('click', () => updateView('super-admin-queue'));
