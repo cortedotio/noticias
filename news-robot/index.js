@@ -64,14 +64,14 @@ exports.fetchNewsRobot = functions.runWith({ timeoutSeconds: 540, memory: '1GB' 
                         return;
                     }
                     
-                    const channel = getChannel(article.source.name || article.creator);
+                    const channel = getChannel(article.source?.name || article.creator);
                     const newsRef = db.collection('companies').doc(companyId).collection('articles').doc();
                     
                     batch.set(newsRef, {
                         title: article.title,
                         description: article.description || article.contentSnippet || 'Sem descrição.',
                         url: articleUrl,
-                        source: { name: article.source.name || article.creator || 'Desconhecida', url: article.source.url || '' },
+                        source: { name: article.source?.name || article.creator || 'Desconhecida', url: article.source?.url || '' },
                         publishedAt: new Date(publishedAt),
                         keyword: keywords.find(kw => article.title.toLowerCase().includes(kw.toLowerCase()) || (article.description && article.description.toLowerCase().includes(kw.toLowerCase()))),
                         channel: channel,
