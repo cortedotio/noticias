@@ -15,8 +15,19 @@ exports.fetchNewsRobot = functions.runWith({ timeoutSeconds: 540, memory: '1GB' 
 
         const now = new Date();
         const hour = now.getUTCHours() - 3; // Ajuste para o fuso horário de Brasília (UTC-3)
-        const gnewsApiKey = getGNewsApiKeyByTime(hour, globalSettings);
-        const apiKeyYoutube = globalSettings.apiKeyYoutube;
+        // Acessa as chaves do .env, substituindo o acesso do Firestore
+        const gnewsApiKey1 = process.env.GNEWS_API_KEY_1;
+        const gnewsApiKey2 = process.env.GNEWS_API_KEY_2;
+        const gnewsApiKey3 = process.env.GNEWS_API_KEY_3;
+        const gnewsApiKey4 = process.env.GNEWS_API_KEY_4;
+        
+        let gnewsApiKey;
+        if (hour >= 0 && hour <= 5) gnewsApiKey = gnewsApiKey1;
+        else if (hour >= 6 && hour <= 11) gnewsApiKey = gnewsApiKey2;
+        else if (hour >= 12 && hour <= 17) gnewsApiKey = gnewsApiKey3;
+        else gnewsApiKey = gnewsApiKey4;
+        
+        const apiKeyYoutube = process.env.YOUTUBE_API_KEY; // Acessa a chave do .env
         const rssUrls = globalSettings.rssUrl ? globalSettings.rssUrl.split('\n') : [];
         const bloggerIds = globalSettings.bloggerId ? globalSettings.bloggerId.split('\n') : [];
 
@@ -98,14 +109,6 @@ exports.fetchNewsRobot = functions.runWith({ timeoutSeconds: 540, memory: '1GB' 
         return null;
     }
 });
-
-// Helper para selecionar a chave GNews com base no horário
-function getGNewsApiKeyByTime(hour, settings) {
-    if (hour >= 0 && hour <= 5) return settings.apiKeyGNews1;
-    if (hour >= 6 && hour <= 11) return settings.apiKeyGNews2;
-    if (hour >= 12 && hour <= 17) return settings.apiKeyGNews3;
-    return settings.apiKeyGNews4;
-}
 
 // Helper para categorizar o canal
 function getChannel(sourceName) {
@@ -293,9 +296,9 @@ exports.generateSuperAdminReport = functions.https.onCall(async (data, context) 
         const predominantSentiment = Object.keys(sentimentCounts).reduce((a, b) => sentimentCounts[a] > sentimentCounts[b] ? a : b);
         const totalSentiments = sentimentCounts.positive + sentimentCounts.neutral + sentimentCounts.negative;
         const sentimentPercentage = {
-            positive: ((sentimentCounts.positive / totalSentiments) * 100).toFixed(2),
-            neutral: ((sentimentCounts.neutral / totalSentiments) * 100).toFixed(2),
-            negative: ((sentimentCounts.negative / totalSentiments) * 100).toFixed(2)
+            positive: ((totalSentiments > 0) ? (sentimentCounts.positive / totalSentiments) * 100 : 0).toFixed(2),
+            neutral: ((totalSentiments > 0) ? (sentimentCounts.neutral / totalSentiments) * 100 : 0).toFixed(2),
+            negative: ((totalSentiments > 0) ? (sentimentCounts.negative / totalSentiments) * 100 : 0).toFixed(2)
         };
         const topChannel = Object.keys(channelCounts).reduce((a, b) => (channelCounts[a] > channelCounts[b] ? a : b) || 'N/A');
         const topVehicle = Object.keys(sourceCounts).reduce((a, b) => (sourceCounts[a] > sourceCounts[b] ? a : b) || 'N/A');

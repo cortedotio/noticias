@@ -140,9 +140,9 @@
                     <button id="btn-manual-alert" class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow">
                         <h3 class="text-xl font-semibold text-gray-700">Inserir Alerta Manual</h3>
                     </button>
-                    <button id="btn-deletion-requests" class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow relative">
-                        <h3 class="text-xl font-semibold text-gray-700">Solicitações de Exclusão</h3>
-                        <span id="deletion-requests-badge" class="hidden absolute top-2 right-2 text-white text-xs font-bold w-5 h-5 text-center rounded-full bg-red-500"></span>
+                    <button id="btn-pending-alerts" class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow relative">
+                        <h3 class="text-xl font-semibold text-gray-700">Fila de Aprovação</h3>
+                        <span id="pending-alerts-badge" class="hidden absolute top-2 right-2 text-white text-xs font-bold w-5 h-5 text-center rounded-full bg-red-500"></span>
                     </button>
                     <button id="btn-super-admin-report" class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow">
                         <h3 class="text-xl font-semibold text-gray-700">Relatório Geral</h3>
@@ -398,6 +398,16 @@
                 <p class="text-gray-500">A carregar solicitações...</p>
             </div>
         </section>
+        
+        <!-- NEW: Super Admin Pending Alerts Queue -->
+        <section id="super-admin-queue-page" class="page-section fade-in">
+            <button id="back-to-dashboard-4" class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar</button>
+            <h2 class="text-3xl font-bold mb-6">Fila de Aprovação de Alertas</h2>
+            <div id="super-admin-pending-alerts-list" class="space-y-4">
+                <p class="text-gray-500">A carregar alertas pendentes...</p>
+            </div>
+        </section>
+
 
         <!-- NEW: Super Admin Report Page -->
         <section id="super-admin-report-page" class="page-section fade-in">
@@ -476,12 +486,12 @@
     </div>
 
     <script type="module">
-        // --- Import Firebase modules ---
+        // --- Importação de Módulos do Firebase ---
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, collection, getDocs, doc, getDoc, setDoc, addDoc, deleteDoc, updateDoc, query, where, orderBy, limit, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js";
 
-        // --- Your Firebase Configuration ---
+        // --- Sua Configuração do Firebase ---
         const firebaseConfig = {
             apiKey: "AIzaSyCWzQM1SbIgO10GIu4AZ8lVtwmcKPEPAbo",
             authDomain: "noticias-6e952.firebaseapp.com",
@@ -491,28 +501,28 @@
             appId: "1:788555331572:web:328cc3967fad0155352ba1"
         };
 
-        // --- Initialize Firebase ---
+        // --- Inicialização do Firebase ---
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const functions = getFunctions(app, 'southamerica-east1');
         
-        // --- APPLICATION STATE ---
+        // --- ESTADO DA APLICAÇÃO ---
         let currentUser = null, clockInterval = null, selectedCompanyForManagement = null, allCompanyArticles = [], companyIdToDelete = null, articleToDeleteInfo = null;
         let sourceChartInstance = null, dateChartInstance = null, sentimentChartInstance = null, channelChartInstance = null;
         let superAdminCredentials = { user: 'ulysses', pass: 'adminqwert' };
-        let notificationListener = null, companiesListener = null, deletionRequestsListener = null;
+        let notificationListener = null, companiesListener = null, deletionRequestsListener = null, pendingAlertsListener = null;
 
-        // --- DOM ELEMENTS (declared inside DOMContentLoaded) ---
-        let pageSections, navLoggedIn, navInicio, navRelatorio, navPesquisa, navSuperAdmin, navLogout, navConfiguracoesAdmin, globalAlert, loginPage, dashboardPage, searchPage, superAdminPage, companyKeywordAdminPage, companySettingsAdminPage, reportPage, companyUserAdminPage, configuracoesAdminPage, loginForm, dashboardTitle, currentDateTimeEl, dashboardKeywordList, newsAlertsContainer, newsAlerts, alertDateFilter, reportAccessToggle, logoUploadInput, headerLogoContainer, loginLogoContainer, filterContainer, searchInput, searchResults, companyForm, companyList, backToSuperAdminKwBtn, backToSuperAdminSettingsBtn, backToSuperAdminUsersBtn, companyKeywordAdminTitle, companySettingsAdminTitle, companyUserAdminTitle, keywordForm, keywordInput, keywordIdInput, adminKeywordList, userForm, userInput, userPasswordInput, userIdInput, adminUserList, notificationBell, notificationBadge, manualTriggerBtn, deleteModal, confirmDeleteBtn, cancelDeleteBtn, companyNameToDeleteEl, newsScopeContainer, startDateInput, endDateInput, linkModal, accessLinkInput, copyLinkBtn, closeLinkModalBtn, reportKeywordFilter, stateSelectContainer, stateSelect, changePasswordForm, apiKeyNewsApiInput, apiKeyGNewsInput1, apiKeyGNewsInput2, apiKeyGNewsInput3, apiKeyGNewsInput4, apiKeyYoutubeInput, apiKeyBloggerInput, bloggerIdInput, rssUrlInput, fetchOnlyNewToggle, changePasswordPage, globalKeysPage, globalSourcesPage, btnChangePassword, btnGlobalKeys, btnNewsSources, backToAdminConfig1, backToAdminConfig2, backToAdminConfig3, apiKeyVisionInput, apiKeyVideoIntelligenceInput, showAllAlertsBtn, deletionAccessToggle, justificationModal, justificationText, submitJustificationBtn, cancelJustificationBtn, btnManualAlert, btnDeletionRequests, btnSuperAdminReport, manualAlertPage, deletionRequestsPage, superAdminReportPage, backToDashboard1, backToDashboard2, backToDashboard3, manualAlertForm, deletionRequestsList, superAdminReportBody, deletionRequestsBadge;
+        // --- ELEMENTOS DO DOM (declarados dentro de DOMContentLoaded) ---
+        let pageSections, navLoggedIn, navInicio, navRelatorio, navPesquisa, navSuperAdmin, navLogout, navConfiguracoesAdmin, globalAlert, loginPage, dashboardPage, searchPage, superAdminPage, companyKeywordAdminPage, companySettingsAdminPage, reportPage, companyUserAdminPage, configuracoesAdminPage, loginForm, dashboardTitle, currentDateTimeEl, dashboardKeywordList, newsAlertsContainer, newsAlerts, alertDateFilter, reportAccessToggle, logoUploadInput, headerLogoContainer, loginLogoContainer, filterContainer, searchInput, searchResults, companyForm, companyList, backToSuperAdminKwBtn, backToSuperAdminSettingsBtn, backToSuperAdminUsersBtn, companyKeywordAdminTitle, companySettingsAdminTitle, companyUserAdminTitle, keywordForm, keywordInput, keywordIdInput, adminKeywordList, userForm, userInput, userPasswordInput, userIdInput, adminUserList, notificationBell, notificationBadge, manualTriggerBtn, deleteModal, confirmDeleteBtn, cancelDeleteBtn, companyNameToDeleteEl, newsScopeContainer, startDateInput, endDateInput, linkModal, accessLinkInput, copyLinkBtn, closeLinkModalBtn, reportKeywordFilter, stateSelectContainer, stateSelect, changePasswordForm, apiKeyNewsApiInput, apiKeyGNewsInput1, apiKeyGNewsInput2, apiKeyGNewsInput3, apiKeyGNewsInput4, apiKeyYoutubeInput, apiKeyBloggerInput, bloggerIdInput, rssUrlInput, fetchOnlyNewToggle, changePasswordPage, globalKeysPage, globalSourcesPage, btnChangePassword, btnGlobalKeys, btnNewsSources, backToAdminConfig1, backToAdminConfig2, backToAdminConfig3, apiKeyVisionInput, apiKeyVideoIntelligenceInput, showAllAlertsBtn, deletionAccessToggle, justificationModal, justificationText, submitJustificationBtn, cancelJustificationBtn, btnManualAlert, btnDeletionRequests, btnSuperAdminReport, manualAlertPage, deletionRequestsPage, superAdminReportPage, backToDashboard1, backToDashboard2, backToDashboard3, manualAlertForm, deletionRequestsList, superAdminReportBody, deletionRequestsBadge, pendingAlertsPage, pendingAlertsList, btnPendingAlerts, backToDashboard4;
 
-        // --- UTILITY FUNCTIONS ---
+        // --- FUNÇÕES DE UTILIDADE ---
         function showAlert(message, type = 'success') { const c = type === 'success' ? 'bg-green-100 border-green-500 text-green-700' : 'bg-red-100 border-red-500 text-red-700'; globalAlert.innerHTML = `<div class="${c} border-l-4 p-4 rounded-md fade-in" role="alert"><p>${message}</p></div>`; setTimeout(() => { globalAlert.innerHTML = ''; }, 4000); }
-        function updateView(pageName) { pageSections.forEach(s => s.classList.remove('active')); const i = !!currentUser; navLoggedIn.style.display = i ? 'flex' : 'none'; navSuperAdmin.classList.toggle('hidden', !currentUser || !currentUser.isSuperAdmin); navConfiguracoesAdmin.classList.toggle('hidden', !currentUser || !currentUser.isSuperAdmin); if (clockInterval) clearInterval(clockInterval); loadAndDisplayLogo(); switch (pageName) { case 'login': loginPage.classList.add('active'); break; case 'dashboard': dashboardPage.classList.add('active'); renderDashboard(); updateDateTime(); clockInterval = setInterval(updateDateTime, 60000); break; case 'super-admin': superAdminPage.classList.add('active'); setupCompaniesListener(); break; case 'search': searchPage.classList.add('active'); setupSearchPage(); break; case 'company-keyword-admin': companyKeywordAdminPage.classList.add('active'); renderCompanyKeywordAdminPage(); break; case 'company-settings-admin': companySettingsAdminPage.classList.add('active'); renderCompanySettingsAdminPage(); break; case 'company-user-admin': companyUserAdminPage.classList.add('active'); renderCompanyUserAdminPage(); break; case 'report': reportPage.classList.add('active'); renderReportPage(); break; case 'configuracoes-admin': configuracoesAdminPage.classList.add('active'); break; case 'change-password': changePasswordPage.classList.add('active'); break; case 'global-keys': globalKeysPage.classList.add('active'); renderGlobalKeysPage(); break; case 'global-sources': globalSourcesPage.classList.add('active'); renderGlobalSourcesPage(); break; case 'manual-alert': manualAlertPage.classList.add('active'); renderManualAlertPage(); break; case 'deletion-requests': deletionRequestsPage.classList.add('active'); setupDeletionRequestsListener(); break; case 'super-admin-report': superAdminReportPage.classList.add('active'); renderSuperAdminReport(); break; } }
+        function updateView(pageName) { pageSections.forEach(s => s.classList.remove('active')); const i = !!currentUser; navLoggedIn.style.display = i ? 'flex' : 'none'; navSuperAdmin.classList.toggle('hidden', !currentUser || !currentUser.isSuperAdmin); navConfiguracoesAdmin.classList.toggle('hidden', !currentUser || !currentUser.isSuperAdmin); if (clockInterval) clearInterval(clockInterval); loadAndDisplayLogo(); switch (pageName) { case 'login': loginPage.classList.add('active'); break; case 'dashboard': dashboardPage.classList.add('active'); renderDashboard(); updateDateTime(); clockInterval = setInterval(updateDateTime, 60000); break; case 'super-admin': superAdminPage.classList.add('active'); setupCompaniesListener(); break; case 'search': searchPage.classList.add('active'); setupSearchPage(); break; case 'company-keyword-admin': companyKeywordAdminPage.classList.add('active'); renderCompanyKeywordAdminPage(); break; case 'company-settings-admin': companySettingsAdminPage.classList.add('active'); renderCompanySettingsAdminPage(); break; case 'company-user-admin': companyUserAdminPage.classList.add('active'); renderCompanyUserAdminPage(); break; case 'report': reportPage.classList.add('active'); renderReportPage(); break; case 'configuracoes-admin': configuracoesAdminPage.classList.add('active'); break; case 'change-password': changePasswordPage.classList.add('active'); break; case 'global-keys': globalKeysPage.classList.add('active'); renderGlobalKeysPage(); break; case 'global-sources': globalSourcesPage.classList.add('active'); renderGlobalSourcesPage(); break; case 'manual-alert': manualAlertPage.classList.add('active'); renderManualAlertPage(); break; case 'deletion-requests': deletionRequestsPage.classList.add('active'); setupDeletionRequestsListener(); break; case 'super-admin-report': superAdminReportPage.classList.add('active'); renderSuperAdminReport(); break; case 'super-admin-queue': pendingAlertsPage.classList.add('active'); setupPendingAlertsListener(); break; } }
         function getStorage(key, defaultValue) { try { const d = localStorage.getItem(key); return d ? JSON.parse(d) : defaultValue; } catch (e) { console.error(e); return defaultValue; } }
         function setStorage(key, value) { localStorage.setItem(key, JSON.stringify(value)); }
         function updateDateTime() { if (!currentDateTimeEl) return; const n = new Date(), f = { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }; currentDateTimeEl.textContent = `Data: ${n.toLocaleDateString('pt-BR', f).replace(',', ' -')}`; }
 
-        // --- MANUAL TRIGGER LOGIC ---
+        // --- LÓGICA DO ACIONAMENTO MANUAL ---
         async function handleManualTrigger() {
             manualTriggerBtn.disabled = true;
             manualTriggerBtn.textContent = 'Executando...';
@@ -530,20 +540,43 @@
             }
         }
 
-        // --- LOGO LOGIC ---
+        // --- LÓGICA DO LOGO ---
         async function handleLogoUpload(e) { const file = e.target.files[0]; if (!file) return; const companyId = currentUser.isSuperAdmin ? selectedCompanyForManagement.id : currentUser.companyId; if (!companyId) return; const reader = new FileReader(); reader.onloadend = async () => { try { const settingsRef = doc(db, "settings", companyId); await setDoc(settingsRef, { logo: reader.result }, { merge: true }); loadAndDisplayLogo(); showAlert('Logo atualizada com sucesso!'); } catch (error) { console.error("Erro ao salvar logo:", error); showAlert("Erro ao salvar logo.", "error"); } }; reader.readAsDataURL(file); }
         async function loadAndDisplayLogo() { const companyId = currentUser ? currentUser.companyId : null; if (!companyId) { headerLogoContainer.innerHTML = ''; loginLogoContainer.innerHTML = ''; return; } const settingsRef = doc(db, "settings", companyId); try { const docSnap = await getDoc(settingsRef); const logoData = docSnap.exists() ? docSnap.data().logo : null; const logoHtml = logoData ? `<img src="${logoData}" alt="Logo da Empresa" class="h-full w-auto object-contain">` : ''; headerLogoContainer.innerHTML = logoHtml; loginLogoContainer.innerHTML = logoHtml; } catch (error) { console.error("Error loading logo:", error); } }
 
-        // --- AUTHENTICATION LOGIC ---
+        // --- LÓGICA DE AUTENTICAÇÃO ---
         async function handleLogin(e) { e.preventDefault(); const companyName = document.getElementById('login-company').value.trim(); const user = document.getElementById('login-user').value.trim(); const pass = document.getElementById('login-password').value.trim(); if (companyName.toLowerCase() === 'newsclip' && user.toLowerCase() === superAdminCredentials.user && pass === superAdminCredentials.pass) { currentUser = { username: 'Ulysses', isSuperAdmin: true, companyId: 'super', companyName: 'Super Admin' }; setStorage('clipping_currentUser', currentUser); updateView('dashboard'); return; } try { const companiesQuery = query(collection(db, "companies"), where("name", "==", companyName.toUpperCase())); const companiesSnapshot = await getDocs(companiesQuery); if (companiesSnapshot.empty) { showAlert('Empresa não encontrada.', 'error'); return; } const companyDoc = companiesSnapshot.docs[0]; const company = { id: companyDoc.id, ...companyDoc.data() }; if (company.status === 'inactive') { showAlert('Esta empresa está inativa e não pode ser acessada.', 'error'); return; } const usersQuery = query(collection(db, "companies", company.id, "users"), where("username", "==", user), where("password", "==", pass)); const usersSnapshot = await getDocs(usersQuery); if(!usersSnapshot.empty) { const settingsDoc = await getDoc(doc(db, "settings", company.id)); const canRequestDeletion = settingsDoc.exists() ? settingsDoc.data().canRequestDeletion : false; currentUser = { username: user, companyId: company.id, companyName: company.name, isSuperAdmin: false, canRequestDeletion }; setStorage('clipping_currentUser', currentUser); updateView('dashboard'); } else { showAlert('Usuário ou senha inválidos para esta empresa.', 'error'); } } catch (error) { console.error("Login error:", error); showAlert("Ocorreu um erro durante o login.", "error"); } }
-        function handleLogout() { if (notificationListener) notificationListener(); if (companiesListener) companiesListener(); if (deletionRequestsListener) deletionRequestsListener(); currentUser = null; selectedCompanyForManagement = null; localStorage.removeItem('clipping_currentUser'); if (clockInterval) clearInterval(clockInterval); headerLogoContainer.innerHTML = ''; updateView('login'); }
+        function handleLogout() { if (notificationListener) notificationListener(); if (companiesListener) companiesListener(); if (deletionRequestsListener) deletionRequestsListener(); if (pendingAlertsListener) pendingAlertsListener(); currentUser = null; selectedCompanyForManagement = null; localStorage.removeItem('clipping_currentUser'); if (clockInterval) clearInterval(clockInterval); headerLogoContainer.innerHTML = ''; updateView('login'); }
         function handleChangePassword(e) { e.preventDefault(); const currentPass = document.getElementById('current-password').value; const newPass = document.getElementById('new-password').value; if (currentPass === superAdminCredentials.pass) { superAdminCredentials.pass = newPass; showAlert('Senha alterada com sucesso para esta sessão.', 'success'); changePasswordForm.reset(); } else { showAlert('Senha atual incorreta.', 'error'); } }
 
-        // --- DASHBOARD LOGIC ---
-        async function renderDashboard() { if (!currentUser) return; document.getElementById('dashboard-grid').style.display = currentUser.isSuperAdmin ? 'none' : 'grid'; document.getElementById('super-admin-dashboard-message').style.display = currentUser.isSuperAdmin ? 'block' : 'none'; dashboardTitle.textContent = currentUser.isSuperAdmin ? 'Painel Super Admin' : `Notícias do Dia - ${currentUser.companyName}`; if (!currentUser.isSuperAdmin) { renderVerticalKeywordList(); const settingsRef = doc(db, "settings", currentUser.companyId); try { const docSnap = await getDoc(settingsRef); const hasReportAccess = docSnap.exists() ? docSnap.data().reportAccess : true; newsAlertsContainer.style.display = hasReportAccess ? 'block' : 'none'; navRelatorio.classList.toggle('hidden', !hasReportAccess || currentUser.isSuperAdmin); populateInitialAlerts(); setupNotificationListener(); } catch (error) { console.error("Error rendering dashboard:", error); } } }
+        // --- LÓGICA DO DASHBOARD ---
+        async function renderDashboard() { 
+            if (!currentUser) return; 
+            if (currentUser.isSuperAdmin) {
+                document.getElementById('dashboard-grid').style.display = 'none';
+                document.getElementById('super-admin-dashboard-message').style.display = 'block';
+                setupPendingAlertsListener();
+            } else {
+                document.getElementById('dashboard-grid').style.display = 'grid';
+                document.getElementById('super-admin-dashboard-message').style.display = 'none';
+                renderVerticalKeywordList(); 
+                const settingsRef = doc(db, "settings", currentUser.companyId); 
+                try { 
+                    const docSnap = await getDoc(settingsRef); 
+                    const hasReportAccess = docSnap.exists() ? docSnap.data().reportAccess : true; 
+                    newsAlertsContainer.style.display = hasReportAccess ? 'block' : 'none'; 
+                    navRelatorio.classList.toggle('hidden', !hasReportAccess || currentUser.isSuperAdmin); 
+                    populateInitialAlerts(); 
+                    setupNotificationListener(); 
+                } catch (error) { 
+                    console.error("Error rendering dashboard:", error); 
+                }
+            }
+            dashboardTitle.textContent = currentUser.isSuperAdmin ? 'Painel Super Admin' : `Notícias do Dia - ${currentUser.companyName}`;
+        }
         async function renderVerticalKeywordList() { if (!currentUser || !dashboardKeywordList) return; try { const q = query(collection(db, "companies", currentUser.companyId, "keywords")); const querySnapshot = await getDocs(q); const keywords = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); dashboardKeywordList.innerHTML = ''; const showAllLi = document.createElement('li'); showAllLi.className = 'keyword-filter active bg-indigo-100 text-indigo-800 text-md font-medium px-3 py-2 rounded-md flex justify-between items-center cursor-pointer hover:bg-indigo-200'; showAllLi.dataset.keyword = "all"; showAllLi.innerHTML = `<span>Mostrar Todas</span>`; dashboardKeywordList.appendChild(showAllLi); if (keywords.length === 0) { dashboardKeywordList.insertAdjacentHTML('beforeend', `<p class="text-gray-500 text-sm mt-2">Nenhuma palavra-chave.</p>`); } else { keywords.forEach(kw => { const li = document.createElement('li'); li.className = 'keyword-filter bg-indigo-100 text-indigo-800 text-md font-medium px-3 py-2 rounded-md flex justify-content-between items-center cursor-pointer hover:bg-indigo-200'; li.dataset.keyword = kw.word; li.innerHTML = `<span>${kw.word}</span>`; dashboardKeywordList.appendChild(li); }); } } catch (error) { console.error("Error fetching keywords:", error); } }
         
-        // --- SUPER ADMIN LOGIC ---
+        // --- LÓGICA DO SUPER ADMIN ---
         function setupCompaniesListener() {
             if (companiesListener) companiesListener(); 
             const companiesQuery = query(collection(db, "companies"));
@@ -572,7 +605,7 @@
         async function handleCompanySubmit(e) { e.preventDefault(); const name = document.getElementById('company-name-input').value.trim(); if(!name) { showAlert('O nome da empresa é obrigatório.', 'error'); return; } try { const q = query(collection(db, "companies"), where("name", "==", name.toUpperCase())); const querySnapshot = await getDocs(q); if (!querySnapshot.empty) { showAlert('Este nome de empresa já existe.', 'error'); return; } await addDoc(collection(db, "companies"), { name: name.toUpperCase(), status: 'active' }); showAlert('Empresa adicionada com sucesso!'); companyForm.reset(); } catch (error) { console.error("Error adding company:", error); showAlert("Erro ao adicionar empresa.", "error"); } }
         async function handleCompanyActions(e) { const target = e.target; const companyId = target.dataset.id || target.dataset.companyId; if (target.classList.contains('view-access-link-btn')) { const companyName = target.dataset.companyName; const baseUrl = window.location.origin + window.location.pathname; const accessUrl = `${baseUrl}?company=${encodeURIComponent(companyName)}`; accessLinkInput.value = accessUrl; linkModal.classList.remove('hidden'); return; } if (!companyId) return; const companyRef = doc(db, "companies", companyId); try { if (target.classList.contains('deactivate-company-btn')) { await updateDoc(companyRef, { status: 'inactive', deactivationDate: new Date().toISOString() }); } else if (target.classList.contains('reactivate-company-btn')) { await updateDoc(companyRef, { status: 'active', deactivationDate: null }); } else if (target.classList.contains('delete-company-btn')) { companyIdToDelete = companyId; companyNameToDeleteEl.textContent = target.dataset.companyName; deleteModal.classList.remove('hidden'); } else if (target.classList.contains('manage-company-keywords-btn')) { selectedCompanyForManagement = { id: target.dataset.companyId, name: target.dataset.companyName }; updateView('company-keyword-admin'); } else if (target.classList.contains('manage-company-settings-btn')) { selectedCompanyForManagement = { id: target.dataset.companyId, name: target.dataset.companyName }; updateView('company-settings-admin'); } else if (target.classList.contains('manage-company-users-btn')) { selectedCompanyForManagement = { id: target.dataset.companyId, name: target.dataset.companyName }; updateView('company-user-admin'); } } catch (error) { console.error("Error handling company action:", error); showAlert("Ocorreu um erro.", "error"); } }
 
-        // --- DELETE COMPANY LOGIC ---
+        // --- LÓGICA DE EXCLUSÃO DE EMPRESA ---
         async function handleConfirmDelete() {
             if (!companyIdToDelete) return;
             confirmDeleteBtn.disabled = true;
@@ -596,13 +629,13 @@
             }
         }
 
-        // --- USER MANAGEMENT LOGIC (BY SUPER ADMIN) ---
+        // --- LÓGICA DE GERENCIAMENTO DE USUÁRIOS (PELO SUPER ADMIN) ---
         async function renderCompanyUserAdminPage() { if (!selectedCompanyForManagement) return; companyUserAdminTitle.textContent = `Gerenciar Usuários para: ${selectedCompanyForManagement.name}`; renderUsersForSelectedCompany(); }
         async function renderUsersForSelectedCompany() { try { const usersRef = collection(db, "companies", selectedCompanyForManagement.id, "users"); const querySnapshot = await getDocs(usersRef); const companyUsers = querySnapshot.docs.map(doc => ({id: doc.id, ...doc.data()})); adminUserList.innerHTML = ''; companyUsers.forEach(user => { const li = document.createElement('li'); li.className = 'flex justify-between items-center bg-gray-100 p-2 rounded-md'; li.innerHTML = `<span>${user.username}</span><div><button data-id="${user.id}" class="edit-user-btn text-blue-500 hover:text-blue-700 mr-2">Editar</button><button data-id="${user.id}" class="delete-user-btn text-red-500 hover:text-red-700">Excluir</button></div>`; adminUserList.appendChild(li); }); } catch (error) { console.error("Error rendering users:", error); } }
         async function handleUserSubmit(e) { e.preventDefault(); const username = userInput.value.trim(), password = userPasswordInput.value.trim(), id = userIdInput.value; if (!username || !password || !selectedCompanyForManagement) return; try { const usersRef = collection(db, "companies", selectedCompanyForManagement.id, "users"); const q = query(usersRef, where("username", "==", username)); const querySnapshot = await getDocs(q); if (!querySnapshot.empty && querySnapshot.docs[0].id !== id) { showAlert('Este nome de usuário já está em uso nesta empresa.', 'error'); return; } if (id) { await updateDoc(doc(db, "companies", selectedCompanyForManagement.id, "users", id), { username, password }); } else { await addDoc(usersRef, { username, password }); } userInput.value = ''; userPasswordInput.value = ''; userIdInput.value = ''; renderUsersForSelectedCompany(); } catch (error) { console.error("Error saving user:", error); showAlert("Erro ao salvar usuário.", "error"); } }
         async function handleUserActions(e) { if (!selectedCompanyForManagement) return; const id = e.target.dataset.id; if (!id) return; try { if (e.target.classList.contains('edit-user-btn')) { const userDoc = await getDoc(doc(db, "companies", selectedCompanyForManagement.id, "users", id)); if (userDoc.exists()) { const user = userDoc.data(); userInput.value = user.username; userPasswordInput.value = user.password; userIdInput.value = id; userInput.focus(); } } if (e.target.classList.contains('delete-user-btn')) { await deleteDoc(doc(db, "companies", selectedCompanyForManagement.id, "users", id)); renderUsersForSelectedCompany(); } } catch (error) { console.error("Error handling user action:", error); } }
 
-        // --- KEYWORD MANAGEMENT LOGIC (BY SUPER ADMIN) ---
+        // --- LÓGICA DE GERENCIAMENTO DE PALAVRAS-CHAVE (PELO SUPER ADMIN) ---
         async function renderCompanyKeywordAdminPage() { if (!selectedCompanyForManagement) return; companyKeywordAdminTitle.textContent = `Gerenciar Palavras-Chave para: ${selectedCompanyForManagement.name}`; renderKeywordsForSelectedCompany(); }
         async function renderKeywordsForSelectedCompany() { try { const keywordsRef = collection(db, "companies", selectedCompanyForManagement.id, "keywords"); const querySnapshot = await getDocs(keywordsRef); const keywords = querySnapshot.docs.map(doc => ({id: doc.id, ...doc.data()})); adminKeywordList.innerHTML = ''; keywords.forEach(kw => { const li = document.createElement('li'); li.className = 'flex justify-between items-center bg-gray-100 p-2 rounded-md'; li.innerHTML = `<span>${kw.word}</span><div><button data-id="${kw.id}" class="edit-keyword-btn text-blue-500 hover:text-blue-700 mr-2">Editar</button><button data-id="${kw.id}" data-word="${kw.word}" class="delete-keyword-btn text-red-500 hover:text-red-700">Excluir</button></div>`; adminKeywordList.appendChild(li); }); } catch (error) { console.error("Error rendering keywords:", error); } }
         async function handleKeywordSubmit(e) { e.preventDefault(); const word = keywordInput.value.trim(), id = keywordIdInput.value; if (!word || !selectedCompanyForManagement) return; try { const keywordsRef = collection(db, "companies", selectedCompanyForManagement.id, "keywords"); if (id) { await updateDoc(doc(db, "companies", selectedCompanyForManagement.id, "keywords", id), { word }); } else { await addDoc(keywordsRef, { word }); } keywordInput.value = ''; keywordIdInput.value = ''; renderKeywordsForSelectedCompany(); } catch (error) { console.error("Error saving keyword:", error); } }
@@ -637,7 +670,7 @@
             } 
         }
         
-        // --- SETTINGS MANAGEMENT LOGIC ---
+        // --- LÓGICA DE GERENCIAMENTO DE CONFIGURAÇÕES ---
         async function renderCompanySettingsAdminPage() { if (!selectedCompanyForManagement) return; companySettingsAdminTitle.textContent = `Opções para: ${selectedCompanyForManagement.name}`; try { const settingsRef = doc(db, "settings", selectedCompanyForManagement.id); const docSnap = await getDoc(settingsRef); if (docSnap.exists()) { const settings = docSnap.data(); reportAccessToggle.checked = settings.reportAccess !== false; fetchOnlyNewToggle.checked = settings.fetchOnlyNew === true; deletionAccessToggle.checked = settings.canRequestDeletion === true; document.querySelector(`input[name="news-scope"][value="${settings.searchScope || 'br'}"]`).checked = true; stateSelect.value = settings.searchState || ''; } else { reportAccessToggle.checked = true; fetchOnlyNewToggle.checked = false; deletionAccessToggle.checked = false; document.querySelector('input[name="news-scope"][value="br"]').checked = true; stateSelect.value = ''; } handleScopeChange(); } catch (error) { console.error("Error rendering settings:", error); } }
         async function handleSettingsChange(e) { if (!selectedCompanyForManagement) return; const settingsRef = doc(db, "settings", selectedCompanyForManagement.id); let key, value; switch (e.target.id) { case 'report-access-toggle': key = 'reportAccess'; value = e.target.checked; break; case 'fetch-only-new-toggle': key = 'fetchOnlyNew'; value = e.target.checked; break; case 'deletion-access-toggle': key = 'canRequestDeletion'; value = e.target.checked; break; case 'state-select': key = 'searchState'; value = e.target.value; break; default: if (e.target.name === 'news-scope') { key = 'searchScope'; value = e.target.value; } else { return; } } try { await setDoc(settingsRef, { [key]: value }, { merge: true }); showAlert('Opção salva!', 'success'); } catch (error) { console.error("Error saving setting:", error); } }
         function handleScopeChange() { const selectedScope = document.querySelector('input[name="news-scope"]:checked').value; stateSelectContainer.classList.toggle('hidden', selectedScope !== 'state'); }
@@ -668,7 +701,7 @@
             }
         }
 
-        // --- NOTIFICATION LOGIC ---
+        // --- LÓGICA DE NOTIFICAÇÃO ---
         function setupNotificationListener() {
             if (notificationListener) notificationListener();
             if (!currentUser || currentUser.isSuperAdmin) return;
@@ -724,7 +757,7 @@
             }
         }
 
-        // --- NEWS ALERT DISPLAY & SENTIMENT LOGIC ---
+        // --- LÓGICA DE EXIBIÇÃO DE ALERTA E SENTIMENTO ---
         function displayNewsAlert(article, container) {
             const pubDate = new Date(article.publishedAt.seconds ? article.publishedAt.toDate() : article.publishedAt);
             const formattedDate = pubDate.toLocaleDateString('pt-BR');
@@ -781,7 +814,7 @@
                 </div>`;
             container.appendChild(alertEl);
         }
-
+        
         async function handleSentimentChange(e) {
             const newScore = parseFloat(e.target.dataset.sentiment);
             const alertEl = e.target.closest('.fade-in');
@@ -818,10 +851,10 @@
                 newsAlerts.innerHTML = '';
                 if (articlesSnapshot.empty) {
                     newsAlerts.innerHTML = '<p class="text-gray-500">Nenhum alerta encontrado.</p>';
-                    return;
+                } else {
+                    const articles = articlesSnapshot.docs.map(d => ({...d.data(), id: d.id}));
+                    articles.forEach(article => displayNewsAlert(article, newsAlerts));
                 }
-                const articles = articlesSnapshot.docs.map(d => ({...d.data(), id: d.id}));
-                articles.forEach(article => displayNewsAlert(article, newsAlerts));
                 filterAlertsByDate();
             } catch (error) {
                 console.error("Error populating alerts:", error);
@@ -830,7 +863,7 @@
         }
         function filterAlertsByDate() { const selectedDate = alertDateFilter.value; const allAlerts = newsAlerts.querySelectorAll('.fade-in'); let visibleCount = 0; allAlerts.forEach(alert => { const isVisible = !selectedDate || alert.dataset.date === selectedDate; alert.style.display = isVisible ? 'block' : 'none'; if(isVisible) visibleCount++; }); if(visibleCount === 0 && !newsAlerts.querySelector('.text-gray-500')) { newsAlerts.insertAdjacentHTML('beforeend', `<p class="text-gray-500">Nenhum alerta encontrado para a data selecionada.</p>`); } else if (visibleCount > 0) { const noAlertsMsg = newsAlerts.querySelector('.text-gray-500'); if (noAlertsMsg) noAlertsMsg.remove(); } }
         
-        // --- REPORT PAGE LOGIC ---
+        // --- LÓGICA DA PÁGINA DE RELATÓRIO ---
         async function renderReportPage() {
             if (!currentUser) return;
             const articlesQuery = query(collection(db, "companies", currentUser.companyId, "articles"), orderBy("publishedAt", "desc"));
@@ -1022,13 +1055,13 @@
             sentimentChartInstance = createChart('sentiment-chart', sentimentChartInstance, 'line', { labels: allSentiments, datasets }, sentimentChartOptions);
         }
 
-        // --- SEARCH PAGE LOGIC ---
+        // --- LÓGICA DA PÁGINA DE PESQUISA ---
         async function setupSearchPage() { if (!currentUser) return; searchInput.value = ''; searchResults.innerHTML = '<p class="text-gray-500">Carregando todos os artigos para pesquisa...</p>'; try { const q = query(collection(db, "companies", currentUser.companyId, "articles"), orderBy("publishedAt", "desc")); const articlesSnapshot = await getDocs(q); allCompanyArticles = articlesSnapshot.docs.map(d => ({...d.data(), id: d.id})); searchResults.innerHTML = `<p class="text-gray-500">Pronto para pesquisar em ${allCompanyArticles.length} artigos. Digite um termo ou use os filtros.</p>`; setupFilters(); } catch (error) { console.error("Error fetching articles for search:", error); searchResults.innerHTML = '<p class="text-red-500">Não foi possível carregar os artigos para pesquisa.</p>'; } }
         function setupFilters() { filterContainer.innerHTML = ''; const keywords = [...new Set(allCompanyArticles.map(a => a.keyword))]; if (keywords.length > 0) { let keywordButtons = keywords.map(kw => `<button class="filter-btn bg-gray-200 hover:bg-indigo-200 text-gray-800 text-sm font-medium px-3 py-1 rounded-full" data-keyword="${kw}">${kw}</button>`).join(''); filterContainer.innerHTML = `<div class="flex flex-wrap gap-2"><span class="font-semibold self-center">Filtar por Palavra-Chave:</span>${keywordButtons}</div>`; } }
         function handleSearch() { const searchTerm = searchInput.value.toLowerCase().trim(); const activeFilter = filterContainer.querySelector('.bg-indigo-500'); const keywordFilter = activeFilter ? activeFilter.dataset.keyword : null; if (!searchTerm && !keywordFilter) { searchResults.innerHTML = `<p class="text-gray-500">Digite algo para começar a pesquisar ou use os filtros.</p>`; return; } let filteredArticles = allCompanyArticles; if (keywordFilter) { filteredArticles = filteredArticles.filter(a => a.keyword === keywordFilter); } if (searchTerm) { filteredArticles = filteredArticles.filter(a => a.title.toLowerCase().includes(searchTerm) || (a.description && a.description.toLowerCase().includes(searchTerm))); } renderSearchResults(filteredArticles); }
         function renderSearchResults(articles) { searchResults.innerHTML = ''; if (articles.length === 0) { searchResults.innerHTML = '<p class="text-gray-500">Nenhum resultado encontrado.</p>'; return; } articles.forEach(article => displayNewsAlert(article, searchResults)); }
 
-        // --- DASHBOARD FILTER LOGIC ---
+        // --- LÓGICA DE FILTRO DO DASHBOARD ---
         function handleDashboardKeywordFilter(e) {
             const target = e.target.closest('.keyword-filter');
             if (!target) return;
@@ -1058,7 +1091,7 @@
             });
         }
 
-        // FIX: Define handleAlertCardActions
+        // --- AÇÕES DO CARTÃO DE ALERTA ---
         function handleAlertCardActions(e) {
             const target = e.target;
 
@@ -1074,15 +1107,103 @@
                     title: alertEl.querySelector('h4').textContent
                 };
                 justificationText.value = '';
-                submitJustificationBtn.disabled = true; // Disable button on open
+                submitJustificationBtn.disabled = true; // Desabilita o botão ao abrir
                 justificationModal.classList.remove('hidden');
             }
         }
+        
+        // --- LÓGICA DA FILA DE ALERTA PENDENTE DO SUPER ADMIN ---
+        // Este é um ouvinte em tempo real para a coleção de alertas pendentes.
+        // Ele atualiza a lista e o contador de notificações automaticamente.
+        function setupPendingAlertsListener() {
+            if (pendingAlertsListener) pendingAlertsListener();
+            const q = query(collection(db, "pendingAlerts"), orderBy("publishedAt", "desc"));
+            pendingAlertsListener = onSnapshot(q, (snapshot) => {
+                renderPendingAlerts(snapshot.docs);
+                const pendingCount = snapshot.docs.length;
+                if (btnPendingAlerts && btnPendingAlerts.querySelector('#pending-alerts-badge')) {
+                    btnPendingAlerts.querySelector('#pending-alerts-badge').textContent = pendingCount;
+                    btnPendingAlerts.querySelector('#pending-alerts-badge').classList.toggle('hidden', pendingCount === 0);
+                }
+            }, (error) => {
+                console.error("Erro ao ouvir alertas pendentes:", error);
+                if (pendingAlertsList) {
+                    pendingAlertsList.innerHTML = '<p class="text-red-500">Erro ao carregar alertas.</p>';
+                }
+            });
+        }
+        
+        // Renderiza a lista de alertas pendentes na página
+        function renderPendingAlerts(docs) {
+            if (!pendingAlertsList) return;
+            pendingAlertsList.innerHTML = '';
+            if (docs.length === 0) {
+                pendingAlertsList.innerHTML = '<p class="text-gray-500">Nenhum alerta pendente para aprovação.</p>';
+                return;
+            }
+            docs.forEach(doc => {
+                const alert = { id: doc.id, ...doc.data() };
+                displayPendingAlert(alert, pendingAlertsList);
+            });
+        }
+        
+        // Manipula a aprovação ou rejeição de um alerta
+        async function handlePendingAlertAction(e) {
+            const target = e.target;
+            const alertEl = target.closest('.fade-in');
+            if (!alertEl) return;
+            const alertId = alertEl.dataset.id;
+            
+            if (target.classList.contains('approve-alert-btn')) {
+                const approveAlert = httpsCallable(functions, 'approveAlert');
+                try {
+                    await approveAlert({ alertId });
+                    showAlert('Alerta aprovado e enviado para a empresa com sucesso!', 'success');
+                } catch (error) {
+                    console.error("Erro ao aprovar alerta:", error);
+                    showAlert(`Erro ao aprovar alerta: ${error.message}`, 'error');
+                }
+            } else if (target.classList.contains('reject-alert-btn')) {
+                const rejectAlert = httpsCallable(functions, 'rejectAlert');
+                try {
+                    await rejectAlert({ alertId });
+                    showAlert('Alerta rejeitado com sucesso!', 'success');
+                } catch (error) {
+                    console.error("Erro ao rejeitar alerta:", error);
+                    showAlert(`Erro ao rejeitar alerta: ${error.message}`, 'error');
+                }
+            }
+        }
+        
+        // Cria o elemento HTML para exibir um alerta pendente
+        function displayPendingAlert(alert, container) {
+            const pubDate = new Date(alert.publishedAt.seconds ? alert.publishedAt.toDate() : alert.publishedAt);
+            const formattedDate = pubDate.toLocaleDateString('pt-BR');
+            const alertEl = document.createElement('div');
+            alertEl.className = 'bg-white p-4 rounded-lg shadow-md border-l-4 border-yellow-500 fade-in';
+            alertEl.dataset.id = alert.id;
+            alertEl.dataset.companyId = alert.companyId;
+            alertEl.innerHTML = `
+                <div class="flex justify-between items-start">
+                    <h4 class="text-lg font-bold text-gray-800 pr-2">${alert.title}</h4>
+                    <span class="flex-shrink-0 text-xs font-semibold bg-gray-100 text-gray-800 px-2 py-1 rounded-full">${alert.companyName} - ${alert.keyword}</span>
+                </div>
+                <p class="text-sm text-gray-600 mt-2">${alert.description || 'Descrição não disponível.'}</p>
+                <div class="text-xs text-gray-500 mt-3 flex justify-between items-center">
+                    <span>Fonte: ${alert.source.name} | Publicado: ${formattedDate}</span>
+                    <div class="flex gap-2">
+                        <button class="approve-alert-btn bg-green-500 text-white px-3 py-1 rounded-md text-sm hover:bg-green-600">Aprovar</button>
+                        <button class="reject-alert-btn bg-red-500 text-white px-3 py-1 rounded-md text-sm hover:bg-red-600">Rejeitar</button>
+                    </div>
+                </div>`;
+            container.appendChild(alertEl);
+        }
 
-        // --- NEW SUPER ADMIN FUNCTIONS ---
+        // --- NOVAS FUNÇÕES DO SUPER ADMIN ---
 
         async function renderManualAlertPage() {
             const companySelect = document.getElementById('manual-alert-company');
+            if (!companySelect) return;
             companySelect.innerHTML = '<option value="">Selecione uma empresa</option>';
             const companiesSnapshot = await getDocs(query(collection(db, "companies"), where("status", "==", "active")));
             companiesSnapshot.forEach(doc => {
@@ -1111,7 +1232,7 @@
                 const manualAddAlert = httpsCallable(functions, 'manualAddAlert');
                 await manualAddAlert({ companyId, title, description, url, source, keyword });
                 showAlert('Alerta manual adicionado com sucesso!', 'success');
-                manualAlertForm.reset();
+                if (manualAlertForm) manualAlertForm.reset();
             } catch (error) {
                 console.error("Erro ao adicionar alerta manual:", error);
                 showAlert(`Erro: ${error.message}`, 'error');
@@ -1124,15 +1245,20 @@
             deletionRequestsListener = onSnapshot(q, (snapshot) => {
                 renderDeletionRequests(snapshot.docs);
                 const pendingCount = snapshot.docs.filter(doc => doc.data().status === 'pending').length;
-                deletionRequestsBadge.textContent = pendingCount;
-                deletionRequestsBadge.classList.toggle('hidden', pendingCount === 0);
+                if (deletionRequestsBadge) {
+                    deletionRequestsBadge.textContent = pendingCount;
+                    deletionRequestsBadge.classList.toggle('hidden', pendingCount === 0);
+                }
             }, (error) => {
                 console.error("Erro ao ouvir solicitações de exclusão:", error);
-                deletionRequestsList.innerHTML = '<p class="text-red-500">Erro ao carregar solicitações.</p>';
+                if (deletionRequestsList) {
+                    deletionRequestsList.innerHTML = '<p class="text-red-500">Erro ao carregar solicitações.</p>';
+                }
             });
         }
 
         function renderDeletionRequests(docs) {
+            if (!deletionRequestsList) return;
             deletionRequestsList.innerHTML = '';
             if (docs.empty) {
                 deletionRequestsList.innerHTML = '<p class="text-gray-500">Nenhuma solicitação de exclusão encontrada.</p>';
@@ -1184,6 +1310,7 @@
         }
 
         async function handleSubmitJustification() {
+            if (!justificationText) return;
             const justification = justificationText.value.trim();
             if (!justification) {
                 showAlert('Por favor, forneça uma justificativa.', 'error');
@@ -1200,7 +1327,7 @@
                     justification: justification
                 });
                 showAlert('Solicitação de exclusão enviada com sucesso!', 'success');
-                justificationModal.classList.add('hidden');
+                if (justificationModal) justificationModal.classList.add('hidden');
                 articleToDeleteInfo = null;
             } catch (error) {
                 console.error("Erro ao enviar solicitação:", error);
@@ -1209,6 +1336,7 @@
         }
 
         async function renderSuperAdminReport() {
+            if (!superAdminReportBody) return;
             superAdminReportBody.innerHTML = '<tr><td colspan="6" class="text-center py-4">A gerar relatório...</td></tr>';
             try {
                 const generateReport = httpsCallable(functions, 'generateSuperAdminReport');
@@ -1244,9 +1372,9 @@
         }
 
 
-        // --- INITIALIZATION AND EVENT LISTENERS ---
+        // --- INICIALIZAÇÃO E OUVINTES DE EVENTOS ---
         document.addEventListener('DOMContentLoaded', () => {
-            // Assign DOM elements after the DOM is loaded
+            // Atribui os elementos do DOM depois que o DOM é carregado
             pageSections = document.querySelectorAll('.page-section');
             navLoggedIn = document.getElementById('nav-logged-in');
             navInicio = document.getElementById('nav-inicio');
@@ -1354,100 +1482,111 @@
             deletionRequestsList = document.getElementById('deletion-requests-list');
             superAdminReportBody = document.getElementById('super-admin-report-body');
             deletionRequestsBadge = document.getElementById('deletion-requests-badge');
+            pendingAlertsPage = document.getElementById('super-admin-queue-page');
+            pendingAlertsList = document.getElementById('super-admin-pending-alerts-list');
+            btnPendingAlerts = document.getElementById('btn-pending-alerts');
+            backToDashboard4 = document.getElementById('back-to-dashboard-4');
 
             const states = {"AC": "Acre", "AL": "Alagoas", "AP": "Amapá", "AM": "Amazonas", "BA": "Bahia", "CE": "Ceará", "DF": "Distrito Federal", "ES": "Espírito Santo", "GO": "Goiás", "MA": "Maranhão", "MT": "Mato Grosso", "MS": "Mato Grosso do Sul", "MG": "Minas Gerais", "PA": "Pará", "PB": "Paraíba", "PR": "Paraná", "PE": "Pernambuco", "PI": "Piauí", "RJ": "Rio de Janeiro", "RN": "Rio Grande do Norte", "RS": "Rio Grande do Sul", "RO": "Rondônia", "RR": "Roraima", "SC": "Santa Catarina", "SP": "São Paulo", "SE": "Sergipe", "TO": "Tocantins"};
             for (const [uf, name] of Object.entries(states)) {
                 const option = document.createElement('option');
                 option.value = uf;
                 option.textContent = name;
-                stateSelect.appendChild(option);
+                if (stateSelect) {
+                    stateSelect.appendChild(option);
+                }
             }
 
-            loginForm.addEventListener('submit', handleLogin);
-            navInicio.addEventListener('click', (e) => { e.preventDefault(); updateView('dashboard'); });
-            navRelatorio.addEventListener('click', (e) => { e.preventDefault(); updateView('report'); });
-            navPesquisa.addEventListener('click', (e) => { e.preventDefault(); updateView('search'); });
-            navSuperAdmin.addEventListener('click', (e) => { e.preventDefault(); updateView('super-admin'); });
-            navConfiguracoesAdmin.addEventListener('click', (e) => { e.preventDefault(); updateView('configuracoes-admin'); });
-            navLogout.addEventListener('click', (e) => { e.preventDefault(); handleLogout(); });
-            manualTriggerBtn.addEventListener('click', handleManualTrigger);
-            companyForm.addEventListener('submit', handleCompanySubmit);
-            companyList.addEventListener('click', handleCompanyActions);
-            confirmDeleteBtn.addEventListener('click', handleConfirmDelete);
-            cancelDeleteBtn.addEventListener('click', () => deleteModal.classList.add('hidden'));
-            closeLinkModalBtn.addEventListener('click', () => linkModal.classList.add('hidden'));
-            copyLinkBtn.addEventListener('click', () => {
+            if (loginForm) loginForm.addEventListener('submit', handleLogin);
+            if (navInicio) navInicio.addEventListener('click', (e) => { e.preventDefault(); updateView('dashboard'); });
+            if (navRelatorio) navRelatorio.addEventListener('click', (e) => { e.preventDefault(); updateView('report'); });
+            if (navPesquisa) navPesquisa.addEventListener('click', (e) => { e.preventDefault(); updateView('search'); });
+            if (navSuperAdmin) navSuperAdmin.addEventListener('click', (e) => { e.preventDefault(); updateView('super-admin'); });
+            if (navConfiguracoesAdmin) navConfiguracoesAdmin.addEventListener('click', (e) => { e.preventDefault(); updateView('configuracoes-admin'); });
+            if (navLogout) navLogout.addEventListener('click', (e) => { e.preventDefault(); handleLogout(); });
+            if (manualTriggerBtn) manualTriggerBtn.addEventListener('click', handleManualTrigger);
+            if (companyForm) companyForm.addEventListener('submit', handleCompanySubmit);
+            if (companyList) companyList.addEventListener('click', handleCompanyActions);
+            if (confirmDeleteBtn) confirmDeleteBtn.addEventListener('click', handleConfirmDelete);
+            if (cancelDeleteBtn) cancelDeleteBtn.addEventListener('click', () => deleteModal.classList.add('hidden'));
+            if (closeLinkModalBtn) closeLinkModalBtn.addEventListener('click', () => linkModal.classList.add('hidden'));
+            if (copyLinkBtn) copyLinkBtn.addEventListener('click', () => {
                 accessLinkInput.select();
                 document.execCommand('copy');
                 showAlert('Link copiado para a área de transferência!', 'success');
             });
-            newsScopeContainer.addEventListener('change', (e) => { handleSettingsChange(e); handleScopeChange(); });
-            apiKeyNewsApiInput.addEventListener('change', handleGlobalKeyChange);
-            apiKeyGNewsInput1.addEventListener('change', handleGlobalKeyChange);
-            apiKeyGNewsInput2.addEventListener('change', handleGlobalKeyChange);
-            apiKeyGNewsInput3.addEventListener('change', handleGlobalKeyChange);
-            apiKeyGNewsInput4.addEventListener('change', handleGlobalKeyChange);
-            apiKeyYoutubeInput.addEventListener('change', handleGlobalKeyChange);
-            apiKeyBloggerInput.addEventListener('change', handleGlobalKeyChange);
-            apiKeyVisionInput.addEventListener('change', handleGlobalKeyChange);
-            apiKeyVideoIntelligenceInput.addEventListener('change', handleGlobalKeyChange);
-            bloggerIdInput.addEventListener('change', handleGlobalSourceChange);
-            rssUrlInput.addEventListener('change', handleGlobalSourceChange);
-            reportAccessToggle.addEventListener('change', handleSettingsChange);
-            fetchOnlyNewToggle.addEventListener('change', handleSettingsChange);
-            deletionAccessToggle.addEventListener('change', handleSettingsChange);
-            stateSelect.addEventListener('change', handleSettingsChange);
-            keywordForm.addEventListener('submit', handleKeywordSubmit);
-            adminKeywordList.addEventListener('click', handleKeywordActions);
-            userForm.addEventListener('submit', handleUserSubmit);
-            adminUserList.addEventListener('click', handleUserActions);
-            searchInput.addEventListener('input', handleSearch);
-            filterContainer.addEventListener('click', (e) => { if (e.target.classList.contains('filter-btn')) { document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('bg-indigo-500', 'text-white')); e.target.classList.add('bg-indigo-500', 'text-white'); handleSearch(); } });
-            notificationBell.addEventListener('click', showOnlyNewAlerts);
-            showAllAlertsBtn.addEventListener('click', populateInitialAlerts);
-            backToSuperAdminKwBtn.addEventListener('click', () => updateView('super-admin'));
-            backToSuperAdminSettingsBtn.addEventListener('click', () => updateView('super-admin'));
-            backToSuperAdminUsersBtn.addEventListener('click', () => updateView('super-admin'));
-            dashboardKeywordList.addEventListener('click', handleDashboardKeywordFilter);
-            newsAlerts.addEventListener('click', handleAlertCardActions);
-            searchResults.addEventListener('click', handleAlertCardActions);
-            alertDateFilter.addEventListener('change', filterAlertsByDate);
-            changePasswordForm.addEventListener('submit', handleChangePassword);
-            btnChangePassword.addEventListener('click', () => updateView('change-password'));
-            btnGlobalKeys.addEventListener('click', () => updateView('global-keys'));
-            btnNewsSources.addEventListener('click', () => updateView('global-sources'));
-            backToAdminConfig1.addEventListener('click', () => updateView('configuracoes-admin'));
-            backToAdminConfig2.addEventListener('click', () => updateView('configuracoes-admin'));
-            backToAdminConfig3.addEventListener('click', () => updateView('configuracoes-admin'));
-            logoUploadInput.addEventListener('change', handleLogoUpload);
-            btnManualAlert.addEventListener('click', () => updateView('manual-alert'));
-            btnDeletionRequests.addEventListener('click', () => updateView('deletion-requests'));
-            btnSuperAdminReport.addEventListener('click', () => updateView('super-admin-report'));
-            backToDashboard1.addEventListener('click', () => updateView('dashboard'));
-            backToDashboard2.addEventListener('click', () => updateView('dashboard'));
-            backToDashboard3.addEventListener('click', () => updateView('dashboard'));
-            manualAlertForm.addEventListener('submit', handleManualAlertSubmit);
-            cancelJustificationBtn.addEventListener('click', () => justificationModal.classList.add('hidden'));
-            submitJustificationBtn.addEventListener('click', handleSubmitJustification);
-            deletionRequestsList.addEventListener('click', handleDeletionRequestAction);
-            justificationText.addEventListener('input', () => {
+            if (newsScopeContainer) newsScopeContainer.addEventListener('change', (e) => { handleSettingsChange(e); handleScopeChange(); });
+            if (apiKeyNewsApiInput) apiKeyNewsApiInput.addEventListener('change', handleGlobalKeyChange);
+            if (apiKeyGNewsInput1) apiKeyGNewsInput1.addEventListener('change', handleGlobalKeyChange);
+            if (apiKeyGNewsInput2) apiKeyGNewsInput2.addEventListener('change', handleGlobalKeyChange);
+            if (apiKeyGNewsInput3) apiKeyGNewsInput3.addEventListener('change', handleGlobalKeyChange);
+            if (apiKeyGNewsInput4) apiKeyGNewsInput4.addEventListener('change', handleGlobalKeyChange);
+            if (apiKeyYoutubeInput) apiKeyYoutubeInput.addEventListener('change', handleGlobalKeyChange);
+            if (apiKeyBloggerInput) apiKeyBloggerInput.addEventListener('change', handleGlobalKeyChange);
+            if (apiKeyVisionInput) apiKeyVisionInput.addEventListener('change', handleGlobalKeyChange);
+            if (apiKeyVideoIntelligenceInput) apiKeyVideoIntelligenceInput.addEventListener('change', handleGlobalKeyChange);
+            if (bloggerIdInput) bloggerIdInput.addEventListener('change', handleGlobalSourceChange);
+            if (rssUrlInput) rssUrlInput.addEventListener('change', handleGlobalSourceChange);
+            if (reportAccessToggle) reportAccessToggle.addEventListener('change', handleSettingsChange);
+            if (fetchOnlyNewToggle) fetchOnlyNewToggle.addEventListener('change', handleSettingsChange);
+            if (deletionAccessToggle) deletionAccessToggle.addEventListener('change', handleSettingsChange);
+            if (stateSelect) stateSelect.addEventListener('change', handleSettingsChange);
+            if (keywordForm) keywordForm.addEventListener('submit', handleKeywordSubmit);
+            if (adminKeywordList) adminKeywordList.addEventListener('click', handleKeywordActions);
+            if (userForm) userForm.addEventListener('submit', handleUserSubmit);
+            if (adminUserList) adminUserList.addEventListener('click', handleUserActions);
+            if (searchInput) searchInput.addEventListener('input', handleSearch);
+            if (filterContainer) filterContainer.addEventListener('click', (e) => { if (e.target.classList.contains('filter-btn')) { document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('bg-indigo-500', 'text-white')); e.target.classList.add('bg-indigo-500', 'text-white'); handleSearch(); } });
+            if (notificationBell) notificationBell.addEventListener('click', showOnlyNewAlerts);
+            if (showAllAlertsBtn) showAllAlertsBtn.addEventListener('click', populateInitialAlerts);
+            if (backToSuperAdminKwBtn) backToSuperAdminKwBtn.addEventListener('click', () => updateView('super-admin'));
+            if (backToSuperAdminSettingsBtn) backToSuperAdminSettingsBtn.addEventListener('click', () => updateView('super-admin'));
+            if (backToSuperAdminUsersBtn) backToSuperAdminUsersBtn.addEventListener('click', () => updateView('super-admin'));
+            if (dashboardKeywordList) dashboardKeywordList.addEventListener('click', handleDashboardKeywordFilter);
+            if (newsAlerts) newsAlerts.addEventListener('click', handleAlertCardActions);
+            if (searchResults) searchResults.addEventListener('click', handleAlertCardActions);
+            if (alertDateFilter) alertDateFilter.addEventListener('change', filterAlertsByDate);
+            if (changePasswordForm) changePasswordForm.addEventListener('submit', handleChangePassword);
+            if (btnChangePassword) btnChangePassword.addEventListener('click', () => updateView('configuracoes-admin'));
+            if (btnGlobalKeys) btnGlobalKeys.addEventListener('click', () => updateView('global-keys'));
+            if (btnNewsSources) btnNewsSources.addEventListener('click', () => updateView('global-sources'));
+            if (backToAdminConfig1) backToAdminConfig1.addEventListener('click', () => updateView('configuracoes-admin'));
+            if (backToAdminConfig2) backToAdminConfig2.addEventListener('click', () => updateView('configuracoes-admin'));
+            if (backToAdminConfig3) backToAdminConfig3.addEventListener('click', () => updateView('configuracoes-admin'));
+            if (logoUploadInput) logoUploadInput.addEventListener('change', handleLogoUpload);
+            if (btnManualAlert) btnManualAlert.addEventListener('click', () => updateView('manual-alert'));
+            if (btnDeletionRequests) btnDeletionRequests.addEventListener('click', () => updateView('deletion-requests'));
+            if (btnSuperAdminReport) btnSuperAdminReport.addEventListener('click', () => updateView('super-admin-report'));
+            if (backToDashboard1) backToDashboard1.addEventListener('click', () => updateView('dashboard'));
+            if (backToDashboard2) backToDashboard2.addEventListener('click', () => updateView('dashboard'));
+            if (backToDashboard3) backToDashboard3.addEventListener('click', () => updateView('dashboard'));
+            if (manualAlertForm) manualAlertForm.addEventListener('submit', handleManualAlertSubmit);
+            if (cancelJustificationBtn) cancelJustificationBtn.addEventListener('click', () => justificationModal.classList.add('hidden'));
+            if (submitJustificationBtn) submitJustificationBtn.addEventListener('click', handleSubmitJustification);
+            if (deletionRequestsList) deletionRequestsList.addEventListener('click', handleDeletionRequestAction);
+            if (justificationText) justificationText.addEventListener('input', () => {
                 submitJustificationBtn.disabled = justificationText.value.trim() === '';
             });
+            if (btnPendingAlerts) btnPendingAlerts.addEventListener('click', () => updateView('super-admin-queue'));
+            if (pendingAlertsList) pendingAlertsList.addEventListener('click', handlePendingAlertAction);
+            if (backToDashboard4) backToDashboard4.addEventListener('click', () => updateView('dashboard'));
             
             const urlParams = new URLSearchParams(window.location.search);
             const companyParam = urlParams.get('company');
             if (companyParam) {
                 const companyInput = document.getElementById('login-company');
-                companyInput.value = decodeURIComponent(companyParam);
-                document.getElementById('login-company-wrapper').style.display = 'none';
+                if (companyInput) {
+                    companyInput.value = decodeURIComponent(companyParam);
+                    document.getElementById('login-company-wrapper').style.display = 'none';
+                }
             }
-            
-            updateView('login');
             
             const savedUser = getStorage('clipping_currentUser', null);
             if (savedUser) { 
                 currentUser = savedUser; 
                 updateView('dashboard'); 
+            } else {
+                updateView('login');
             }
         });
     </script>
