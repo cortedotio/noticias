@@ -1574,7 +1574,7 @@
             if (submitJustificationBtn) submitJustificationBtn.addEventListener('click', handleSubmitJustification);
             if (deletionRequestsList) deletionRequestsList.addEventListener('click', handleDeletionRequestAction);
             if (justificationText && submitJustificationBtn) justificationText.addEventListener('input', () => {
-                submitJustificationBtn.disabled = justificationText.value.trim() === '';
+                if(submitJustificationBtn) submitJustificationBtn.disabled = justificationText.value.trim() === '';
             });
             if (btnPendingAlerts) btnPendingAlerts.addEventListener('click', () => updateView('super-admin-queue'));
             if (pendingAlertsList) pendingAlertsList.addEventListener('click', handlePendingAlertAction);
@@ -1586,7 +1586,10 @@
                 const companyInput = document.getElementById('login-company');
                 if (companyInput) {
                     companyInput.value = decodeURIComponent(companyParam);
-                    document.getElementById('login-company-wrapper').style.display = 'none';
+                    const loginCompanyWrapper = document.getElementById('login-company-wrapper');
+                    if (loginCompanyWrapper) {
+                      loginCompanyWrapper.style.display = 'none';
+                    }
                 }
             }
             
