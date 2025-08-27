@@ -1,310 +1,502 @@
-const functions = require('firebase-functions');
-const admin = require('firebase-admin');
-const axios = require('axios');
-const Parser = require('rss-parser');
+// index.js
+const functions = require("firebase-functions");
+const admin = require("firebase-admin");
+const fetch = require("node-fetch");
+const { Timestamp } = require("firebase-admin/firestore");
 
+// Inicializa o Firebase Admin SDK para interagir com o Firestore
 admin.initializeApp();
 const db = admin.firestore();
-const parser = new Parser();
 
-// --- Função Principal do Robô de Coleta de Notícias ---
-exports.fetchNewsRobot = functions.runWith({ timeoutSeconds: 540, memory: '1GB' }).pubsub.schedule('every 1 minutes').onRun(async (context) => {
-    try {
-        const globalSettingsDoc = await db.collection('settings').doc('global').get();
-        const globalSettings = globalSettingsDoc.exists ? globalSettingsDoc.data() : {};
+// O link para a API do GNews
+const GNEWS_URL = "https://gnews.io/api/v4/search";
 
-        const now = new Date();
-        const hour = now.getUTCHours() - 3; // Ajuste para o fuso horário de Brasília (UTC-3)
-        // Acessa as chaves do .env, substituindo o acesso do Firestore
-        const gnewsApiKey1 = process.env.GNEWS_API_KEY_1;
-        const gnewsApiKey2 = process.env.GNEWS_API_KEY_2;
-        const gnewsApiKey3 = process.env.GNEWS_API_KEY_3;
-        const gnewsApiKey4 = process.env.GNEWS_API_KEY_4;
-        
-        let gnewsApiKey;
-        if (hour >= 0 && hour <= 5) gnewsApiKey = gnewsApiKey1;
-        else if (hour >= 6 && hour <= 11) gnewsApiKey = gnewsApiKey2;
-        else if (hour >= 12 && hour <= 17) gnewsApiKey = gnewsApiKey3;
-        else gnewsApiKey = gnewsApiKey4;
-        
-        const apiKeyYoutube = process.env.YOUTUBE_API_KEY; // Acessa a chave do .env
-        const rssUrls = globalSettings.rssUrl ? globalSettings.rssUrl.split('\n') : [];
-        const bloggerIds = globalSettings.bloggerId ? globalSettings.bloggerId.split('\n') : [];
+/**
+ * Funções auxiliares para apagar subcoleções de forma eficiente.
+ * A Cloud Function `deleteCompany` chamará esta função.
+ */
+async function deleteCollection(collectionPath) {
+  const collectionRef = db.collection(collectionPath);
+  const snapshot = await collectionRef.get();
+  const batch = db.batch();
+  snapshot.docs.forEach(doc => {
+    batch.delete(doc.ref);
+  });
+  await batch.commit();
+}
 
-        const companiesSnapshot = await db.collection('companies').where('status', '==', 'active').get();
-        
-        for (const companyDoc of companiesSnapshot.docs) {
-            const companyId = companyDoc.id;
-            const companySettingsDoc = await db.collection('settings').doc(companyId).get();
-            const companySettings = companySettingsDoc.exists ? companySettingsDoc.data() : {};
-            const keywordsSnapshot = await db.collection('companies').doc(companyId).collection('keywords').get();
-            const keywords = keywordsSnapshot.docs.map(doc => doc.data().word);
+/**
+ * Esta função de backend aciona a coleta de notícias.
+ * Ela pode ser chamada manualmente (via HTTP) ou por um agendamento.
+ * A lógica de rotação das chaves de API do GNews é baseada na hora atual.
+ */
+exports.manualFetch = functions
+  .region("southamerica-east1")
+  .https.onCall(async (data, context) => {
+    functions.logger.info("Iniciando a coleta manual de notícias.");
 
-            if (keywords && keywords.length > 0) {
-                const queryStr = keywords.join(' OR ');
-                const newsPromises = [];
-                const newsAdded = new Set();
-                const lastFetchTimestamp = companySettings.lastFetchTimestamp ? companySettings.lastFetchTimestamp.toDate() : null;
-                const fetchOnlyNew = companySettings.fetchOnlyNew;
-
-                // Coleta de GNews
-                if (gnewsApiKey) {
-                    const gnewsUrl = `https://gnews.io/api/v4/search?q=${encodeURIComponent(queryStr)}&lang=pt&country=br&token=${gnewsApiKey}`;
-                    newsPromises.push(axios.get(gnewsUrl).then(res => res.data.articles || []).catch(e => { console.error(`Erro GNews para ${companyId}: ${e.message}`); return []; }));
-                }
-
-                // Coleta de RSS
-                for (const rssUrl of rssUrls) {
-                    newsPromises.push(parser.parseURL(rssUrl).then(feed => feed.items).catch(e => { console.error(`Erro RSS para ${rssUrl}: ${e.message}`); return []; }));
-                }
-
-                // Coleta de Blogger (futuro)
-                // if (apiKeyBlogger) { ... }
-
-                const allNews = [].concat(...await Promise.all(newsPromises));
-                const batch = db.batch();
-                let newAlertsCount = 0;
-
-                allNews.forEach(article => {
-                    const articleUrl = article.url || article.link;
-                    if (!articleUrl || newsAdded.has(articleUrl)) return;
-                    newsAdded.add(articleUrl);
-
-                    const publishedAt = article.publishedAt || article.isoDate;
-                    if (fetchOnlyNew && lastFetchTimestamp && new Date(publishedAt) <= lastFetchTimestamp) {
-                        return;
-                    }
-                    
-                    const channel = getChannel(article.source?.name || article.creator);
-                    const newsRef = db.collection('companies').doc(companyId).collection('articles').doc();
-                    
-                    batch.set(newsRef, {
-                        title: article.title,
-                        description: article.description || article.contentSnippet || 'Sem descrição.',
-                        url: articleUrl,
-                        source: { name: article.source?.name || article.creator || 'Desconhecida', url: article.source?.url || '' },
-                        publishedAt: new Date(publishedAt),
-                        keyword: keywords.find(kw => article.title.toLowerCase().includes(kw.toLowerCase()) || (article.description && article.description.toLowerCase().includes(kw.toLowerCase()))),
-                        channel: channel,
-                        sentiment: { score: 0 }
-                    });
-                    newAlertsCount++;
-                });
-
-                if (newAlertsCount > 0) {
-                    const companySettingsRef = db.collection('settings').doc(companyId);
-                    batch.update(companySettingsRef, {
-                        newAlertsCount: admin.firestore.FieldValue.increment(newAlertsCount),
-                        lastFetchTimestamp: now
-                    });
-                }
-                
-                await batch.commit();
-            }
-        }
-        console.log('Robô de notícias executado com sucesso.');
-        return null;
-    } catch (error) {
-        console.error('Erro na função fetchNewsRobot:', error);
-        return null;
+    // Garante que apenas administradores ou usuários autenticados possam chamar a função
+    if (!context.auth) {
+      throw new functions.https.HttpsError(
+        "unauthenticated",
+        "Apenas usuários autenticados podem acionar a coleta."
+      );
     }
-});
 
-// Helper para categorizar o canal
-function getChannel(sourceName) {
-    const name = (sourceName || '').toLowerCase();
+    try {
+      // 1. Acessa as chaves de API do Firestore
+      const globalSettingsRef = db.collection("settings").doc("global");
+      const globalSettingsDoc = await globalSettingsRef.get();
+      const settings = globalSettingsDoc.data();
+
+      if (!settings) {
+        throw new Error("Configurações globais não encontradas.");
+      }
+
+      // 2. Determina qual chave de API usar com base na hora atual
+      const currentHour = new Date().getHours();
+      let currentApiKey = '';
+
+      if (currentHour >= 0 && currentHour < 6) { // 00:00 - 05:59
+        currentApiKey = settings.apiKeyGNews1;
+      } else if (currentHour >= 6 && currentHour < 12) { // 06:00 - 11:59
+        currentApiKey = settings.apiKeyGNews2;
+      } else if (currentHour >= 12 && currentHour < 18) { // 12:00 - 17:59
+        currentApiKey = settings.apiKeyGNews3;
+      } else { // 18:00 - 23:59
+        currentApiKey = settings.apiKeyGNews4;
+      }
+
+      if (!currentApiKey) {
+        throw new Error(
+          `Nenhuma chave de API do GNews encontrada para o período das ${currentHour}h.`
+        );
+      }
+
+      functions.logger.info(`Usando a chave de API para o período das ${currentHour}h.`);
+
+      // 3. Itera sobre todas as empresas ativas
+      const companiesSnapshot = await db
+        .collection("companies")
+        .where("status", "==", "active")
+        .get();
+
+      for (const companyDoc of companiesSnapshot.docs) {
+        const companyId = companyDoc.id;
+        const companyData = companyDoc.data();
+        const companyName = companyData.name;
+
+        functions.logger.info(`Processando empresa: ${companyName}`);
+
+        // Acessa as palavras-chave da empresa
+        const keywordsSnapshot = await db
+          .collection(`companies/${companyId}/keywords`)
+          .get();
+
+        // Itera sobre as palavras-chave para buscar as notícias
+        for (const keywordDoc of keywordsSnapshot.docs) {
+          const keyword = keywordDoc.data().word;
+
+          // Monta a URL da API do GNews
+          const queryUrl = `${GNEWS_URL}?q=${encodeURIComponent(
+            keyword
+          )}&lang=pt&country=br&token=${currentApiKey}`;
+
+          try {
+            // Faz a chamada à API
+            const response = await fetch(queryUrl);
+            const data = await response.json();
+
+            if (data.errors) {
+              functions.logger.error(
+                `Erro na API para a palavra-chave '${keyword}': ${data.errors.join(
+                  ", "
+                )}`
+              );
+              continue;
+            }
+
+            // 4. Salva os novos artigos no Firestore
+            for (const article of data.articles) {
+              const articleData = {
+                title: article.title,
+                description: article.description,
+                url: article.url,
+                image: article.image || null,
+                publishedAt: admin.firestore.Timestamp.fromDate(
+                  new Date(article.publishedAt)
+                ),
+                source: {
+                  name: article.source.name,
+                  url: article.source.url,
+                },
+                keyword: keyword,
+                companyId: companyId,
+                companyName: companyName,
+                // Adiciona o artigo em uma coleção de alertas pendentes para aprovação
+                status: "pending",
+              };
+
+              // Adiciona o alerta à coleção de alertas pendentes globalmente
+              await db.collection("pendingAlerts").add(articleData);
+            }
+          } catch (fetchError) {
+            functions.logger.error(
+              `Erro ao buscar notícias para a palavra-chave '${keyword}':`,
+              fetchError
+            );
+          }
+        }
+      }
+
+      functions.logger.info("Coleta de notícias concluída com sucesso.");
+      return { success: true };
+    } catch (error) {
+      functions.logger.error("Erro fatal na função de coleta:", error);
+      throw new functions.https.HttpsError(
+        "internal",
+        "Ocorreu um erro interno no servidor."
+      );
+    }
+  });
+
+/**
+ * Função para aprovar um alerta. Move o alerta da fila de pendentes
+ * para a coleção de artigos da empresa e a coleção de artigos global.
+ */
+exports.approveAlert = functions
+  .region("southamerica-east1")
+  .https.onCall(async (data, context) => {
+    // Garante que apenas administradores possam aprovar
+    const alertId = data.alertId;
+    if (!alertId) {
+      throw new functions.https.HttpsError(
+        "invalid-argument",
+        "O ID do alerta é necessário."
+      );
+    }
+
+    const pendingAlertRef = db.collection("pendingAlerts").doc(alertId);
+    const pendingAlertDoc = await pendingAlertRef.get();
+
+    if (!pendingAlertDoc.exists) {
+      throw new functions.https.HttpsError(
+        "not-found",
+        "Alerta pendente não encontrado."
+      );
+    }
+
+    const alertData = pendingAlertDoc.data();
+    if (!alertData) {
+      throw new functions.https.HttpsError(
+        "internal",
+        "Dados do alerta estão corrompidos."
+      );
+    }
+    const companyId = alertData.companyId;
+
+    // 1. Adiciona o alerta aprovado à coleção da empresa
+    await db.collection(`companies/${companyId}/articles`).add({
+      ...alertData,
+      status: "approved",
+      approvedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    // 2. Remove o alerta da coleção de pendentes
+    await pendingAlertRef.delete();
+
+    // 3. Atualiza o contador de novos alertas para a empresa
+    const settingsRef = db.collection("settings").doc(companyId);
+    await db.runTransaction(async (transaction) => {
+      const settingsDoc = await transaction.get(settingsRef);
+      const newAlertsCount = (settingsDoc.data()?.newAlertsCount || 0) + 1;
+      transaction.update(settingsRef, { newAlertsCount });
+    });
+
+    return { success: true };
+  });
+
+/**
+ * Função para rejeitar um alerta, simplesmente o removendo da fila de pendentes.
+ */
+exports.rejectAlert = functions
+  .region("southamerica-east1")
+  .https.onCall(async (data, context) => {
+    const alertId = data.alertId;
+    if (!alertId) {
+      throw new functions.https.HttpsError(
+        "invalid-argument",
+        "O ID do alerta é necessário."
+      );
+    }
+    const pendingAlertRef = db.collection("pendingAlerts").doc(alertId);
+    await pendingAlertRef.delete();
+    return { success: true };
+  });
+
+/**
+ * Função para excluir uma empresa e todos os seus dados.
+ */
+exports.deleteCompany = functions
+  .region("southamerica-east1")
+  .https.onCall(async (data, context) => {
+    const companyId = data.companyId;
+    if (!companyId) {
+      throw new functions.https.HttpsError(
+        "invalid-argument",
+        "O ID da empresa é necessário."
+      );
+    }
+    
+    // Deleta todas as subcoleções (usuários, palavras-chave, artigos)
+    await deleteCollection(`companies/${companyId}/users`);
+    await deleteCollection(`companies/${companyId}/keywords`);
+    await deleteCollection(`companies/${companyId}/articles`);
+
+    // Deleta o documento da empresa
+    await db.collection("companies").doc(companyId).delete();
+    await db.collection("settings").doc(companyId).delete();
+
+    // Remove alertas pendentes e solicitações de exclusão relacionados
+    const pendingAlertsSnapshot = await db.collection("pendingAlerts").where("companyId", "==", companyId).get();
+    const pendingBatch = db.batch();
+    pendingAlertsSnapshot.docs.forEach(doc => pendingBatch.delete(doc.ref));
+    await pendingBatch.commit();
+
+    const deletionRequestsSnapshot = await db.collection("deletionRequests").where("companyId", "==", companyId).get();
+    const requestsBatch = db.batch();
+    deletionRequestsSnapshot.docs.forEach(doc => requestsBatch.delete(doc.ref));
+    await requestsBatch.commit();
+
+    return { success: true };
+  });
+
+/**
+ * Função para deletar uma palavra-chave e todos os artigos a ela associados.
+ */
+exports.deleteKeywordAndArticles = functions
+  .region("southamerica-east1")
+  .https.onCall(async (data, context) => {
+    const { companyId, keyword } = data;
+    if (!companyId || !keyword) {
+      throw new functions.https.HttpsError(
+        "invalid-argument",
+        "O ID da empresa e a palavra-chave são necessários."
+      );
+    }
+
+    const articlesToDelete = await db
+      .collection(`companies/${companyId}/articles`)
+      .where("keyword", "==", keyword)
+      .get();
+    
+    const batch = db.batch();
+    articlesToDelete.docs.forEach(doc => {
+      batch.delete(doc.ref);
+    });
+    await batch.commit();
+
+    const keywordRef = await db
+      .collection(`companies/${companyId}/keywords`)
+      .where("word", "==", keyword)
+      .get();
+    
+    if (!keywordRef.empty) {
+      await db.collection(`companies/${companyId}/keywords`).doc(keywordRef.docs[0].id).delete();
+    }
+
+    return { success: true };
+  });
+
+/**
+ * Função para gerenciar solicitações de exclusão de alertas.
+ */
+exports.manageDeletionRequest = functions
+  .region("southamerica-east1")
+  .https.onCall(async (data, context) => {
+    const { requestId, approve } = data;
+    if (!requestId) {
+      throw new functions.https.HttpsError(
+        "invalid-argument",
+        "O ID da solicitação é necessário."
+      );
+    }
+
+    const requestRef = db.collection("deletionRequests").doc(requestId);
+    const requestDoc = await requestRef.get();
+    if (!requestDoc.exists) {
+      throw new functions.https.HttpsError(
+        "not-found",
+        "Solicitação de exclusão não encontrada."
+      );
+    }
+    
+    const requestData = requestDoc.data();
+    if (!requestData) {
+      throw new functions.https.HttpsError(
+        "internal",
+        "Dados da solicitação estão corrompidos."
+      );
+    }
+
+    if (approve) {
+      await db.collection(`companies/${requestData.companyId}/articles`).doc(requestData.articleId).delete();
+      await requestRef.update({ status: "approved" });
+    } else {
+      await requestRef.update({ status: "denied" });
+    }
+
+    return { success: true };
+  });
+
+/**
+ * Função para o usuário solicitar a exclusão de um alerta.
+ */
+exports.requestAlertDeletion = functions
+  .region("southamerica-east1")
+  .https.onCall(async (data, context) => {
+    const { companyId, companyName, articleId, articleTitle, justification } = data;
+
+    if (!companyId || !articleId || !justification) {
+      throw new functions.https.HttpsError(
+        "invalid-argument",
+        "Informações incompletas para a solicitação de exclusão."
+      );
+    }
+
+    await db.collection("deletionRequests").add({
+      companyId,
+      companyName,
+      articleId,
+      articleTitle,
+      justification,
+      status: "pending",
+      requestedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    return { success: true };
+  });
+
+/**
+ * Função para adicionar um alerta manualmente pelo Super Admin.
+ */
+exports.manualAddAlert = functions
+  .region("southamerica-east1")
+  .https.onCall(async (data, context) => {
+    const { companyId, title, description, url, source, keyword } = data;
+    if (!companyId || !title || !url || !source || !keyword) {
+      throw new functions.https.HttpsError(
+        "invalid-argument",
+        "Dados incompletos para adicionar um alerta."
+      );
+    }
+
+    const alertData = {
+      title,
+      description,
+      url,
+      source: { name: source, url: "" },
+      publishedAt: admin.firestore.FieldValue.serverTimestamp(),
+      keyword,
+      companyId,
+      companyName: (await db.collection("companies").doc(companyId).get()).data()?.name,
+      status: "approved",
+    };
+
+    await db.collection(`companies/${companyId}/articles`).add(alertData);
+    
+    // Atualiza o contador de novos alertas
+    const settingsRef = db.collection("settings").doc(companyId);
+    await db.runTransaction(async (transaction) => {
+      const settingsDoc = await transaction.get(settingsRef);
+      const newAlertsCount = (settingsDoc.data()?.newAlertsCount || 0) + 1;
+      transaction.update(settingsRef, { newAlertsCount });
+    });
+
+    return { success: true };
+  });
+
+/**
+ * Função para gerar um relatório geral para o Super Admin.
+ */
+exports.generateSuperAdminReport = functions
+  .region("southamerica-east1")
+  .https.onCall(async (data, context) => {
+    const companiesSnapshot = await db.collection("companies").get();
+    const reportData = [];
+
+    for (const companyDoc of companiesSnapshot.docs) {
+      const companyId = companyDoc.id;
+      const companyName = companyDoc.data().name;
+
+      const articlesSnapshot = await db.collection(`companies/${companyId}/articles`).get();
+      const totalAlerts = articlesSnapshot.size;
+
+      let positiveCount = 0;
+      let neutralCount = 0;
+      let negativeCount = 0;
+      const channelCounts = {};
+      const vehicleCounts = {};
+      
+      articlesSnapshot.docs.forEach(doc => {
+        const article = doc.data();
+        // Contagem de sentimento
+        const score = article.sentiment?.score || 0;
+        if (score > 0.2) positiveCount++;
+        else if (score < -0.2) negativeCount++;
+        else neutralCount++;
+
+        // Contagem de canal
+        const channel = article.source?.name ? getChannelCategory(article.source.name) : 'Outros';
+        channelCounts[channel] = (channelCounts[channel] || 0) + 1;
+
+        // Contagem de veículo
+        const vehicle = article.source?.name || 'Outros';
+        vehicleCounts[vehicle] = (vehicleCounts[vehicle] || 0) + 1;
+      });
+
+      const totalSentiments = positiveCount + neutralCount + negativeCount;
+      const sentimentPercentage = {
+        positive: totalSentiments > 0 ? parseFloat((positiveCount / totalSentiments * 100).toFixed(2)) : 0,
+        neutral: totalSentiments > 0 ? parseFloat((neutralCount / totalSentiments * 100).toFixed(2)) : 0,
+        negative: totalSentiments > 0 ? parseFloat((negativeCount / totalSentiments * 100).toFixed(2)) : 0,
+      };
+
+      const predominantSentiment = getPredominantSentiment(sentimentPercentage);
+      const topChannel = getTopCount(channelCounts);
+      const topVehicle = getTopCount(vehicleCounts);
+
+      reportData.push({
+        companyName,
+        totalAlerts,
+        sentimentPercentage,
+        predominantSentiment,
+        topChannel,
+        topVehicle,
+      });
+    }
+
+    return reportData;
+  });
+
+// --- Funções de ajuda para o relatório ---
+function getChannelCategory(sourceName) {
+    const name = sourceName.toLowerCase();
     if (name.includes('youtube')) return 'YouTube';
-    if (name.includes('blogger')) return 'Blogger';
     if (name.includes('globo') || name.includes('g1') || name.includes('uol') || name.includes('terra') || name.includes('r7')) return 'Sites';
     if (name.includes('veja') || name.includes('istoé') || name.includes('exame')) return 'Revistas';
     if (name.includes('cbn') || name.includes('bandeirantes')) return 'Rádios';
     return 'Sites';
 }
 
-// --- Funções Chamáveis (Callable Functions) ---
+function getPredominantSentiment(percentages) {
+    if (percentages.positive > percentages.neutral && percentages.positive > percentages.negative) return 'Positivo';
+    if (percentages.negative > percentages.positive && percentages.negative > percentages.neutral) return 'Negativo';
+    return 'Neutro';
+}
 
-// Função para acionar o robô de forma manual
-exports.manualFetch = functions.https.onCall(async (data, context) => {
-    // Implementação simples, apenas dispara o robô agendado
-    await exports.fetchNewsRobot(context);
-    return { success: true, message: 'Robô executado com sucesso!' };
-});
+function getTopCount(counts) {
+    if (Object.keys(counts).length === 0) return 'N/A';
+    return Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b);
+}
 
-// Função para deletar uma empresa e todos os seus dados
-exports.deleteCompany = functions.https.onCall(async (data, context) => {
-    if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'Apenas usuários autenticados podem excluir empresas.');
-    const superAdminRoleDoc = await db.collection('users').doc(context.auth.uid).get();
-    if (!superAdminRoleDoc.exists || superAdminRoleDoc.data().role !== 'superadmin') throw new functions.https.HttpsError('permission-denied', 'Apenas super administradores podem excluir empresas.');
-
-    const companyId = data.companyId;
-    if (!companyId) throw new functions.https.HttpsError('invalid-argument', 'O ID da empresa é obrigatório.');
-
-    try {
-        const batch = db.batch();
-        const collectionsToDelete = ['users', 'keywords', 'articles'];
-        for (const collectionName of collectionsToDelete) {
-            const snapshot = await db.collection('companies').doc(companyId).collection(collectionName).get();
-            snapshot.forEach(doc => batch.delete(doc.ref));
-        }
-
-        batch.delete(db.collection('settings').doc(companyId));
-        batch.delete(db.collection('companies').doc(companyId));
-        
-        await batch.commit();
-
-        return { success: true };
-    } catch (error) {
-        console.error("Erro ao excluir empresa:", error);
-        throw new functions.https.HttpsError('internal', 'Ocorreu um erro ao tentar excluir a empresa e seus dados.', error);
-    }
-});
-
-// Função para deletar uma palavra-chave e os alertas associados
-exports.deleteKeywordAndArticles = functions.https.onCall(async (data, context) => {
-    if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'Autenticação necessária.');
-    const superAdminRoleDoc = await db.collection('users').doc(context.auth.uid).get();
-    if (!superAdminRoleDoc.exists || superAdminRoleDoc.data().role !== 'superadmin') throw new functions.https.HttpsError('permission-denied', 'Permissão negada.');
-
-    const { companyId, keyword } = data;
-    if (!companyId || !keyword) throw new functions.https.HttpsError('invalid-argument', 'ID da empresa e palavra-chave são obrigatórios.');
-
-    const batch = db.batch();
-    const keywordQuery = await db.collection('companies').doc(companyId).collection('keywords').where('word', '==', keyword).get();
-    keywordQuery.forEach(doc => batch.delete(doc.ref));
-
-    const articlesQuery = await db.collection('companies').doc(companyId).collection('articles').where('keyword', '==', keyword).get();
-    articlesQuery.forEach(doc => batch.delete(doc.ref));
-
-    await batch.commit();
-    return { success: true };
-});
-
-// Função para adicionar um alerta manualmente
-exports.manualAddAlert = functions.https.onCall(async (data, context) => {
-    if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'Autenticação necessária.');
-    const superAdminRoleDoc = await db.collection('users').doc(context.auth.uid).get();
-    if (!superAdminRoleDoc.exists || superAdminRoleDoc.data().role !== 'superadmin') throw new functions.https.HttpsError('permission-denied', 'Permissão negada.');
-
-    const { companyId, title, description, url, source, keyword } = data;
-    if (!companyId || !title || !url || !source || !keyword) throw new functions.https.HttpsError('invalid-argument', 'Dados incompletos.');
-
-    const articleRef = db.collection('companies').doc(companyId).collection('articles').doc();
-    await articleRef.set({
-        title,
-        description,
-        url,
-        source: { name: source, url: '' },
-        publishedAt: new Date(),
-        keyword,
-        channel: 'Manual',
-        sentiment: { score: 0 }
-    });
-
-    // Atualiza a contagem de alertas
-    const companySettingsRef = db.collection('settings').doc(companyId);
-    await companySettingsRef.update({
-        newAlertsCount: admin.firestore.FieldValue.increment(1)
-    });
-
-    return { success: true };
-});
-
-// Função para usuários solicitarem a exclusão de um alerta
-exports.requestAlertDeletion = functions.https.onCall(async (data, context) => {
-    if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'Autenticação necessária.');
-    const { companyId, companyName, articleId, articleTitle, justification } = data;
-    if (!companyId || !articleId || !justification) throw new functions.https.HttpsError('invalid-argument', 'Dados incompletos.');
-
-    const deletionRequestRef = db.collection('deletionRequests').doc();
-    await deletionRequestRef.set({
-        companyId,
-        companyName,
-        articleId,
-        articleTitle,
-        justification,
-        requestedBy: context.auth.uid,
-        requestedAt: new Date(),
-        status: 'pending'
-    });
-
-    return { success: true };
-});
-
-// Função para o super admin gerenciar solicitações de exclusão
-exports.manageDeletionRequest = functions.https.onCall(async (data, context) => {
-    if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'Autenticação necessária.');
-    const superAdminRoleDoc = await db.collection('users').doc(context.auth.uid).get();
-    if (!superAdminRoleDoc.exists || superAdminRoleDoc.data().role !== 'superadmin') throw new functions.https.HttpsError('permission-denied', 'Permissão negada.');
-
-    const { requestId, approve } = data;
-    const requestRef = db.collection('deletionRequests').doc(requestId);
-    const requestDoc = await requestRef.get();
-    if (!requestDoc.exists) throw new functions.https.HttpsError('not-found', 'Solicitação não encontrada.');
-
-    const request = requestDoc.data();
-    if (approve) {
-        // Exclui o alerta
-        const articleRef = db.collection('companies').doc(request.companyId).collection('articles').doc(request.articleId);
-        await articleRef.delete();
-        await requestRef.update({ status: 'approved', approvedBy: context.auth.uid, approvedAt: new Date() });
-    } else {
-        await requestRef.update({ status: 'denied', deniedBy: context.auth.uid, deniedAt: new Date() });
-    }
-    
-    return { success: true };
-});
-
-// Função para gerar o relatório geral de super admin
-exports.generateSuperAdminReport = functions.https.onCall(async (data, context) => {
-    if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'Autenticação necessária.');
-    const superAdminRoleDoc = await db.collection('users').doc(context.auth.uid).get();
-    if (!superAdminRoleDoc.exists || superAdminRoleDoc.data().role !== 'superadmin') throw new functions.https.HttpsError('permission-denied', 'Permissão negada.');
-
-    const reportData = [];
-    const companiesSnapshot = await db.collection('companies').get();
-
-    for (const companyDoc of companiesSnapshot.docs) {
-        const companyId = companyDoc.id;
-        const companyName = companyDoc.data().name;
-        
-        const articlesSnapshot = await db.collection('companies').doc(companyId).collection('articles').get();
-        const articles = articlesSnapshot.docs.map(doc => doc.data());
-
-        const totalAlerts = articles.length;
-        if (totalAlerts === 0) {
-            reportData.push({ companyName, totalAlerts: 0, sentimentPercentage: { positive: 0, neutral: 0, negative: 0 }, predominantSentiment: 'N/A', topChannel: 'N/A', topVehicle: 'N/A' });
-            continue;
-        }
-
-        const sentimentCounts = { positive: 0, neutral: 0, negative: 0 };
-        const channelCounts = {};
-        const sourceCounts = {};
-
-        articles.forEach(article => {
-            const sentimentScore = article.sentiment?.score || 0;
-            if (sentimentScore > 0.2) sentimentCounts.positive++;
-            else if (sentimentScore < -0.2) sentimentCounts.negative++;
-            else sentimentCounts.neutral++;
-
-            const channel = article.channel || 'Desconhecido';
-            channelCounts[channel] = (channelCounts[channel] || 0) + 1;
-
-            const source = article.source?.name || 'Desconhecido';
-            sourceCounts[source] = (sourceCounts[source] || 0) + 1;
-        });
-
-        const predominantSentiment = Object.keys(sentimentCounts).reduce((a, b) => sentimentCounts[a] > sentimentCounts[b] ? a : b);
-        const totalSentiments = sentimentCounts.positive + sentimentCounts.neutral + sentimentCounts.negative;
-        const sentimentPercentage = {
-            positive: ((totalSentiments > 0) ? (sentimentCounts.positive / totalSentiments) * 100 : 0).toFixed(2),
-            neutral: ((totalSentiments > 0) ? (sentimentCounts.neutral / totalSentiments) * 100 : 0).toFixed(2),
-            negative: ((totalSentiments > 0) ? (sentimentCounts.negative / totalSentiments) * 100 : 0).toFixed(2)
-        };
-        const topChannel = Object.keys(channelCounts).reduce((a, b) => (channelCounts[a] > channelCounts[b] ? a : b) || 'N/A');
-        const topVehicle = Object.keys(sourceCounts).reduce((a, b) => (sourceCounts[a] > sourceCounts[b] ? a : b) || 'N/A');
-
-        reportData.push({ companyName, totalAlerts, sentimentPercentage, predominantSentiment, topChannel, topVehicle });
-    }
-    
-    return reportData;
-});
