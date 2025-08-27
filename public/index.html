@@ -512,82 +512,12 @@
         let superAdminCredentials = { user: 'ulysses', pass: 'adminqwert' };
         let notificationListener = null, companiesListener = null, deletionRequestsListener = null, pendingAlertsListener = null;
 
+        // --- ELEMENTOS DO DOM (declarados dentro de DOMContentLoaded) ---
+        let pageSections, navLoggedIn, navInicio, navRelatorio, navPesquisa, navSuperAdmin, navLogout, navConfiguracoesAdmin, globalAlert, loginPage, dashboardPage, searchPage, superAdminPage, companyKeywordAdminPage, companySettingsAdminPage, reportPage, companyUserAdminPage, configuracoesAdminPage, loginForm, dashboardTitle, currentDateTimeEl, dashboardKeywordList, newsAlertsContainer, newsAlerts, alertDateFilter, reportAccessToggle, logoUploadInput, headerLogoContainer, loginLogoContainer, filterContainer, searchInput, searchResults, companyForm, companyList, backToSuperAdminKwBtn, backToSuperAdminSettingsBtn, backToSuperAdminUsersBtn, companyKeywordAdminTitle, companySettingsAdminTitle, companyUserAdminTitle, keywordForm, keywordInput, keywordIdInput, adminKeywordList, userForm, userInput, userPasswordInput, userIdInput, adminUserList, notificationBell, notificationBadge, manualTriggerBtn, deleteModal, confirmDeleteBtn, cancelDeleteBtn, companyNameToDeleteEl, newsScopeContainer, startDateInput, endDateInput, linkModal, accessLinkInput, copyLinkBtn, closeLinkModalBtn, reportKeywordFilter, stateSelectContainer, stateSelect, changePasswordForm, apiKeyNewsApiInput, apiKeyGNewsInput1, apiKeyGNewsInput2, apiKeyGNewsInput3, apiKeyGNewsInput4, apiKeyYoutubeInput, apiKeyBloggerInput, bloggerIdInput, rssUrlInput, fetchOnlyNewToggle, changePasswordPage, globalKeysPage, globalSourcesPage, btnChangePassword, btnGlobalKeys, btnNewsSources, backToAdminConfig1, backToAdminConfig2, backToAdminConfig3, apiKeyVisionInput, apiKeyVideoIntelligenceInput, showAllAlertsBtn, deletionAccessToggle, justificationModal, justificationText, submitJustificationBtn, cancelJustificationBtn, btnManualAlert, btnDeletionRequests, btnSuperAdminReport, manualAlertPage, deletionRequestsPage, superAdminReportPage, backToDashboard1, backToDashboard2, backToDashboard3, manualAlertForm, deletionRequestsList, superAdminReportBody, deletionRequestsBadge, pendingAlertsPage, pendingAlertsList, btnPendingAlerts, backToDashboard4;
+
         // --- FUNÇÕES DE UTILIDADE ---
-        function showAlert(message, type = 'success') { const c = type === 'success' ? 'bg-green-100 border-green-500 text-green-700' : 'bg-red-100 border-red-500 text-red-700'; if(globalAlert) globalAlert.innerHTML = `<div class="${c} border-l-4 p-4 rounded-md fade-in" role="alert"><p>${message}</p></div>`; setTimeout(() => { if(globalAlert) globalAlert.innerHTML = ''; }, 4000); }
-        function updateView(pageName) { 
-            if(pageSections) pageSections.forEach(s => s.classList.remove('active')); 
-            const i = !!currentUser; 
-            if(navLoggedIn) navLoggedIn.style.display = i ? 'flex' : 'none'; 
-            if(navSuperAdmin) navSuperAdmin.classList.toggle('hidden', !currentUser || !currentUser.isSuperAdmin); 
-            if(navConfiguracoesAdmin) navConfiguracoesAdmin.classList.toggle('hidden', !currentUser || !currentUser.isSuperAdmin); 
-            if (clockInterval) clearInterval(clockInterval); 
-            loadAndDisplayLogo(); 
-            switch (pageName) { 
-                case 'login': 
-                    if(loginPage) loginPage.classList.add('active'); 
-                    break; 
-                case 'dashboard': 
-                    if(dashboardPage) dashboardPage.classList.add('active'); 
-                    renderDashboard(); 
-                    updateDateTime(); 
-                    clockInterval = setInterval(updateDateTime, 60000); 
-                    break; 
-                case 'super-admin': 
-                    if(superAdminPage) superAdminPage.classList.add('active'); 
-                    setupCompaniesListener(); 
-                    break; 
-                case 'search': 
-                    if(searchPage) searchPage.classList.add('active'); 
-                    setupSearchPage(); 
-                    break; 
-                case 'company-keyword-admin': 
-                    if(companyKeywordAdminPage) companyKeywordAdminPage.classList.add('active'); 
-                    renderCompanyKeywordAdminPage(); 
-                    break; 
-                case 'company-settings-admin': 
-                    if(companySettingsAdminPage) companySettingsAdminPage.classList.add('active'); 
-                    renderCompanySettingsAdminPage(); 
-                    break; 
-                case 'company-user-admin': 
-                    if(companyUserAdminPage) companyUserAdminPage.classList.add('active'); 
-                    renderCompanyUserAdminPage(); 
-                    break; 
-                case 'report': 
-                    if(reportPage) reportPage.classList.add('active'); 
-                    renderReportPage(); 
-                    break; 
-                case 'configuracoes-admin': 
-                    if(configuracoesAdminPage) configuracoesAdminPage.classList.add('active'); 
-                    break; 
-                case 'change-password': 
-                    if(changePasswordPage) changePasswordPage.classList.add('active'); 
-                    break; 
-                case 'global-keys': 
-                    if(globalKeysPage) globalKeysPage.classList.add('active'); 
-                    renderGlobalKeysPage(); 
-                    break; 
-                case 'global-sources': 
-                    if(globalSourcesPage) globalSourcesPage.classList.add('active'); 
-                    renderGlobalSourcesPage(); 
-                    break; 
-                case 'manual-alert': 
-                    if(manualAlertPage) manualAlertPage.classList.add('active'); 
-                    renderManualAlertPage(); 
-                    break; 
-                case 'deletion-requests': 
-                    if(deletionRequestsPage) deletionRequestsPage.classList.add('active'); 
-                    setupDeletionRequestsListener(); 
-                    break; 
-                case 'super-admin-report': 
-                    if(superAdminReportPage) superAdminReportPage.classList.add('active'); 
-                    renderSuperAdminReport(); 
-                    break; 
-                case 'super-admin-queue': 
-                    if(pendingAlertsPage) pendingAlertsPage.classList.add('active'); 
-                    setupPendingAlertsListener(); 
-                    break; 
-            } 
-        }
+        function showAlert(message, type = 'success') { const c = type === 'success' ? 'bg-green-100 border-green-500 text-green-700' : 'bg-red-100 border-red-500 text-red-700'; globalAlert.innerHTML = `<div class="${c} border-l-4 p-4 rounded-md fade-in" role="alert"><p>${message}</p></div>`; setTimeout(() => { globalAlert.innerHTML = ''; }, 4000); }
+        function updateView(pageName) { pageSections.forEach(s => s.classList.remove('active')); const i = !!currentUser; navLoggedIn.style.display = i ? 'flex' : 'none'; navSuperAdmin.classList.toggle('hidden', !currentUser || !currentUser.isSuperAdmin); navConfiguracoesAdmin.classList.toggle('hidden', !currentUser || !currentUser.isSuperAdmin); if (clockInterval) clearInterval(clockInterval); loadAndDisplayLogo(); switch (pageName) { case 'login': loginPage.classList.add('active'); break; case 'dashboard': dashboardPage.classList.add('active'); renderDashboard(); updateDateTime(); clockInterval = setInterval(updateDateTime, 60000); break; case 'super-admin': superAdminPage.classList.add('active'); setupCompaniesListener(); break; case 'search': searchPage.classList.add('active'); setupSearchPage(); break; case 'company-keyword-admin': companyKeywordAdminPage.classList.add('active'); renderCompanyKeywordAdminPage(); break; case 'company-settings-admin': companySettingsAdminPage.classList.add('active'); renderCompanySettingsAdminPage(); break; case 'company-user-admin': companyUserAdminPage.classList.add('active'); renderCompanyUserAdminPage(); break; case 'report': reportPage.classList.add('active'); renderReportPage(); break; case 'configuracoes-admin': configuracoesAdminPage.classList.add('active'); break; case 'change-password': changePasswordPage.classList.add('active'); break; case 'global-keys': globalKeysPage.classList.add('active'); renderGlobalKeysPage(); break; case 'global-sources': globalSourcesPage.classList.add('active'); renderGlobalSourcesPage(); break; case 'manual-alert': manualAlertPage.classList.add('active'); renderManualAlertPage(); break; case 'deletion-requests': deletionRequestsPage.classList.add('active'); setupDeletionRequestsListener(); break; case 'super-admin-report': superAdminReportPage.classList.add('active'); renderSuperAdminReport(); break; case 'super-admin-queue': pendingAlertsPage.classList.add('active'); setupPendingAlertsListener(); break; } }
         function getStorage(key, defaultValue) { try { const d = localStorage.getItem(key); return d ? JSON.parse(d) : defaultValue; } catch (e) { console.error(e); return defaultValue; } }
         function setStorage(key, value) { localStorage.setItem(key, JSON.stringify(value)); }
         function updateDateTime() { if (!currentDateTimeEl) return; const n = new Date(), f = { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }; currentDateTimeEl.textContent = `Data: ${n.toLocaleDateString('pt-BR', f).replace(',', ' -')}`; }
@@ -748,7 +678,7 @@
         function handleScopeChange() { if(!stateSelectContainer || !document.querySelector('input[name="news-scope"]:checked')) return; const selectedScope = document.querySelector('input[name="news-scope"]:checked').value; stateSelectContainer.classList.toggle('hidden', selectedScope !== 'state'); }
         async function renderGlobalKeysPage() { try { const settingsRef = doc(db, "settings", "global"); const docSnap = await getDoc(settingsRef); if (docSnap.exists()) { const settings = docSnap.data(); if(apiKeyNewsApiInput) apiKeyNewsApiInput.value = settings.apiKeyNewsApi || ''; if(apiKeyGNewsInput1) apiKeyGNewsInput1.value = settings.apiKeyGNews1 || ''; if(apiKeyGNewsInput2) apiKeyGNewsInput2.value = settings.apiKeyGNews2 || ''; if(apiKeyGNewsInput3) apiKeyGNewsInput3.value = settings.apiKeyGNews3 || ''; if(apiKeyGNewsInput4) apiKeyGNewsInput4.value = settings.apiKeyGNews4 || ''; if(apiKeyYoutubeInput) apiKeyYoutubeInput.value = settings.apiKeyYoutube || ''; if(apiKeyBloggerInput) apiKeyBloggerInput.value = settings.apiKeyBlogger || ''; if(apiKeyVisionInput) apiKeyVisionInput.value = settings.apiKeyVision || ''; if(apiKeyVideoIntelligenceInput) apiKeyVideoIntelligenceInput.value = settings.apiKeyVideoIntelligence || ''; } } catch (error) { console.error("Error loading global API keys:", error); } }
         async function handleGlobalKeyChange(e) { const settingsRef = doc(db, "settings", "global"); const key = e.target.id; const value = e.target.value; try { await setDoc(settingsRef, { [key]: value }, { merge: true }); showAlert('Chave de API salva!', 'success'); } catch (error) { console.error("Error saving global API key:", error); } }
-        async function renderGlobalSourcesPage() { try { const settingsRef = doc(db, "settings", "global"); const docSnap = await getDoc(settingsRef); if (docSnap.exists()) { const settings = docSnap.data(); if(bloggerIdInput) bloggerIdInput.value = settings.bloggerId || ''; if(rssUrlInput) rssUrlInput.value = settings.rssUrl || ''; } catch (error) { console.error("Error loading global sources:", error); } } catch (error) { console.error("Error loading global sources:", error); } }
+        async function renderGlobalSourcesPage() { try { const settingsRef = doc(db, "settings", "global"); const docSnap = await getDoc(settingsRef); if (docSnap.exists()) { const settings = docSnap.data(); if(bloggerIdInput) bloggerIdInput.value = settings.bloggerId || ''; if(rssUrlInput) rssUrlInput.value = settings.rssUrl || ''; } } catch (error) { console.error("Error loading global sources:", error); } }
         
         function cleanAndSaveTextarea(e) {
             const textarea = e.target;
