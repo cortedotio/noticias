@@ -512,7 +512,7 @@
 
         // --- Importação de Módulos do Firebase ---
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, signInWithCustomToken, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, collection, getDocs, doc, getDoc, setDoc, addDoc, deleteDoc, updateDoc, query, where, orderBy, limit, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js";
 
@@ -538,6 +538,7 @@
             pageSections.forEach(s => s.classList.remove('active')); 
             const i = !!currentUser; 
             if (navLoggedIn) navLoggedIn.style.display = i ? 'flex' : 'none'; 
+            if (navRelatorio) navRelatorio.classList.toggle('hidden', !currentUser || currentUser.isSuperAdmin);
             if (navSuperAdmin) navSuperAdmin.classList.toggle('hidden', !currentUser || !currentUser.isSuperAdmin); 
             if (navConfiguracoesAdmin) navConfiguracoesAdmin.classList.toggle('hidden', !currentUser || !currentUser.isSuperAdmin); 
             if (clockInterval) clearInterval(clockInterval); 
@@ -661,7 +662,7 @@
                     const docSnap = await getDoc(settingsRef); 
                     const hasReportAccess = docSnap.exists() ? docSnap.data().reportAccess : true; 
                     if(newsAlertsContainer) newsAlertsContainer.style.display = hasReportAccess ? 'block' : 'none'; 
-                    if(navRelatorio) navRelatorio.classList.toggle('hidden', !hasReportAccess || currentUser.isSuperAdmin); 
+                    if(navRelatorio) navRelatorio.classList.toggle('hidden', !hasReportAccess); 
                     populateInitialAlerts(); 
                     setupNotificationListener(); 
                 } catch (error) { 
@@ -1493,7 +1494,7 @@
 
 
         // --- INICIALIZAÇÃO E OUVINTES DE EVENTOS ---
-        document.addEventListener('DOMContentLoaded', async () => {
+        document.addEventListener('DOMContentLoaded', () => {
             // Atribui os elementos do DOM depois que o DOM é carregado
             pageSections = document.querySelectorAll('.page-section');
             navLoggedIn = document.getElementById('nav-logged-in');
@@ -1621,21 +1622,42 @@
                     stateSelect.appendChild(option);
                 }
             }
+            
+            // This async IIFE will handle the initial authentication logic
+            (async () => {
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        const savedUser = getStorage('clipping_currentUser', null);
+                        if (savedUser) {
+                            currentUser = savedUser;
+                            // For a clean start, remove existing listeners
+                            if (notificationListener) notificationListener(); 
+                            if (companiesListener) companiesListener(); 
+                            if (deletionRequestsListener) deletionRequestsListener(); 
+                            if (pendingAlertsListener) pendingAlertsListener(); 
+                            updateView('dashboard'); 
+                        } else {
+                            // User exists in auth but not local storage, force login
+                            currentUser = null;
+                            updateView('login');
+                        }
+                    } else {
+                        currentUser = null;
+                        updateView('login');
+                    }
+                });
 
-            // Authentication logic
-            if (initialAuthToken) {
-                try {
-                    await signInWithCustomToken(auth, initialAuthToken);
-                    currentUser = { username: 'Admin', isSuperAdmin: true, companyId: 'super', companyName: 'Super Admin' };
-                    setStorage('clipping_currentUser', currentUser);
-                } catch (error) {
-                    console.error("Firebase auth error:", error);
-                    showAlert("Erro de autenticação automática. Tente fazer login manualmente.", "error");
-                    currentUser = null;
+                if (initialAuthToken) {
+                    try {
+                        await signInWithCustomToken(auth, initialAuthToken);
+                    } catch (error) {
+                        console.error("Firebase auth error:", error);
+                        showAlert("Erro de autenticação automática. Tente fazer login manualmente.", "error");
+                    }
+                } else {
+                    await signInAnonymously(auth);
                 }
-            } else {
-                 await signInAnonymously(auth);
-            }
+            })();
 
             if (loginForm) loginForm.addEventListener('submit', handleLogin);
             if (navInicio) navInicio.addEventListener('click', (e) => { e.preventDefault(); updateView('dashboard'); });
@@ -1725,15 +1747,8 @@
                     }
                 }
             }
-            
-            const savedUser = getStorage('clipping_currentUser', null);
-            if (savedUser) { 
-                currentUser = savedUser; 
-                updateView('dashboard'); 
-            } else {
-                updateView('login');
-            }
         });
     </script>
 </body>
 </html>
+
