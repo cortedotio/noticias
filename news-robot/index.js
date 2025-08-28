@@ -15,8 +15,7 @@ const GNEWS_URL = "https://gnews.io/api/v4/search";
  * Funções auxiliares para apagar subcoleções de forma eficiente.
  * A Cloud Function `deleteCompany` chamará esta função.
  */
-async function deleteCollection(collectionPath) {
-  const collectionRef = db.collection(collectionPath);
+async function deleteCollection(collectionRef) {
   const snapshot = await collectionRef.get();
   const batch = db.batch();
   snapshot.docs.forEach(doc => {
@@ -26,157 +25,21 @@ async function deleteCollection(collectionPath) {
 }
 
 /**
- * Esta função de backend aciona a coleta de notícias.
- * Ela pode ser chamada manualmente (via HTTP) ou por um agendamento.
- * A lógica de rotação das chaves de API do GNews é baseada na hora atual.
- */
-exports.manualFetch = functions
-  .region("southamerica-east1")
-  .https.onCall(async (data, context) => {
-    functions.logger.info("Iniciando a coleta manual de notícias.");
-
-    // Garante que apenas administradores ou usuários autenticados possam chamar a função
-    if (!context.auth) {
-      throw new functions.https.HttpsError(
-        "unauthenticated",
-        "Apenas usuários autenticados podem acionar a coleta."
-      );
-    }
-
-    try {
-      // 1. Acessa as chaves de API do Firestore
-      const globalSettingsRef = db.collection("settings").doc("global");
-      const globalSettingsDoc = await globalSettingsRef.get();
-      const settings = globalSettingsDoc.data();
-
-      if (!settings) {
-        throw new Error("Configurações globais não encontradas.");
-      }
-
-      // 2. Determina qual chave de API usar com base na hora atual
-      const currentHour = new Date().getHours();
-      let currentApiKey = '';
-
-      if (currentHour >= 0 && currentHour < 6) { // 00:00 - 05:59
-        currentApiKey = settings.apiKeyGNews1;
-      } else if (currentHour >= 6 && currentHour < 12) { // 06:00 - 11:59
-        currentApiKey = settings.apiKeyGNews2;
-      } else if (currentHour >= 12 && currentHour < 18) { // 12:00 - 17:59
-        currentApiKey = settings.apiKeyGNews3;
-      } else { // 18:00 - 23:59
-        currentApiKey = settings.apiKeyGNews4;
-      }
-
-      if (!currentApiKey) {
-        throw new Error(
-          `Nenhuma chave de API do GNews encontrada para o período das ${currentHour}h.`
-        );
-      }
-
-      functions.logger.info(`Usando a chave de API para o período das ${currentHour}h.`);
-
-      // 3. Itera sobre todas as empresas ativas
-      const companiesSnapshot = await db
-        .collection("companies")
-        .where("status", "==", "active")
-        .get();
-
-      for (const companyDoc of companiesSnapshot.docs) {
-        const companyId = companyDoc.id;
-        const companyData = companyDoc.data();
-        const companyName = companyData.name;
-
-        functions.logger.info(`Processando empresa: ${companyName}`);
-
-        // Acessa as palavras-chave da empresa
-        const keywordsSnapshot = await db
-          .collection(`companies/${companyId}/keywords`)
-          .get();
-
-        // Itera sobre as palavras-chave para buscar as notícias
-        for (const keywordDoc of keywordsSnapshot.docs) {
-          const keyword = keywordDoc.data().word;
-
-          // Monta a URL da API do GNews
-          const queryUrl = `${GNEWS_URL}?q=${encodeURIComponent(
-            keyword
-          )}&lang=pt&country=br&token=${currentApiKey}`;
-
-          try {
-            // Faz a chamada à API
-            const response = await fetch(queryUrl);
-            const data = await response.json();
-
-            if (data.errors) {
-              functions.logger.error(
-                `Erro na API para a palavra-chave '${keyword}': ${data.errors.join(
-                  ", "
-                )}`
-              );
-              continue;
-            }
-
-            // 4. Salva os novos artigos no Firestore
-            for (const article of data.articles) {
-              const articleData = {
-                title: article.title,
-                description: article.description,
-                url: article.url,
-                image: article.image || null,
-                publishedAt: admin.firestore.Timestamp.fromDate(
-                  new Date(article.publishedAt)
-                ),
-                source: {
-                  name: article.source.name,
-                  url: article.source.url,
-                },
-                keyword: keyword,
-                companyId: companyId,
-                companyName: companyName,
-                // Adiciona o artigo em uma coleção de alertas pendentes para aprovação
-                status: "pending",
-              };
-
-              // Adiciona o alerta à coleção de alertas pendentes globalmente
-              await db.collection("pendingAlerts").add(articleData);
-            }
-          } catch (fetchError) {
-            functions.logger.error(
-              `Erro ao buscar notícias para a palavra-chave '${keyword}':`,
-              fetchError
-            );
-          }
-        }
-      }
-
-      functions.logger.info("Coleta de notícias concluída com sucesso.");
-      return { success: true };
-    } catch (error) {
-      functions.logger.error("Erro fatal na função de coleta:", error);
-      throw new functions.https.HttpsError(
-        "internal",
-        "Ocorreu um erro interno no servidor."
-      );
-    }
-  });
-
-/**
  * Função para aprovar um alerta. Move o alerta da fila de pendentes
  * para a coleção de artigos da empresa e a coleção de artigos global.
  */
 exports.approveAlert = functions
   .region("southamerica-east1")
   .https.onCall(async (data, context) => {
-    // Garante que apenas administradores possam aprovar
-    const alertId = data.alertId;
-    if (!alertId) {
+    const { appId, alertId } = data;
+    if (!appId || !alertId) {
       throw new functions.https.HttpsError(
         "invalid-argument",
-        "O ID do alerta é necessário."
+        "O ID da aplicação e do alerta são necessários."
       );
     }
 
-    const pendingAlertRef = db.collection("pendingAlerts").doc(alertId);
+    const pendingAlertRef = db.collection("artifacts").doc(appId).collection("public/data/pendingAlerts").doc(alertId);
     const pendingAlertDoc = await pendingAlertRef.get();
 
     if (!pendingAlertDoc.exists) {
@@ -196,7 +59,7 @@ exports.approveAlert = functions
     const companyId = alertData.companyId;
 
     // 1. Adiciona o alerta aprovado à coleção da empresa
-    await db.collection(`companies/${companyId}/articles`).add({
+    const newArticleRef = await db.collection("artifacts").doc(appId).collection(`users/${companyId}/articles`).add({
       ...alertData,
       status: "approved",
       approvedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -206,7 +69,7 @@ exports.approveAlert = functions
     await pendingAlertRef.delete();
 
     // 3. Atualiza o contador de novos alertas para a empresa
-    const settingsRef = db.collection("settings").doc(companyId);
+    const settingsRef = db.collection("artifacts").doc(appId).collection("public/data/settings").doc(companyId);
     await db.runTransaction(async (transaction) => {
       const settingsDoc = await transaction.get(settingsRef);
       const newAlertsCount = (settingsDoc.data()?.newAlertsCount || 0) + 1;
@@ -222,14 +85,14 @@ exports.approveAlert = functions
 exports.rejectAlert = functions
   .region("southamerica-east1")
   .https.onCall(async (data, context) => {
-    const alertId = data.alertId;
-    if (!alertId) {
+    const { appId, alertId } = data;
+    if (!appId || !alertId) {
       throw new functions.https.HttpsError(
         "invalid-argument",
-        "O ID do alerta é necessário."
+        "O ID da aplicação e do alerta são necessários."
       );
     }
-    const pendingAlertRef = db.collection("pendingAlerts").doc(alertId);
+    const pendingAlertRef = db.collection("artifacts").doc(appId).collection("public/data/pendingAlerts").doc(alertId);
     await pendingAlertRef.delete();
     return { success: true };
   });
@@ -240,30 +103,30 @@ exports.rejectAlert = functions
 exports.deleteCompany = functions
   .region("southamerica-east1")
   .https.onCall(async (data, context) => {
-    const companyId = data.companyId;
-    if (!companyId) {
+    const { appId, companyId } = data;
+    if (!appId || !companyId) {
       throw new functions.https.HttpsError(
         "invalid-argument",
-        "O ID da empresa é necessário."
+        "O ID da aplicação e da empresa são necessários."
       );
     }
     
     // Deleta todas as subcoleções (usuários, palavras-chave, artigos)
-    await deleteCollection(`companies/${companyId}/users`);
-    await deleteCollection(`companies/${companyId}/keywords`);
-    await deleteCollection(`companies/${companyId}/articles`);
+    await deleteCollection(db.collection("artifacts").doc(appId).collection(`users/${companyId}/users`));
+    await deleteCollection(db.collection("artifacts").doc(appId).collection(`users/${companyId}/keywords`));
+    await deleteCollection(db.collection("artifacts").doc(appId).collection(`users/${companyId}/articles`));
 
-    // Deleta o documento da empresa
-    await db.collection("companies").doc(companyId).delete();
-    await db.collection("settings").doc(companyId).delete();
+    // Deleta o documento da empresa e as configurações
+    await db.collection("artifacts").doc(appId).collection("public/data/companies").doc(companyId).delete();
+    await db.collection("artifacts").doc(appId).collection("public/data/settings").doc(companyId).delete();
 
     // Remove alertas pendentes e solicitações de exclusão relacionados
-    const pendingAlertsSnapshot = await db.collection("pendingAlerts").where("companyId", "==", companyId).get();
+    const pendingAlertsSnapshot = await db.collection("artifacts").doc(appId).collection("public/data/pendingAlerts").where("companyId", "==", companyId).get();
     const pendingBatch = db.batch();
     pendingAlertsSnapshot.docs.forEach(doc => pendingBatch.delete(doc.ref));
     await pendingBatch.commit();
 
-    const deletionRequestsSnapshot = await db.collection("deletionRequests").where("companyId", "==", companyId).get();
+    const deletionRequestsSnapshot = await db.collection("artifacts").doc(appId).collection("public/data/deletionRequests").where("companyId", "==", companyId).get();
     const requestsBatch = db.batch();
     deletionRequestsSnapshot.docs.forEach(doc => requestsBatch.delete(doc.ref));
     await requestsBatch.commit();
@@ -277,16 +140,16 @@ exports.deleteCompany = functions
 exports.deleteKeywordAndArticles = functions
   .region("southamerica-east1")
   .https.onCall(async (data, context) => {
-    const { companyId, keyword } = data;
-    if (!companyId || !keyword) {
+    const { appId, companyId, keyword } = data;
+    if (!appId || !companyId || !keyword) {
       throw new functions.https.HttpsError(
         "invalid-argument",
-        "O ID da empresa e a palavra-chave são necessários."
+        "O ID da aplicação, da empresa e a palavra-chave são necessários."
       );
     }
 
     const articlesToDelete = await db
-      .collection(`companies/${companyId}/articles`)
+      .collection("artifacts").doc(appId).collection(`users/${companyId}/articles`)
       .where("keyword", "==", keyword)
       .get();
     
@@ -297,12 +160,12 @@ exports.deleteKeywordAndArticles = functions
     await batch.commit();
 
     const keywordRef = await db
-      .collection(`companies/${companyId}/keywords`)
+      .collection("artifacts").doc(appId).collection(`users/${companyId}/keywords`)
       .where("word", "==", keyword)
       .get();
     
     if (!keywordRef.empty) {
-      await db.collection(`companies/${companyId}/keywords`).doc(keywordRef.docs[0].id).delete();
+      await db.collection("artifacts").doc(appId).collection(`users/${companyId}/keywords`).doc(keywordRef.docs[0].id).delete();
     }
 
     return { success: true };
@@ -314,15 +177,15 @@ exports.deleteKeywordAndArticles = functions
 exports.manageDeletionRequest = functions
   .region("southamerica-east1")
   .https.onCall(async (data, context) => {
-    const { requestId, approve } = data;
-    if (!requestId) {
+    const { appId, requestId, approve } = data;
+    if (!appId || !requestId) {
       throw new functions.https.HttpsError(
         "invalid-argument",
-        "O ID da solicitação é necessário."
+        "O ID da aplicação e da solicitação são necessários."
       );
     }
 
-    const requestRef = db.collection("deletionRequests").doc(requestId);
+    const requestRef = db.collection("artifacts").doc(appId).collection("public/data/deletionRequests").doc(requestId);
     const requestDoc = await requestRef.get();
     if (!requestDoc.exists) {
       throw new functions.https.HttpsError(
@@ -340,7 +203,7 @@ exports.manageDeletionRequest = functions
     }
 
     if (approve) {
-      await db.collection(`companies/${requestData.companyId}/articles`).doc(requestData.articleId).delete();
+      await db.collection("artifacts").doc(appId).collection(`users/${requestData.companyId}/articles`).doc(requestData.articleId).delete();
       await requestRef.update({ status: "approved" });
     } else {
       await requestRef.update({ status: "denied" });
@@ -355,16 +218,16 @@ exports.manageDeletionRequest = functions
 exports.requestAlertDeletion = functions
   .region("southamerica-east1")
   .https.onCall(async (data, context) => {
-    const { companyId, companyName, articleId, articleTitle, justification } = data;
+    const { appId, companyId, companyName, articleId, articleTitle, justification } = data;
 
-    if (!companyId || !articleId || !justification) {
+    if (!appId || !companyId || !articleId || !justification) {
       throw new functions.https.HttpsError(
         "invalid-argument",
         "Informações incompletas para a solicitação de exclusão."
       );
     }
 
-    await db.collection("deletionRequests").add({
+    await db.collection("artifacts").doc(appId).collection("public/data/deletionRequests").add({
       companyId,
       companyName,
       articleId,
@@ -383,13 +246,19 @@ exports.requestAlertDeletion = functions
 exports.manualAddAlert = functions
   .region("southamerica-east1")
   .https.onCall(async (data, context) => {
-    const { companyId, title, description, url, source, keyword } = data;
-    if (!companyId || !title || !url || !source || !keyword) {
+    const { appId, companyId, title, description, url, source, keyword } = data;
+    if (!appId || !companyId || !title || !url || !source || !keyword) {
       throw new functions.https.HttpsError(
         "invalid-argument",
         "Dados incompletos para adicionar um alerta."
       );
     }
+
+    const companyDoc = await db.collection("artifacts").doc(appId).collection("public/data/companies").doc(companyId).get();
+    if (!companyDoc.exists) {
+        throw new functions.https.HttpsError("not-found", "Empresa não encontrada.");
+    }
+    const companyName = companyDoc.data()?.name;
 
     const alertData = {
       title,
@@ -399,14 +268,14 @@ exports.manualAddAlert = functions
       publishedAt: admin.firestore.FieldValue.serverTimestamp(),
       keyword,
       companyId,
-      companyName: (await db.collection("companies").doc(companyId).get()).data()?.name,
+      companyName,
       status: "approved",
     };
 
-    await db.collection(`companies/${companyId}/articles`).add(alertData);
+    await db.collection("artifacts").doc(appId).collection(`users/${companyId}/articles`).add(alertData);
     
     // Atualiza o contador de novos alertas
-    const settingsRef = db.collection("settings").doc(companyId);
+    const settingsRef = db.collection("artifacts").doc(appId).collection("public/data/settings").doc(companyId);
     await db.runTransaction(async (transaction) => {
       const settingsDoc = await transaction.get(settingsRef);
       const newAlertsCount = (settingsDoc.data()?.newAlertsCount || 0) + 1;
@@ -422,14 +291,19 @@ exports.manualAddAlert = functions
 exports.generateSuperAdminReport = functions
   .region("southamerica-east1")
   .https.onCall(async (data, context) => {
-    const companiesSnapshot = await db.collection("companies").get();
+    const { appId } = data;
+    if (!appId) {
+        throw new functions.https.HttpsError("invalid-argument", "O ID da aplicação é necessário.");
+    }
+
+    const companiesSnapshot = await db.collection("artifacts").doc(appId).collection("public/data/companies").get();
     const reportData = [];
 
     for (const companyDoc of companiesSnapshot.docs) {
       const companyId = companyDoc.id;
       const companyName = companyDoc.data().name;
 
-      const articlesSnapshot = await db.collection(`companies/${companyId}/articles`).get();
+      const articlesSnapshot = await db.collection("artifacts").doc(appId).collection(`users/${companyId}/articles`).get();
       const totalAlerts = articlesSnapshot.size;
 
       let positiveCount = 0;
@@ -479,6 +353,137 @@ exports.generateSuperAdminReport = functions
     return reportData;
   });
 
+/**
+ * Função que aciona a coleta de notícias.
+ * Ela pode ser chamada manualmente (via HTTP) ou por um agendamento.
+ */
+exports.manualFetch = functions
+  .region("southamerica-east1")
+  .https.onCall(async (data, context) => {
+    const { appId } = data;
+    if (!appId) {
+        throw new functions.https.HttpsError("invalid-argument", "O ID da aplicação é necessário.");
+    }
+    functions.logger.info("Iniciando a coleta manual de notícias.");
+
+    try {
+      // 1. Acessa as chaves de API do Firestore
+      const globalSettingsRef = db.collection("artifacts").doc(appId).collection("public/data/settings").doc("global");
+      const globalSettingsDoc = await globalSettingsRef.get();
+      const settings = globalSettingsDoc.data();
+
+      if (!settings) {
+        throw new Error("Configurações globais não encontradas.");
+      }
+
+      // 2. Determina qual chave de API usar com base na hora atual
+      const currentHour = new Date().getHours();
+      let currentApiKey = '';
+
+      if (currentHour >= 0 && currentHour < 6) { // 00:00 - 05:59
+        currentApiKey = settings.apiKeyGNews1;
+      } else if (currentHour >= 6 && currentHour < 12) { // 06:00 - 11:59
+        currentApiKey = settings.apiKeyGNews2;
+      } else if (currentHour >= 12 && currentHour < 18) { // 12:00 - 17:59
+        currentApiKey = settings.apiKeyGNews3;
+      } else { // 18:00 - 23:59
+        currentApiKey = settings.apiKeyGNews4;
+      }
+
+      if (!currentApiKey) {
+        throw new Error(
+          `Nenhuma chave de API do GNews encontrada para o período das ${currentHour}h.`
+        );
+      }
+
+      functions.logger.info(`Usando a chave de API para o período das ${currentHour}h.`);
+
+      // 3. Itera sobre todas as empresas ativas
+      const companiesSnapshot = await db
+        .collection("artifacts").doc(appId).collection("public/data/companies")
+        .where("status", "==", "active")
+        .get();
+
+      for (const companyDoc of companiesSnapshot.docs) {
+        const companyId = companyDoc.id;
+        const companyData = companyDoc.data();
+        const companyName = companyData.name;
+
+        functions.logger.info(`Processando empresa: ${companyName}`);
+
+        // Acessa as palavras-chave da empresa
+        const keywordsSnapshot = await db
+          .collection("artifacts").doc(appId).collection(`users/${companyId}/keywords`)
+          .get();
+
+        // Itera sobre as palavras-chave para buscar as notícias
+        for (const keywordDoc of keywordsSnapshot.docs) {
+          const keyword = keywordDoc.data().word;
+
+          // Monta a URL da API do GNews
+          const queryUrl = `${GNEWS_URL}?q=${encodeURIComponent(
+            keyword
+          )}&lang=pt&country=br&token=${currentApiKey}`;
+
+          try {
+            // Faz a chamada à API
+            const response = await fetch(queryUrl);
+            const data = await response.json();
+
+            if (data.errors) {
+              functions.logger.error(
+                `Erro na API para a palavra-chave '${keyword}': ${data.errors.join(
+                  ", "
+                )}`
+              );
+              continue;
+            }
+
+            // 4. Salva os novos artigos no Firestore
+            for (const article of data.articles) {
+              const articleData = {
+                title: article.title,
+                description: article.description,
+                url: article.url,
+                image: article.image || null,
+                publishedAt: admin.firestore.Timestamp.fromDate(
+                  new Date(article.publishedAt)
+                ),
+                source: {
+                  name: article.source.name,
+                  url: article.source.url,
+                },
+                keyword: keyword,
+                companyId: companyId,
+                companyName: companyName,
+                // Adiciona o artigo em uma coleção de alertas pendentes para aprovação
+                status: "pending",
+              };
+
+              // Adiciona o alerta à coleção de alertas pendentes globalmente
+              await db.collection("artifacts").doc(appId).collection("public/data/pendingAlerts").add(articleData);
+            }
+          } catch (fetchError) {
+            functions.logger.error(
+              `Erro ao buscar notícias para a palavra-chave '${keyword}':`,
+              fetchError
+            );
+          }
+        }
+      }
+
+      functions.logger.info("Coleta de notícias concluída com sucesso.");
+      return { success: true };
+    } catch (error) {
+      functions.logger.error("Erro fatal na função de coleta:", error);
+      throw new functions.https.HttpsError(
+        "internal",
+        "Ocorreu um erro interno no servidor."
+      );
+    }
+  });
+
+
 // --- Funções de ajuda para o relatório ---
 function getChannelCategory(sourceName) {
     const name = sourceName.toLowerCase();
@@ -499,4 +504,3 @@ function getTopCount(counts) {
     if (Object.keys(counts).length === 0) return 'N/A';
     return Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b);
 }
-

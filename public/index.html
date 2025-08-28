@@ -573,7 +573,7 @@
             showAlert('A coleta manual de notícias foi iniciada. Isto pode levar alguns minutos.', 'success');
             const manualFetch = httpsCallable(functions, 'manualFetch');
             try {
-                await manualFetch();
+                await manualFetch({ appId });
                 showAlert('Robô executado com sucesso! As novas notícias estarão disponíveis em breve.', 'success');
             } catch (error) {
                 console.error("Erro ao acionar o robô manual:", error);
@@ -709,12 +709,8 @@
             confirmDeleteBtn.textContent = 'Excluindo...';
             try {
                 const deleteCompany = httpsCallable(functions, 'deleteCompany');
-                const result = await deleteCompany({ companyId: companyIdToDelete });
-                if (result.data.success) {
-                    showAlert('Empresa e todos os dados associados foram excluídos.');
-                } else {
-                    throw new Error(result.data.message || 'Falha ao excluir empresa.');
-                }
+                await deleteCompany({ appId, companyId: companyIdToDelete });
+                showAlert('Empresa e todos os dados associados foram excluídos.');
             } catch (error) {
                 console.error("Erro ao excluir empresa:", error);
                 showAlert(`Erro: ${error.message}`, 'error');
@@ -772,7 +768,7 @@
             confirmDeleteKeywordBtn.textContent = 'Excluindo...';
             try {
                 const deleteKeyword = httpsCallable(functions, 'deleteKeywordAndArticles');
-                await deleteKeyword({ companyId: selectedCompanyForManagement.id, keyword: keywordToDeleteInfo.word });
+                await deleteKeyword({ appId, companyId: selectedCompanyForManagement.id, keyword: keywordToDeleteInfo.word });
                 showAlert('Palavra-chave e alertas associados foram excluídos.', 'success');
                 renderKeywordsForSelectedCompany();
             } catch (error) {
@@ -1123,9 +1119,9 @@
                         const score = article.sentiment.score;
                         if (score > 0.2) sentimentCounts.positive++;
                         else if (score < -0.2) sentimentCounts.negative++;
-                        else sentimentCounts.neutral++;
+                        else neutralCount++;
                     } else {
-                        sentimentCounts.neutral++;
+                        neutralCount++;
                     }
                 });
 
@@ -1240,7 +1236,7 @@
         // Ele atualiza a lista e o contador de notificações automaticamente.
         function setupPendingAlertsListener() {
             if (pendingAlertsListener) pendingAlertsListener();
-            const q = query(collection(db, "artifacts", appId, "pendingAlerts"), orderBy("publishedAt", "desc"));
+            const q = query(collection(db, "artifacts", appId, "public/data/pendingAlerts"), orderBy("publishedAt", "desc"));
             pendingAlertsListener = onSnapshot(q, (snapshot) => {
                 renderPendingAlerts(snapshot.docs);
                 const pendingCount = snapshot.docs.length;
@@ -1280,7 +1276,7 @@
             if (target.classList.contains('approve-alert-btn')) {
                 const approveAlert = httpsCallable(functions, 'approveAlert');
                 try {
-                    await approveAlert({ alertId });
+                    await approveAlert({ appId, alertId });
                     showAlert('Alerta aprovado e enviado para a empresa com sucesso!', 'success');
                 } catch (error) {
                     console.error("Erro ao aprovar alerta:", error);
@@ -1289,7 +1285,7 @@
             } else if (target.classList.contains('reject-alert-btn')) {
                 const rejectAlert = httpsCallable(functions, 'rejectAlert');
                 try {
-                    await rejectAlert({ alertId });
+                    await rejectAlert({ appId, alertId });
                     showAlert('Alerta rejeitado com sucesso!', 'success');
                 } catch (error) {
                     console.error("Erro ao rejeitar alerta:", error);
@@ -1353,7 +1349,7 @@
 
             try {
                 const manualAddAlert = httpsCallable(functions, 'manualAddAlert');
-                await manualAddAlert({ companyId, title, description, url, source, keyword });
+                await manualAddAlert({ appId, companyId, title, description, url, source, keyword });
                 showAlert('Alerta manual adicionado com sucesso!', 'success');
                 if (manualAlertForm) manualAlertForm.reset();
             } catch (error) {
@@ -1424,7 +1420,7 @@
 
             try {
                 const manageDeletionRequest = httpsCallable(functions, 'manageDeletionRequest');
-                await manageDeletionRequest({ requestId, approve });
+                await manageDeletionRequest({ appId, requestId, approve });
                 showAlert(`Solicitação ${approve ? 'aprovada' : 'negada'} com sucesso.`, 'success');
             } catch (error) {
                 console.error("Erro ao gerir solicitação:", error);
@@ -1443,6 +1439,7 @@
             try {
                 const requestAlertDeletion = httpsCallable(functions, 'requestAlertDeletion');
                 await requestAlertDeletion({
+                    appId,
                     companyId: currentUser.companyId,
                     companyName: currentUser.companyName,
                     articleId: articleToDeleteInfo.id,
@@ -1463,7 +1460,7 @@
             superAdminReportBody.innerHTML = '<tr><td colspan="6" class="text-center py-4">A gerar relatório...</td></tr>';
             try {
                 const generateReport = httpsCallable(functions, 'generateSuperAdminReport');
-                const result = await generateReport();
+                const result = await generateReport({ appId });
                 const reportData = result.data;
 
                 superAdminReportBody.innerHTML = '';
@@ -1740,4 +1737,3 @@
     </script>
 </body>
 </html>
-
