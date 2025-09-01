@@ -531,7 +531,8 @@
         let keywordToDeleteInfo = null;
 
         // --- ELEMENTOS DO DOM (declarados dentro de DOMContentLoaded) ---
-        let pageSections, navLoggedIn, navInicio, navRelatorio, navPesquisa, navSuperAdmin, navLogout, navConfiguracoesAdmin, globalAlert, loginPage, dashboardPage, searchPage, superAdminPage, companyKeywordAdminPage, companySettingsAdminPage, reportPage, companyUserAdminPage, configuracoesAdminPage, loginForm, dashboardTitle, currentDateTimeEl, dashboardKeywordList, newsAlertsContainer, newsAlerts, alertDateFilter, reportAccessToggle, logoUploadInput, headerLogoContainer, loginLogoContainer, filterContainer, searchInput, searchResults, companyForm, companyList, backToSuperAdminKwBtn, backToSuperAdminSettingsBtn, backToSuperAdminUsersBtn, companyKeywordAdminTitle, companySettingsAdminTitle, companyUserAdminTitle, keywordForm, keywordInput, keywordIdInput, adminKeywordList, userForm, userInput, userPasswordInput, userIdInput, adminUserList, notificationBell, notificationBadge, manualTriggerBtn, deleteModal, confirmDeleteBtn, cancelDeleteBtn, companyNameToDeleteEl, newsScopeContainer, startDateInput, endDateInput, linkModal, accessLinkInput, copyLinkBtn, closeLinkModalBtn, reportKeywordFilter, stateSelectContainer, stateSelect, changePasswordForm, apiKeyNewsApiInput, apiKeyGNewsInput1, apiKeyGNewsInput2, apiKeyGNewsInput3, apiKeyGNewsInput4, apiKeyYoutubeInput, apiKeyBloggerInput, apiKeyVisionInput, apiKeyVideoIntelligenceInput, showAllAlertsBtn, deletionAccessToggle, justificationModal, justificationText, submitJustificationBtn, cancelJustificationBtn, btnManualAlert, btnDeletionRequests, btnSuperAdminReport, manualAlertPage, deletionRequestsPage, superAdminReportPage, backToDashboard1, backToDashboard2, backToDashboard3, manualAlertForm, deletionRequestsList, superAdminReportBody, deletionRequestsBadge, pendingAlertsPage, pendingAlertsList, btnPendingAlerts, backToDashboard4, confirmDeleteKeywordBtn, cancelDeleteKeywordBtn, confirmDeleteKeywordModal, keywordToDeleteNameEl;
+        let pageSections, navLoggedIn, navInicio, navRelatorio, navPesquisa, navSuperAdmin, navLogout, navConfiguracoesAdmin, globalAlert, loginPage, dashboardPage, searchPage, superAdminPage, companyKeywordAdminPage, companySettingsAdminPage, reportPage, companyUserAdminPage, configuracoesAdminPage, loginForm, dashboardTitle, currentDateTimeEl, dashboardKeywordList, newsAlertsContainer, newsAlerts, alertDateFilter, reportAccessToggle, logoUploadInput, headerLogoContainer, loginLogoContainer, filterContainer, searchInput, searchResults, companyForm, companyList, backToSuperAdminKwBtn, backToSuperAdminSettingsBtn, backToSuperAdminUsersBtn, companyKeywordAdminTitle, companySettingsAdminTitle, companyUserAdminTitle, keywordForm, keywordInput, keywordIdInput, adminKeywordList, userForm, userInput, userPasswordInput, userIdInput, adminUserList, notificationBell, notificationBadge, manualTriggerBtn, deleteModal, confirmDeleteBtn, cancelDeleteBtn, companyNameToDeleteEl, newsScopeContainer, startDateInput, endDateInput, linkModal, accessLinkInput, copyLinkBtn, closeLinkModalBtn, reportKeywordFilter, stateSelectContainer, stateSelect, changePasswordForm, apiKeyNewsApiInput, apiKeyGNewsInput1, apiKeyGNewsInput2, apiKeyGNewsInput3, apiKeyGNewsInput4, apiKeyYoutubeInput, apiKeyBloggerInput, apiKeyVisionInput, apiKeyVideoIntelligenceInput, showAllAlertsBtn, deletionAccessToggle, justificationModal, justificationText, submitJustificationBtn, cancelJustificationBtn, btnManualAlert, btnDeletionRequests, btnSuperAdminReport, manualAlertPage, deletionRequestsPage, superAdminReportPage, backToDashboard1, backToDashboard2, backToDashboard3, manualAlertForm, deletionRequestsList, superAdminReportBody, deletionRequestsBadge, pendingAlertsPage, pendingAlertsList, btnPendingAlerts, backToDashboard4, confirmDeleteKeywordBtn, cancelDeleteKeywordBtn, confirmDeleteKeywordModal, keywordToDeleteNameEl, bloggerIdInput, rssUrlInput, fetchOnlyNewToggle, changePasswordPage, globalKeysPage, globalSourcesPage, btnChangePassword, btnGlobalKeys, btnNewsSources, backToAdminConfig1, backToAdminConfig2, backToAdminConfig3;
+
 
         // --- FUNÇÕES DE UTILIDADE ---
         function showAlert(message, type = 'success') { const c = type === 'success' ? 'bg-green-100 border-green-500 text-green-700' : 'bg-red-100 border-red-500 text-red-700'; globalAlert.innerHTML = `<div class="${c} border-l-4 p-4 rounded-md fade-in" role="alert"><p>${message}</p></div>`; setTimeout(() => { globalAlert.innerHTML = ''; }, 4000); }
@@ -1121,9 +1122,9 @@
                         const score = article.sentiment.score;
                         if (score > 0.2) sentimentCounts.positive++;
                         else if (score < -0.2) sentimentCounts.negative++;
-                        else neutralCount++;
+                        else sentimentCounts.neutral++;
                     } else {
-                        neutralCount++;
+                        sentimentCounts.neutral++;
                     }
                 });
 
@@ -1712,7 +1713,7 @@
             if (searchResults) searchResults.addEventListener('click', handleAlertCardActions);
             if (alertDateFilter) alertDateFilter.addEventListener('change', filterAlertsByDate);
             if (changePasswordForm) changePasswordForm.addEventListener('submit', handleChangePassword);
-            if (btnChangePassword) btnChangePassword.addEventListener('click', () => updateView('configuracoes-admin'));
+            if (btnChangePassword) btnChangePassword.addEventListener('click', () => updateView('change-password'));
             if (btnGlobalKeys) btnGlobalKeys.addEventListener('click', () => updateView('global-keys'));
             if (btnNewsSources) btnNewsSources.addEventListener('click', () => updateView('global-sources'));
             if (backToAdminConfig1) backToAdminConfig1.addEventListener('click', () => updateView('configuracoes-admin'));
@@ -1744,7 +1745,7 @@
                     companyInput.value = decodeURIComponent(companyParam);
                     const loginCompanyWrapper = document.getElementById('login-company-wrapper');
                     if (loginCompanyWrapper) {
-                      loginCompanyWrapper.style.display = 'none';
+                        loginCompanyWrapper.style.display = 'none';
                     }
                 }
             }
@@ -1752,3 +1753,4 @@
     </script>
 </body>
 </html>
+
