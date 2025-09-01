@@ -1,7 +1,7 @@
 // index.js
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
-const fetch = require("node-fetch");
+// A linha 'require("node-fetch")' foi removida pois o fetch já é nativo no Node.js v20
 const { Timestamp } = require("firebase-admin/firestore");
 
 // Inicializa o Firebase Admin SDK para interagir com o Firestore
@@ -26,7 +26,7 @@ async function deleteCollection(collectionRef) {
 
 /**
  * Função para aprovar um alerta. Move o alerta da fila de pendentes
- * para a coleção de artigos da empresa e a coleção de artigos global.
+ * para a coleção de artigos da empresa.
  */
 exports.approveAlert = functions
   .region("southamerica-east1")
@@ -59,7 +59,7 @@ exports.approveAlert = functions
     const companyId = alertData.companyId;
 
     // 1. Adiciona o alerta aprovado à coleção da empresa
-    const newArticleRef = await db.collection("artifacts").doc(appId).collection(`users/${companyId}/articles`).add({
+    await db.collection("artifacts").doc(appId).collection(`users/${companyId}/articles`).add({
       ...alertData,
       status: "approved",
       approvedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -73,7 +73,7 @@ exports.approveAlert = functions
     await db.runTransaction(async (transaction) => {
       const settingsDoc = await transaction.get(settingsRef);
       const newAlertsCount = (settingsDoc.data()?.newAlertsCount || 0) + 1;
-      transaction.update(settingsRef, { newAlertsCount });
+      transaction.set(settingsRef, { newAlertsCount }, { merge: true });
     });
 
     return { success: true };
@@ -279,7 +279,7 @@ exports.manualAddAlert = functions
     await db.runTransaction(async (transaction) => {
       const settingsDoc = await transaction.get(settingsRef);
       const newAlertsCount = (settingsDoc.data()?.newAlertsCount || 0) + 1;
-      transaction.update(settingsRef, { newAlertsCount });
+      transaction.set(settingsRef, { newAlertsCount }, { merge: true });
     });
 
     return { success: true };
@@ -504,3 +504,4 @@ function getTopCount(counts) {
     if (Object.keys(counts).length === 0) return 'N/A';
     return Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b);
 }
+

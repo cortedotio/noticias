@@ -11,8 +11,7 @@
   "main": "index.js",
   "dependencies": {
     "firebase-admin": "^11.11.1",
-    "firebase-functions": "^5.0.0",
-    "node-fetch": "^2.6.7"
+    "firebase-functions": "^5.0.0"
   },
   "private": true
 }
