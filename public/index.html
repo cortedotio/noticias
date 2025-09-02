@@ -144,13 +144,17 @@
                         <h3 class="text-xl font-semibold text-gray-700">Fila de Aprovação</h3>
                         <span id="pending-alerts-badge" class="hidden absolute top-2 right-2 text-white text-xs font-bold w-5 h-5 text-center rounded-full bg-red-500"></span>
                     </button>
+                     <button id="btn-deletion-requests" class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow relative">
+                        <h3 class="text-xl font-semibold text-gray-700">Solicitações de Exclusão</h3>
+                        <span id="deletion-requests-badge" class="hidden absolute top-2 right-2 text-white text-xs font-bold w-5 h-5 text-center rounded-full bg-red-500"></span>
+                    </button>
                     <button id="btn-super-admin-report" class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow">
                         <h3 class="text-xl font-semibold text-gray-700">Relatório Geral</h3>
                     </button>
                 </div>
                 <div class="mt-6 p-4 bg-blue-100 border-l-4 border-blue-500 text-blue-800 rounded-md text-left">
                     <p class="font-bold">Execução Manual do Robô</p>
-                    <p class="mt-2 text-sm">Use o botão abaixo para disparar a coleta de notícias imediatamente.</p>
+                    <p class="mt-2 text-sm">A busca automática já está configurada para rodar a cada 30 minutos. Use o botão abaixo apenas se precisar de uma atualização imediata.</p>
                     <button id="manual-trigger-btn" class="mt-4 w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:bg-blue-300">Executar Robô Manualmente</button>
                 </div>
             </div>
@@ -659,6 +663,7 @@
                 if(document.getElementById('dashboard-grid')) document.getElementById('dashboard-grid').style.display = 'none';
                 if(document.getElementById('super-admin-dashboard-message')) document.getElementById('super-admin-dashboard-message').style.display = 'block';
                 setupPendingAlertsListener();
+                 setupDeletionRequestsListener(); // Adicionado para carregar o badge
             } else {
                 if(document.getElementById('dashboard-grid')) document.getElementById('dashboard-grid').style.display = 'grid';
                 if(document.getElementById('super-admin-dashboard-message')) document.getElementById('super-admin-dashboard-message').style.display = 'none';
@@ -1380,7 +1385,7 @@
         function renderDeletionRequests(docs) {
             if (!deletionRequestsList) return;
             deletionRequestsList.innerHTML = '';
-            if (docs.empty) {
+            if (docs.length === 0) { // Alterado de docs.empty para docs.length
                 deletionRequestsList.innerHTML = '<p class="text-gray-500">Nenhuma solicitação de exclusão encontrada.</p>';
                 return;
             }
@@ -1747,5 +1752,3 @@
     </script>
 </body>
 </html>
-
-
