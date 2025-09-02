@@ -6,7 +6,7 @@
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const { Timestamp } = require("firebase-admin/firestore");
-// Importante: certifique-se de ter o 'axios' no seu package.json. Se não tiver, use 'node-fetch'.
+// Importante: certifique-se de ter o 'axios' no seu package.json.
 const axios = require("axios"); 
 
 admin.initializeApp();
@@ -14,6 +14,9 @@ const db = admin.firestore();
 
 const GNEWS_URL = "https://gnews.io/api/v4/search";
 const APP_ID = "noticias-6e952";
+
+// **CORREÇÃO:** Definindo a região uma vez para ser usada por todas as funções.
+const regionalFunctions = functions.region("southamerica-east1");
 
 // Funções auxiliares (sem alterações)
 async function deleteCollection(collectionRef) {
@@ -52,11 +55,9 @@ const findMatchingKeyword = (article, keywords) => {
 };
 
 
-// Cloud Functions (com a `manualFetch` atualizada para depuração)
+// Cloud Functions (atualizadas para usar a nova sintaxe de região)
 
-exports.approveAlert = functions
-  .region("southamerica-east1")
-  .https.onCall(async (data, context) => {
+exports.approveAlert = regionalFunctions.https.onCall(async (data, context) => {
     const { appId, alertId } = data;
     if (!appId || !alertId) {
       throw new functions.https.HttpsError("invalid-argument", "O ID da aplicação e do alerta são necessários.");
@@ -86,9 +87,7 @@ exports.approveAlert = functions
     return { success: true };
   });
 
-exports.rejectAlert = functions
-  .region("southamerica-east1")
-  .https.onCall(async (data, context) => {
+exports.rejectAlert = regionalFunctions.https.onCall(async (data, context) => {
     const { appId, alertId } = data;
     if (!appId || !alertId) {
       throw new functions.https.HttpsError("invalid-argument", "O ID da aplicação e do alerta são necessários.");
@@ -98,9 +97,7 @@ exports.rejectAlert = functions
     return { success: true };
   });
 
-exports.deleteCompany = functions
-  .region("southamerica-east1")
-  .https.onCall(async (data, context) => {
+exports.deleteCompany = regionalFunctions.https.onCall(async (data, context) => {
     const { appId, companyId } = data;
     if (!appId || !companyId) {
       throw new functions.https.HttpsError("invalid-argument", "O ID da aplicação e da empresa são necessários.");
@@ -121,9 +118,7 @@ exports.deleteCompany = functions
     return { success: true };
   });
 
-exports.deleteKeywordAndArticles = functions
-  .region("southamerica-east1")
-  .https.onCall(async (data, context) => {
+exports.deleteKeywordAndArticles = regionalFunctions.https.onCall(async (data, context) => {
     const { appId, companyId, keyword } = data;
     if (!appId || !companyId || !keyword) {
       throw new functions.https.HttpsError("invalid-argument", "O ID da aplicação, da empresa e a palavra-chave são necessários.");
@@ -141,9 +136,7 @@ exports.deleteKeywordAndArticles = functions
     return { success: true };
   });
 
-exports.manageDeletionRequest = functions
-  .region("southamerica-east1")
-  .https.onCall(async (data, context) => {
+exports.manageDeletionRequest = regionalFunctions.https.onCall(async (data, context) => {
     const { appId, requestId, approve } = data;
     if (!appId || !requestId) {
       throw new functions.https.HttpsError("invalid-argument", "O ID da aplicação e da solicitação são necessários.");
@@ -168,9 +161,7 @@ exports.manageDeletionRequest = functions
     return { success: true };
   });
 
-exports.requestAlertDeletion = functions
-  .region("southamerica-east1")
-  .https.onCall(async (data, context) => {
+exports.requestAlertDeletion = regionalFunctions.https.onCall(async (data, context) => {
     const { appId, companyId, companyName, articleId, articleTitle, justification } = data;
     if (!appId || !companyId || !articleId || !justification) {
       throw new functions.https.HttpsError("invalid-argument", "Informações incompletas para a solicitação de exclusão.");
@@ -189,9 +180,7 @@ exports.requestAlertDeletion = functions
     return { success: true };
   });
 
-exports.manualAddAlert = functions
-  .region("southamerica-east1")
-  .https.onCall(async (data, context) => {
+exports.manualAddAlert = regionalFunctions.https.onCall(async (data, context) => {
     const { appId, companyId, title, description, url, source, keyword } = data;
     if (!appId || !companyId || !title || !url || !source || !keyword) {
       throw new functions.https.HttpsError("invalid-argument", "Dados incompletos para adicionar um alerta.");
@@ -222,9 +211,7 @@ exports.manualAddAlert = functions
     return { success: true };
   });
 
-exports.generateSuperAdminReport = functions
-  .region("southamerica-east1")
-  .https.onCall(async (data, context) => {
+exports.generateSuperAdminReport = regionalFunctions.https.onCall(async (data, context) => {
     const { appId } = data;
     if (!appId) {
         throw new functions.https.HttpsError("invalid-argument", "O ID da aplicação é necessário.");
@@ -266,12 +253,7 @@ exports.generateSuperAdminReport = functions
     return reportData;
   });
 
-// =============================================================================================
-// FUNÇÃO MANUALFETCH ATUALIZADA COM LOGS PARA DEPURAÇÃO
-// =============================================================================================
-exports.manualFetch = functions
-  .region("southamerica-east1")
-  .https.onCall(async (data, context) => {
+exports.manualFetch = regionalFunctions.https.onCall(async (data, context) => {
     functions.logger.info("=======================================");
     functions.logger.info("INICIANDO BUSCA MANUAL DE NOTÍCIAS (VERSÃO DE DEPURAÇÃO)...");
     
@@ -386,19 +368,12 @@ exports.manualFetch = functions
     }
   });
 
-
-exports.scheduledFetch = functions
-  .region("southamerica-east1")
-  .pubsub.schedule("every 30 minutes")
+exports.scheduledFetch = regionalFunctions.pubsub.schedule("every 30 minutes")
   .timeZone("America/Sao_Paulo")
   .onRun(async (context) => {
     functions.logger.info("Iniciando a coleta AGENDADA de notícias (a cada 30 min).");
     const appId = APP_ID;
     try {
-      // Reutiliza a lógica da função manualFetch
-      // OBS: A função manualFetch precisa ser chamada internamente, o que não é o ideal.
-      // A melhor prática seria extrair a lógica comum para uma função auxiliar.
-      // Por simplicidade aqui, replicamos a lógica.
       const globalSettingsRef = db.doc(`artifacts/${appId}/public/data/settings/global`);
       const globalSettingsDoc = await globalSettingsRef.get();
       if (!globalSettingsDoc.exists) {
@@ -430,7 +405,6 @@ exports.scheduledFetch = functions
         const queryUrl = `${GNEWS_URL}?q=${encodeURIComponent(searchQuery)}&lang=pt&country=br&token=${currentApiKey}`;
         
         try {
-          // Usando axios para consistência
           const response = await axios.get(queryUrl);
           const responseData = response.data;
           
