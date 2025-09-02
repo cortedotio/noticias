@@ -352,19 +352,31 @@ exports.generateSuperAdminReport = functions
 
     return reportData;
   });
+  
+/**
+ * Função auxiliar para encontrar a primeira palavra-chave que corresponde ao texto do artigo.
+ */
+const findMatchingKeyword = (article, keywords) => {
+  const title = article.title.toLowerCase();
+  const description = article.description.toLowerCase();
+  // Retorna a primeira palavra-chave encontrada no título ou na descrição
+  return keywords.find(kw =>
+    title.includes(kw.toLowerCase()) || description.includes(kw.toLowerCase())
+  ) || keywords[0]; // Se nenhuma for encontrada, retorna a primeira como padrão
+};
 
 /**
  * Função que aciona a coleta de notícias.
- * Ela pode ser chamada manualmente (via HTTP) ou por um agendamento.
+ * Otimizada para fazer uma chamada de API por empresa, não por palavra-chave.
  */
 exports.manualFetch = functions
   .region("southamerica-east1")
   .https.onCall(async (data, context) => {
     const { appId } = data;
     if (!appId) {
-        throw new functions.https.HttpsError("invalid-argument", "O ID da aplicação é necessário.");
+      throw new functions.https.HttpsError("invalid-argument", "O ID da aplicação é necessário.");
     }
-    functions.logger.info("Iniciando a coleta manual de notícias.");
+    functions.logger.info("Iniciando a coleta manual de notícias (otimizada).");
 
     try {
       // 1. Acessa as chaves de API do Firestore
@@ -391,9 +403,7 @@ exports.manualFetch = functions
       }
 
       if (!currentApiKey) {
-        throw new Error(
-          `Nenhuma chave de API do GNews encontrada para o período das ${currentHour}h.`
-        );
+        throw new Error(`Nenhuma chave de API do GNews encontrada para o período das ${currentHour}h.`);
       }
 
       functions.logger.info(`Usando a chave de API para o período das ${currentHour}h.`);
@@ -415,60 +425,68 @@ exports.manualFetch = functions
         const keywordsSnapshot = await db
           .collection("artifacts").doc(appId).collection(`users/${companyId}/keywords`)
           .get();
+        
+        if (keywordsSnapshot.empty) {
+          functions.logger.warn(`Nenhuma palavra-chave para a empresa ${companyName}, pulando.`);
+          continue; // Pula para a próxima empresa
+        }
+        
+        // Coleta todas as palavras-chave em um array
+        const keywordsList = keywordsSnapshot.docs.map(doc => doc.data().word);
 
-        // Itera sobre as palavras-chave para buscar as notícias
-        for (const keywordDoc of keywordsSnapshot.docs) {
-          const keyword = keywordDoc.data().word;
+        // Cria a string de busca com operador OR
+        // Envolve cada palavra-chave em aspas para buscar a frase exata
+        const searchQuery = keywordsList.map(kw => `"${kw}"`).join(" OR ");
 
-          // Monta a URL da API do GNews
-          const queryUrl = `${GNEWS_URL}?q=${encodeURIComponent(
-            keyword
-          )}&lang=pt&country=br&token=${currentApiKey}`;
+        // Monta a URL da API do GNews com a busca combinada
+        const queryUrl = `${GNEWS_URL}?q=${encodeURIComponent(searchQuery)}&lang=pt&country=br&token=${currentApiKey}`;
+        
+        functions.logger.info(`Buscando por: ${searchQuery}`);
 
-          try {
-            // Faz a chamada à API
-            const response = await fetch(queryUrl);
-            const data = await response.json();
+        try {
+          // Faz a chamada ÚNICA à API para esta empresa
+          const response = await fetch(queryUrl);
+          const data = await response.json();
 
-            if (data.errors) {
-              functions.logger.error(
-                `Erro na API para a palavra-chave '${keyword}': ${data.errors.join(
-                  ", "
-                )}`
-              );
-              continue;
-            }
-
-            // 4. Salva os novos artigos no Firestore
-            for (const article of data.articles) {
-              const articleData = {
-                title: article.title,
-                description: article.description,
-                url: article.url,
-                image: article.image || null,
-                publishedAt: admin.firestore.Timestamp.fromDate(
-                  new Date(article.publishedAt)
-                ),
-                source: {
-                  name: article.source.name,
-                  url: article.source.url,
-                },
-                keyword: keyword,
-                companyId: companyId,
-                companyName: companyName,
-                // Adiciona o artigo em uma coleção de alertas pendentes para aprovação
-                status: "pending",
-              };
-
-              // Adiciona o alerta à coleção de alertas pendentes globalmente
-              await db.collection("artifacts").doc(appId).collection("public/data/pendingAlerts").add(articleData);
-            }
-          } catch (fetchError) {
+          if (data.errors) {
             functions.logger.error(
-              `Erro ao buscar notícias para a palavra-chave '${keyword}':`,
-              fetchError
+              `Erro na API para a empresa '${companyName}': ${data.errors.join(", ")}`
             );
+            continue; // Pula para a próxima empresa em caso de erro
           }
+
+          // 4. Salva os novos artigos no Firestore
+          for (const article of data.articles) {
+            
+            // Descobre qual palavra-chave deu 'match' no artigo
+            const matchedKeyword = findMatchingKeyword(article, keywordsList);
+
+            const articleData = {
+              title: article.title,
+              description: article.description,
+              url: article.url,
+              image: article.image || null,
+              publishedAt: admin.firestore.Timestamp.fromDate(
+                new Date(article.publishedAt)
+              ),
+              source: {
+                name: article.source.name,
+                url: article.source.url,
+              },
+              keyword: matchedKeyword, // Salva a palavra-chave que foi encontrada
+              companyId: companyId,
+              companyName: companyName,
+              status: "pending",
+            };
+
+            // Adiciona o alerta à coleção de alertas pendentes globalmente
+            await db.collection("artifacts").doc(appId).collection("public/data/pendingAlerts").add(articleData);
+          }
+        } catch (fetchError) {
+          functions.logger.error(
+            `Erro ao buscar notícias para a empresa '${companyName}':`,
+            fetchError
+          );
         }
       }
 
@@ -504,4 +522,3 @@ function getTopCount(counts) {
     if (Object.keys(counts).length === 0) return 'N/A';
     return Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b);
 }
-
