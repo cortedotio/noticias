@@ -1,22 +1,23 @@
 /**
  * IMPORTANTE: Este é o código COMPLETO e ATUALIZADO para o servidor (Firebase Cloud Functions).
- * Ele deve substituir o conteúdo do arquivo `index.js` no seu projeto Firebase.
+ * Ele está atualizado para a versão mais recente do firebase-functions.
  */
 
-const functions = require("firebase-functions");
+const { https, pubsub, logger } = require("firebase-functions");
 const admin = require("firebase-admin");
-const { Timestamp } = require("firebase-admin/firestore");
-// Importante: certifique-se de ter o 'axios' no seu package.json.
-const axios = require("axios"); 
+const { setGlobalOptions } = require("firebase-functions/v2");
+const axios = require("axios");
 
+// Inicializa o Firebase Admin SDK
 admin.initializeApp();
 const db = admin.firestore();
 
+// Constantes do projeto
 const GNEWS_URL = "https://gnews.io/api/v4/search";
 const APP_ID = "noticias-6e952";
 
-// **CORREÇÃO:** Definindo a região uma vez para ser usada por todas as funções.
-const regionalFunctions = functions.region("southamerica-east1");
+// **CORREÇÃO:** Define a região globalmente para todas as funções (sintaxe moderna)
+setGlobalOptions({ region: "southamerica-east1" });
 
 // Funções auxiliares (sem alterações)
 async function deleteCollection(collectionRef) {
@@ -29,7 +30,7 @@ async function deleteCollection(collectionRef) {
 }
 
 function getChannelCategory(sourceName) {
-    const name = sourceName.toLowerCase();
+    const name = (sourceName || "").toLowerCase();
     if (name.includes('youtube')) return 'YouTube';
     if (name.includes('globo') || name.includes('g1') || name.includes('uol') || name.includes('terra') || name.includes('r7')) return 'Sites';
     if (name.includes('veja') || name.includes('istoé') || name.includes('exame')) return 'Revistas';
@@ -54,22 +55,23 @@ const findMatchingKeyword = (article, keywords) => {
   return keywords.find(kw => title.includes(kw.toLowerCase()) || description.includes(kw.toLowerCase())) || keywords[0];
 };
 
+// =============================================================================================
+// CLOUD FUNCTIONS (Sintaxe atualizada)
+// =============================================================================================
 
-// Cloud Functions (atualizadas para usar a nova sintaxe de região)
-
-exports.approveAlert = regionalFunctions.https.onCall(async (data, context) => {
+exports.approveAlert = https.onCall(async (data, context) => {
     const { appId, alertId } = data;
     if (!appId || !alertId) {
-      throw new functions.https.HttpsError("invalid-argument", "O ID da aplicação e do alerta são necessários.");
+      throw new https.HttpsError("invalid-argument", "O ID da aplicação e do alerta são necessários.");
     }
     const pendingAlertRef = db.doc(`artifacts/${appId}/public/data/pendingAlerts/${alertId}`);
     const pendingAlertDoc = await pendingAlertRef.get();
     if (!pendingAlertDoc.exists) {
-      throw new functions.https.HttpsError("not-found", "Alerta pendente não encontrado.");
+      throw new https.HttpsError("not-found", "Alerta pendente não encontrado.");
     }
     const alertData = pendingAlertDoc.data();
     if (!alertData) {
-      throw new functions.https.HttpsError("internal", "Dados do alerta estão corrompidos.");
+      throw new https.HttpsError("internal", "Dados do alerta estão corrompidos.");
     }
     const companyId = alertData.companyId;
     await db.collection(`artifacts/${appId}/users/${companyId}/articles`).add({
@@ -87,20 +89,20 @@ exports.approveAlert = regionalFunctions.https.onCall(async (data, context) => {
     return { success: true };
   });
 
-exports.rejectAlert = regionalFunctions.https.onCall(async (data, context) => {
+exports.rejectAlert = https.onCall(async (data, context) => {
     const { appId, alertId } = data;
     if (!appId || !alertId) {
-      throw new functions.https.HttpsError("invalid-argument", "O ID da aplicação e do alerta são necessários.");
+      throw new https.HttpsError("invalid-argument", "O ID da aplicação e do alerta são necessários.");
     }
     const pendingAlertRef = db.doc(`artifacts/${appId}/public/data/pendingAlerts/${alertId}`);
     await pendingAlertRef.delete();
     return { success: true };
   });
 
-exports.deleteCompany = regionalFunctions.https.onCall(async (data, context) => {
+exports.deleteCompany = https.onCall(async (data, context) => {
     const { appId, companyId } = data;
     if (!appId || !companyId) {
-      throw new functions.https.HttpsError("invalid-argument", "O ID da aplicação e da empresa são necessários.");
+      throw new https.HttpsError("invalid-argument", "O ID da aplicação e da empresa são necessários.");
     }
     await deleteCollection(db.collection(`artifacts/${appId}/users/${companyId}/users`));
     await deleteCollection(db.collection(`artifacts/${appId}/users/${companyId}/keywords`));
@@ -118,10 +120,10 @@ exports.deleteCompany = regionalFunctions.https.onCall(async (data, context) => 
     return { success: true };
   });
 
-exports.deleteKeywordAndArticles = regionalFunctions.https.onCall(async (data, context) => {
+exports.deleteKeywordAndArticles = https.onCall(async (data, context) => {
     const { appId, companyId, keyword } = data;
     if (!appId || !companyId || !keyword) {
-      throw new functions.https.HttpsError("invalid-argument", "O ID da aplicação, da empresa e a palavra-chave são necessários.");
+      throw new https.HttpsError("invalid-argument", "O ID da aplicação, da empresa e a palavra-chave são necessários.");
     }
     const articlesToDelete = await db.collection(`artifacts/${appId}/users/${companyId}/articles`).where("keyword", "==", keyword).get();
     const batch = db.batch();
@@ -136,19 +138,19 @@ exports.deleteKeywordAndArticles = regionalFunctions.https.onCall(async (data, c
     return { success: true };
   });
 
-exports.manageDeletionRequest = regionalFunctions.https.onCall(async (data, context) => {
+exports.manageDeletionRequest = https.onCall(async (data, context) => {
     const { appId, requestId, approve } = data;
     if (!appId || !requestId) {
-      throw new functions.https.HttpsError("invalid-argument", "O ID da aplicação e da solicitação são necessários.");
+      throw new https.HttpsError("invalid-argument", "O ID da aplicação e da solicitação são necessários.");
     }
     const requestRef = db.doc(`artifacts/${appId}/public/data/deletionRequests/${requestId}`);
     const requestDoc = await requestRef.get();
     if (!requestDoc.exists) {
-      throw new functions.https.HttpsError("not-found", "Solicitação de exclusão não encontrada.");
+      throw new https.HttpsError("not-found", "Solicitação de exclusão não encontrada.");
     }
     const requestData = requestDoc.data();
     if (!requestData) {
-      throw new functions.https.HttpsError("internal", "Dados da solicitação estão corrompidos.");
+      throw new https.HttpsError("internal", "Dados da solicitação estão corrompidos.");
     }
     const articleRef = db.doc(`artifacts/${appId}/users/${requestData.companyId}/articles/${requestData.articleId}`);
     if (approve) {
@@ -161,10 +163,10 @@ exports.manageDeletionRequest = regionalFunctions.https.onCall(async (data, cont
     return { success: true };
   });
 
-exports.requestAlertDeletion = regionalFunctions.https.onCall(async (data, context) => {
+exports.requestAlertDeletion = https.onCall(async (data, context) => {
     const { appId, companyId, companyName, articleId, articleTitle, justification } = data;
     if (!appId || !companyId || !articleId || !justification) {
-      throw new functions.https.HttpsError("invalid-argument", "Informações incompletas para a solicitação de exclusão.");
+      throw new https.HttpsError("invalid-argument", "Informações incompletas para a solicitação de exclusão.");
     }
     await db.collection(`artifacts/${appId}/public/data/deletionRequests`).add({
       companyId,
@@ -180,14 +182,14 @@ exports.requestAlertDeletion = regionalFunctions.https.onCall(async (data, conte
     return { success: true };
   });
 
-exports.manualAddAlert = regionalFunctions.https.onCall(async (data, context) => {
+exports.manualAddAlert = https.onCall(async (data, context) => {
     const { appId, companyId, title, description, url, source, keyword } = data;
     if (!appId || !companyId || !title || !url || !source || !keyword) {
-      throw new functions.https.HttpsError("invalid-argument", "Dados incompletos para adicionar um alerta.");
+      throw new https.HttpsError("invalid-argument", "Dados incompletos para adicionar um alerta.");
     }
     const companyDoc = await db.doc(`artifacts/${appId}/public/data/companies/${companyId}`).get();
     if (!companyDoc.exists) {
-        throw new functions.https.HttpsError("not-found", "Empresa não encontrada.");
+        throw new https.HttpsError("not-found", "Empresa não encontrada.");
     }
     const companyName = companyDoc.data()?.name;
     const alertData = {
@@ -211,10 +213,10 @@ exports.manualAddAlert = regionalFunctions.https.onCall(async (data, context) =>
     return { success: true };
   });
 
-exports.generateSuperAdminReport = regionalFunctions.https.onCall(async (data, context) => {
+exports.generateSuperAdminReport = https.onCall(async (data, context) => {
     const { appId } = data;
     if (!appId) {
-        throw new functions.https.HttpsError("invalid-argument", "O ID da aplicação é necessário.");
+        throw new https.HttpsError("invalid-argument", "O ID da aplicação é necessário.");
     }
     const companiesSnapshot = await db.collection(`artifacts/${appId}/public/data/companies`).get();
     const reportData = [];
@@ -253,14 +255,14 @@ exports.generateSuperAdminReport = regionalFunctions.https.onCall(async (data, c
     return reportData;
   });
 
-exports.manualFetch = regionalFunctions.https.onCall(async (data, context) => {
-    functions.logger.info("=======================================");
-    functions.logger.info("INICIANDO BUSCA MANUAL DE NOTÍCIAS (VERSÃO DE DEPURAÇÃO)...");
+exports.manualFetch = https.onCall(async (data, context) => {
+    logger.info("=======================================");
+    logger.info("INICIANDO BUSCA MANUAL DE NOTÍCIAS (VERSÃO DE DEPURAÇÃO)...");
     
     const { appId } = data;
     if (!appId) {
-      functions.logger.error("ERRO CRÍTICO: O ID da aplicação é necessário.");
-      throw new functions.https.HttpsError("invalid-argument", "O ID da aplicação é necessário.");
+      logger.error("ERRO CRÍTICO: O ID da aplicação é necessário.");
+      throw new https.HttpsError("invalid-argument", "O ID da aplicação é necessário.");
     }
 
     try {
@@ -281,11 +283,11 @@ exports.manualFetch = regionalFunctions.https.onCall(async (data, context) => {
       if (!currentApiKey) {
         throw new Error(`Nenhuma chave de API do GNews encontrada para o período das ${currentHour}h.`);
       }
-      functions.logger.info(`Usando a chave de API para o período das ${currentHour}h.`);
+      logger.info(`Usando a chave de API para o período das ${currentHour}h.`);
 
       const companiesSnapshot = await db.collection(`artifacts/${appId}/public/data/companies`).where("status", "==", "active").get();
       if (companiesSnapshot.empty) {
-        functions.logger.warn("Nenhuma empresa ativa encontrada para processar.");
+        logger.warn("Nenhuma empresa ativa encontrada para processar.");
         return { success: true, message: "Nenhuma empresa ativa encontrada." };
       }
 
@@ -295,11 +297,11 @@ exports.manualFetch = regionalFunctions.https.onCall(async (data, context) => {
       for (const companyDoc of companiesSnapshot.docs) {
         const companyId = companyDoc.id;
         const companyName = companyDoc.data().name;
-        functions.logger.info(`--- Processando empresa: ${companyName} ---`);
+        logger.info(`--- Processando empresa: ${companyName} ---`);
 
         const keywordsSnapshot = await db.collection(`artifacts/${appId}/users/${companyId}/keywords`).get();
         if (keywordsSnapshot.empty) {
-          functions.logger.warn(`Nenhuma palavra-chave para a empresa ${companyName}, pulando.`);
+          logger.warn(`Nenhuma palavra-chave para a empresa ${companyName}, pulando.`);
           continue;
         }
 
@@ -307,19 +309,19 @@ exports.manualFetch = regionalFunctions.https.onCall(async (data, context) => {
         const searchQuery = keywordsList.map(kw => `"${kw}"`).join(" OR ");
         const queryUrl = `${GNEWS_URL}?q=${encodeURIComponent(searchQuery)}&lang=pt&country=br&token=${currentApiKey}`;
         
-        functions.logger.info(`URL da API para ${companyName}: ${queryUrl}`);
+        logger.info(`URL da API para ${companyName}: ${queryUrl}`);
 
         try {
           const response = await axios.get(queryUrl);
           const responseData = response.data;
 
           if (responseData.errors) {
-            functions.logger.error(`Erro retornado pela API GNews para '${companyName}': ${responseData.errors.join(", ")}`);
+            logger.error(`Erro retornado pela API GNews para '${companyName}': ${responseData.errors.join(", ")}`);
             continue;
           }
 
           if (responseData.articles && responseData.articles.length > 0) {
-            functions.logger.info(`-> API retornou ${responseData.articles.length} artigos para '${companyName}'.`);
+            logger.info(`-> API retornou ${responseData.articles.length} artigos para '${companyName}'.`);
             totalArticlesFound += responseData.articles.length;
 
             for (const article of responseData.articles) {
@@ -337,41 +339,41 @@ exports.manualFetch = regionalFunctions.https.onCall(async (data, context) => {
                 status: "pending",
               };
               
-              functions.logger.log(`Preparando para salvar artigo: "${article.title}"`);
+              logger.log(`Preparando para salvar artigo: "${article.title}"`);
               try {
                 await db.collection(`artifacts/${appId}/public/data/pendingAlerts`).add(articleData);
                 totalArticlesSaved++;
-                functions.logger.log(`   -> Artigo salvo com sucesso na fila de aprovação.`);
+                logger.log(`   -> Artigo salvo com sucesso na fila de aprovação.`);
               } catch (saveError) {
-                  functions.logger.error(`   !!! ERRO AO SALVAR ARTIGO NO FIRESTORE: ${saveError.message}`);
+                  logger.error(`   !!! ERRO AO SALVAR ARTIGO NO FIRESTORE: ${saveError.message}`);
               }
             }
           } else {
-            functions.logger.warn(`Nenhum artigo encontrado pela API para a busca da empresa '${companyName}'.`);
+            logger.warn(`Nenhum artigo encontrado pela API para a busca da empresa '${companyName}'.`);
           }
         } catch (fetchError) {
-          functions.logger.error(`!!! ERRO na chamada da API para a empresa '${companyName}':`, fetchError.message);
+          logger.error(`!!! ERRO na chamada da API para a empresa '${companyName}':`, fetchError.message);
           if (fetchError.response) {
-            functions.logger.error("   -> Resposta da API (com erro):", fetchError.response.data);
+            logger.error("   -> Resposta da API (com erro):", fetchError.response.data);
           }
         }
       }
-      functions.logger.info("=======================================");
-      functions.logger.info("BUSCA MANUAL CONCLUÍDA!");
-      functions.logger.info(`Total de artigos encontrados: ${totalArticlesFound}`);
-      functions.logger.info(`Total de artigos salvos na fila: ${totalArticlesSaved}`);
-      functions.logger.info("=======================================");
+      logger.info("=======================================");
+      logger.info("BUSCA MANUAL CONCLUÍDA!");
+      logger.info(`Total de artigos encontrados: ${totalArticlesFound}`);
+      logger.info(`Total de artigos salvos na fila: ${totalArticlesSaved}`);
+      logger.info("=======================================");
       return { success: true, totalSaved: totalArticlesSaved };
     } catch (error) {
-      functions.logger.error("!!!! ERRO FATAL na função manualFetch:", error);
-      throw new functions.https.HttpsError("internal", "Ocorreu um erro interno no servidor.", error.message);
+      logger.error("!!!! ERRO FATAL na função manualFetch:", error);
+      throw new https.HttpsError("internal", "Ocorreu um erro interno no servidor.", error.message);
     }
   });
 
-exports.scheduledFetch = regionalFunctions.pubsub.schedule("every 30 minutes")
+exports.scheduledFetch = pubsub.schedule("every 30 minutes")
   .timeZone("America/Sao_Paulo")
   .onRun(async (context) => {
-    functions.logger.info("Iniciando a coleta AGENDADA de notícias (a cada 30 min).");
+    logger.info("Iniciando a coleta AGENDADA de notícias (a cada 30 min).");
     const appId = APP_ID;
     try {
       const globalSettingsRef = db.doc(`artifacts/${appId}/public/data/settings/global`);
@@ -409,7 +411,7 @@ exports.scheduledFetch = regionalFunctions.pubsub.schedule("every 30 minutes")
           const responseData = response.data;
           
           if (responseData.errors) {
-            functions.logger.error(`(Agendado) Erro na API para '${companyName}': ${responseData.errors.join(", ")}`);
+            logger.error(`(Agendado) Erro na API para '${companyName}': ${responseData.errors.join(", ")}`);
             continue;
           }
           
@@ -432,14 +434,13 @@ exports.scheduledFetch = regionalFunctions.pubsub.schedule("every 30 minutes")
             }
           }
         } catch (fetchError) {
-          functions.logger.error(`(Agendado) Erro ao buscar notícias para '${companyName}':`, fetchError.message);
+          logger.error(`(Agendado) Erro ao buscar notícias para '${companyName}':`, fetchError.message);
         }
       }
-      functions.logger.info("Coleta AGENDADA de notícias concluída com sucesso.");
+      logger.info("Coleta AGENDADA de notícias concluída com sucesso.");
       return null;
     } catch (error) {
-      functions.logger.error("Erro fatal na função AGENDADA de coleta:", error);
+      logger.error("Erro fatal na função AGENDADA de coleta:", error);
       return null;
     }
   });
-
