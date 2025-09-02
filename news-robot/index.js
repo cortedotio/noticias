@@ -141,10 +141,12 @@ exports.manageDeletionRequest = functions
     if (!requestData) {
       throw new functions.https.HttpsError("internal", "Dados da solicitação estão corrompidos.");
     }
+    const articleRef = db.collection("artifacts").doc(appId).collection(`users/${requestData.companyId}/articles`).doc(requestData.articleId);
     if (approve) {
-      await db.collection("artifacts").doc(appId).collection(`users/${requestData.companyId}/articles`).doc(requestData.articleId).delete();
+      await articleRef.delete();
       await requestRef.update({ status: "approved" });
     } else {
+      await articleRef.update({ deletionRequestStatus: null });
       await requestRef.update({ status: "denied" });
     }
     return { success: true };
@@ -169,6 +171,8 @@ exports.requestAlertDeletion = functions
       status: "pending",
       requestedAt: admin.firestore.FieldValue.serverTimestamp(),
     });
+    const articleRef = db.collection("artifacts").doc(appId).collection(`users/${companyId}/articles`).doc(articleId);
+    await articleRef.update({ deletionRequestStatus: 'pending' });
     return { success: true };
   });
 
@@ -341,46 +345,13 @@ exports.manualFetch = functions
     }
   });
 
-// --- Funções de ajuda para o relatório ---
-function getChannelCategory(sourceName) {
-    const name = sourceName.toLowerCase();
-    if (name.includes('youtube')) return 'YouTube';
-    if (name.includes('globo') || name.includes('g1') || name.includes('uol') || name.includes('terra') || name.includes('r7')) return 'Sites';
-    if (name.includes('veja') || name.includes('istoé') || name.includes('exame')) return 'Revistas';
-    if (name.includes('cbn') || name.includes('bandeirantes')) return 'Rádios';
-    return 'Sites';
-}
-
-function getPredominantSentiment(percentages) {
-    if (percentages.positive > percentages.neutral && percentages.positive > percentages.negative) return 'Positivo';
-    if (percentages.negative > percentages.positive && percentages.negative > percentages.neutral) return 'Negativo';
-    return 'Neutro';
-}
-
-function getTopCount(counts) {
-    if (Object.keys(counts).length === 0) return 'N/A';
-    return Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b);
-}
-
-// ==================================================================================
-// NOVA FUNÇÃO AGENDADA
-// ==================================================================================
-/**
- * Esta função é executada automaticamente em um cronograma para buscar notícias.
- * Você pode alterar a string 'every 30 minutes' para o intervalo desejado.
- * Exemplos: 'every day 09:00', 'every 1 hours', etc.
- * Documentação: https://firebase.google.com/docs/functions/schedule-functions
- */
 exports.scheduledFetch = functions
   .region("southamerica-east1")
   .pubsub.schedule("every 30 minutes")
-  .timeZone("America/Sao_Paulo") // Importante para definir o fuso horário correto
+  .timeZone("America/Sao_Paulo")
   .onRun(async (context) => {
-    functions.logger.info("Iniciando a coleta AGENDADA de notícias.");
-    
-    // A lógica aqui é uma cópia da função manualFetch, mas adaptada para o contexto do agendador
-    const appId = APP_ID; // Usamos o ID do projeto definido no topo do arquivo
-
+    functions.logger.info("Iniciando a coleta AGENDADA de notícias (a cada 30 min).");
+    const appId = APP_ID;
     try {
       const globalSettingsRef = db.collection("artifacts").doc(appId).collection("public/data/settings").doc("global");
       const globalSettingsDoc = await globalSettingsRef.get();
@@ -444,9 +415,30 @@ exports.scheduledFetch = functions
         }
       }
       functions.logger.info("Coleta AGENDADA de notícias concluída com sucesso.");
-      return null; // Funções agendadas devem retornar null ou uma Promise resolvida
+      return null;
     } catch (error) {
       functions.logger.error("Erro fatal na função AGENDADA de coleta:", error);
       return null;
     }
   });
+
+// --- Funções de ajuda para o relatório ---
+function getChannelCategory(sourceName) {
+    const name = sourceName.toLowerCase();
+    if (name.includes('youtube')) return 'YouTube';
+    if (name.includes('globo') || name.includes('g1') || name.includes('uol') || name.includes('terra') || name.includes('r7')) return 'Sites';
+    if (name.includes('veja') || name.includes('istoé') || name.includes('exame')) return 'Revistas';
+    if (name.includes('cbn') || name.includes('bandeirantes')) return 'Rádios';
+    return 'Sites';
+}
+
+function getPredominantSentiment(percentages) {
+    if (percentages.positive > percentages.neutral && percentages.positive > percentages.negative) return 'Positivo';
+    if (percentages.negative > percentages.positive && percentages.negative > percentages.neutral) return 'Negativo';
+    return 'Neutro';
+}
+
+function getTopCount(counts) {
+    if (Object.keys(counts).length === 0) return 'N/A';
+    return Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b);
+}
