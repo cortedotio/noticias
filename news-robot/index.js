@@ -367,13 +367,13 @@ function getTopCount(counts) {
 // ==================================================================================
 /**
  * Esta função é executada automaticamente em um cronograma para buscar notícias.
- * Você pode alterar a string 'every 6 hours' para o intervalo desejado.
+ * Você pode alterar a string 'every 30 minutes' para o intervalo desejado.
  * Exemplos: 'every day 09:00', 'every 1 hours', etc.
  * Documentação: https://firebase.google.com/docs/functions/schedule-functions
  */
 exports.scheduledFetch = functions
   .region("southamerica-east1")
-  .pubsub.schedule("every 6 hours")
+  .pubsub.schedule("every 30 minutes")
   .timeZone("America/Sao_Paulo") // Importante para definir o fuso horário correto
   .onRun(async (context) => {
     functions.logger.info("Iniciando a coleta AGENDADA de notícias.");
