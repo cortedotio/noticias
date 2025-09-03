@@ -13,7 +13,7 @@
   },
   "scripts": {
     "serve": "firebase emulators:start --only functions",
-    "deploy": "firebase deploy --only functions",
+    "deploy": "firebase deploy --only functions --region southamerica-east1",
     "logs": "firebase functions:log"
   }
 }
