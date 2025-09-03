@@ -1,18 +1,37 @@
 {
-  "name": "news-robot-functions",
-  "description": "Cloud Functions para o Robô de Notícias",
-  "main": "index.js",
-  "dependencies": {
-    "axios": "^1.7.2",
-    "firebase-admin": "^12.1.1",
-    "firebase-functions": "^5.0.1"
-  },
-  "private": true,
-  "engines": {
-    "node": "20"
-  },
-  "scripts": {
-    "deploy": "firebase deploy --only functions",
-    "logs": "firebase functions:log"
+  "functions": [
+    {
+      "source": "news-robot",
+      "codebase": "default",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log"
+      ],
+      "predeploy": [
+        "npm --prefix \"$RESOURCE_DIR\" install"
+      ]
+    }
+  ],
+  "hosting": {
+    "public": "public",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ]
   }
 }
+```
+
+### Próximos Passos
+
+1.  **Substitua o conteúdo** do seu `firebase.json` pelo código que forneci acima.
+2.  Verifique se os arquivos `index.js` e `package.json` dentro da pasta `news-robot` são as versões mais recentes que eu te enviei.
+3.  Abra o terminal na raiz do seu projeto (`C:\Users\Ulysses\Desktop\GERENCIAMENTO DE NOTICIAS\projeto ulysses`).
+4.  Execute o comando de deploy novamente:
+
+    ```bash
+    firebase deploy --only functions
+    
