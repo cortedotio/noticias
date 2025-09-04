@@ -1,6 +1,6 @@
 /**
  * IMPORTANTE: Este é o código COMPLETO e ATUALIZADO para o servidor (Firebase Cloud Functions).
- * A lógica de busca foi expandida para usar múltiplas fontes de API, RSS e Blogger.
+ * Foi adicionada uma lógica para verificar e impedir o registo de alertas duplicados.
  */
 
 const functions = require("firebase-functions");
@@ -113,7 +113,6 @@ async function fetchAllNews() {
         return { success: true, message: "Nenhuma empresa ativa encontrada." };
     }
 
-    const seenUrls = new Set(); // Para evitar artigos duplicados na mesma execução
     const batch = db.batch(); // Usar um batch para salvar todos os artigos de uma vez
     let articlesToSaveCount = 0;
 
@@ -121,6 +120,18 @@ async function fetchAllNews() {
         const companyId = companyDoc.id;
         const companyName = companyDoc.data().name;
         functions.logger.info(`--- A processar empresa: ${companyName} ---`);
+
+        // NOVO: Coletar todas as URLs existentes para esta empresa para evitar duplicados
+        const existingUrls = new Set();
+        const articlesQuery = db.collection(`artifacts/${APP_ID}/users/${companyId}/articles`).select('url');
+        const pendingQuery = db.collection(`artifacts/${APP_ID}/public/data/pendingAlerts`).where('companyId', '==', companyId).select('url');
+
+        const [articlesSnapshot, pendingSnapshot] = await Promise.all([articlesQuery.get(), pendingQuery.get()]);
+        
+        articlesSnapshot.forEach(doc => existingUrls.add(doc.data().url));
+        pendingSnapshot.forEach(doc => existingUrls.add(doc.data().url));
+        functions.logger.info(`Encontradas ${existingUrls.size} URLs existentes para ${companyName}.`);
+
 
         const keywordsSnapshot = await db.collection(`artifacts/${APP_ID}/users/${companyId}/keywords`).get();
         if (keywordsSnapshot.empty) {
@@ -147,7 +158,7 @@ async function fetchAllNews() {
                     if (response.data && response.data.articles) {
                         functions.logger.info(`GNews encontrou ${response.data.articles.length} artigos para ${companyName}`);
                         for (const article of response.data.articles) {
-                            if (seenUrls.has(article.url)) continue;
+                            if (existingUrls.has(article.url)) continue; // Pula se a URL já existir
                             const matchedKeyword = findMatchingKeyword(article, keywordsList);
                             if (matchedKeyword) {
                                 const normalized = normalizeArticle(article, 'gnews');
@@ -157,7 +168,7 @@ async function fetchAllNews() {
                                         ...normalized, keyword: matchedKeyword,
                                         companyId, companyName, status: "pending"
                                     });
-                                    seenUrls.add(article.url);
+                                    existingUrls.add(article.url); // Adiciona para evitar duplicados na mesma execução
                                     articlesToSaveCount++;
                                 }
                             }
@@ -175,7 +186,7 @@ async function fetchAllNews() {
                 if (response.data && response.data.articles) {
                     functions.logger.info(`NewsAPI encontrou ${response.data.articles.length} artigos para ${companyName}`);
                     for (const article of response.data.articles) {
-                        if (seenUrls.has(article.url)) continue;
+                        if (existingUrls.has(article.url)) continue; // Pula se a URL já existir
                         const matchedKeyword = findMatchingKeyword(article, keywordsList);
                         if (matchedKeyword) {
                             const normalized = normalizeArticle(article, 'newsapi');
@@ -185,7 +196,7 @@ async function fetchAllNews() {
                                     ...normalized, keyword: matchedKeyword,
                                     companyId, companyName, status: "pending"
                                 });
-                                seenUrls.add(article.url);
+                                existingUrls.add(article.url);
                                 articlesToSaveCount++;
                             }
                         }
@@ -204,7 +215,7 @@ async function fetchAllNews() {
                         const filteredItems = response.data.items.filter(item => findMatchingKeyword(item, keywordsList));
                         functions.logger.info(`RSS (${rssUrl}) encontrou ${filteredItems.length} artigos para ${companyName}`);
                         for (const item of filteredItems) {
-                             if (seenUrls.has(item.link)) continue;
+                             if (existingUrls.has(item.link)) continue; // Pula se a URL já existir
                              const normalized = normalizeArticle(item, 'rss');
                              if(normalized){
                                 const pendingAlertRef = db.collection(`artifacts/${APP_ID}/public/data/pendingAlerts`).doc();
@@ -212,7 +223,7 @@ async function fetchAllNews() {
                                     ...normalized, keyword: findMatchingKeyword(item, keywordsList),
                                     companyId, companyName, status: "pending"
                                 });
-                                seenUrls.add(item.link);
+                                existingUrls.add(item.link);
                                 articlesToSaveCount++;
                              }
                         }
@@ -232,7 +243,7 @@ async function fetchAllNews() {
                         const filteredItems = response.data.items.filter(item => findMatchingKeyword(item, keywordsList));
                         functions.logger.info(`Blogger (${blogId}) encontrou ${filteredItems.length} artigos para ${companyName}`);
                         for (const item of filteredItems) {
-                             if (seenUrls.has(item.url)) continue;
+                             if (existingUrls.has(item.url)) continue; // Pula se a URL já existir
                              const normalized = normalizeArticle(item, 'blogger');
                              if(normalized){
                                 const pendingAlertRef = db.collection(`artifacts/${APP_ID}/public/data/pendingAlerts`).doc();
@@ -240,7 +251,7 @@ async function fetchAllNews() {
                                     ...normalized, keyword: findMatchingKeyword(item, keywordsList),
                                     companyId, companyName, status: "pending"
                                 });
-                                seenUrls.add(item.url);
+                                existingUrls.add(item.url);
                                 articlesToSaveCount++;
                              }
                         }
@@ -253,7 +264,7 @@ async function fetchAllNews() {
     if (articlesToSaveCount > 0) {
         await batch.commit();
     }
-    functions.logger.info(`Busca concluída. ${articlesToSaveCount} artigos únicos foram guardados na fila de aprovação.`);
+    functions.logger.info(`Busca concluída. ${articlesToSaveCount} novos artigos únicos foram guardados na fila de aprovação.`);
     functions.logger.info("=======================================");
     return { success: true, totalSaved: articlesToSaveCount };
 }
