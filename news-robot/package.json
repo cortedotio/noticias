@@ -13,8 +13,9 @@
   },
   "scripts": {
     "serve": "firebase emulators:start --only functions",
-    "deploy": "firebase deploy --only functions --region southamerica-east1",
+    "deploy": "firebase deploy --only functions",
     "logs": "firebase functions:log"
   }
 }
+
 
