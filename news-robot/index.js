@@ -1,6 +1,6 @@
 /**
  * IMPORTANTE: Este é o código COMPLETO e ATUALIZADO para o servidor (Firebase Cloud Functions).
- * Ele foi modificado para forçar a região "southamerica-east1" em cada função individualmente.
+ * A lógica de busca foi expandida para usar múltiplas fontes de API, RSS e Blogger.
  */
 
 const functions = require("firebase-functions");
@@ -11,36 +11,60 @@ admin.initializeApp();
 const db = admin.firestore();
 
 const GNEWS_URL = "https://gnews.io/api/v4/search";
+const NEWSAPI_URL = "https://newsapi.org/v2/everything";
+const BLOGGER_URL = "https://www.googleapis.com/blogger/v3/blogs";
+const RSS2JSON_URL = "https://api.rss2json.com/v1/api.json";
 const APP_ID = "noticias-6e952";
 
-// Funções auxiliares (sem alterações)
-async function deleteCollection(collectionRef) {
-  const snapshot = await collectionRef.get();
-  const batch = db.batch();
-  snapshot.docs.forEach(doc => {
-    batch.delete(doc.ref);
-  });
-  await batch.commit();
-}
+// --- Funções Auxiliares ---
 
-function getChannelCategory(sourceName) {
-    const name = sourceName.toLowerCase();
-    if (name.includes('youtube')) return 'YouTube';
-    if (name.includes('globo') || name.includes('g1') || name.includes('uol') || name.includes('terra') || name.includes('r7')) return 'Sites';
-    if (name.includes('veja') || name.includes('istoé') || name.includes('exame')) return 'Revistas';
-    if (name.includes('cbn') || name.includes('bandeirantes')) return 'Rádios';
-    return 'Sites';
-}
-
-function getPredominantSentiment(percentages) {
-    if (percentages.positive > percentages.neutral && percentages.positive > percentages.negative) return 'Positivo';
-    if (percentages.negative > percentages.positive && percentages.negative > percentages.neutral) return 'Negativo';
-    return 'Neutro';
-}
-
-function getTopCount(counts) {
-    if (Object.keys(counts).length === 0) return 'N/A';
-    return Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b);
+// Função para normalizar artigos de diferentes fontes para um formato padrão
+function normalizeArticle(article, sourceApi) {
+    try {
+        switch (sourceApi) {
+            case 'gnews':
+                return {
+                    title: article.title,
+                    description: article.description,
+                    url: article.url,
+                    image: article.image || null,
+                    publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.publishedAt)),
+                    source: { name: article.source.name, url: article.source.url },
+                };
+            case 'newsapi':
+                return {
+                    title: article.title,
+                    description: article.description,
+                    url: article.url,
+                    image: article.urlToImage || null,
+                    publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.publishedAt)),
+                    source: { name: article.source.name, url: null },
+                };
+            case 'blogger':
+                 return {
+                    title: article.title,
+                    description: (article.content || "").substring(0, 250).replace(/<[^>]*>?/gm, '') + '...',
+                    url: article.url,
+                    image: null,
+                    publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.published)),
+                    source: { name: article.blog.name || 'Blogger', url: article.url },
+                };
+            case 'rss':
+                return {
+                    title: article.title,
+                    description: (article.description || "").substring(0, 250).replace(/<[^>]*>?/gm, '') + '...',
+                    url: article.link,
+                    image: article.thumbnail || null,
+                    publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.pubDate)),
+                    source: { name: article.author || 'RSS Feed', url: article.link },
+                };
+            default:
+                return null;
+        }
+    } catch (e) {
+        functions.logger.error(`Erro ao normalizar artigo da fonte ${sourceApi}:`, e);
+        return null;
+    }
 }
 
 const findMatchingKeyword = (article, keywords) => {
@@ -49,7 +73,190 @@ const findMatchingKeyword = (article, keywords) => {
   return keywords.find(kw => title.includes(kw.toLowerCase()) || description.includes(kw.toLowerCase())) || keywords[0];
 };
 
-// Cloud Functions (com a região FORÇADA em cada uma)
+
+/**
+ * Função principal e centralizada para buscar notícias de todas as fontes.
+ */
+async function fetchAllNews() {
+    functions.logger.info("=======================================");
+    functions.logger.info("INICIANDO BUSCA DE NOTÍCIAS MULTI-FONTE...");
+
+    const globalSettingsRef = db.doc(`artifacts/${APP_ID}/public/data/settings/global`);
+    const globalSettingsDoc = await globalSettingsRef.get();
+    if (!globalSettingsDoc.exists) {
+        throw new Error("Configurações globais não encontradas.");
+    }
+    const settings = globalSettingsDoc.data();
+
+    const companiesSnapshot = await db.collection(`artifacts/${APP_ID}/public/data/companies`).where("status", "==", "active").get();
+    if (companiesSnapshot.empty) {
+        functions.logger.warn("Nenhuma empresa ativa encontrada para processar.");
+        return { success: true, message: "Nenhuma empresa ativa encontrada." };
+    }
+
+    const seenUrls = new Set(); // Para evitar artigos duplicados na mesma execução
+    const batch = db.batch(); // Usar um batch para salvar todos os artigos de uma vez
+    let articlesToSaveCount = 0;
+
+    for (const companyDoc of companiesSnapshot.docs) {
+        const companyId = companyDoc.id;
+        const companyName = companyDoc.data().name;
+        functions.logger.info(`--- Processando empresa: ${companyName} ---`);
+
+        const keywordsSnapshot = await db.collection(`artifacts/${APP_ID}/users/${companyId}/keywords`).get();
+        if (keywordsSnapshot.empty) {
+            functions.logger.warn(`Nenhuma palavra-chave para a empresa ${companyName}, pulando.`);
+            continue;
+        }
+
+        const keywordsList = keywordsSnapshot.docs.map(doc => doc.data().word);
+        const searchQuery = keywordsList.map(kw => `"${kw}"`).join(" OR ");
+
+        // 1. Busca no GNews
+        if (settings.apiKeyGNews1) {
+            const currentHour = new Date().getHours();
+            let gnewsApiKey = '';
+            if (currentHour >= 0 && currentHour < 6) gnewsApiKey = settings.apiKeyGNews1;
+            else if (currentHour >= 6 && currentHour < 12) gnewsApiKey = settings.apiKeyGNews2;
+            else if (currentHour >= 12 && currentHour < 18) gnewsApiKey = settings.apiKeyGNews3;
+            else gnewsApiKey = settings.apiKeyGNews4;
+
+            if(gnewsApiKey) {
+                const queryUrl = `${GNEWS_URL}?q=${encodeURIComponent(searchQuery)}&lang=pt&country=br&token=${gnewsApiKey}`;
+                try {
+                    const response = await axios.get(queryUrl);
+                    if (response.data && response.data.articles) {
+                        functions.logger.info(`GNews encontrou ${response.data.articles.length} artigos para ${companyName}`);
+                        for (const article of response.data.articles) {
+                            if (seenUrls.has(article.url)) continue;
+                            const normalized = normalizeArticle(article, 'gnews');
+                            if (normalized) {
+                                const pendingAlertRef = db.collection(`artifacts/${APP_ID}/public/data/pendingAlerts`).doc();
+                                batch.set(pendingAlertRef, {
+                                    ...normalized, keyword: findMatchingKeyword(article, keywordsList),
+                                    companyId, companyName, status: "pending"
+                                });
+                                seenUrls.add(article.url);
+                                articlesToSaveCount++;
+                            }
+                        }
+                    }
+                } catch (e) { functions.logger.error(`Erro na API GNews para ${companyName}:`, e.message); }
+            }
+        }
+
+        // 2. Busca no NewsAPI.org
+        if (settings.apiKeyNewsApi) {
+            const queryUrl = `${NEWSAPI_URL}?q=${encodeURIComponent(searchQuery)}&language=pt&apiKey=${settings.apiKeyNewsApi}`;
+            try {
+                const response = await axios.get(queryUrl);
+                if (response.data && response.data.articles) {
+                    functions.logger.info(`NewsAPI encontrou ${response.data.articles.length} artigos para ${companyName}`);
+                    for (const article of response.data.articles) {
+                        if (seenUrls.has(article.url)) continue;
+                        const normalized = normalizeArticle(article, 'newsapi');
+                        if(normalized) {
+                            const pendingAlertRef = db.collection(`artifacts/${APP_ID}/public/data/pendingAlerts`).doc();
+                            batch.set(pendingAlertRef, {
+                                ...normalized, keyword: findMatchingKeyword(article, keywordsList),
+                                companyId, companyName, status: "pending"
+                            });
+                            seenUrls.add(article.url);
+                            articlesToSaveCount++;
+                        }
+                    }
+                }
+            } catch (e) { functions.logger.error(`Erro na NewsAPI para ${companyName}:`, e.message); }
+        }
+        
+        // 3. Busca em Feeds RSS
+        if (settings.rssUrl) {
+            const rssUrls = settings.rssUrl.split('\n').filter(url => url.trim() !== '');
+            for(const rssUrl of rssUrls) {
+                try {
+                    const response = await axios.get(`${RSS2JSON_URL}?rss_url=${encodeURIComponent(rssUrl)}`);
+                    if (response.data && response.data.items) {
+                        const filteredItems = response.data.items.filter(item => findMatchingKeyword(item, keywordsList));
+                        functions.logger.info(`RSS (${rssUrl}) encontrou ${filteredItems.length} artigos para ${companyName}`);
+                        for (const item of filteredItems) {
+                             if (seenUrls.has(item.link)) continue;
+                             const normalized = normalizeArticle(item, 'rss');
+                             if(normalized){
+                                const pendingAlertRef = db.collection(`artifacts/${APP_ID}/public/data/pendingAlerts`).doc();
+                                batch.set(pendingAlertRef, {
+                                    ...normalized, keyword: findMatchingKeyword(item, keywordsList),
+                                    companyId, companyName, status: "pending"
+                                });
+                                seenUrls.add(item.link);
+                                articlesToSaveCount++;
+                             }
+                        }
+                    }
+                } catch (e) { functions.logger.error(`Erro ao buscar RSS Feed ${rssUrl}:`, e.message); }
+            }
+        }
+
+        // 4. Busca em Blogs do Blogger
+        if (settings.apiKeyBlogger && settings.bloggerId) {
+            const blogIds = settings.bloggerId.split('\n').filter(id => id.trim() !== '');
+            for (const blogId of blogIds) {
+                const queryUrl = `${BLOGGER_URL}/${blogId}/posts?q=${encodeURIComponent(searchQuery)}&key=${settings.apiKeyBlogger}`;
+                try {
+                     const response = await axios.get(queryUrl);
+                     if (response.data && response.data.items) {
+                        functions.logger.info(`Blogger (${blogId}) encontrou ${response.data.items.length} artigos para ${companyName}`);
+                        for (const item of response.data.items) {
+                             if (seenUrls.has(item.url)) continue;
+                             const normalized = normalizeArticle(item, 'blogger');
+                             if(normalized){
+                                const pendingAlertRef = db.collection(`artifacts/${APP_ID}/public/data/pendingAlerts`).doc();
+                                batch.set(pendingAlertRef, {
+                                    ...normalized, keyword: findMatchingKeyword(item, keywordsList),
+                                    companyId, companyName, status: "pending"
+                                });
+                                seenUrls.add(item.url);
+                                articlesToSaveCount++;
+                             }
+                        }
+                     }
+                } catch(e) { functions.logger.error(`Erro ao buscar no Blogger ID ${blogId}:`, e.message); }
+            }
+        }
+    }
+    
+    if (articlesToSaveCount > 0) {
+        await batch.commit();
+    }
+    functions.logger.info(`Busca concluída. ${articlesToSaveCount} artigos únicos foram salvos na fila de aprovação.`);
+    functions.logger.info("=======================================");
+    return { success: true, totalSaved: articlesToSaveCount };
+}
+
+
+// --- Funções Principais (Callable e Scheduled) ---
+
+exports.manualFetch = functions.region("southamerica-east1").https.onCall(async (data, context) => {
+    try {
+        return await fetchAllNews();
+    } catch(error) {
+        functions.logger.error("!!!! ERRO FATAL na função manualFetch:", error);
+        throw new functions.https.HttpsError("internal", "Ocorreu um erro interno no servidor.", error.message);
+    }
+});
+
+exports.scheduledFetch = functions.region("southamerica-east1").pubsub.schedule("every 30 minutes")
+  .timeZone("America/Sao_Paulo")
+  .onRun(async (context) => {
+    try {
+        await fetchAllNews();
+        return null;
+    } catch(error) {
+        functions.logger.error("!!!! ERRO FATAL na função scheduledFetch:", error);
+        return null;
+    }
+});
+
+// --- Outras Funções (sem alteração de lógica) ---
 
 exports.approveAlert = functions.region("southamerica-east1").https.onCall(async (data, context) => {
     const { appId, alertId } = data;
@@ -245,194 +452,5 @@ exports.generateSuperAdminReport = functions.region("southamerica-east1").https.
       reportData.push({ companyName, totalAlerts, sentimentPercentage, predominantSentiment, topChannel, topVehicle });
     }
     return reportData;
-  });
+});
 
-exports.manualFetch = functions.region("southamerica-east1").https.onCall(async (data, context) => {
-    functions.logger.info("=======================================");
-    functions.logger.info("INICIANDO BUSCA MANUAL DE NOTÍCIAS (VERSÃO DE DEPURAÇÃO)...");
-    
-    const { appId } = data;
-    if (!appId) {
-      functions.logger.error("ERRO CRÍTICO: O ID da aplicação é necessário.");
-      throw new functions.https.HttpsError("invalid-argument", "O ID da aplicação é necessário.");
-    }
-
-    try {
-      const globalSettingsRef = db.doc(`artifacts/${appId}/public/data/settings/global`);
-      const globalSettingsDoc = await globalSettingsRef.get();
-      if (!globalSettingsDoc.exists) {
-        throw new Error("Configurações globais não encontradas.");
-      }
-      const settings = globalSettingsDoc.data();
-      
-      const currentHour = new Date().getHours();
-      let currentApiKey = '';
-      if (currentHour >= 0 && currentHour < 6) currentApiKey = settings.apiKeyGNews1;
-      else if (currentHour >= 6 && currentHour < 12) currentApiKey = settings.apiKeyGNews2;
-      else if (currentHour >= 12 && currentHour < 18) currentApiKey = settings.apiKeyGNews3;
-      else currentApiKey = settings.apiKeyGNews4;
-
-      if (!currentApiKey) {
-        throw new Error(`Nenhuma chave de API do GNews encontrada para o período das ${currentHour}h.`);
-      }
-      functions.logger.info(`Usando a chave de API para o período das ${currentHour}h.`);
-
-      const companiesSnapshot = await db.collection(`artifacts/${appId}/public/data/companies`).where("status", "==", "active").get();
-      if (companiesSnapshot.empty) {
-        functions.logger.warn("Nenhuma empresa ativa encontrada para processar.");
-        return { success: true, message: "Nenhuma empresa ativa encontrada." };
-      }
-
-      let totalArticlesFound = 0;
-      let totalArticlesSaved = 0;
-
-      for (const companyDoc of companiesSnapshot.docs) {
-        const companyId = companyDoc.id;
-        const companyName = companyDoc.data().name;
-        functions.logger.info(`--- Processando empresa: ${companyName} ---`);
-
-        const keywordsSnapshot = await db.collection(`artifacts/${appId}/users/${companyId}/keywords`).get();
-        if (keywordsSnapshot.empty) {
-          functions.logger.warn(`Nenhuma palavra-chave para a empresa ${companyName}, pulando.`);
-          continue;
-        }
-
-        const keywordsList = keywordsSnapshot.docs.map(doc => doc.data().word);
-        const searchQuery = keywordsList.map(kw => `"${kw}"`).join(" OR ");
-        const queryUrl = `${GNEWS_URL}?q=${encodeURIComponent(searchQuery)}&lang=pt&country=br&token=${currentApiKey}`;
-        
-        functions.logger.info(`URL da API para ${companyName}: ${queryUrl}`);
-
-        try {
-          const response = await axios.get(queryUrl);
-          const responseData = response.data;
-
-          if (responseData.errors) {
-            functions.logger.error(`Erro retornado pela API GNews para '${companyName}': ${responseData.errors.join(", ")}`);
-            continue;
-          }
-
-          if (responseData.articles && responseData.articles.length > 0) {
-            functions.logger.info(`-> API retornou ${responseData.articles.length} artigos para '${companyName}'.`);
-            totalArticlesFound += responseData.articles.length;
-
-            for (const article of responseData.articles) {
-              const matchedKeyword = findMatchingKeyword(article, keywordsList);
-              const articleData = {
-                title: article.title,
-                description: article.description,
-                url: article.url,
-                image: article.image || null,
-                publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.publishedAt)),
-                source: { name: article.source.name, url: article.source.url },
-                keyword: matchedKeyword,
-                companyId: companyId,
-                companyName: companyName,
-                status: "pending",
-              };
-              
-              functions.logger.log(`Preparando para salvar artigo: "${article.title}"`);
-              try {
-                await db.collection(`artifacts/${appId}/public/data/pendingAlerts`).add(articleData);
-                totalArticlesSaved++;
-                functions.logger.log(`   -> Artigo salvo com sucesso na fila de aprovação.`);
-              } catch (saveError) {
-                  functions.logger.error(`   !!! ERRO AO SALVAR ARTIGO NO FIRESTORE: ${saveError.message}`);
-              }
-            }
-          } else {
-            functions.logger.warn(`Nenhum artigo encontrado pela API para a busca da empresa '${companyName}'.`);
-          }
-        } catch (fetchError) {
-          functions.logger.error(`!!! ERRO na chamada da API para a empresa '${companyName}':`, fetchError.message);
-          if (fetchError.response) {
-            functions.logger.error("   -> Resposta da API (com erro):", fetchError.response.data);
-          }
-        }
-      }
-      functions.logger.info("=======================================");
-      functions.logger.info("BUSCA MANUAL CONCLUÍDA!");
-      functions.logger.info(`Total de artigos encontrados: ${totalArticlesFound}`);
-      functions.logger.info(`Total de artigos salvos na fila: ${totalArticlesSaved}`);
-      functions.logger.info("=======================================");
-      return { success: true, totalSaved: totalArticlesSaved };
-    } catch (error) {
-      functions.logger.error("!!!! ERRO FATAL na função manualFetch:", error);
-      throw new functions.https.HttpsError("internal", "Ocorreu um erro interno no servidor.", error.message);
-    }
-  });
-
-exports.scheduledFetch = functions.region("southamerica-east1").pubsub.schedule("every 30 minutes")
-  .timeZone("America/Sao_Paulo")
-  .onRun(async (context) => {
-    functions.logger.info("Iniciando a coleta AGENDADA de notícias (a cada 30 min).");
-    const appId = APP_ID;
-    try {
-      const globalSettingsRef = db.doc(`artifacts/${appId}/public/data/settings/global`);
-      const globalSettingsDoc = await globalSettingsRef.get();
-      if (!globalSettingsDoc.exists) {
-        throw new Error("Configurações globais não encontradas.");
-      }
-      const settings = globalSettingsDoc.data();
-      
-      const currentHour = new Date().getHours();
-      let currentApiKey = '';
-      if (currentHour >= 0 && currentHour < 6) currentApiKey = settings.apiKeyGNews1;
-      else if (currentHour >= 6 && currentHour < 12) currentApiKey = settings.apiKeyGNews2;
-      else if (currentHour >= 12 && currentHour < 18) currentApiKey = settings.apiKeyGNews3;
-      else currentApiKey = settings.apiKeyGNews4;
-
-      if (!currentApiKey) {
-        throw new Error(`Nenhuma chave de API do GNews encontrada para o período das ${currentHour}h.`);
-      }
-
-      const companiesSnapshot = await db.collection(`artifacts/${appId}/public/data/companies`).where("status", "==", "active").get();
-      for (const companyDoc of companiesSnapshot.docs) {
-        const companyId = companyDoc.id;
-        const companyName = companyDoc.data().name;
-        
-        const keywordsSnapshot = await db.collection(`artifacts/${appId}/users/${companyId}/keywords`).get();
-        if (keywordsSnapshot.empty) continue;
-
-        const keywordsList = keywordsSnapshot.docs.map(doc => doc.data().word);
-        const searchQuery = keywordsList.map(kw => `"${kw}"`).join(" OR ");
-        const queryUrl = `${GNEWS_URL}?q=${encodeURIComponent(searchQuery)}&lang=pt&country=br&token=${currentApiKey}`;
-        
-        try {
-          const response = await axios.get(queryUrl);
-          const responseData = response.data;
-          
-          if (responseData.errors) {
-            functions.logger.error(`(Agendado) Erro na API para '${companyName}': ${responseData.errors.join(", ")}`);
-            continue;
-          }
-          
-          if (responseData.articles && responseData.articles.length > 0) {
-            for (const article of responseData.articles) {
-              const matchedKeyword = findMatchingKeyword(article, keywordsList);
-              const articleData = {
-                title: article.title,
-                description: article.description,
-                url: article.url,
-                image: article.image || null,
-                publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.publishedAt)),
-                source: { name: article.source.name, url: article.source.url },
-                keyword: matchedKeyword,
-                companyId: companyId,
-                companyName: companyName,
-                status: "pending",
-              };
-              await db.collection(`artifacts/${appId}/public/data/pendingAlerts`).add(articleData);
-            }
-          }
-        } catch (fetchError) {
-          functions.logger.error(`(Agendado) Erro ao buscar notícias para '${companyName}':`, fetchError.message);
-        }
-      }
-      functions.logger.info("Coleta AGENDADA de notícias concluída com sucesso.");
-      return null;
-    } catch (error) {
-      functions.logger.error("Erro fatal na função AGENDADA de coleta:", error);
-      return null;
-    }
-  });
