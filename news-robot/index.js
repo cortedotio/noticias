@@ -16,7 +16,32 @@ const BLOGGER_URL = "https://www.googleapis.com/blogger/v3/blogs";
 const RSS2JSON_URL = "https://api.rss2json.com/v1/api.json";
 const APP_ID = "noticias-6e952";
 
+// **CORREÇÃO:** Definindo a região uma vez para ser usada por todas as funções.
+const regionalFunctions = functions.region("southamerica-east1");
+
 // --- Funções Auxiliares ---
+
+/**
+ * Procura por uma palavra-chave no título ou no corpo (description/content) de um artigo.
+ * @param {object} article O artigo da notícia.
+ * @param {string[]} keywords A lista de palavras-chave a procurar.
+ * @returns {string|null} A primeira palavra-chave encontrada ou nulo se nenhuma for encontrada.
+ */
+const findMatchingKeyword = (article, keywords) => {
+  const title = (article.title || "").toLowerCase();
+  // Unifica a busca no corpo do texto, seja 'description' ou 'content' (para o Blogger)
+  const bodyText = (article.description || article.content || "").toLowerCase();
+  
+  // Encontra a primeira palavra-chave que corresponda
+  const matchedKeyword = keywords.find(kw => {
+      const lowerCaseKw = kw.toLowerCase();
+      // A palavra-chave precisa de estar contida no título ou no corpo do texto
+      return title.includes(lowerCaseKw) || bodyText.includes(lowerCaseKw);
+  });
+
+  return matchedKeyword || null; // Retorna a palavra-chave encontrada ou nulo se não houver correspondência
+};
+
 
 // Função para normalizar artigos de diferentes fontes para um formato padrão
 function normalizeArticle(article, sourceApi) {
@@ -38,21 +63,21 @@ function normalizeArticle(article, sourceApi) {
                     url: article.url,
                     image: article.urlToImage || null,
                     publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.publishedAt)),
-                    source: { name: article.source.name, url: null },
+                    source: { name: article.source.name, url: null }, // NewsAPI não fornece URL da fonte
                 };
             case 'blogger':
                  return {
                     title: article.title,
-                    description: (article.content || "").substring(0, 250).replace(/<[^>]*>?/gm, '') + '...',
+                    description: (article.content || "").substring(0, 250).replace(/<[^>]*>?/gm, '') + '...', // Remove HTML e limita a descrição
                     url: article.url,
-                    image: null,
+                    image: null, // Blogger API não fornece imagem de destaque facilmente
                     publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.published)),
                     source: { name: article.blog.name || 'Blogger', url: article.url },
                 };
             case 'rss':
                 return {
                     title: article.title,
-                    description: (article.description || "").substring(0, 250).replace(/<[^>]*>?/gm, '') + '...',
+                    description: (article.description || "").substring(0, 250).replace(/<[^>]*>?/gm, '') + '...', // Remove HTML e limita a descrição
                     url: article.link,
                     image: article.thumbnail || null,
                     publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.pubDate)),
@@ -66,12 +91,6 @@ function normalizeArticle(article, sourceApi) {
         return null;
     }
 }
-
-const findMatchingKeyword = (article, keywords) => {
-  const title = (article.title || "").toLowerCase();
-  const description = (article.description || "").toLowerCase();
-  return keywords.find(kw => title.includes(kw.toLowerCase()) || description.includes(kw.toLowerCase())) || keywords[0];
-};
 
 
 /**
@@ -101,11 +120,11 @@ async function fetchAllNews() {
     for (const companyDoc of companiesSnapshot.docs) {
         const companyId = companyDoc.id;
         const companyName = companyDoc.data().name;
-        functions.logger.info(`--- Processando empresa: ${companyName} ---`);
+        functions.logger.info(`--- A processar empresa: ${companyName} ---`);
 
         const keywordsSnapshot = await db.collection(`artifacts/${APP_ID}/users/${companyId}/keywords`).get();
         if (keywordsSnapshot.empty) {
-            functions.logger.warn(`Nenhuma palavra-chave para a empresa ${companyName}, pulando.`);
+            functions.logger.warn(`Nenhuma palavra-chave para a empresa ${companyName}, a saltar.`);
             continue;
         }
 
@@ -129,15 +148,18 @@ async function fetchAllNews() {
                         functions.logger.info(`GNews encontrou ${response.data.articles.length} artigos para ${companyName}`);
                         for (const article of response.data.articles) {
                             if (seenUrls.has(article.url)) continue;
-                            const normalized = normalizeArticle(article, 'gnews');
-                            if (normalized) {
-                                const pendingAlertRef = db.collection(`artifacts/${APP_ID}/public/data/pendingAlerts`).doc();
-                                batch.set(pendingAlertRef, {
-                                    ...normalized, keyword: findMatchingKeyword(article, keywordsList),
-                                    companyId, companyName, status: "pending"
-                                });
-                                seenUrls.add(article.url);
-                                articlesToSaveCount++;
+                            const matchedKeyword = findMatchingKeyword(article, keywordsList);
+                            if (matchedKeyword) {
+                                const normalized = normalizeArticle(article, 'gnews');
+                                if (normalized) {
+                                    const pendingAlertRef = db.collection(`artifacts/${APP_ID}/public/data/pendingAlerts`).doc();
+                                    batch.set(pendingAlertRef, {
+                                        ...normalized, keyword: matchedKeyword,
+                                        companyId, companyName, status: "pending"
+                                    });
+                                    seenUrls.add(article.url);
+                                    articlesToSaveCount++;
+                                }
                             }
                         }
                     }
@@ -154,15 +176,18 @@ async function fetchAllNews() {
                     functions.logger.info(`NewsAPI encontrou ${response.data.articles.length} artigos para ${companyName}`);
                     for (const article of response.data.articles) {
                         if (seenUrls.has(article.url)) continue;
-                        const normalized = normalizeArticle(article, 'newsapi');
-                        if(normalized) {
-                            const pendingAlertRef = db.collection(`artifacts/${APP_ID}/public/data/pendingAlerts`).doc();
-                            batch.set(pendingAlertRef, {
-                                ...normalized, keyword: findMatchingKeyword(article, keywordsList),
-                                companyId, companyName, status: "pending"
-                            });
-                            seenUrls.add(article.url);
-                            articlesToSaveCount++;
+                        const matchedKeyword = findMatchingKeyword(article, keywordsList);
+                        if (matchedKeyword) {
+                            const normalized = normalizeArticle(article, 'newsapi');
+                            if(normalized) {
+                                const pendingAlertRef = db.collection(`artifacts/${APP_ID}/public/data/pendingAlerts`).doc();
+                                batch.set(pendingAlertRef, {
+                                    ...normalized, keyword: matchedKeyword,
+                                    companyId, companyName, status: "pending"
+                                });
+                                seenUrls.add(article.url);
+                                articlesToSaveCount++;
+                            }
                         }
                     }
                 }
@@ -200,12 +225,13 @@ async function fetchAllNews() {
         if (settings.apiKeyBlogger && settings.bloggerId) {
             const blogIds = settings.bloggerId.split('\n').filter(id => id.trim() !== '');
             for (const blogId of blogIds) {
-                const queryUrl = `${BLOGGER_URL}/${blogId}/posts?q=${encodeURIComponent(searchQuery)}&key=${settings.apiKeyBlogger}`;
+                const queryUrl = `${BLOGGER_URL}/${blogId}/posts?key=${settings.apiKeyBlogger}`;
                 try {
                      const response = await axios.get(queryUrl);
                      if (response.data && response.data.items) {
-                        functions.logger.info(`Blogger (${blogId}) encontrou ${response.data.items.length} artigos para ${companyName}`);
-                        for (const item of response.data.items) {
+                        const filteredItems = response.data.items.filter(item => findMatchingKeyword(item, keywordsList));
+                        functions.logger.info(`Blogger (${blogId}) encontrou ${filteredItems.length} artigos para ${companyName}`);
+                        for (const item of filteredItems) {
                              if (seenUrls.has(item.url)) continue;
                              const normalized = normalizeArticle(item, 'blogger');
                              if(normalized){
@@ -227,7 +253,7 @@ async function fetchAllNews() {
     if (articlesToSaveCount > 0) {
         await batch.commit();
     }
-    functions.logger.info(`Busca concluída. ${articlesToSaveCount} artigos únicos foram salvos na fila de aprovação.`);
+    functions.logger.info(`Busca concluída. ${articlesToSaveCount} artigos únicos foram guardados na fila de aprovação.`);
     functions.logger.info("=======================================");
     return { success: true, totalSaved: articlesToSaveCount };
 }
@@ -235,7 +261,7 @@ async function fetchAllNews() {
 
 // --- Funções Principais (Callable e Scheduled) ---
 
-exports.manualFetch = functions.region("southamerica-east1").https.onCall(async (data, context) => {
+exports.manualFetch = regionalFunctions.https.onCall(async (data, context) => {
     try {
         return await fetchAllNews();
     } catch(error) {
@@ -244,7 +270,7 @@ exports.manualFetch = functions.region("southamerica-east1").https.onCall(async 
     }
 });
 
-exports.scheduledFetch = functions.region("southamerica-east1").pubsub.schedule("every 30 minutes")
+exports.scheduledFetch = regionalFunctions.pubsub.schedule("every 30 minutes")
   .timeZone("America/Sao_Paulo")
   .onRun(async (context) => {
     try {
@@ -258,7 +284,7 @@ exports.scheduledFetch = functions.region("southamerica-east1").pubsub.schedule(
 
 // --- Outras Funções (sem alteração de lógica) ---
 
-exports.approveAlert = functions.region("southamerica-east1").https.onCall(async (data, context) => {
+exports.approveAlert = regionalFunctions.https.onCall(async (data, context) => {
     const { appId, alertId } = data;
     if (!appId || !alertId) {
       throw new functions.https.HttpsError("invalid-argument", "O ID da aplicação e do alerta são necessários.");
@@ -286,9 +312,9 @@ exports.approveAlert = functions.region("southamerica-east1").https.onCall(async
       transaction.set(settingsRef, { newAlertsCount }, { merge: true });
     });
     return { success: true };
-  });
+});
 
-exports.rejectAlert = functions.region("southamerica-east1").https.onCall(async (data, context) => {
+exports.rejectAlert = regionalFunctions.https.onCall(async (data, context) => {
     const { appId, alertId } = data;
     if (!appId || !alertId) {
       throw new functions.https.HttpsError("invalid-argument", "O ID da aplicação e do alerta são necessários.");
@@ -296,9 +322,9 @@ exports.rejectAlert = functions.region("southamerica-east1").https.onCall(async 
     const pendingAlertRef = db.doc(`artifacts/${appId}/public/data/pendingAlerts/${alertId}`);
     await pendingAlertRef.delete();
     return { success: true };
-  });
+});
 
-exports.deleteCompany = functions.region("southamerica-east1").https.onCall(async (data, context) => {
+exports.deleteCompany = regionalFunctions.https.onCall(async (data, context) => {
     const { appId, companyId } = data;
     if (!appId || !companyId) {
       throw new functions.https.HttpsError("invalid-argument", "O ID da aplicação e da empresa são necessários.");
@@ -317,9 +343,9 @@ exports.deleteCompany = functions.region("southamerica-east1").https.onCall(asyn
     deletionRequestsSnapshot.docs.forEach(doc => requestsBatch.delete(doc.ref));
     await requestsBatch.commit();
     return { success: true };
-  });
+});
 
-exports.deleteKeywordAndArticles = functions.region("southamerica-east1").https.onCall(async (data, context) => {
+exports.deleteKeywordAndArticles = regionalFunctions.https.onCall(async (data, context) => {
     const { appId, companyId, keyword } = data;
     if (!appId || !companyId || !keyword) {
       throw new functions.https.HttpsError("invalid-argument", "O ID da aplicação, da empresa e a palavra-chave são necessários.");
@@ -335,9 +361,9 @@ exports.deleteKeywordAndArticles = functions.region("southamerica-east1").https.
       await db.doc(`artifacts/${appId}/users/${companyId}/keywords/${keywordRef.docs[0].id}`).delete();
     }
     return { success: true };
-  });
+});
 
-exports.manageDeletionRequest = functions.region("southamerica-east1").https.onCall(async (data, context) => {
+exports.manageDeletionRequest = regionalFunctions.https.onCall(async (data, context) => {
     const { appId, requestId, approve } = data;
     if (!appId || !requestId) {
       throw new functions.https.HttpsError("invalid-argument", "O ID da aplicação e da solicitação são necessários.");
@@ -360,9 +386,9 @@ exports.manageDeletionRequest = functions.region("southamerica-east1").https.onC
       await requestRef.update({ status: "denied" });
     }
     return { success: true };
-  });
+});
 
-exports.requestAlertDeletion = functions.region("southamerica-east1").https.onCall(async (data, context) => {
+exports.requestAlertDeletion = regionalFunctions.https.onCall(async (data, context) => {
     const { appId, companyId, companyName, articleId, articleTitle, justification } = data;
     if (!appId || !companyId || !articleId || !justification) {
       throw new functions.https.HttpsError("invalid-argument", "Informações incompletas para a solicitação de exclusão.");
@@ -379,9 +405,9 @@ exports.requestAlertDeletion = functions.region("southamerica-east1").https.onCa
     const articleRef = db.doc(`artifacts/${appId}/users/${companyId}/articles/${articleId}`);
     await articleRef.update({ deletionRequestStatus: 'pending' });
     return { success: true };
-  });
+});
 
-exports.manualAddAlert = functions.region("southamerica-east1").https.onCall(async (data, context) => {
+exports.manualAddAlert = regionalFunctions.https.onCall(async (data, context) => {
     const { appId, companyId, title, description, url, source, keyword } = data;
     if (!appId || !companyId || !title || !url || !source || !keyword) {
       throw new functions.https.HttpsError("invalid-argument", "Dados incompletos para adicionar um alerta.");
@@ -410,9 +436,9 @@ exports.manualAddAlert = functions.region("southamerica-east1").https.onCall(asy
       transaction.set(settingsRef, { newAlertsCount }, { merge: true });
     });
     return { success: true };
-  });
+});
 
-exports.generateSuperAdminReport = functions.region("southamerica-east1").https.onCall(async (data, context) => {
+exports.generateSuperAdminReport = regionalFunctions.https.onCall(async (data, context) => {
     const { appId } = data;
     if (!appId) {
         throw new functions.https.HttpsError("invalid-argument", "O ID da aplicação é necessário.");
