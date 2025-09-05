@@ -14,7 +14,7 @@
     <style>
         body { font-family: 'Inter', sans-serif; }
         header { position: fixed; top: 0; left: 0; width: 100%; z-index: 1000; }
-        main { padding-top: 96px; } 
+        main { padding-top: 80px; } 
         .page-section { display: none; }
         .page-section.active { display: block; }
         .fade-in { animation: fadeIn 0.5s ease-in-out; }
@@ -61,36 +61,36 @@
 <body class="bg-gray-100 text-gray-800">
 
     <header class="bg-white shadow-md">
-        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
-            <div id="global-logo-area" class="text-2xl font-bold text-indigo-600 flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline-block mr-2 h-8 w-8"><path d="M2.5 17a2.4 2.4 0 0 1 3 0L12 23l6.5-6.5a2.4 2.4 0 0 1 3 0Z"/><path d="M5 11.5a2.5 2.5 0 0 1 0-5c1.5 0 2.8 1.3 2.8 2.8V13c0 1.4-1.3 2.8-2.8 2.8-1.5 0-2.8-1.3-2.8-2.8V8.5"/><path d="M19 11.5a2.5 2.5 0 0 0 0-5c-1.5 0-2.8 1.3-2.8 2.8V13c0 1.4 1.3 2.8 2.8 2.8 1.5 0-2.8-1.3-2.8-2.8V8.5"/></svg>
+        <nav class="container mx-auto px-4 sm:px-6 py-3 flex justify-between items-center">
+            <div id="global-logo-area" class="text-xl sm:text-2xl font-bold text-indigo-600 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline-block mr-2 h-7 w-7 sm:h-8 sm:w-8"><path d="M2.5 17a2.4 2.4 0 0 1 3 0L12 23l6.5-6.5a2.4 2.4 0 0 1 3 0Z"/><path d="M5 11.5a2.5 2.5 0 0 1 0-5c1.5 0 2.8 1.3 2.8 2.8V13c0 1.4-1.3 2.8-2.8 2.8-1.5 0-2.8-1.3-2.8-2.8V8.5"/><path d="M19 11.5a2.5 2.5 0 0 0 0-5c-1.5 0-2.8 1.3-2.8 2.8V13c0 1.4 1.3 2.8 2.8 2.8 1.5 0-2.8-1.3-2.8-2.8V8.5"/></svg>
                 Aurora clipping
             </div>
             <div class="flex items-center">
-                <div id="nav-logged-in" class="hidden items-center">
-                    <a href="#" id="nav-inicio" class="text-gray-600 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">Início</a>
-                    <a href="#" id="nav-relatorio" class="hidden text-gray-600 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">Relatório</a>
-                    <a href="#" id="nav-pesquisa" class="text-gray-600 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">Pesquisa</a>
-                    <a href="#" id="nav-super-admin" class="hidden text-red-600 hover:text-red-800 px-3 py-2 rounded-md text-sm font-bold">Super Admin</a>
-                    <a href="#" id="nav-configuracoes-admin" class="hidden text-gray-600 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">Configurações</a>
-                    <div id="notification-bell-container" class="relative cursor-pointer ml-4 p-1">
+                <div id="nav-logged-in" class="hidden items-center flex-wrap justify-end">
+                    <a href="#" id="nav-inicio" class="text-gray-600 hover:text-indigo-600 px-2 py-1 sm:px-3 sm:py-2 rounded-md text-sm font-medium">Início</a>
+                    <a href="#" id="nav-relatorio" class="hidden text-gray-600 hover:text-indigo-600 px-2 py-1 sm:px-3 sm:py-2 rounded-md text-sm font-medium">Relatório</a>
+                    <a href="#" id="nav-pesquisa" class="text-gray-600 hover:text-indigo-600 px-2 py-1 sm:px-3 sm:py-2 rounded-md text-sm font-medium">Pesquisa</a>
+                    <a href="#" id="nav-super-admin" class="hidden text-red-600 hover:text-red-800 px-2 py-1 sm:px-3 sm:py-2 rounded-md text-sm font-bold">Super Admin</a>
+                    <a href="#" id="nav-configuracoes-admin" class="hidden text-gray-600 hover:text-indigo-600 px-2 py-1 sm:px-3 sm:py-2 rounded-md text-sm font-medium">Configurações</a>
+                    <div id="notification-bell-container" class="relative cursor-pointer ml-2 sm:ml-4 p-1">
                         <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
                         <span id="notification-badge" class="hidden absolute -top-1 -right-1 text-white text-xs font-bold text-center rounded-full bg-red-500"></span>
                     </div>
-                    <a href="#" id="nav-logout" class="ml-4 bg-indigo-600 text-white hover:bg-indigo-700 px-3 py-2 rounded-md text-sm font-medium">Sair</a>
+                    <a href="#" id="nav-logout" class="ml-2 sm:ml-4 bg-indigo-600 text-white hover:bg-indigo-700 px-3 py-2 rounded-md text-sm font-medium">Sair</a>
                 </div>
                 <div id="header-logo-container" class="ml-4 h-10 w-auto"></div>
             </div>
         </nav>
     </header>
 
-    <main class="container mx-auto p-6">
+    <main class="container mx-auto p-4 sm:p-6">
         <div id="global-alert" class="mb-6"></div>
 
         <section id="login-page" class="page-section fade-in">
-            <div class="max-w-md mx-auto bg-gray-50 p-8 rounded-lg shadow-lg mt-10 relative">
+            <div class="max-w-md mx-auto bg-gray-50 p-4 sm:p-8 rounded-lg shadow-lg mt-10 relative">
                 <div id="login-logo-container" class="absolute top-4 right-4 h-12 w-auto"></div>
-                <h1 class="text-3xl font-bold text-center text-gray-800">Bem-Vindo</h1>
+                <h1 class="text-2xl sm:text-3xl font-bold text-center text-gray-800">Bem-Vindo</h1>
                 <p class="text-center text-gray-500 mt-2 mb-6">Informe os seus dados de acesso</p>
                 <form id="login-form">
                     <div id="login-company-wrapper" class="mb-4"><label for="login-company" class="block text-sm font-medium text-gray-700 mb-1">Empresa</label><input type="text" id="login-company" class="w-full px-3 py-2 border border-gray-300 rounded-md"></div>
@@ -103,19 +103,19 @@
 
         <section id="dashboard-page" class="page-section fade-in">
             <div class="flex flex-col md:flex-row justify-between md:items-center mb-6 bg-white p-4 rounded-lg shadow-md">
-                <h2 id="dashboard-title" class="text-2xl font-bold text-gray-800 mb-2 md:mb-0">Notícias do Dia</h2>
-                <p id="current-datetime" class="text-lg text-indigo-600 font-medium"></p>
+                <h2 id="dashboard-title" class="text-xl sm:text-2xl font-bold text-gray-800 mb-2 md:mb-0">Notícias do Dia</h2>
+                <p id="current-datetime" class="text-base sm:text-lg text-indigo-600 font-medium"></p>
             </div>
             <div id="dashboard-grid" class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div class="md:col-span-1 bg-white p-6 rounded-lg shadow-lg">
-                    <h3 class="text-xl font-semibold mb-3 text-gray-700">Palavras-Chave Monitorizadas</h3>
+                <div class="md:col-span-1 bg-white p-4 sm:p-6 rounded-lg shadow-lg">
+                    <h3 class="text-lg sm:text-xl font-semibold mb-3 text-gray-700">Palavras-Chave Monitorizadas</h3>
                     <ul id="dashboard-keyword-list" class="space-y-2"></ul>
                 </div>
                 <div id="news-alerts-container" class="md:col-span-2">
-                    <div class="bg-white p-6 rounded-lg shadow-lg">
-                        <div class="flex justify-between items-center mb-4">
-                            <h3 class="text-xl font-semibold text-gray-700">Relatório de Alertas</h3>
-                            <div class="flex items-center gap-4">
+                    <div class="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
+                            <h3 class="text-lg sm:text-xl font-semibold text-gray-700">Relatório de Alertas</h3>
+                            <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full sm:w-auto">
                                 <button id="show-all-alerts-btn" class="hidden bg-gray-200 text-gray-700 px-3 py-1 rounded-md text-sm hover:bg-gray-300">Mostrar Todos</button>
                                 <div class="flex items-center gap-2">
                                     <label for="alert-date-filter" class="text-sm font-medium">Filtrar por data:</label>
@@ -127,23 +127,23 @@
                     </div>
                 </div>
             </div>
-             <div id="super-admin-dashboard-message" class="hidden bg-white p-8 rounded-lg shadow-lg text-center">
-                <h3 class="text-2xl font-bold">Bem-vindo, Super Admin!</h3>
+             <div id="super-admin-dashboard-message" class="hidden bg-white p-4 sm:p-8 rounded-lg shadow-lg text-center">
+                <h3 class="text-xl sm:text-2xl font-bold">Bem-vindo, Super Admin!</h3>
                 <p class="mt-4 text-gray-600">Use o menu "Super Admin" no topo da página para gerir as opções.</p>
                 <div class="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <button id="btn-manual-alert" class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow">
-                        <h3 class="text-xl font-semibold text-gray-700">Inserir Alerta Manual</h3>
+                        <h3 class="text-lg sm:text-xl font-semibold text-gray-700">Inserir Alerta Manual</h3>
                     </button>
                     <button id="btn-pending-alerts" class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow relative">
-                        <h3 class="text-xl font-semibold text-gray-700">Fila de Aprovação</h3>
+                        <h3 class="text-lg sm:text-xl font-semibold text-gray-700">Fila de Aprovação</h3>
                         <span id="pending-alerts-badge" class="hidden absolute top-2 right-2 text-white text-xs font-bold w-5 h-5 text-center rounded-full bg-red-500"></span>
                     </button>
                      <button id="btn-deletion-requests" class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow relative">
-                        <h3 class="text-xl font-semibold text-gray-700">Pedidos de Exclusão</h3>
+                        <h3 class="text-lg sm:text-xl font-semibold text-gray-700">Pedidos de Exclusão</h3>
                         <span id="deletion-requests-badge" class="hidden absolute top-2 right-2 text-white text-xs font-bold w-5 h-5 text-center rounded-full bg-red-500"></span>
                     </button>
                     <button id="btn-super-admin-report" class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow">
-                        <h3 class="text-xl font-semibold text-gray-700">Relatório Geral</h3>
+                        <h3 class="text-lg sm:text-xl font-semibold text-gray-700">Relatório Geral</h3>
                     </button>
                 </div>
                 <div class="mt-6 p-4 bg-blue-100 border-l-4 border-blue-500 text-blue-800 rounded-md text-left">
@@ -155,16 +155,16 @@
         </section>
         
         <section id="super-admin-page" class="page-section fade-in">
-            <h2 class="text-3xl font-bold mb-6 text-red-600">Painel de Super-Administrador</h2>
+            <h2 class="text-2xl sm:text-3xl font-bold mb-6 text-red-600">Painel de Super-Administrador</h2>
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div class="bg-white p-6 rounded-lg shadow-lg">
+                <div class="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
                     <h3 class="text-xl font-semibold mb-4">Adicionar Nova Empresa</h3>
                     <form id="company-form" class="space-y-4">
                         <div><label for="company-name-input">Nome da Empresa</label><input type="text" id="company-name-input" class="w-full px-3 py-2 border border-gray-300 rounded-md" required></div>
                         <button type="submit" class="w-full bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700">Adicionar Empresa</button>
                     </form>
                 </div>
-                <div class="bg-white p-6 rounded-lg shadow-lg">
+                <div class="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
                     <h3 class="text-xl font-semibold mb-4">Empresas Registadas</h3>
                     <ul id="company-list" class="space-y-2 max-h-96 overflow-y-auto"></ul>
                 </div>
@@ -172,27 +172,27 @@
         </section>
 
         <section id="configuracoes-admin-page" class="page-section fade-in">
-            <h2 class="text-3xl font-bold mb-6">Configurações do Super Admin</h2>
+            <h2 class="text-2xl sm:text-3xl font-bold mb-6">Configurações do Super Admin</h2>
             <div class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <button id="btn-change-password" class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow">
-                    <h3 class="text-xl font-semibold">Alterar Palavra-passe</h3>
+                    <h3 class="text-lg sm:text-xl font-semibold">Alterar Palavra-passe</h3>
                 </button>
                 <button id="btn-global-keys" class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow">
-                    <h3 class="text-xl font-semibold">Chaves de API Globais</h3>
+                    <h3 class="text-lg sm:text-xl font-semibold">Chaves de API Globais</h3>
                 </button>
                 <button id="btn-news-sources" class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow">
-                    <h3 class="text-xl font-semibold">Fontes de Notícias</h3>
+                    <h3 class="text-lg sm:text-xl font-semibold">Fontes de Notícias</h3>
                 </button>
                  <button id="btn-global-logo" class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow">
-                    <h3 class="text-xl font-semibold">Logótipo Global</h3>
+                    <h3 class="text-lg sm:text-xl font-semibold">Logótipo Global</h3>
                 </button>
             </div>
         </section>
         
         <section id="change-password-page" class="page-section fade-in">
             <button id="back-to-admin-config-1" class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar</button>
-            <h2 class="text-3xl font-bold mb-6">Alterar Palavra-passe de Acesso</h2>
-            <div class="max-w-lg mx-auto bg-white p-6 rounded-lg shadow-lg">
+            <h2 class="text-2xl sm:text-3xl font-bold mb-6">Alterar Palavra-passe de Acesso</h2>
+            <div class="max-w-lg mx-auto bg-white p-4 sm:p-6 rounded-lg shadow-lg">
                 <form id="change-password-form" class="space-y-4">
                     <div><label for="current-password" class="block text-sm font-medium text-gray-700">Palavra-passe Atual</label><input type="password" id="current-password" class="w-full px-3 py-2 border border-gray-300 rounded-md" required></div>
                     <div><label for="new-password" class="block text-sm font-medium text-gray-700">Nova Palavra-passe</label><input type="password" id="new-password" class="w-full px-3 py-2 border border-gray-300 rounded-md" required></div>
@@ -203,8 +203,8 @@
 
         <section id="global-keys-page" class="page-section fade-in">
             <button id="back-to-admin-config-2" class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar</button>
-            <h2 class="text-3xl font-bold mb-6">Chaves de API Globais</h2>
-            <div class="max-w-lg mx-auto bg-white p-6 rounded-lg shadow-lg">
+            <h2 class="text-2xl sm:text-3xl font-bold mb-6">Chaves de API Globais</h2>
+            <div class="max-w-lg mx-auto bg-white p-4 sm:p-6 rounded-lg shadow-lg">
                 <div class="space-y-4">
                     <div class="bg-gray-100 p-3 rounded-md">
                         <label for="apiKeyNewsApi" class="block text-sm font-medium text-gray-700 mb-1">Chave da API (NewsAPI.org)</label>
@@ -252,8 +252,8 @@
 
         <section id="global-sources-page" class="page-section fade-in">
             <button id="back-to-admin-config-3" class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar</button>
-            <h2 class="text-3xl font-bold mb-6">Fontes de Notícias Globais</h2>
-            <div class="max-w-lg mx-auto bg-white p-6 rounded-lg shadow-lg">
+            <h2 class="text-2xl sm:text-3xl font-bold mb-6">Fontes de Notícias Globais</h2>
+            <div class="max-w-lg mx-auto bg-white p-4 sm:p-6 rounded-lg shadow-lg">
                 <div class="space-y-4">
                     <div class="bg-gray-100 p-3 rounded-md">
                         <label for="bloggerId" class="block text-sm font-medium text-gray-700 mb-1">IDs de Blogs (Blogger) - um por linha</label>
@@ -269,8 +269,8 @@
 
         <section id="global-logo-page" class="page-section fade-in">
             <button id="back-to-admin-config-4" class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar</button>
-            <h2 class="text-3xl font-bold mb-6">Logótipo Global da Aplicação</h2>
-            <div class="max-w-lg mx-auto bg-white p-6 rounded-lg shadow-lg">
+            <h2 class="text-2xl sm:text-3xl font-bold mb-6">Logótipo Global da Aplicação</h2>
+            <div class="max-w-lg mx-auto bg-white p-4 sm:p-6 rounded-lg shadow-lg">
                 <p class="text-gray-600 mb-4">Faça o upload do logótipo que aparecerá no cabeçalho de todas as páginas, substituindo o nome "Aurora clipping".</p>
                 <div>
                     <h4 class="text-lg font-semibold mb-2">Logótipo da Aplicação</h4>
@@ -281,8 +281,8 @@
 
         <section id="company-user-admin-page" class="page-section fade-in">
             <button id="back-to-super-admin-users" class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar para Super Admin</button>
-            <h2 id="company-user-admin-title" class="text-3xl font-bold mb-6">Gerir Usuários</h2>
-            <div class="bg-white p-6 rounded-lg shadow-lg">
+            <h2 id="company-user-admin-title" class="text-2xl sm:text-3xl font-bold mb-6">Gerir Usuários</h2>
+            <div class="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
                 <form id="user-form" class="flex flex-col sm:flex-row gap-2 mb-4">
                     <input type="text" id="user-input" placeholder="Nome do usuário" class="flex-grow px-3 py-2 border border-gray-300 rounded-md">
                     <input type="text" id="user-password-input" placeholder="Palavra-passe" class="flex-grow px-3 py-2 border border-gray-300 rounded-md">
@@ -295,8 +295,8 @@
 
         <section id="company-keyword-admin-page" class="page-section fade-in">
             <button id="back-to-super-admin-kw" class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar para Super Admin</button>
-            <h2 id="company-keyword-admin-title" class="text-3xl font-bold mb-6">Gerir Palavras-Chave</h2>
-            <div class="bg-white p-6 rounded-lg shadow-lg">
+            <h2 id="company-keyword-admin-title" class="text-2xl sm:text-3xl font-bold mb-6">Gerir Palavras-Chave</h2>
+            <div class="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
                 <form id="keyword-form" class="flex gap-2 mb-4">
                     <input type="text" id="keyword-input" placeholder="Adicionar ou editar palavra" class="flex-grow px-3 py-2 border border-gray-300 rounded-md">
                     <input type="hidden" id="keyword-id">
@@ -308,8 +308,8 @@
 
         <section id="company-settings-admin-page" class="page-section fade-in">
             <button id="back-to-super-admin-settings" class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar para Super Admin</button>
-            <h2 id="company-settings-admin-title" class="text-3xl font-bold mb-6">Opções da Empresa</h2>
-            <div class="bg-white p-6 rounded-lg shadow-lg">
+            <h2 id="company-settings-admin-title" class="text-2xl sm:text-3xl font-bold mb-6">Opções da Empresa</h2>
+            <div class="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
                 <div class="space-y-6">
                     <div class="flex items-center"><input type="checkbox" id="report-access-toggle" class="h-4 w-4 text-indigo-600 border-gray-300 rounded"><label for="report-access-toggle" class="ml-2 block text-sm text-gray-900">Permitir o acesso ao relatório de alertas na página inicial.</label></div>
                     <div class="flex items-center"><input type="checkbox" id="fetch-only-new-toggle" class="h-4 w-4 text-indigo-600 border-gray-300 rounded"><label for="fetch-only-new-toggle" class="ml-2 block text-sm text-gray-900">Capturar apenas notícias novas (evita duplicados).</label></div>
@@ -332,9 +332,9 @@
         </section>
 
         <section id="report-page" class="page-section fade-in">
-            <div class="bg-white p-8 rounded-lg shadow-lg">
+            <div class="bg-white p-4 sm:p-8 rounded-lg shadow-lg">
                 <div class="flex flex-col sm:flex-row justify-between items-start mb-6 gap-4">
-                    <h2 class="text-3xl font-bold text-gray-700 mb-4 sm:mb-0">Relatórios Gráficos</h2>
+                    <h2 class="text-2xl sm:text-3xl font-bold text-gray-700 mb-4 sm:mb-0">Relatórios Gráficos</h2>
                     <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full sm:w-auto">
                         <div class="w-full sm:w-auto">
                             <label for="report-keyword-filter" class="text-sm font-medium">Filtrar por Palavra-Chave:</label>
@@ -372,8 +372,8 @@
         </section>
 
         <section id="search-page" class="page-section fade-in">
-             <div class="bg-white p-6 md:p-8 rounded-lg shadow-lg">
-                <h2 class="text-2xl md:text-3xl font-bold mb-6">Pesquisar nos Alertas Guardados</h2>
+             <div class="bg-white p-4 sm:p-6 md:p-8 rounded-lg shadow-lg">
+                <h2 class="text-xl sm:text-2xl md:text-3xl font-bold mb-6">Pesquisar nos Alertas Guardados</h2>
                 <div id="filter-container" class="mb-8 p-4 border border-gray-200 rounded-lg bg-gray-50"></div>
                 <input type="text" id="search-input" placeholder="Digite para pesquisar em títulos ou descrições..." class="w-full p-3 border border-gray-300 rounded-md mb-6">
                 <div id="search-results" class="space-y-4 max-h-[60vh] overflow-y-auto"><p class="text-gray-500">Digite algo para começar a pesquisar ou use os filtros.</p></div>
@@ -382,8 +382,8 @@
 
         <section id="manual-alert-page" class="page-section fade-in">
             <button id="back-to-dashboard-1" class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar</button>
-            <h2 class="text-3xl font-bold mb-6">Inserir Alerta Manualmente</h2>
-            <div class="max-w-2xl mx-auto bg-white p-6 rounded-lg shadow-lg">
+            <h2 class="text-2xl sm:text-3xl font-bold mb-6">Inserir Alerta Manualmente</h2>
+            <div class="max-w-2xl mx-auto bg-white p-4 sm:p-6 rounded-lg shadow-lg">
                 <form id="manual-alert-form" class="space-y-4">
                     <div>
                         <label for="manual-alert-company" class="block text-sm font-medium text-gray-700">Empresa</label>
@@ -406,7 +406,7 @@
 
         <section id="deletion-requests-page" class="page-section fade-in">
             <button id="back-to-dashboard-2" class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar</button>
-            <h2 class="text-3xl font-bold mb-6">Pedidos de Exclusão de Alertas</h2>
+            <h2 class="text-2xl sm:text-3xl font-bold mb-6">Pedidos de Exclusão de Alertas</h2>
             <div id="deletion-requests-list" class="space-y-4">
                 <p class="text-gray-500">A carregar pedidos...</p>
             </div>
@@ -414,7 +414,7 @@
         
         <section id="super-admin-queue-page" class="page-section fade-in">
             <button id="back-to-dashboard-4" class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar</button>
-            <h2 class="text-3xl font-bold mb-6">Fila de Aprovação de Alertas</h2>
+            <h2 class="text-2xl sm:text-3xl font-bold mb-6">Fila de Aprovação de Alertas</h2>
             <div id="super-admin-pending-alerts-list" class="space-y-4">
                 <p class="text-gray-500">A carregar alertas pendentes...</p>
             </div>
@@ -423,8 +423,8 @@
 
         <section id="super-admin-report-page" class="page-section fade-in">
              <button id="back-to-dashboard-3" class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar</button>
-            <h2 class="text-3xl font-bold mb-6">Relatório Geral de Empresas</h2>
-            <div class="bg-white p-6 rounded-lg shadow-lg overflow-x-auto">
+            <h2 class="text-2xl sm:text-3xl font-bold mb-6">Relatório Geral de Empresas</h2>
+            <div class="bg-white p-4 sm:p-6 rounded-lg shadow-lg overflow-x-auto">
                 <table class="w-full whitespace-nowrap">
                     <thead class="bg-gray-50">
                         <tr>
@@ -516,7 +516,7 @@
     <script type="module">
         // --- Importação de Módulos do Firebase ---
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, collection, getDocs, doc, getDoc, setDoc, addDoc, deleteDoc, updateDoc, query, where, orderBy, limit, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js";
 
@@ -611,10 +611,10 @@
             try {
                 const docSnap = await getDoc(settingsRef);
                 const logoData = docSnap.exists() ? docSnap.data().appLogo : null;
-                if (logoData) {
+                if (logoData && globalLogoArea) {
                     globalLogoArea.innerHTML = `<img src="${logoData}" alt="Logótipo da Aplicação" class="h-10 w-auto object-contain">`;
-                } else {
-                    globalLogoArea.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline-block mr-2 h-8 w-8"><path d="M2.5 17a2.4 2.4 0 0 1 3 0L12 23l6.5-6.5a2.4 2.4 0 0 1 3 0Z"/><path d="M5 11.5a2.5 2.5 0 0 1 0-5c1.5 0 2.8 1.3 2.8 2.8V13c0 1.4-1.3 2.8-2.8 2.8-1.5 0-2.8-1.3-2.8-2.8V8.5"/><path d="M19 11.5a2.5 2.5 0 0 0 0-5c-1.5 0-2.8 1.3-2.8 2.8V13c0 1.4 1.3 2.8 2.8 2.8 1.5 0-2.8-1.3-2.8-2.8V8.5"/></svg> Aurora clipping`;
+                } else if(globalLogoArea) {
+                    globalLogoArea.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline-block mr-2 h-7 w-7 sm:h-8 sm:w-8"><path d="M2.5 17a2.4 2.4 0 0 1 3 0L12 23l6.5-6.5a2.4 2.4 0 0 1 3 0Z"/><path d="M5 11.5a2.5 2.5 0 0 1 0-5c1.5 0 2.8 1.3 2.8 2.8V13c0 1.4-1.3 2.8-2.8 2.8-1.5 0-2.8-1.3-2.8-2.8V8.5"/><path d="M19 11.5a2.5 2.5 0 0 0 0-5c-1.5 0-2.8 1.3-2.8 2.8V13c0 1.4 1.3 2.8 2.8 2.8 1.5 0-2.8-1.3-2.8-2.8V8.5"/></svg> Aurora clipping`;
                 }
             } catch (error) {
                 console.error("Erro ao carregar o logótipo global:", error);
@@ -657,7 +657,7 @@
                     setStorage('clipping_currentUser', currentUser); 
                     updateView('dashboard'); 
                 } else { 
-                    showAlert('Usuário ou palavra-passe inválidos para esta empresa.', 'error'); 
+                    showAlert('Usuário ou palavra-passe inválidos for this company.', 'error'); 
                 } 
             } catch (error) { 
                 console.error("Erro de login:", error); 
@@ -1072,10 +1072,32 @@
             if (!canvasEl) return;
             if (instanceVar) instanceVar.destroy();
             const ctx = canvasEl.getContext('2d');
+            
             const defaultOptions = { 
                 responsive: true, 
+                maintainAspectRatio: false,
                 interaction: { mode: 'index', intersect: false }, 
-                plugins: { legend: { position: 'left' } }  // ALTERADO AQUI
+                plugins: { 
+                    legend: { 
+                        position: 'left',
+                        onHover: (event, legendItem, legend) => {
+                            const chart = legend.chart;
+                            const datasetIndex = legendItem.datasetIndex;
+                            const dataset = chart.data.datasets[datasetIndex];
+                            dataset._originalBorderWidth = dataset.borderWidth; // Salva a largura original
+                            dataset.borderWidth = 5; // Aumenta a largura
+                            chart.update();
+                        },
+                        onLeave: (event, legendItem, legend) => {
+                            const chart = legend.chart;
+                            const datasetIndex = legendItem.datasetIndex;
+                             const dataset = chart.data.datasets[datasetIndex];
+                             // Restaura a partir da propriedade salva, ou usa um padrão
+                            dataset.borderWidth = dataset._originalBorderWidth || 2; 
+                            chart.update();
+                        }
+                    } 
+                }
             };
             const options = { ...defaultOptions, ...customOptions };
             return new Chart(ctx, { type, data, options });
@@ -1094,6 +1116,7 @@
                     label: keyword,
                     data: sourceCounts,
                     borderColor: chartColors[index % chartColors.length],
+                    borderWidth: 2,
                     fill: false
                 });
             });
@@ -1122,6 +1145,7 @@
                     label: keyword,
                     data: channelCounts,
                     borderColor: chartColors[index % chartColors.length],
+                    borderWidth: 2,
                     fill: false
                 });
             });
@@ -1143,6 +1167,7 @@
                     label: keyword,
                     data: dateCounts,
                     borderColor: chartColors[index % chartColors.length],
+                    borderWidth: 2,
                     fill: false,
                     tension: 0.1
                 });
@@ -1182,13 +1207,22 @@
                     label: keyword,
                     data: dataInPercentage,
                     borderColor: chartColors[index % chartColors.length],
+                    borderWidth: 2,
                     fill: false
                 });
             });
 
             const sentimentChartOptions = {
+                scales: {
+                    y: {
+                        ticks: {
+                            callback: function(value) { return value + '%'; }
+                        },
+                        min: 0,
+                        max: 100
+                    }
+                },
                 plugins: {
-                    legend: { position: 'left' }, // ALTERADO AQUI
                     tooltip: {
                         callbacks: {
                             label: function(context) {
@@ -1200,15 +1234,6 @@
                                 return label;
                             }
                         }
-                    }
-                },
-                scales: {
-                    y: {
-                        ticks: {
-                            callback: function(value) { return value + '%'; }
-                        },
-                        min: 0,
-                        max: 100
                     }
                 }
             };
@@ -1693,7 +1718,6 @@
             globalLogoUpload = document.getElementById('global-logo-upload');
             globalLogoArea = document.getElementById('global-logo-area');
 
-
             const states = {"AC": "Acre", "AL": "Alagoas", "AP": "Amapá", "AM": "Amazonas", "BA": "Bahia", "CE": "Ceará", "DF": "Distrito Federal", "ES": "Espírito Santo", "GO": "Goiás", "MA": "Maranhão", "MT": "Mato Grosso", "MS": "Mato Grosso do Sul", "MG": "Minas Gerais", "PA": "Pará", "PB": "Paraíba", "PR": "Paraná", "PE": "Pernambuco", "PI": "Piauí", "RJ": "Rio de Janeiro", "RN": "Rio Grande do Norte", "RS": "Rio Grande do Sul", "RO": "Rondônia", "RR": "Roraima", "SC": "Santa Catarina", "SP": "São Paulo", "SE": "Sergipe", "TO": "Tocantins"};
             for (const [uf, name] of Object.entries(states)) {
                 const option = document.createElement('option');
@@ -1704,7 +1728,6 @@
                 }
             }
             
-            // This async IIFE will handle the initial authentication logic
             (async () => {
                 onAuthStateChanged(auth, async (user) => {
                     if (user) {
