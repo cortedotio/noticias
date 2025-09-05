@@ -53,7 +53,7 @@
         .sentiment-container:hover .sentiment-menu {
             display: block;
         }
-        #report-keyword-filter, #manual-alert-keyword {
+        #report-keyword-filter-container, #manual-alert-keyword {
             height: 100px;
         }
     </style>
@@ -62,10 +62,12 @@
 
     <header class="bg-white shadow-md">
         <nav class="container mx-auto px-4 sm:px-6 py-3 flex justify-between items-center">
-            <div id="global-logo-area" class="text-xl sm:text-2xl font-bold text-indigo-600 flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline-block mr-2 h-7 w-7 sm:h-8 sm:w-8"><path d="M2.5 17a2.4 2.4 0 0 1 3 0L12 23l6.5-6.5a2.4 2.4 0 0 1 3 0Z"/><path d="M5 11.5a2.5 2.5 0 0 1 0-5c1.5 0 2.8 1.3 2.8 2.8V13c0 1.4-1.3 2.8-2.8 2.8-1.5 0-2.8-1.3-2.8-2.8V8.5"/><path d="M19 11.5a2.5 2.5 0 0 0 0-5c-1.5 0-2.8 1.3-2.8 2.8V13c0 1.4 1.3 2.8 2.8 2.8 1.5 0-2.8-1.3-2.8-2.8V8.5"/></svg>
-                Aurora clipping
-            </div>
+            <a href="#" id="logo-link" class="cursor-pointer">
+                <div id="global-logo-area" class="text-xl sm:text-2xl font-bold text-indigo-600 flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline-block mr-2 h-7 w-7 sm:h-8 sm:w-8"><path d="M2.5 17a2.4 2.4 0 0 1 3 0L12 23l6.5-6.5a2.4 2.4 0 0 1 3 0Z"/><path d="M5 11.5a2.5 2.5 0 0 1 0-5c1.5 0 2.8 1.3 2.8 2.8V13c0 1.4-1.3 2.8-2.8 2.8-1.5 0-2.8-1.3-2.8-2.8V8.5"/><path d="M19 11.5a2.5 2.5 0 0 0 0-5c-1.5 0-2.8 1.3-2.8 2.8V13c0 1.4 1.3 2.8 2.8 2.8 1.5 0-2.8-1.3-2.8-2.8V8.5"/></svg>
+                    Aurora clipping
+                </div>
+            </a>
             <div class="flex items-center">
                 <div id="nav-logged-in" class="hidden items-center flex-wrap justify-end">
                     <a href="#" id="nav-inicio" class="text-gray-600 hover:text-indigo-600 px-2 py-1 sm:px-3 sm:py-2 rounded-md text-sm font-medium">Início</a>
@@ -173,15 +175,18 @@
 
         <section id="configuracoes-admin-page" class="page-section fade-in">
             <h2 class="text-2xl sm:text-3xl font-bold mb-6">Configurações do Super Admin</h2>
-            <div class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
                 <button id="btn-change-password" class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow">
                     <h3 class="text-lg sm:text-xl font-semibold">Alterar Palavra-passe</h3>
                 </button>
                 <button id="btn-global-keys" class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow">
-                    <h3 class="text-lg sm:text-xl font-semibold">Chaves de API Globais</h3>
+                    <h3 class="text-lg sm:text-xl font-semibold">Chaves de API</h3>
                 </button>
                 <button id="btn-news-sources" class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow">
                     <h3 class="text-lg sm:text-xl font-semibold">Fontes de Notícias</h3>
+                </button>
+                <button id="btn-radio-sources" class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow">
+                    <h3 class="text-lg sm:text-xl font-semibold">Fontes de Rádio</h3>
                 </button>
                  <button id="btn-global-logo" class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow">
                     <h3 class="text-lg sm:text-xl font-semibold">Logótipo Global</h3>
@@ -267,6 +272,20 @@
             </div>
         </section>
 
+        <section id="global-radio-sources-page" class="page-section fade-in">
+            <button id="back-to-admin-config-5" class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar</button>
+            <h2 class="text-2xl sm:text-3xl font-bold mb-6">Fontes de Rádio Globais</h2>
+            <div class="max-w-lg mx-auto bg-white p-4 sm:p-6 rounded-lg shadow-lg">
+                 <div class="space-y-4">
+                    <div class="bg-gray-100 p-3 rounded-md">
+                        <label for="radioSources" class="block text-sm font-medium text-gray-700 mb-1">Fontes de Rádio - uma por linha</label>
+                        <textarea id="radioSources" rows="5" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="Ex: Rádio Jovem Pan | http://.../stream.mp3"></textarea>
+                        <p class="mt-2 text-xs text-gray-500">Insira o nome da rádio e o link da transmissão (stream) de áudio. O monitoramento de rádio é um recurso avançado e precisa de configuração adicional no servidor.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <section id="global-logo-page" class="page-section fade-in">
             <button id="back-to-admin-config-4" class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar</button>
             <h2 class="text-2xl sm:text-3xl font-bold mb-6">Logótipo Global da Aplicação</h2>
@@ -337,8 +356,8 @@
                     <h2 class="text-2xl sm:text-3xl font-bold text-gray-700 mb-4 sm:mb-0">Relatórios Gráficos</h2>
                     <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full sm:w-auto">
                         <div class="w-full sm:w-auto">
-                            <label for="report-keyword-filter" class="text-sm font-medium">Filtrar por Palavra-Chave:</label>
-                            <select id="report-keyword-filter" multiple class="w-full px-2 py-1 border border-gray-300 rounded-md text-sm"></select>
+                            <label class="text-sm font-medium">Filtrar por Palavra-Chave:</label>
+                            <div id="report-keyword-filter-container" class="w-full p-2 border border-gray-300 rounded-md text-sm bg-white overflow-y-auto space-y-1"></div>
                         </div>
                         <div class="w-full sm:w-auto">
                             <label class="text-sm font-medium">Filtrar por Período:</label>
@@ -351,19 +370,19 @@
                     </div>
                 </div>
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <div class="p-4 border rounded-lg">
+                    <div class="p-4 border rounded-lg min-h-[300px] sm:min-h-[400px]">
                         <h3 class="text-xl font-semibold mb-4 text-center">Notícias por Veículo</h3>
                         <canvas id="source-chart"></canvas>
                     </div>
-                    <div class="p-4 border rounded-lg">
+                    <div class="p-4 border rounded-lg min-h-[300px] sm:min-h-[400px]">
                         <h3 class="text-xl font-semibold mb-4 text-center">Notícias por Canal</h3>
                         <canvas id="channel-chart"></canvas>
                     </div>
-                    <div class="p-4 border rounded-lg">
+                    <div class="p-4 border rounded-lg min-h-[300px] sm:min-h-[400px]">
                         <h3 class="text-xl font-semibold mb-4 text-center">Notícias por Período</h3>
                          <canvas id="date-chart"></canvas>
                     </div>
-                    <div class="p-4 border rounded-lg">
+                    <div class="p-4 border rounded-lg min-h-[300px] sm:min-h-[400px]">
                         <h3 class="text-xl font-semibold mb-4 text-center">Análise de Sentimento</h3>
                         <canvas id="sentiment-chart"></canvas>
                     </div>
@@ -516,7 +535,7 @@
     <script type="module">
         // --- Importação de Módulos do Firebase ---
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, collection, getDocs, doc, getDoc, setDoc, addDoc, deleteDoc, updateDoc, query, where, orderBy, limit, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js";
 
@@ -544,8 +563,7 @@
         let keywordToDeleteInfo = null;
 
         // --- ELEMENTOS DO DOM ---
-        let pageSections, navLoggedIn, navInicio, navRelatorio, navPesquisa, navSuperAdmin, navLogout, navConfiguracoesAdmin, globalAlert, loginPage, dashboardPage, searchPage, superAdminPage, companyKeywordAdminPage, companySettingsAdminPage, reportPage, companyUserAdminPage, configuracoesAdminPage, loginForm, dashboardTitle, currentDateTimeEl, dashboardKeywordList, newsAlertsContainer, newsAlerts, alertDateFilter, reportAccessToggle, logoUploadInput, headerLogoContainer, loginLogoContainer, filterContainer, searchInput, searchResults, companyForm, companyList, backToSuperAdminKwBtn, backToSuperAdminSettingsBtn, backToSuperAdminUsersBtn, companyKeywordAdminTitle, companySettingsAdminTitle, companyUserAdminTitle, keywordForm, keywordInput, keywordIdInput, adminKeywordList, userForm, userInput, userPasswordInput, userIdInput, adminUserList, notificationBell, notificationBadge, manualTriggerBtn, deleteModal, confirmDeleteBtn, cancelDeleteBtn, companyNameToDeleteEl, newsScopeContainer, startDateInput, endDateInput, linkModal, accessLinkInput, copyLinkBtn, closeLinkModalBtn, reportKeywordFilter, stateSelectContainer, stateSelect, changePasswordForm, apiKeyNewsApiInput, apiKeyFirebaseNewsInput, apiKeyGNewsInput1, apiKeyGNewsInput2, apiKeyGNewsInput3, apiKeyGNewsInput4, apiKeyYoutubeInput, apiKeyBloggerInput, apiKeyVisionInput, apiKeyVideoIntelligenceInput, showAllAlertsBtn, deletionAccessToggle, justificationModal, justificationText, submitJustificationBtn, cancelJustificationBtn, btnManualAlert, btnDeletionRequests, btnSuperAdminReport, manualAlertPage, deletionRequestsPage, superAdminReportPage, backToDashboard1, backToDashboard2, backToDashboard3, manualAlertForm, deletionRequestsList, superAdminReportBody, deletionRequestsBadge, pendingAlertsPage, pendingAlertsList, btnPendingAlerts, backToDashboard4, confirmDeleteKeywordBtn, cancelDeleteKeywordBtn, confirmDeleteKeywordModal, keywordToDeleteNameEl, bloggerIdInput, rssUrlInput, fetchOnlyNewToggle, changePasswordPage, globalKeysPage, globalSourcesPage, btnChangePassword, btnGlobalKeys, btnNewsSources, backToAdminConfig1, backToAdminConfig2, backToAdminConfig3, globalLogoPage, btnGlobalLogo, backToAdminConfig4, globalLogoUpload, globalLogoArea;
-
+        let pageSections, navLoggedIn, navInicio, navRelatorio, navPesquisa, navSuperAdmin, navLogout, navConfiguracoesAdmin, globalAlert, loginPage, dashboardPage, searchPage, superAdminPage, companyKeywordAdminPage, companySettingsAdminPage, reportPage, companyUserAdminPage, configuracoesAdminPage, loginForm, dashboardTitle, currentDateTimeEl, dashboardKeywordList, newsAlertsContainer, newsAlerts, alertDateFilter, reportAccessToggle, logoUploadInput, headerLogoContainer, loginLogoContainer, filterContainer, searchInput, searchResults, companyForm, companyList, backToSuperAdminKwBtn, backToSuperAdminSettingsBtn, backToSuperAdminUsersBtn, companyKeywordAdminTitle, companySettingsAdminTitle, companyUserAdminTitle, keywordForm, keywordInput, keywordIdInput, adminKeywordList, userForm, userInput, userPasswordInput, userIdInput, adminUserList, notificationBell, notificationBadge, manualTriggerBtn, deleteModal, confirmDeleteBtn, cancelDeleteBtn, companyNameToDeleteEl, newsScopeContainer, startDateInput, endDateInput, linkModal, accessLinkInput, copyLinkBtn, closeLinkModalBtn, reportKeywordFilterContainer, stateSelectContainer, stateSelect, changePasswordForm, apiKeyNewsApiInput, apiKeyFirebaseNewsInput, apiKeyGNewsInput1, apiKeyGNewsInput2, apiKeyGNewsInput3, apiKeyGNewsInput4, apiKeyYoutubeInput, apiKeyBloggerInput, apiKeyVisionInput, apiKeyVideoIntelligenceInput, showAllAlertsBtn, deletionAccessToggle, justificationModal, justificationText, submitJustificationBtn, cancelJustificationBtn, btnManualAlert, btnDeletionRequests, btnSuperAdminReport, manualAlertPage, deletionRequestsPage, superAdminReportPage, backToDashboard1, backToDashboard2, backToDashboard3, manualAlertForm, deletionRequestsList, superAdminReportBody, deletionRequestsBadge, pendingAlertsPage, pendingAlertsList, btnPendingAlerts, backToDashboard4, confirmDeleteKeywordBtn, cancelDeleteKeywordBtn, confirmDeleteKeywordModal, keywordToDeleteNameEl, bloggerIdInput, rssUrlInput, fetchOnlyNewToggle, changePasswordPage, globalKeysPage, globalSourcesPage, btnChangePassword, btnGlobalKeys, btnNewsSources, backToAdminConfig1, backToAdminConfig2, backToAdminConfig3, globalLogoPage, btnGlobalLogo, backToAdminConfig4, globalLogoUpload, globalLogoArea, logoLink, btnRadioSources, globalRadioSourcesPage, backToAdminConfig5, radioSourcesInput;
 
         // --- FUNÇÕES DE UTILIDADE ---
         function showAlert(message, type = 'success') { const c = type === 'success' ? 'bg-green-100 border-green-500 text-green-700' : 'bg-red-100 border-red-500 text-red-700'; globalAlert.innerHTML = `<div class="${c} border-l-4 p-4 rounded-md fade-in" role="alert"><p>${message}</p></div>`; setTimeout(() => { globalAlert.innerHTML = ''; }, 4000); }
@@ -572,6 +590,7 @@
                 case 'change-password': changePasswordPage.classList.add('active'); break; 
                 case 'global-keys': globalKeysPage.classList.add('active'); renderGlobalKeysPage(); break; 
                 case 'global-sources': globalSourcesPage.classList.add('active'); renderGlobalSourcesPage(); break; 
+                case 'global-radio-sources': globalRadioSourcesPage.classList.add('active'); renderGlobalRadioSourcesPage(); break;
                 case 'global-logo': globalLogoPage.classList.add('active'); break;
                 case 'manual-alert': manualAlertPage.classList.add('active'); renderManualAlertPage(); break; 
                 case 'deletion-requests': deletionRequestsPage.classList.add('active'); setupDeletionRequestsListener(); break; 
@@ -657,7 +676,7 @@
                     setStorage('clipping_currentUser', currentUser); 
                     updateView('dashboard'); 
                 } else { 
-                    showAlert('Usuário ou palavra-passe inválidos for this company.', 'error'); 
+                    showAlert('Usuário ou palavra-passe inválidos para esta empresa.', 'error'); 
                 } 
             } catch (error) { 
                 console.error("Erro de login:", error); 
@@ -823,6 +842,7 @@
         async function renderGlobalKeysPage() { try { const settingsRef = doc(db, "artifacts", appId, "public/data/settings", "global"); const docSnap = await getDoc(settingsRef); if (docSnap.exists()) { const settings = docSnap.data(); if(apiKeyNewsApiInput) apiKeyNewsApiInput.value = settings.apiKeyNewsApi || ''; if(apiKeyFirebaseNewsInput) apiKeyFirebaseNewsInput.value = settings.apiKeyFirebaseNews || ''; if(apiKeyGNewsInput1) apiKeyGNewsInput1.value = settings.apiKeyGNews1 || ''; if(apiKeyGNewsInput2) apiKeyGNewsInput2.value = settings.apiKeyGNews2 || ''; if(apiKeyGNewsInput3) apiKeyGNewsInput3.value = settings.apiKeyGNews3 || ''; if(apiKeyGNewsInput4) apiKeyGNewsInput4.value = settings.apiKeyGNews4 || ''; if(apiKeyYoutubeInput) apiKeyYoutubeInput.value = settings.apiKeyYoutube || ''; if(apiKeyBloggerInput) apiKeyBloggerInput.value = settings.apiKeyBlogger || ''; if(apiKeyVisionInput) apiKeyVisionInput.value = settings.apiKeyVision || ''; if(apiKeyVideoIntelligenceInput) apiKeyVideoIntelligenceInput.value = settings.apiKeyVideoIntelligence || ''; } } catch (error) { console.error("Erro ao carregar as chaves de API globais:", error); } }
         async function handleGlobalKeyChange(e) { const settingsRef = doc(db, "artifacts", appId, "public/data/settings", "global"); const key = e.target.id; const value = e.target.value; try { await setDoc(settingsRef, { [key]: value }, { merge: true }); showAlert('Chave de API guardada!', 'success'); } catch (error) { console.error("Erro ao guardar a chave de API global:", error); } }
         async function renderGlobalSourcesPage() { try { const settingsRef = doc(db, "artifacts", appId, "public/data/settings", "global"); const docSnap = await getDoc(settingsRef); if (docSnap.exists()) { const settings = docSnap.data(); if(bloggerIdInput) bloggerIdInput.value = settings.bloggerId || ''; if(rssUrlInput) rssUrlInput.value = settings.rssUrl || ''; } } catch (error) { console.error("Erro ao carregar as fontes globais:", error); } }
+        async function renderGlobalRadioSourcesPage() { try { const settingsRef = doc(db, "artifacts", appId, "public/data/settings", "global"); const docSnap = await getDoc(settingsRef); if (docSnap.exists()) { const settings = docSnap.data(); if(radioSourcesInput) radioSourcesInput.value = settings.radioSources || ''; } } catch (error) { console.error("Erro ao carregar as fontes de rádio:", error); } }
         
         function cleanAndSaveTextarea(e) {
             const textarea = e.target;
@@ -1027,20 +1047,24 @@
             allCompanyArticles = articlesSnapshot.docs.map(doc => doc.data());
             const keywords = keywordsSnapshot.docs.map(doc => doc.data().word);
 
-            if (reportKeywordFilter) {
-               reportKeywordFilter.innerHTML = '';
+            if (reportKeywordFilterContainer) {
+               reportKeywordFilterContainer.innerHTML = '';
                keywords.forEach(kw => {
-                   const option = document.createElement('option');
-                   option.value = kw;
-                   option.textContent = kw;
-                   reportKeywordFilter.appendChild(option);
+                    const id = `kw-filter-${kw.replace(/\s+/g, '-')}`;
+                    const filterEl = document.createElement('div');
+                    filterEl.className = 'flex items-center';
+                    filterEl.innerHTML = `
+                        <input type="checkbox" id="${id}" value="${kw}" class="report-kw-checkbox h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                        <label for="${id}" class="ml-2 block text-sm text-gray-900">${kw}</label>
+                    `;
+                   reportKeywordFilterContainer.appendChild(filterEl);
                });
             }
             
             const updateCharts = () => {
                 const startDate = startDateInput && startDateInput.value ? new Date(startDateInput.value) : null;
                 const endDate = endDateInput && endDateInput.value ? new Date(endDateInput.value) : null;
-                const selectedKeywords = reportKeywordFilter ? Array.from(reportKeywordFilter.selectedOptions).map(option => option.value) : [];
+                const selectedKeywords = reportKeywordFilterContainer ? Array.from(reportKeywordFilterContainer.querySelectorAll('.report-kw-checkbox:checked')).map(cb => cb.value) : [];
 
                 if (startDate) startDate.setHours(0, 0, 0, 0);
                 if (endDate) endDate.setHours(23, 59, 59, 999);
@@ -1061,7 +1085,7 @@
             
             if (startDateInput) startDateInput.addEventListener('change', updateCharts);
             if (endDateInput) endDateInput.addEventListener('change', updateCharts);
-            if (reportKeywordFilter) reportKeywordFilter.addEventListener('change', updateCharts);
+            if (reportKeywordFilterContainer) reportKeywordFilterContainer.addEventListener('change', updateCharts);
             updateCharts();
         }
         
@@ -1082,19 +1106,22 @@
                         position: 'left',
                         onHover: (event, legendItem, legend) => {
                             const chart = legend.chart;
-                            const datasetIndex = legendItem.datasetIndex;
-                            const dataset = chart.data.datasets[datasetIndex];
-                            dataset._originalBorderWidth = dataset.borderWidth; // Salva a largura original
-                            dataset.borderWidth = 5; // Aumenta a largura
-                            chart.update();
+                            if (chart.options.datasets.line.borderWidth) { // Apenas para gráficos de linha
+                                const datasetIndex = legendItem.datasetIndex;
+                                const dataset = chart.data.datasets[datasetIndex];
+                                dataset._originalBorderWidth = dataset.borderWidth;
+                                dataset.borderWidth = (dataset.borderWidth || 2) + 3;
+                                chart.update();
+                            }
                         },
                         onLeave: (event, legendItem, legend) => {
-                            const chart = legend.chart;
-                            const datasetIndex = legendItem.datasetIndex;
-                             const dataset = chart.data.datasets[datasetIndex];
-                             // Restaura a partir da propriedade salva, ou usa um padrão
-                            dataset.borderWidth = dataset._originalBorderWidth || 2; 
-                            chart.update();
+                           const chart = legend.chart;
+                           if (chart.options.datasets.line.borderWidth) {
+                                const datasetIndex = legendItem.datasetIndex;
+                                const dataset = chart.data.datasets[datasetIndex];
+                                dataset.borderWidth = dataset._originalBorderWidth || 2;
+                                chart.update();
+                           }
                         }
                     } 
                 }
@@ -1659,7 +1686,7 @@
             accessLinkInput = document.getElementById('access-link-input');
             copyLinkBtn = document.getElementById('copy-link-btn');
             closeLinkModalBtn = document.getElementById('close-link-modal-btn');
-            reportKeywordFilter = document.getElementById('report-keyword-filter');
+            reportKeywordFilterContainer = document.getElementById('report-keyword-filter-container');
             stateSelectContainer = document.getElementById('state-select-container');
             stateSelect = document.getElementById('state-select');
             changePasswordForm = document.getElementById('change-password-form');
@@ -1675,16 +1702,20 @@
             apiKeyVideoIntelligenceInput = document.getElementById('apiKeyVideoIntelligence');
             bloggerIdInput = document.getElementById('bloggerId');
             rssUrlInput = document.getElementById('rssUrl');
+            radioSourcesInput = document.getElementById('radioSources');
             fetchOnlyNewToggle = document.getElementById('fetch-only-new-toggle');
             changePasswordPage = document.getElementById('change-password-page');
             globalKeysPage = document.getElementById('global-keys-page');
             globalSourcesPage = document.getElementById('global-sources-page');
+            globalRadioSourcesPage = document.getElementById('global-radio-sources-page');
             btnChangePassword = document.getElementById('btn-change-password');
             btnGlobalKeys = document.getElementById('btn-global-keys');
             btnNewsSources = document.getElementById('btn-news-sources');
+            btnRadioSources = document.getElementById('btn-radio-sources');
             backToAdminConfig1 = document.getElementById('back-to-admin-config-1');
             backToAdminConfig2 = document.getElementById('back-to-admin-config-2');
             backToAdminConfig3 = document.getElementById('back-to-admin-config-3');
+            backToAdminConfig5 = document.getElementById('back-to-admin-config-5');
             showAllAlertsBtn = document.getElementById('show-all-alerts-btn');
             deletionAccessToggle = document.getElementById('deletion-access-toggle');
             justificationModal = document.getElementById('justification-modal');
@@ -1717,6 +1748,7 @@
             backToAdminConfig4 = document.getElementById('back-to-admin-config-4');
             globalLogoUpload = document.getElementById('global-logo-upload');
             globalLogoArea = document.getElementById('global-logo-area');
+            logoLink = document.getElementById('logo-link');
 
             const states = {"AC": "Acre", "AL": "Alagoas", "AP": "Amapá", "AM": "Amazonas", "BA": "Bahia", "CE": "Ceará", "DF": "Distrito Federal", "ES": "Espírito Santo", "GO": "Goiás", "MA": "Maranhão", "MT": "Mato Grosso", "MS": "Mato Grosso do Sul", "MG": "Minas Gerais", "PA": "Pará", "PB": "Paraíba", "PR": "Paraná", "PE": "Pernambuco", "PI": "Piauí", "RJ": "Rio de Janeiro", "RN": "Rio Grande do Norte", "RS": "Rio Grande do Sul", "RO": "Rondônia", "RR": "Roraima", "SC": "Santa Catarina", "SP": "São Paulo", "SE": "Sergipe", "TO": "Tocantins"};
             for (const [uf, name] of Object.entries(states)) {
@@ -1757,6 +1789,7 @@
                 }
             })();
 
+            if (logoLink) logoLink.addEventListener('click', (e) => { e.preventDefault(); if(currentUser) updateView('dashboard'); });
             if (loginForm) loginForm.addEventListener('submit', handleLogin);
             if (navInicio) navInicio.addEventListener('click', (e) => { e.preventDefault(); updateView('dashboard'); });
             if (navRelatorio) navRelatorio.addEventListener('click', (e) => { e.preventDefault(); updateView('report'); });
@@ -1784,6 +1817,7 @@
             if (apiKeyVideoIntelligenceInput) apiKeyVideoIntelligenceInput.addEventListener('change', handleGlobalKeyChange);
             if (bloggerIdInput) bloggerIdInput.addEventListener('change', handleGlobalSourceChange);
             if (rssUrlInput) rssUrlInput.addEventListener('change', handleGlobalSourceChange);
+            if (radioSourcesInput) radioSourcesInput.addEventListener('change', handleGlobalSourceChange);
             if (reportAccessToggle) reportAccessToggle.addEventListener('change', handleSettingsChange);
             if (fetchOnlyNewToggle) fetchOnlyNewToggle.addEventListener('change', handleSettingsChange);
             if (deletionAccessToggle) deletionAccessToggle.addEventListener('change', handleSettingsChange);
@@ -1809,11 +1843,13 @@
             if (btnChangePassword) btnChangePassword.addEventListener('click', () => updateView('change-password'));
             if (btnGlobalKeys) btnGlobalKeys.addEventListener('click', () => updateView('global-keys'));
             if (btnNewsSources) btnNewsSources.addEventListener('click', () => updateView('global-sources'));
+            if (btnRadioSources) btnRadioSources.addEventListener('click', () => updateView('global-radio-sources'));
             if (btnGlobalLogo) btnGlobalLogo.addEventListener('click', () => updateView('global-logo'));
             if (backToAdminConfig1) backToAdminConfig1.addEventListener('click', () => updateView('configuracoes-admin'));
             if (backToAdminConfig2) backToAdminConfig2.addEventListener('click', () => updateView('configuracoes-admin'));
             if (backToAdminConfig3) backToAdminConfig3.addEventListener('click', () => updateView('configuracoes-admin'));
             if (backToAdminConfig4) backToAdminConfig4.addEventListener('click', () => updateView('configuracoes-admin'));
+            if (backToAdminConfig5) backToAdminConfig5.addEventListener('click', () => updateView('configuracoes-admin'));
             if (logoUploadInput) logoUploadInput.addEventListener('change', handleLogoUpload);
             if (globalLogoUpload) globalLogoUpload.addEventListener('change', handleGlobalLogoUpload);
             if (btnManualAlert) btnManualAlert.addEventListener('click', () => updateView('manual-alert'));
