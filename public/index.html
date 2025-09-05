@@ -59,6 +59,9 @@
         .alert-body-clickable {
             cursor: pointer;
         }
+        .company-report-row {
+            cursor: pointer;
+        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
@@ -373,19 +376,19 @@
                     </div>
                 </div>
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <div class="p-4 border rounded-lg min-h-[300px] sm:min-h-[400px]">
+                    <div class="p-4 border rounded-lg min-h-[280px] sm:min-h-[320px]">
                         <h3 class="text-xl font-semibold mb-4 text-center">Notícias por Veículo</h3>
                         <canvas id="source-chart"></canvas>
                     </div>
-                    <div class="p-4 border rounded-lg min-h-[300px] sm:min-h-[400px]">
+                    <div class="p-4 border rounded-lg min-h-[280px] sm:min-h-[320px]">
                         <h3 class="text-xl font-semibold mb-4 text-center">Notícias por Canal</h3>
                         <canvas id="channel-chart"></canvas>
                     </div>
-                    <div class="p-4 border rounded-lg min-h-[300px] sm:min-h-[400px]">
+                    <div class="p-4 border rounded-lg min-h-[280px] sm:min-h-[320px]">
                         <h3 class="text-xl font-semibold mb-4 text-center">Notícias por Período</h3>
                          <canvas id="date-chart"></canvas>
                     </div>
-                    <div class="p-4 border rounded-lg min-h-[300px] sm:min-h-[400px]">
+                    <div class="p-4 border rounded-lg min-h-[280px] sm:min-h-[320px]">
                         <h3 class="text-xl font-semibold mb-4 text-center">Análise de Sentimento</h3>
                         <canvas id="sentiment-chart"></canvas>
                     </div>
@@ -472,8 +475,23 @@
             </div>
         </section>
         
+        <section id="company-keyword-report-page" class="page-section fade-in">
+             <button id="back-to-super-admin-report" class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">← Voltar para Relatório Geral</button>
+            <h2 id="company-keyword-report-title" class="text-2xl sm:text-3xl font-bold mb-6">Análise por Palavra-Chave</h2>
+             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="p-4 bg-white rounded-lg shadow-lg min-h-[300px] sm:min-h-[400px]">
+                    <h3 class="text-xl font-semibold mb-4 text-center">Total de Alertas por Palavra-Chave</h3>
+                    <canvas id="keyword-total-chart"></canvas>
+                </div>
+                <div class="p-4 bg-white rounded-lg shadow-lg min-h-[300px] sm:min-h-[400px]">
+                    <h3 class="text-xl font-semibold mb-4 text-center">Sentimento por Palavra-Chave</h3>
+                    <canvas id="keyword-sentiment-chart"></canvas>
+                </div>
+            </div>
+        </section>
+
         <section id="article-detail-page" class="page-section fade-in">
-            <button id="back-to-dashboard-5" class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">← Voltar</button>
+            <button id="back-from-detail" class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">← Voltar</button>
             <div class="bg-white p-6 sm:p-8 rounded-lg shadow-lg relative">
                  <div class="absolute top-6 right-6 sm:top-8 sm:right-8 flex items-center gap-3">
                     <button id="share-whatsapp-btn" title="Compartilhar no WhatsApp" class="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors">
@@ -584,14 +602,14 @@
         // --- ESTADO DA APLICAÇÃO ---
         const appId = firebaseConfig.projectId;
         let currentUser = null, clockInterval = null, selectedCompanyForManagement = null, allCompanyArticles = [], companyIdToDelete = null, articleToDeleteInfo = null;
-        let sourceChartInstance = null, dateChartInstance = null, sentimentChartInstance = null, channelChartInstance = null, companySummaryChartInstance = null;
+        let sourceChartInstance = null, dateChartInstance = null, sentimentChartInstance = null, channelChartInstance = null, companySummaryChartInstance = null, keywordTotalChartInstance = null, keywordSentimentChartInstance = null;
         let superAdminCredentials = { user: 'ulysses', pass: 'adminqwert' };
         let notificationListener = null, companiesListener = null, deletionRequestsListener = null, pendingAlertsListener = null;
         let keywordToDeleteInfo = null;
         let currentDetailArticle = null;
 
         // --- ELEMENTOS DO DOM ---
-        let pageSections, navLoggedIn, navInicio, navRelatorio, navPesquisa, navSuperAdmin, navLogout, navConfiguracoesAdmin, globalAlert, loginPage, dashboardPage, searchPage, superAdminPage, companyKeywordAdminPage, companySettingsAdminPage, reportPage, companyUserAdminPage, configuracoesAdminPage, loginForm, dashboardTitle, currentDateTimeEl, dashboardKeywordList, newsAlertsContainer, newsAlerts, alertDateFilter, reportAccessToggle, logoUploadInput, headerLogoContainer, loginLogoContainer, filterContainer, searchInput, searchResults, companyForm, companyList, backToSuperAdminKwBtn, backToSuperAdminSettingsBtn, backToSuperAdminUsersBtn, companyKeywordAdminTitle, companySettingsAdminTitle, companyUserAdminTitle, keywordForm, keywordInput, keywordIdInput, adminKeywordList, userForm, userInput, userPasswordInput, userIdInput, adminUserList, notificationBell, notificationBadge, manualTriggerBtn, deleteModal, confirmDeleteBtn, cancelDeleteBtn, companyNameToDeleteEl, newsScopeContainer, startDateInput, endDateInput, linkModal, accessLinkInput, copyLinkBtn, closeLinkModalBtn, reportKeywordFilterContainer, stateSelectContainer, stateSelect, changePasswordForm, apiKeyNewsApiInput, apiKeyFirebaseNewsInput, apiKeyGNewsInput1, apiKeyGNewsInput2, apiKeyGNewsInput3, apiKeyGNewsInput4, apiKeyYoutubeInput, apiKeyBloggerInput, apiKeyVisionInput, apiKeyVideoIntelligenceInput, showAllAlertsBtn, deletionAccessToggle, justificationModal, justificationText, submitJustificationBtn, cancelJustificationBtn, btnManualAlert, btnDeletionRequests, btnSuperAdminReport, manualAlertPage, deletionRequestsPage, superAdminReportPage, backToDashboard1, backToDashboard2, backToDashboard3, manualAlertForm, deletionRequestsList, superAdminReportBody, deletionRequestsBadge, pendingAlertsPage, pendingAlertsList, btnPendingAlerts, backToDashboard4, confirmDeleteKeywordBtn, cancelDeleteKeywordBtn, confirmDeleteKeywordModal, keywordToDeleteNameEl, bloggerIdInput, rssUrlInput, fetchOnlyNewToggle, changePasswordPage, globalKeysPage, globalSourcesPage, btnChangePassword, btnGlobalKeys, btnNewsSources, backToAdminConfig1, backToAdminConfig2, backToAdminConfig3, globalLogoPage, btnGlobalLogo, backToAdminConfig4, globalLogoUpload, globalLogoArea, logoLink, btnRadioSources, globalRadioSourcesPage, backToAdminConfig5, radioSourcesInput, articleDetailPage, backToDashboard5, detailTitle, detailMeta, detailContent, shareWhatsappBtn, shareEmailBtn;
+        let pageSections, navLoggedIn, navInicio, navRelatorio, navPesquisa, navSuperAdmin, navLogout, navConfiguracoesAdmin, globalAlert, loginPage, dashboardPage, searchPage, superAdminPage, companyKeywordAdminPage, companySettingsAdminPage, reportPage, companyUserAdminPage, configuracoesAdminPage, loginForm, dashboardTitle, currentDateTimeEl, dashboardKeywordList, newsAlertsContainer, newsAlerts, alertDateFilter, reportAccessToggle, logoUploadInput, headerLogoContainer, loginLogoContainer, filterContainer, searchInput, searchResults, companyForm, companyList, backToSuperAdminKwBtn, backToSuperAdminSettingsBtn, backToSuperAdminUsersBtn, companyKeywordAdminTitle, companySettingsAdminTitle, companyUserAdminTitle, keywordForm, keywordInput, keywordIdInput, adminKeywordList, userForm, userInput, userPasswordInput, userIdInput, adminUserList, notificationBell, notificationBadge, manualTriggerBtn, deleteModal, confirmDeleteBtn, cancelDeleteBtn, companyNameToDeleteEl, newsScopeContainer, startDateInput, endDateInput, linkModal, accessLinkInput, copyLinkBtn, closeLinkModalBtn, reportKeywordFilterContainer, stateSelectContainer, stateSelect, changePasswordForm, apiKeyNewsApiInput, apiKeyFirebaseNewsInput, apiKeyGNewsInput1, apiKeyGNewsInput2, apiKeyGNewsInput3, apiKeyGNewsInput4, apiKeyYoutubeInput, apiKeyBloggerInput, apiKeyVisionInput, apiKeyVideoIntelligenceInput, showAllAlertsBtn, deletionAccessToggle, justificationModal, justificationText, submitJustificationBtn, cancelJustificationBtn, btnManualAlert, btnDeletionRequests, btnSuperAdminReport, manualAlertPage, deletionRequestsPage, superAdminReportPage, backToDashboard1, backToDashboard2, backToDashboard3, manualAlertForm, deletionRequestsList, superAdminReportBody, deletionRequestsBadge, pendingAlertsPage, pendingAlertsList, btnPendingAlerts, backToDashboard4, confirmDeleteKeywordBtn, cancelDeleteKeywordBtn, confirmDeleteKeywordModal, keywordToDeleteNameEl, bloggerIdInput, rssUrlInput, fetchOnlyNewToggle, changePasswordPage, globalKeysPage, globalSourcesPage, btnChangePassword, btnGlobalKeys, btnNewsSources, backToAdminConfig1, backToAdminConfig2, backToAdminConfig3, globalLogoPage, btnGlobalLogo, backToAdminConfig4, globalLogoUpload, globalLogoArea, logoLink, btnRadioSources, globalRadioSourcesPage, backToAdminConfig5, radioSourcesInput, articleDetailPage, backFromDetail, detailTitle, detailMeta, detailContent, shareWhatsappBtn, shareEmailBtn, companyKeywordReportPage, backToSuperAdminReportBtn, companyKeywordReportTitle;
 
         // --- FUNÇÕES DE UTILIDADE ---
         function showAlert(message, type = 'success') { const c = type === 'success' ? 'bg-green-100 border-green-500 text-green-700' : 'bg-red-100 border-red-500 text-red-700'; globalAlert.innerHTML = `<div class="${c} border-l-4 p-4 rounded-md fade-in" role="alert"><p>${message}</p></div>`; setTimeout(() => { globalAlert.innerHTML = ''; }, 4000); }
@@ -625,6 +643,7 @@
                 case 'super-admin-report': superAdminReportPage.classList.add('active'); renderSuperAdminReport(); break; 
                 case 'super-admin-queue': pendingAlertsPage.classList.add('active'); setupPendingAlertsListener(); break; 
                 case 'article-detail': articleDetailPage.classList.add('active'); break;
+                case 'company-keyword-report': companyKeywordReportPage.classList.add('active'); break;
             } 
         }
         function getStorage(key, defaultValue) { try { const d = localStorage.getItem(key); return d ? JSON.parse(d) : defaultValue; } catch (e) { console.error(e); return defaultValue; } }
@@ -1686,12 +1705,17 @@
                 superAdminReportBody.innerHTML = '';
                 if (reportData.length === 0) {
                     superAdminReportBody.innerHTML = '<tr><td colspan="6" class="text-center py-4">Nenhum dado para exibir.</td></tr>';
+                    document.getElementById('company-summary-chart').style.display = 'none';
                     return;
                 }
+                 document.getElementById('company-summary-chart').style.display = 'block';
 
                 reportData.forEach(item => {
                     const row = document.createElement('tr');
-                    row.className = 'hover:bg-gray-50';
+                    row.className = 'hover:bg-gray-50 company-report-row';
+                    row.dataset.companyId = item.companyId;
+                    row.dataset.companyName = item.companyName;
+
                     let sentimentClass = 'text-gray-600';
                     if (item.predominantSentiment === 'Positivo') sentimentClass = 'text-green-600 font-semibold';
                     if (item.predominantSentiment === 'Negativo') sentimentClass = 'text-red-600 font-semibold';
@@ -1711,29 +1735,86 @@
                     superAdminReportBody.appendChild(row);
                 });
                 
-                // Renderizar o novo gráfico de resumo
                 const chartLabels = reportData.map(d => d.companyName);
                 const chartValues = reportData.map(d => d.totalAlerts);
-                companySummaryChartInstance = createChart('company-summary-chart', companySummaryChartInstance, 'bar', {
+                companySummaryChartInstance = createChart('company-summary-chart', companySummaryChartInstance, 'line', {
                     labels: chartLabels,
                     datasets: [{
                         label: 'Total de Alertas',
                         data: chartValues,
-                        backgroundColor: chartColors,
-                        borderColor: chartColors,
-                        borderWidth: 1
+                        borderColor: '#4F46E5',
+                        backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                        fill: true,
+                        tension: 0.1
                     }]
                 }, {
-                     indexAxis: 'y',
                      plugins: { legend: { display: false } }
                 });
 
             } catch (error) {
                 console.error("Erro ao gerar relatório:", error);
-                superAdminReportBody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-red-500">Erro: ${error.message}</td></tr>`;
+                superAdminReportBody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-red-500">Erro ao gerar relatório: ${error.message}</td></tr>`;
             }
         }
 
+        async function renderCompanyKeywordReport(companyId, companyName) {
+            if (!companyKeywordReportTitle) return;
+            companyKeywordReportTitle.textContent = `Análise por Palavra-Chave: ${companyName}`;
+            
+            if (keywordTotalChartInstance) keywordTotalChartInstance.destroy();
+            if (keywordSentimentChartInstance) keywordSentimentChartInstance.destroy();
+
+            try {
+                const articlesSnapshot = await getDocs(query(collection(db, `artifacts/${appId}/users/${companyId}/articles`)));
+                const keywordsSnapshot = await getDocs(query(collection(db, `artifacts/${appId}/users/${companyId}/keywords`)));
+                
+                const articles = articlesSnapshot.docs.map(doc => doc.data());
+                const keywords = keywordsSnapshot.docs.map(doc => doc.data().word);
+
+                const keywordTotals = {};
+                const keywordSentiments = {};
+
+                keywords.forEach(kw => {
+                    const articlesForKw = articles.filter(a => (a.keywords || []).includes(kw));
+                    keywordTotals[kw] = articlesForKw.length;
+                    
+                    const sentimentCounts = { positive: 0, neutral: 0, negative: 0 };
+                    articlesForKw.forEach(article => {
+                        const score = article.sentiment?.score ?? 0;
+                        if (score > 0.2) sentimentCounts.positive++;
+                        else if (score < -0.2) sentimentCounts.negative++;
+                        else sentimentCounts.neutral++;
+                    });
+                    keywordSentiments[kw] = sentimentCounts;
+                });
+
+                // Renderizar gráfico de totais
+                keywordTotalChartInstance = createChart('keyword-total-chart', keywordTotalChartInstance, 'bar', {
+                    labels: Object.keys(keywordTotals),
+                    datasets: [{
+                        label: 'Nº de Alertas',
+                        data: Object.values(keywordTotals),
+                        backgroundColor: chartColors,
+                    }]
+                }, { plugins: { legend: { display: false } }, indexAxis: 'y' });
+                
+                // Renderizar gráfico de sentimentos
+                keywordSentimentChartInstance = createChart('keyword-sentiment-chart', keywordSentimentChartInstance, 'bar', {
+                    labels: keywords,
+                    datasets: [
+                        { label: 'Positivo', data: keywords.map(kw => keywordSentiments[kw].positive), backgroundColor: '#10B981' },
+                        { label: 'Neutro', data: keywords.map(kw => keywordSentiments[kw].neutral), backgroundColor: '#6B7280' },
+                        { label: 'Negativo', data: keywords.map(kw => keywordSentiments[kw].negative), backgroundColor: '#EF4444' },
+                    ]
+                }, { scales: { x: { stacked: true }, y: { stacked: true } } });
+
+                updateView('company-keyword-report');
+
+            } catch (error) {
+                console.error('Erro ao gerar relatório de palavras-chave:', error);
+                showAlert('Não foi possível gerar o relatório detalhado.', 'error');
+            }
+        }
 
         // --- INICIALIZAÇÃO E OUVINTES DE EVENTOS ---
         document.addEventListener('DOMContentLoaded', () => {
@@ -1809,7 +1890,7 @@
             apiKeyGNewsInput1 = document.getElementById('apiKeyGNews1');
             apiKeyGNewsInput2 = document.getElementById('apiKeyGNews2');
             apiKeyGNewsInput3 = document.getElementById('apiKeyGNews3');
-            apiKeyGNewsInput4 = document.getElementById('apiKeyGNews4');
+            apiKeyGNewsInput4 = document.getElementById('apiKeyGNewsInput4');
             apiKeyYoutubeInput = document.getElementById('apiKeyYoutube');
             apiKeyBloggerInput = document.getElementById('apiKeyBlogger');
             apiKeyVisionInput = document.getElementById('apiKeyVision');
@@ -1864,12 +1945,15 @@
             globalLogoArea = document.getElementById('global-logo-area');
             logoLink = document.getElementById('logo-link');
             articleDetailPage = document.getElementById('article-detail-page');
-            backToDashboard5 = document.getElementById('back-to-dashboard-5');
+            backFromDetail = document.getElementById('back-from-detail');
             detailTitle = document.getElementById('detail-title');
             detailMeta = document.getElementById('detail-meta');
             detailContent = document.getElementById('detail-content');
             shareWhatsappBtn = document.getElementById('share-whatsapp-btn');
             shareEmailBtn = document.getElementById('share-email-btn');
+            companyKeywordReportPage = document.getElementById('company-keyword-report-page');
+            backToSuperAdminReportBtn = document.getElementById('back-to-super-admin-report');
+            companyKeywordReportTitle = document.getElementById('company-keyword-report-title');
 
             const states = {"AC": "Acre", "AL": "Alagoas", "AP": "Amapá", "AM": "Amazonas", "BA": "Bahia", "CE": "Ceará", "DF": "Distrito Federal", "ES": "Espírito Santo", "GO": "Goiás", "MA": "Maranhão", "MT": "Mato Grosso", "MS": "Mato Grosso do Sul", "MG": "Minas Gerais", "PA": "Pará", "PB": "Paraíba", "PR": "Paraná", "PE": "Pernambuco", "PI": "Piauí", "RJ": "Rio de Janeiro", "RN": "Rio Grande do Norte", "RS": "Rio Grande do Sul", "RO": "Rondônia", "RR": "Roraima", "SC": "Santa Catarina", "SP": "São Paulo", "SE": "Sergipe", "TO": "Tocantins"};
             for (const [uf, name] of Object.entries(states)) {
@@ -1921,6 +2005,13 @@
             if (manualTriggerBtn) manualTriggerBtn.addEventListener('click', handleManualTrigger);
             if (companyForm) companyForm.addEventListener('submit', handleCompanySubmit);
             if (companyList) companyList.addEventListener('click', handleCompanyActions);
+            if (superAdminReportBody) superAdminReportBody.addEventListener('click', (e) => {
+                const row = e.target.closest('.company-report-row');
+                if (row) {
+                    const { companyId, companyName } = row.dataset;
+                    renderCompanyKeywordReport(companyId, companyName);
+                }
+            });
             if (confirmDeleteBtn) confirmDeleteBtn.addEventListener('click', handleConfirmDelete);
             if (cancelDeleteBtn) cancelDeleteBtn.addEventListener('click', () => { if(deleteModal) deleteModal.classList.add('hidden')});
             if (closeLinkModalBtn) closeLinkModalBtn.addEventListener('click', () => { if(linkModal) linkModal.classList.add('hidden')});
@@ -1978,8 +2069,9 @@
             if (btnSuperAdminReport) btnSuperAdminReport.addEventListener('click', () => updateView('super-admin-report'));
             if (backToDashboard1) backToDashboard1.addEventListener('click', () => updateView('dashboard'));
             if (backToDashboard2) backToDashboard2.addEventListener('click', () => updateView('dashboard'));
-            if (backToDashboard3) backToDashboard3.addEventListener('click', () => updateView('dashboard'));
-            if (backToDashboard5) backToDashboard5.addEventListener('click', () => window.history.back());
+            if (backToDashboard3) backToDashboard3.addEventListener('click', () => updateView('super-admin-report'));
+            if (backFromDetail) backFromDetail.addEventListener('click', () => window.history.back());
+            if (backToSuperAdminReportBtn) backToSuperAdminReportBtn.addEventListener('click', () => updateView('super-admin-report'));
             if (manualAlertForm) manualAlertForm.addEventListener('submit', handleManualAlertSubmit);
             const manualAlertCompanySelect = document.getElementById('manual-alert-company');
             if (manualAlertCompanySelect) manualAlertCompanySelect.addEventListener('change', populateManualAlertKeywords);
