@@ -56,6 +56,9 @@
         #report-keyword-filter-container, #manual-alert-keyword {
             height: 100px;
         }
+        .alert-body-clickable {
+            cursor: pointer;
+        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
@@ -370,19 +373,19 @@
                     </div>
                 </div>
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <div class="p-4 border rounded-lg min-h-[300px] sm:min-h-[400px]">
+                    <div class="p-4 border rounded-lg min-h-[400px] sm:min-h-[500px]">
                         <h3 class="text-xl font-semibold mb-4 text-center">Notícias por Veículo</h3>
                         <canvas id="source-chart"></canvas>
                     </div>
-                    <div class="p-4 border rounded-lg min-h-[300px] sm:min-h-[400px]">
+                    <div class="p-4 border rounded-lg min-h-[400px] sm:min-h-[500px]">
                         <h3 class="text-xl font-semibold mb-4 text-center">Notícias por Canal</h3>
                         <canvas id="channel-chart"></canvas>
                     </div>
-                    <div class="p-4 border rounded-lg min-h-[300px] sm:min-h-[400px]">
+                    <div class="p-4 border rounded-lg min-h-[400px] sm:min-h-[500px]">
                         <h3 class="text-xl font-semibold mb-4 text-center">Notícias por Período</h3>
                          <canvas id="date-chart"></canvas>
                     </div>
-                    <div class="p-4 border rounded-lg min-h-[300px] sm:min-h-[400px]">
+                    <div class="p-4 border rounded-lg min-h-[400px] sm:min-h-[500px]">
                         <h3 class="text-xl font-semibold mb-4 text-center">Análise de Sentimento</h3>
                         <canvas id="sentiment-chart"></canvas>
                     </div>
@@ -439,26 +442,34 @@
             </div>
         </section>
 
-
         <section id="super-admin-report-page" class="page-section fade-in">
              <button id="back-to-dashboard-3" class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar</button>
             <h2 class="text-2xl sm:text-3xl font-bold mb-6">Relatório Geral de Empresas</h2>
             <div class="bg-white p-4 sm:p-6 rounded-lg shadow-lg overflow-x-auto">
-                <table class="w-full whitespace-nowrap">
+                <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
                         <tr>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Empresa</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total de Alertas</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Sentimento (%)</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Sentimento Predominante</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Canal Principal</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Veículo Principal</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Empresa</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total de Alertas</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sentimento (%)</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sentimento Predominante</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Canal Principal</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Veículo Principal</th>
                         </tr>
                     </thead>
                     <tbody id="super-admin-report-body" class="bg-white divide-y divide-gray-200">
-                        <tr><td colspan="6" class="text-center py-4">A gerar relatório...</td></tr>
+                        <tr><td colspan="6" class="text-center py-4">Gerando relatório...</td></tr>
                     </tbody>
                 </table>
+            </div>
+        </section>
+        
+        <section id="article-detail-page" class="page-section fade-in">
+            <button id="back-to-dashboard-5" class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">← Voltar</button>
+            <div class="bg-white p-6 sm:p-8 rounded-lg shadow-lg">
+                <h1 id="detail-title" class="text-2xl sm:text-3xl font-bold text-gray-800 mb-4"></h1>
+                <div id="detail-meta" class="flex flex-wrap gap-x-6 gap-y-2 text-sm text-gray-500 mb-6 border-b pb-4"></div>
+                <div id="detail-content" class="prose max-w-none text-gray-700"></div>
             </div>
         </section>
 
@@ -563,7 +574,7 @@
         let keywordToDeleteInfo = null;
 
         // --- ELEMENTOS DO DOM ---
-        let pageSections, navLoggedIn, navInicio, navRelatorio, navPesquisa, navSuperAdmin, navLogout, navConfiguracoesAdmin, globalAlert, loginPage, dashboardPage, searchPage, superAdminPage, companyKeywordAdminPage, companySettingsAdminPage, reportPage, companyUserAdminPage, configuracoesAdminPage, loginForm, dashboardTitle, currentDateTimeEl, dashboardKeywordList, newsAlertsContainer, newsAlerts, alertDateFilter, reportAccessToggle, logoUploadInput, headerLogoContainer, loginLogoContainer, filterContainer, searchInput, searchResults, companyForm, companyList, backToSuperAdminKwBtn, backToSuperAdminSettingsBtn, backToSuperAdminUsersBtn, companyKeywordAdminTitle, companySettingsAdminTitle, companyUserAdminTitle, keywordForm, keywordInput, keywordIdInput, adminKeywordList, userForm, userInput, userPasswordInput, userIdInput, adminUserList, notificationBell, notificationBadge, manualTriggerBtn, deleteModal, confirmDeleteBtn, cancelDeleteBtn, companyNameToDeleteEl, newsScopeContainer, startDateInput, endDateInput, linkModal, accessLinkInput, copyLinkBtn, closeLinkModalBtn, reportKeywordFilterContainer, stateSelectContainer, stateSelect, changePasswordForm, apiKeyNewsApiInput, apiKeyFirebaseNewsInput, apiKeyGNewsInput1, apiKeyGNewsInput2, apiKeyGNewsInput3, apiKeyGNewsInput4, apiKeyYoutubeInput, apiKeyBloggerInput, apiKeyVisionInput, apiKeyVideoIntelligenceInput, showAllAlertsBtn, deletionAccessToggle, justificationModal, justificationText, submitJustificationBtn, cancelJustificationBtn, btnManualAlert, btnDeletionRequests, btnSuperAdminReport, manualAlertPage, deletionRequestsPage, superAdminReportPage, backToDashboard1, backToDashboard2, backToDashboard3, manualAlertForm, deletionRequestsList, superAdminReportBody, deletionRequestsBadge, pendingAlertsPage, pendingAlertsList, btnPendingAlerts, backToDashboard4, confirmDeleteKeywordBtn, cancelDeleteKeywordBtn, confirmDeleteKeywordModal, keywordToDeleteNameEl, bloggerIdInput, rssUrlInput, fetchOnlyNewToggle, changePasswordPage, globalKeysPage, globalSourcesPage, btnChangePassword, btnGlobalKeys, btnNewsSources, backToAdminConfig1, backToAdminConfig2, backToAdminConfig3, globalLogoPage, btnGlobalLogo, backToAdminConfig4, globalLogoUpload, globalLogoArea, logoLink, btnRadioSources, globalRadioSourcesPage, backToAdminConfig5, radioSourcesInput;
+        let pageSections, navLoggedIn, navInicio, navRelatorio, navPesquisa, navSuperAdmin, navLogout, navConfiguracoesAdmin, globalAlert, loginPage, dashboardPage, searchPage, superAdminPage, companyKeywordAdminPage, companySettingsAdminPage, reportPage, companyUserAdminPage, configuracoesAdminPage, loginForm, dashboardTitle, currentDateTimeEl, dashboardKeywordList, newsAlertsContainer, newsAlerts, alertDateFilter, reportAccessToggle, logoUploadInput, headerLogoContainer, loginLogoContainer, filterContainer, searchInput, searchResults, companyForm, companyList, backToSuperAdminKwBtn, backToSuperAdminSettingsBtn, backToSuperAdminUsersBtn, companyKeywordAdminTitle, companySettingsAdminTitle, companyUserAdminTitle, keywordForm, keywordInput, keywordIdInput, adminKeywordList, userForm, userInput, userPasswordInput, userIdInput, adminUserList, notificationBell, notificationBadge, manualTriggerBtn, deleteModal, confirmDeleteBtn, cancelDeleteBtn, companyNameToDeleteEl, newsScopeContainer, startDateInput, endDateInput, linkModal, accessLinkInput, copyLinkBtn, closeLinkModalBtn, reportKeywordFilterContainer, stateSelectContainer, stateSelect, changePasswordForm, apiKeyNewsApiInput, apiKeyFirebaseNewsInput, apiKeyGNewsInput1, apiKeyGNewsInput2, apiKeyGNewsInput3, apiKeyGNewsInput4, apiKeyYoutubeInput, apiKeyBloggerInput, apiKeyVisionInput, apiKeyVideoIntelligenceInput, showAllAlertsBtn, deletionAccessToggle, justificationModal, justificationText, submitJustificationBtn, cancelJustificationBtn, btnManualAlert, btnDeletionRequests, btnSuperAdminReport, manualAlertPage, deletionRequestsPage, superAdminReportPage, backToDashboard1, backToDashboard2, backToDashboard3, manualAlertForm, deletionRequestsList, superAdminReportBody, deletionRequestsBadge, pendingAlertsPage, pendingAlertsList, btnPendingAlerts, backToDashboard4, confirmDeleteKeywordBtn, cancelDeleteKeywordBtn, confirmDeleteKeywordModal, keywordToDeleteNameEl, bloggerIdInput, rssUrlInput, fetchOnlyNewToggle, changePasswordPage, globalKeysPage, globalSourcesPage, btnChangePassword, btnGlobalKeys, btnNewsSources, backToAdminConfig1, backToAdminConfig2, backToAdminConfig3, globalLogoPage, btnGlobalLogo, backToAdminConfig4, globalLogoUpload, globalLogoArea, logoLink, btnRadioSources, globalRadioSourcesPage, backToAdminConfig5, radioSourcesInput, articleDetailPage, backToDashboard5, detailTitle, detailMeta, detailContent;
 
         // --- FUNÇÕES DE UTILIDADE ---
         function showAlert(message, type = 'success') { const c = type === 'success' ? 'bg-green-100 border-green-500 text-green-700' : 'bg-red-100 border-red-500 text-red-700'; globalAlert.innerHTML = `<div class="${c} border-l-4 p-4 rounded-md fade-in" role="alert"><p>${message}</p></div>`; setTimeout(() => { globalAlert.innerHTML = ''; }, 4000); }
@@ -596,6 +607,7 @@
                 case 'deletion-requests': deletionRequestsPage.classList.add('active'); setupDeletionRequestsListener(); break; 
                 case 'super-admin-report': superAdminReportPage.classList.add('active'); renderSuperAdminReport(); break; 
                 case 'super-admin-queue': pendingAlertsPage.classList.add('active'); setupPendingAlertsListener(); break; 
+                case 'article-detail': articleDetailPage.classList.add('active'); break;
             } 
         }
         function getStorage(key, defaultValue) { try { const d = localStorage.getItem(key); return d ? JSON.parse(d) : defaultValue; } catch (e) { console.error(e); return defaultValue; } }
@@ -934,8 +946,6 @@
             alertEl.dataset.id = article.id;
             alertEl.dataset.date = dateForFilter;
             alertEl.dataset.keywords = (article.keywords || [article.keyword]).join(',');
-            alertEl.dataset.title = article.title.toLowerCase();
-            alertEl.dataset.description = article.description ? article.description.toLowerCase() : '';
 
             const getSentimentHTML = (score) => {
                 let emoji = '😐'; let color = 'gray'; let text = 'Neutro';
@@ -951,11 +961,6 @@
                     <button data-sentiment="-0.5" class="sentiment-option w-full text-left text-xs px-2 py-1 rounded hover:bg-gray-100">😠 Negativo</button>
                 </div>`;
 
-            let entitiesHTML = '';
-            if (article.entities && article.entities.length > 0) {
-                entitiesHTML = `<div class="mt-2 flex flex-wrap gap-2">${article.entities.map(e => `<span class="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-full">${e}</span>`).join('')}</div>`;
-            }
-
             const deleteButtonHTML = currentUser && currentUser.canRequestDeletion ? `<button class="request-delete-btn text-red-500 hover:text-red-700 ml-4" title="Solicitar Exclusão">🗑️</button>` : '';
 
             const keywordsArray = article.keywords || [article.keyword];
@@ -964,24 +969,25 @@
             ).join('');
 
             alertEl.innerHTML = `
-                <div class="flex justify-between items-start">
-                    <h4 class="text-lg font-bold text-gray-800 pr-2">${article.title}</h4>
-                    <div class="flex items-center gap-2">
-                        <div class="flex flex-col items-end gap-1">
-                            ${keywordsHTML}
-                        </div>
-                        <div class="sentiment-container relative">
-                            ${getSentimentHTML(article.sentiment ? article.sentiment.score : 0)}
-                            ${sentimentMenuHTML}
+                <div class="alert-body-clickable">
+                    <div class="flex justify-between items-start">
+                        <h4 class="text-lg font-bold text-gray-800 pr-2">${article.title}</h4>
+                        <div class="flex items-center gap-2">
+                            <div class="flex flex-col items-end gap-1">
+                                ${keywordsHTML}
+                            </div>
+                            <div class="sentiment-container relative">
+                                ${getSentimentHTML(article.sentiment ? article.sentiment.score : 0)}
+                                ${sentimentMenuHTML}
+                            </div>
                         </div>
                     </div>
+                    <p class="text-sm text-gray-600 mt-2">${article.description || 'Descrição não disponível.'}</p>
                 </div>
-                <p class="text-sm text-gray-600 mt-2">${article.description || 'Descrição não disponível.'}</p>
-                ${entitiesHTML}
                 <div class="text-xs text-gray-500 mt-3 flex justify-between items-center">
                     <span>Fonte: ${article.source.name} | Publicado: ${formattedDate}</span>
                     <div>
-                        <a href="${article.url}" target="_blank" rel="noopener noreferrer" class="text-indigo-600 hover:underline font-semibold">Ler mais →</a>
+                        <a href="${article.url}" target="_blank" rel="noopener noreferrer" class="text-indigo-600 hover:underline font-semibold">Ler no site original →</a>
                         ${deleteButtonHTML}
                     </div>
                 </div>`;
@@ -1106,7 +1112,7 @@
                         position: 'left',
                         onHover: (event, legendItem, legend) => {
                             const chart = legend.chart;
-                            if (chart.options.datasets.line.borderWidth) { // Apenas para gráficos de linha
+                            if (chart.config.type === 'line') {
                                 const datasetIndex = legendItem.datasetIndex;
                                 const dataset = chart.data.datasets[datasetIndex];
                                 dataset._originalBorderWidth = dataset.borderWidth;
@@ -1116,7 +1122,7 @@
                         },
                         onLeave: (event, legendItem, legend) => {
                            const chart = legend.chart;
-                           if (chart.options.datasets.line.borderWidth) {
+                           if (chart.config.type === 'line') {
                                 const datasetIndex = legendItem.datasetIndex;
                                 const dataset = chart.data.datasets[datasetIndex];
                                 dataset.borderWidth = dataset._originalBorderWidth || 2;
@@ -1307,7 +1313,7 @@
         }
 
         // --- AÇÕES DO CARTÃO DE ALERTA ---
-        function handleAlertCardActions(e) {
+        async function handleAlertCardActions(e) {
             const target = e.target;
             if(!target) return;
 
@@ -1326,9 +1332,59 @@
                 if(justificationText) justificationText.value = '';
                 if(submitJustificationBtn) submitJustificationBtn.disabled = true;
                 if(justificationModal) justificationModal.classList.remove('hidden');
+                return;
+            }
+
+            const alertBody = target.closest('.alert-body-clickable');
+            if(alertBody){
+                const alertEl = alertBody.closest('.fade-in');
+                const articleId = alertEl.dataset.id;
+                if (!articleId || !currentUser) return;
+                
+                try {
+                    const articleRef = doc(db, "artifacts", appId, "users", currentUser.companyId, "articles", articleId);
+                    const docSnap = await getDoc(articleRef);
+                    if (docSnap.exists()) {
+                        renderArticleDetailPage(docSnap.data());
+                        updateView('article-detail');
+                    } else {
+                        showAlert('Não foi possível encontrar os detalhes deste alerta.', 'error');
+                    }
+                } catch (error) {
+                     console.error("Erro ao buscar detalhes do artigo:", error);
+                     showAlert('Erro ao carregar os detalhes do alerta.', 'error');
+                }
             }
         }
         
+        // --- LÓGICA DA PÁGINA DE DETALHES DO ALERTA ---
+        function renderArticleDetailPage(article) {
+            if (!detailTitle || !detailMeta || !detailContent) return;
+
+            detailTitle.textContent = article.title;
+            detailContent.innerHTML = `<p>${article.description || 'Conteúdo não disponível.'}</p>`;
+
+            const pubDate = new Date(article.publishedAt.seconds ? article.publishedAt.toDate() : article.publishedAt);
+            const formattedDate = pubDate.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+
+            let score = article.sentiment?.score ?? 0;
+            let sentimentText = 'Neutro';
+            let sentimentColor = 'text-gray-600';
+            if (score > 0.2) { sentimentText = 'Positivo'; sentimentColor = 'text-green-600'; }
+            else if (score < -0.2) { sentimentText = 'Negativo'; sentimentColor = 'text-red-600'; }
+
+            let metaHTML = `
+                <span><strong>Fonte:</strong> ${article.source.name}</span>
+                <span><strong>Data:</strong> ${formattedDate}</span>
+                <span class="${sentimentColor}"><strong>Sentimento:</strong> ${sentimentText}</span>
+            `;
+            if (article.author) {
+                 metaHTML += `<span><strong>Autor:</strong> ${article.author}</span>`;
+            }
+
+            detailMeta.innerHTML = metaHTML;
+        }
+
         // --- LÓGICA DA FILA DE ALERTA PENDENTE DO SUPER ADMIN ---
         function setupPendingAlertsListener() {
             if (pendingAlertsListener) pendingAlertsListener();
@@ -1586,7 +1642,7 @@
 
         async function renderSuperAdminReport() {
             if (!superAdminReportBody) return;
-            superAdminReportBody.innerHTML = '<tr><td colspan="6" class="text-center py-4">A gerar relatório...</td></tr>';
+            superAdminReportBody.innerHTML = '<tr><td colspan="6" class="text-center py-4">Gerando relatório...</td></tr>';
             try {
                 const generateReport = httpsCallable(functions, 'generateSuperAdminReport');
                 const result = await generateReport({ appId });
@@ -1600,17 +1656,22 @@
 
                 reportData.forEach(item => {
                     const row = document.createElement('tr');
+                    row.className = 'hover:bg-gray-50';
+                    let sentimentClass = '';
+                    if (item.predominantSentiment === 'Positivo') sentimentClass = 'text-green-600 font-semibold';
+                    if (item.predominantSentiment === 'Negativo') sentimentClass = 'text-red-600 font-semibold';
+
                     row.innerHTML = `
-                        <td class="px-4 py-3 font-medium">${item.companyName}</td>
-                        <td class="px-4 py-3">${item.totalAlerts}</td>
-                        <td class="px-4 py-3 text-xs">
+                        <td class="px-6 py-4 whitespace-nowrap font-medium text-gray-900">${item.companyName}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-gray-500">${item.totalAlerts}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-xs">
                             <span class="text-green-600">P: ${item.sentimentPercentage.positive}%</span>, 
                             <span class="text-gray-600">N: ${item.sentimentPercentage.neutral}%</span>, 
                             <span class="text-red-600">Ng: ${item.sentimentPercentage.negative}%</span>
                         </td>
-                        <td class="px-4 py-3">${item.predominantSentiment}</td>
-                        <td class="px-4 py-3">${item.topChannel}</td>
-                        <td class="px-4 py-3">${item.topVehicle}</td>
+                        <td class="px-6 py-4 whitespace-nowrap ${sentimentClass}">${item.predominantSentiment}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-gray-500">${item.topChannel}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-gray-500">${item.topVehicle}</td>
                     `;
                     superAdminReportBody.appendChild(row);
                 });
@@ -1619,7 +1680,6 @@
                 superAdminReportBody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-red-500">Erro: ${error.message}</td></tr>`;
             }
         }
-
 
         // --- INICIALIZAÇÃO E OUVINTES DE EVENTOS ---
         document.addEventListener('DOMContentLoaded', () => {
@@ -1749,6 +1809,11 @@
             globalLogoUpload = document.getElementById('global-logo-upload');
             globalLogoArea = document.getElementById('global-logo-area');
             logoLink = document.getElementById('logo-link');
+            articleDetailPage = document.getElementById('article-detail-page');
+            backToDashboard5 = document.getElementById('back-to-dashboard-5');
+            detailTitle = document.getElementById('detail-title');
+            detailMeta = document.getElementById('detail-meta');
+            detailContent = document.getElementById('detail-content');
 
             const states = {"AC": "Acre", "AL": "Alagoas", "AP": "Amapá", "AM": "Amazonas", "BA": "Bahia", "CE": "Ceará", "DF": "Distrito Federal", "ES": "Espírito Santo", "GO": "Goiás", "MA": "Maranhão", "MT": "Mato Grosso", "MS": "Mato Grosso do Sul", "MG": "Minas Gerais", "PA": "Pará", "PB": "Paraíba", "PR": "Paraná", "PE": "Pernambuco", "PI": "Piauí", "RJ": "Rio de Janeiro", "RN": "Rio Grande do Norte", "RS": "Rio Grande do Sul", "RO": "Rondônia", "RR": "Roraima", "SC": "Santa Catarina", "SP": "São Paulo", "SE": "Sergipe", "TO": "Tocantins"};
             for (const [uf, name] of Object.entries(states)) {
@@ -1858,6 +1923,7 @@
             if (backToDashboard1) backToDashboard1.addEventListener('click', () => updateView('dashboard'));
             if (backToDashboard2) backToDashboard2.addEventListener('click', () => updateView('dashboard'));
             if (backToDashboard3) backToDashboard3.addEventListener('click', () => updateView('dashboard'));
+            if (backToDashboard5) backToDashboard5.addEventListener('click', () => window.history.back());
             if (manualAlertForm) manualAlertForm.addEventListener('submit', handleManualAlertSubmit);
             const manualAlertCompanySelect = document.getElementById('manual-alert-company');
             if (manualAlertCompanySelect) manualAlertCompanySelect.addEventListener('change', populateManualAlertKeywords);
