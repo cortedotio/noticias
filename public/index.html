@@ -480,7 +480,7 @@
                         <svg class="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M16.75 13.96c.25.13.43.2.5.33.07.13.07.66 0 1.14-.07.48-.83 1-1.25 1.13-.42.13-1.14.2-3.13-.62-2-.82-3.5-2.25-4.63-3.8-1.13-1.55-1.7-3.13-1.63-3.6.07-.48.5-1 .63-1.14.13-.13.3-.13.42-.13h.5c.13 0 .25.07.38.38.13.25.43.98.5 1.05.07.07.07.13 0 .25-.07.13-.13.25-.25.38-.13.13-.25.25-.38.38-.07.07-.07.13.07.38.2.13.83.82 1.63 1.55.8.73 1.5 1 1.63 1.13.13.13.25.2.38.07.13-.13.38-.5.5-.63.13-.13.25-.25.38-.25s.33.07.43.13c.1.13.58.57.68.68.1.1.18.2.2.3.03.17.03.25.03.38v.12Z M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm0 18.13a8.13 8.13 0 1 1 0-16.26 8.13 8.13 0 0 1 0 16.26Z" clip-rule="evenodd" fill-rule="evenodd"></path></svg>
                     </button>
                      <button id="share-email-btn" title="Compartilhar por E-mail" class="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors">
-                         <svg class="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M2.25 5.63a2.5 2.5 0 0 1 2.5-2.5h14.5a2.5 2.5 0 0 1 2.5 2.5v12.5a2.5 2.5 0 0 1-2.5 2.5H4.75a2.5 2.5 0 0 1-2.5-2.5V5.63Zm3.12 1.88 5.63 4.25a2 2 0 0 0 2.5 0l5.63-4.25a.5.5 0 0 0-.63-.75L12 10.13 5.9 6.75a.5.5 0 0 0-.5.88Z" clip-rule="evenodd" fill-rule="evenodd"></path></svg>
+                         <svg class="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M2.25 5.63a2.5 2.5 0 0 1 2.5-2.5h14.5a2.5 2.5 0 0 1 2.5 2.5v12.5a2.5 2.5 0 0 1-2.5-2.5H4.75a2.5 2.5 0 0 1-2.5-2.5V5.63Zm3.12 1.88 5.63 4.25a2 2 0 0 0 2.5 0l5.63-4.25a.5.5 0 0 0-.63-.75L12 10.13 5.9 6.75a.5.5 0 0 0-.5.88Z" clip-rule="evenodd" fill-rule="evenodd"></path></svg>
                     </button>
                 </div>
 
@@ -1375,6 +1375,7 @@
             }
         }
         
+        // --- LÓGICA DA PÁGINA DE DETALHES DO ALERTA ---
         function renderArticleDetailPage(article) {
             if (!detailTitle || !detailMeta || !detailContent) return;
 
@@ -1723,7 +1724,7 @@
                         borderWidth: 1
                     }]
                 }, {
-                     indexAxis: 'y', // Faz o gráfico de barras ser horizontal
+                     indexAxis: 'y',
                      plugins: { legend: { display: false } }
                 });
 
