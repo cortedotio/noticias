@@ -1,45 +1,49 @@
 /**
  * IMPORTANTE: Este é o código COMPLETO e ATUALIZADO para o servidor (Firebase Cloud Functions).
- * Foi adicionada uma lógica para verificar e impedir o registo de alertas duplicados.
+ * * Alterações realizadas:
+ * 1.  Busca por palavras-chave agora retorna TODAS as correspondências, não apenas a primeira.
+ * 2.  Adicionada a busca de vídeos no YouTube.
+ * 3.  Otimização da lógica para evitar alertas duplicados.
+ * 4.  Ajustes nas funções auxiliares para suportar múltiplas palavras-chave.
  */
 
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
-const axios = require("axios"); 
+const axios = require("axios");
 
 admin.initializeApp();
 const db = admin.firestore();
 
+// URLs das APIs
 const GNEWS_URL = "https://gnews.io/api/v4/search";
 const NEWSAPI_URL = "https://newsapi.org/v2/everything";
 const BLOGGER_URL = "https://www.googleapis.com/blogger/v3/blogs";
+const YOUTUBE_URL = "https://www.googleapis.com/youtube/v3/search";
 const RSS2JSON_URL = "https://api.rss2json.com/v1/api.json";
 const APP_ID = "noticias-6e952";
 
-// **CORREÇÃO:** Definindo a região uma vez para ser usada por todas as funções.
 const regionalFunctions = functions.region("southamerica-east1");
 
 // --- Funções Auxiliares ---
 
 /**
- * Procura por uma palavra-chave no título ou no corpo (description/content) de um artigo.
+ * **ALTERADO**: Procura por TODAS as palavras-chave correspondentes no título ou no corpo de um artigo.
+ * A busca já incluía o corpo do texto, atendendo ao primeiro requisito.
  * @param {object} article O artigo da notícia.
  * @param {string[]} keywords A lista de palavras-chave a procurar.
- * @returns {string|null} A primeira palavra-chave encontrada ou nulo se nenhuma for encontrada.
+ * @returns {string[]} Um array com todas as palavras-chave encontradas.
  */
-const findMatchingKeyword = (article, keywords) => {
-  const title = (article.title || "").toLowerCase();
-  // Unifica a busca no corpo do texto, seja 'description' ou 'content' (para o Blogger)
-  const bodyText = (article.description || article.content || "").toLowerCase();
-  
-  // Encontra a primeira palavra-chave que corresponda
-  const matchedKeyword = keywords.find(kw => {
-      const lowerCaseKw = kw.toLowerCase();
-      // A palavra-chave precisa de estar contida no título ou no corpo do texto
-      return title.includes(lowerCaseKw) || bodyText.includes(lowerCaseKw);
-  });
+const findMatchingKeywords = (article, keywords) => {
+    const title = (article.title || "").toLowerCase();
+    const bodyText = (article.description || article.content || "").toLowerCase();
 
-  return matchedKeyword || null; // Retorna a palavra-chave encontrada ou nulo se não houver correspondência
+    // Filtra para encontrar todas as palavras-chave que correspondem
+    const matchedKeywords = keywords.filter(kw => {
+        const lowerCaseKw = kw.toLowerCase();
+        return title.includes(lowerCaseKw) || bodyText.includes(lowerCaseKw);
+    });
+
+    return matchedKeywords; // Retorna um array de palavras-chave
 };
 
 
@@ -63,25 +67,35 @@ function normalizeArticle(article, sourceApi) {
                     url: article.url,
                     image: article.urlToImage || null,
                     publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.publishedAt)),
-                    source: { name: article.source.name, url: null }, // NewsAPI não fornece URL da fonte
+                    source: { name: article.source.name, url: null },
                 };
             case 'blogger':
-                 return {
+                return {
                     title: article.title,
-                    description: (article.content || "").substring(0, 250).replace(/<[^>]*>?/gm, '') + '...', // Remove HTML e limita a descrição
+                    description: (article.content || "").substring(0, 250).replace(/<[^>]*>?/gm, '') + '...',
                     url: article.url,
-                    image: null, // Blogger API não fornece imagem de destaque facilmente
+                    image: null,
                     publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.published)),
                     source: { name: article.blog.name || 'Blogger', url: article.url },
                 };
             case 'rss':
                 return {
                     title: article.title,
-                    description: (article.description || "").substring(0, 250).replace(/<[^>]*>?/gm, '') + '...', // Remove HTML e limita a descrição
+                    description: (article.description || "").substring(0, 250).replace(/<[^>]*>?/gm, '') + '...',
                     url: article.link,
                     image: article.thumbnail || null,
                     publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.pubDate)),
                     source: { name: article.author || 'RSS Feed', url: article.link },
+                };
+            // **NOVO**: Normalizador para o YouTube
+            case 'youtube':
+                return {
+                    title: article.snippet.title,
+                    description: article.snippet.description,
+                    url: `https://www.youtube.com/watch?v=${article.id.videoId}`,
+                    image: article.snippet.thumbnails.high.url || null,
+                    publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.snippet.publishedAt)),
+                    source: { name: 'YouTube', url: `https://www.youtube.com/channel/${article.snippet.channelId}` }
                 };
             default:
                 return null;
@@ -113,7 +127,7 @@ async function fetchAllNews() {
         return { success: true, message: "Nenhuma empresa ativa encontrada." };
     }
 
-    const batch = db.batch(); // Usar um batch para salvar todos os artigos de uma vez
+    const batch = db.batch();
     let articlesToSaveCount = 0;
 
     for (const companyDoc of companiesSnapshot.docs) {
@@ -121,7 +135,6 @@ async function fetchAllNews() {
         const companyName = companyDoc.data().name;
         functions.logger.info(`--- A processar empresa: ${companyName} ---`);
 
-        // NOVO: Coletar todas as URLs existentes para esta empresa para evitar duplicados
         const existingUrls = new Set();
         const articlesQuery = db.collection(`artifacts/${APP_ID}/users/${companyId}/articles`).select('url');
         const pendingQuery = db.collection(`artifacts/${APP_ID}/public/data/pendingAlerts`).where('companyId', '==', companyId).select('url');
@@ -132,7 +145,6 @@ async function fetchAllNews() {
         pendingSnapshot.forEach(doc => existingUrls.add(doc.data().url));
         functions.logger.info(`Encontradas ${existingUrls.size} URLs existentes para ${companyName}.`);
 
-
         const keywordsSnapshot = await db.collection(`artifacts/${APP_ID}/users/${companyId}/keywords`).get();
         if (keywordsSnapshot.empty) {
             functions.logger.warn(`Nenhuma palavra-chave para a empresa ${companyName}, a saltar.`);
@@ -142,7 +154,7 @@ async function fetchAllNews() {
         const keywordsList = keywordsSnapshot.docs.map(doc => doc.data().word);
         const searchQuery = keywordsList.map(kw => `"${kw}"`).join(" OR ");
 
-        // 1. Busca no GNews
+        // 1. Busca no GNews (Lógica de horário já estava correta)
         if (settings.apiKeyGNews1) {
             const currentHour = new Date().getHours();
             let gnewsApiKey = '';
@@ -158,17 +170,17 @@ async function fetchAllNews() {
                     if (response.data && response.data.articles) {
                         functions.logger.info(`GNews encontrou ${response.data.articles.length} artigos para ${companyName}`);
                         for (const article of response.data.articles) {
-                            if (existingUrls.has(article.url)) continue; // Pula se a URL já existir
-                            const matchedKeyword = findMatchingKeyword(article, keywordsList);
-                            if (matchedKeyword) {
+                            if (existingUrls.has(article.url)) continue;
+                            const matchedKeywords = findMatchingKeywords(article, keywordsList);
+                            if (matchedKeywords.length > 0) { // **ALTERAÇÃO**
                                 const normalized = normalizeArticle(article, 'gnews');
                                 if (normalized) {
                                     const pendingAlertRef = db.collection(`artifacts/${APP_ID}/public/data/pendingAlerts`).doc();
                                     batch.set(pendingAlertRef, {
-                                        ...normalized, keyword: matchedKeyword,
+                                        ...normalized, keywords: matchedKeywords, // **ALTERAÇÃO**
                                         companyId, companyName, status: "pending"
                                     });
-                                    existingUrls.add(article.url); // Adiciona para evitar duplicados na mesma execução
+                                    existingUrls.add(article.url);
                                     articlesToSaveCount++;
                                 }
                             }
@@ -186,14 +198,14 @@ async function fetchAllNews() {
                 if (response.data && response.data.articles) {
                     functions.logger.info(`NewsAPI encontrou ${response.data.articles.length} artigos para ${companyName}`);
                     for (const article of response.data.articles) {
-                        if (existingUrls.has(article.url)) continue; // Pula se a URL já existir
-                        const matchedKeyword = findMatchingKeyword(article, keywordsList);
-                        if (matchedKeyword) {
+                        if (existingUrls.has(article.url)) continue;
+                        const matchedKeywords = findMatchingKeywords(article, keywordsList);
+                        if (matchedKeywords.length > 0) { // **ALTERAÇÃO**
                             const normalized = normalizeArticle(article, 'newsapi');
                             if(normalized) {
                                 const pendingAlertRef = db.collection(`artifacts/${APP_ID}/public/data/pendingAlerts`).doc();
                                 batch.set(pendingAlertRef, {
-                                    ...normalized, keyword: matchedKeyword,
+                                    ...normalized, keywords: matchedKeywords, // **ALTERAÇÃO**
                                     companyId, companyName, status: "pending"
                                 });
                                 existingUrls.add(article.url);
@@ -204,27 +216,59 @@ async function fetchAllNews() {
                 }
             } catch (e) { functions.logger.error(`Erro na NewsAPI para ${companyName}:`, e.message); }
         }
+
+        // **NOVO**: 3. Busca no YouTube
+        if (settings.apiKeyYoutube) {
+            const queryUrl = `${YOUTUBE_URL}?part=snippet&q=${encodeURIComponent(searchQuery)}&type=video&relevanceLanguage=pt&regionCode=BR&key=${settings.apiKeyYoutube}`;
+            try {
+                const response = await axios.get(queryUrl);
+                if (response.data && response.data.items) {
+                    functions.logger.info(`YouTube encontrou ${response.data.items.length} vídeos para ${companyName}`);
+                    for (const item of response.data.items) {
+                        const videoUrl = `https://www.youtube.com/watch?v=${item.id.videoId}`;
+                        if (existingUrls.has(videoUrl)) continue;
+                        
+                        // O `findMatchingKeywords` precisa do objeto `snippet`
+                        const matchedKeywords = findMatchingKeywords(item.snippet, keywordsList);
+                        if (matchedKeywords.length > 0) { // **ALTERAÇÃO**
+                            const normalized = normalizeArticle(item, 'youtube');
+                            if (normalized) {
+                                const pendingAlertRef = db.collection(`artifacts/${APP_ID}/public/data/pendingAlerts`).doc();
+                                batch.set(pendingAlertRef, {
+                                    ...normalized, keywords: matchedKeywords, // **ALTERAÇÃO**
+                                    companyId, companyName, status: "pending"
+                                });
+                                existingUrls.add(videoUrl);
+                                articlesToSaveCount++;
+                            }
+                        }
+                    }
+                }
+            } catch (e) { functions.logger.error(`Erro na API do YouTube para ${companyName}:`, e.message); }
+        }
         
-        // 3. Busca em Feeds RSS
+        // 4. Busca em Feeds RSS
         if (settings.rssUrl) {
             const rssUrls = settings.rssUrl.split('\n').filter(url => url.trim() !== '');
             for(const rssUrl of rssUrls) {
                 try {
                     const response = await axios.get(`${RSS2JSON_URL}?rss_url=${encodeURIComponent(rssUrl)}`);
                     if (response.data && response.data.items) {
-                        const filteredItems = response.data.items.filter(item => findMatchingKeyword(item, keywordsList));
-                        functions.logger.info(`RSS (${rssUrl}) encontrou ${filteredItems.length} artigos para ${companyName}`);
-                        for (const item of filteredItems) {
-                             if (existingUrls.has(item.link)) continue; // Pula se a URL já existir
-                             const normalized = normalizeArticle(item, 'rss');
-                             if(normalized){
-                                const pendingAlertRef = db.collection(`artifacts/${APP_ID}/public/data/pendingAlerts`).doc();
-                                batch.set(pendingAlertRef, {
-                                    ...normalized, keyword: findMatchingKeyword(item, keywordsList),
-                                    companyId, companyName, status: "pending"
-                                });
-                                existingUrls.add(item.link);
-                                articlesToSaveCount++;
+                        functions.logger.info(`RSS (${rssUrl}) encontrou ${response.data.items.length} artigos brutos para ${companyName}`);
+                        for (const item of response.data.items) {
+                             if (existingUrls.has(item.link)) continue;
+                             const matchedKeywords = findMatchingKeywords(item, keywordsList);
+                             if (matchedKeywords.length > 0) { // **ALTERAÇÃO**
+                                const normalized = normalizeArticle(item, 'rss');
+                                if(normalized){
+                                    const pendingAlertRef = db.collection(`artifacts/${APP_ID}/public/data/pendingAlerts`).doc();
+                                    batch.set(pendingAlertRef, {
+                                        ...normalized, keywords: matchedKeywords, // **ALTERAÇÃO**
+                                        companyId, companyName, status: "pending"
+                                    });
+                                    existingUrls.add(item.link);
+                                    articlesToSaveCount++;
+                                }
                              }
                         }
                     }
@@ -232,7 +276,7 @@ async function fetchAllNews() {
             }
         }
 
-        // 4. Busca em Blogs do Blogger
+        // 5. Busca em Blogs do Blogger
         if (settings.apiKeyBlogger && settings.bloggerId) {
             const blogIds = settings.bloggerId.split('\n').filter(id => id.trim() !== '');
             for (const blogId of blogIds) {
@@ -240,21 +284,23 @@ async function fetchAllNews() {
                 try {
                      const response = await axios.get(queryUrl);
                      if (response.data && response.data.items) {
-                        const filteredItems = response.data.items.filter(item => findMatchingKeyword(item, keywordsList));
-                        functions.logger.info(`Blogger (${blogId}) encontrou ${filteredItems.length} artigos para ${companyName}`);
-                        for (const item of filteredItems) {
-                             if (existingUrls.has(item.url)) continue; // Pula se a URL já existir
-                             const normalized = normalizeArticle(item, 'blogger');
-                             if(normalized){
-                                const pendingAlertRef = db.collection(`artifacts/${APP_ID}/public/data/pendingAlerts`).doc();
-                                batch.set(pendingAlertRef, {
-                                    ...normalized, keyword: findMatchingKeyword(item, keywordsList),
-                                    companyId, companyName, status: "pending"
-                                });
-                                existingUrls.add(item.url);
-                                articlesToSaveCount++;
+                        functions.logger.info(`Blogger (${blogId}) encontrou ${response.data.items.length} artigos brutos para ${companyName}`);
+                         for (const item of response.data.items) {
+                             if (existingUrls.has(item.url)) continue;
+                             const matchedKeywords = findMatchingKeywords(item, keywordsList);
+                             if(matchedKeywords.length > 0) { // **ALTERAÇÃO**
+                                const normalized = normalizeArticle(item, 'blogger');
+                                if(normalized){
+                                    const pendingAlertRef = db.collection(`artifacts/${APP_ID}/public/data/pendingAlerts`).doc();
+                                    batch.set(pendingAlertRef, {
+                                        ...normalized, keywords: matchedKeywords, // **ALTERAÇÃO**
+                                        companyId, companyName, status: "pending"
+                                    });
+                                    existingUrls.add(item.url);
+                                    articlesToSaveCount++;
+                                }
                              }
-                        }
+                         }
                      }
                 } catch(e) { functions.logger.error(`Erro ao buscar no Blogger ID ${blogId}:`, e.message); }
             }
@@ -293,7 +339,7 @@ exports.scheduledFetch = regionalFunctions.pubsub.schedule("every 30 minutes")
     }
 });
 
-// --- Outras Funções (sem alteração de lógica) ---
+// --- Outras Funções (com pequenos ajustes para múltiplas palavras-chave) ---
 
 exports.approveAlert = regionalFunctions.https.onCall(async (data, context) => {
     const { appId, alertId } = data;
@@ -335,6 +381,13 @@ exports.rejectAlert = regionalFunctions.https.onCall(async (data, context) => {
     return { success: true };
 });
 
+async function deleteCollection(collectionRef) {
+    const snapshot = await collectionRef.get();
+    const batch = db.batch();
+    snapshot.docs.forEach(doc => batch.delete(doc.ref));
+    await batch.commit();
+}
+
 exports.deleteCompany = regionalFunctions.https.onCall(async (data, context) => {
     const { appId, companyId } = data;
     if (!appId || !companyId) {
@@ -359,17 +412,18 @@ exports.deleteCompany = regionalFunctions.https.onCall(async (data, context) => 
 exports.deleteKeywordAndArticles = regionalFunctions.https.onCall(async (data, context) => {
     const { appId, companyId, keyword } = data;
     if (!appId || !companyId || !keyword) {
-      throw new functions.https.HttpsError("invalid-argument", "O ID da aplicação, da empresa e a palavra-chave são necessários.");
+        throw new functions.https.HttpsError("invalid-argument", "ID da aplicação, da empresa e palavra-chave são necessários.");
     }
-    const articlesToDelete = await db.collection(`artifacts/${appId}/users/${companyId}/articles`).where("keyword", "==", keyword).get();
+    // **ALTERAÇÃO**: Usa 'array-contains' para encontrar artigos com a palavra-chave em uma lista
+    const articlesToDelete = await db.collection(`artifacts/${appId}/users/${companyId}/articles`).where("keywords", "array-contains", keyword).get();
     const batch = db.batch();
     articlesToDelete.docs.forEach(doc => {
-      batch.delete(doc.ref);
+        batch.delete(doc.ref);
     });
     await batch.commit();
     const keywordRef = await db.collection(`artifacts/${appId}/users/${companyId}/keywords`).where("word", "==", keyword).get();
     if (!keywordRef.empty) {
-      await db.doc(`artifacts/${appId}/users/${companyId}/keywords/${keywordRef.docs[0].id}`).delete();
+        await db.doc(`artifacts/${appId}/users/${companyId}/keywords/${keywordRef.docs[0].id}`).delete();
     }
     return { success: true };
 });
@@ -419,35 +473,56 @@ exports.requestAlertDeletion = regionalFunctions.https.onCall(async (data, conte
 });
 
 exports.manualAddAlert = regionalFunctions.https.onCall(async (data, context) => {
-    const { appId, companyId, title, description, url, source, keyword } = data;
-    if (!appId || !companyId || !title || !url || !source || !keyword) {
-      throw new functions.https.HttpsError("invalid-argument", "Dados incompletos para adicionar um alerta.");
+    const { appId, companyId, title, description, url, source, keywords } = data; // Alterado para 'keywords'
+    if (!appId || !companyId || !title || !url || !source || !keywords) {
+        throw new functions.https.HttpsError("invalid-argument", "Dados incompletos para adicionar um alerta.");
     }
     const companyDoc = await db.doc(`artifacts/${appId}/public/data/companies/${companyId}`).get();
     if (!companyDoc.exists) {
         throw new functions.https.HttpsError("not-found", "Empresa não encontrada.");
     }
+    // **ALTERAÇÃO**: Processa a string de palavras-chave para um array
+    const keywordsArray = keywords.split(',').map(kw => kw.trim()).filter(kw => kw);
+
     const companyName = companyDoc.data()?.name;
     const alertData = {
-      title,
-      description,
-      url,
-      source: { name: source, url: "" },
-      publishedAt: admin.firestore.FieldValue.serverTimestamp(),
-      keyword,
-      companyId,
-      companyName,
-      status: "approved",
+        title,
+        description,
+        url,
+        source: { name: source, url: "" },
+        publishedAt: admin.firestore.FieldValue.serverTimestamp(),
+        keywords: keywordsArray, // Salva como array
+        companyId,
+        companyName,
+        status: "approved",
     };
     await db.collection(`artifacts/${appId}/users/${companyId}/articles`).add(alertData);
     const settingsRef = db.doc(`artifacts/${appId}/public/data/settings/${companyId}`);
     await db.runTransaction(async (transaction) => {
-      const settingsDoc = await transaction.get(settingsRef);
-      const newAlertsCount = (settingsDoc.data()?.newAlertsCount || 0) + 1;
-      transaction.set(settingsRef, { newAlertsCount }, { merge: true });
+        const settingsDoc = await transaction.get(settingsRef);
+        const newAlertsCount = (settingsDoc.data()?.newAlertsCount || 0) + 1;
+        transaction.set(settingsRef, { newAlertsCount }, { merge: true });
     });
     return { success: true };
 });
+
+function getChannelCategory(sourceName) {
+    const name = (sourceName || "").toLowerCase();
+    if (name.includes('youtube')) return 'YouTube';
+    if (name.includes('globo') || name.includes('g1') || name.includes('uol') || name.includes('terra') || name.includes('r7')) return 'Sites';
+    if (name.includes('veja') || name.includes('istoé') || name.includes('exame')) return 'Revistas';
+    if (name.includes('cbn') || name.includes('bandeirantes')) return 'Rádios';
+    return 'Sites';
+}
+function getPredominantSentiment(percentages) {
+    if (percentages.positive > percentages.neutral && percentages.positive > percentages.negative) return 'Positivo';
+    if (percentages.negative > percentages.positive && percentages.negative > percentages.neutral) return 'Negativo';
+    return 'Neutro';
+}
+function getTopCount(counts) {
+    if (Object.keys(counts).length === 0) return 'N/A';
+    return Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b);
+}
 
 exports.generateSuperAdminReport = regionalFunctions.https.onCall(async (data, context) => {
     const { appId } = data;
@@ -490,4 +565,3 @@ exports.generateSuperAdminReport = regionalFunctions.https.onCall(async (data, c
     }
     return reportData;
 });
-
