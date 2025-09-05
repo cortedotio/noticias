@@ -356,7 +356,7 @@
             </div>
         </section>
 
-<section id="report-page" class="page-section fade-in">
+        <section id="report-page" class="page-section fade-in">
             <div class="bg-white p-4 sm:p-8 rounded-lg shadow-lg">
                 <div class="flex flex-col sm:flex-row justify-between items-start mb-6 gap-4">
                     <h2 class="text-2xl sm:text-3xl font-bold text-gray-700 mb-4 sm:mb-0">Relatórios Gráficos</h2>
@@ -1148,7 +1148,7 @@
             const ctx = canvasEl.getContext('2d');
             
             const defaultOptions = { 
-                responsive: true, 
+                responsive: false, // Alterado para false para forçar tamanho fixo
                 maintainAspectRatio: false,
                 interaction: { mode: 'index', intersect: false }, 
                 plugins: { 
@@ -1753,7 +1753,8 @@
                         borderColor: '#4F46E5',
                         backgroundColor: 'rgba(79, 70, 229, 0.1)',
                         fill: true,
-                        tension: 0.1
+                        tension: 0.1,
+                        borderWidth: 2
                     }]
                 }, {
                      plugins: { legend: { display: false } }
@@ -1898,7 +1899,7 @@
             apiKeyGNewsInput1 = document.getElementById('apiKeyGNews1');
             apiKeyGNewsInput2 = document.getElementById('apiKeyGNews2');
             apiKeyGNewsInput3 = document.getElementById('apiKeyGNews3');
-            apiKeyGNewsInput4 = document.getElementById('apiKeyGNewsInput4');
+            apiKeyGNewsInput4 = document.getElementById('apiKeyGNews4');
             apiKeyYoutubeInput = document.getElementById('apiKeyYoutube');
             apiKeyBloggerInput = document.getElementById('apiKeyBlogger');
             apiKeyVisionInput = document.getElementById('apiKeyVision');
