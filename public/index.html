@@ -373,19 +373,19 @@
                     </div>
                 </div>
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <div class="p-4 border rounded-lg min-h-[400px] sm:min-h-[500px]">
+                    <div class="p-4 border rounded-lg min-h-[300px] sm:min-h-[400px]">
                         <h3 class="text-xl font-semibold mb-4 text-center">Notícias por Veículo</h3>
                         <canvas id="source-chart"></canvas>
                     </div>
-                    <div class="p-4 border rounded-lg min-h-[400px] sm:min-h-[500px]">
+                    <div class="p-4 border rounded-lg min-h-[300px] sm:min-h-[400px]">
                         <h3 class="text-xl font-semibold mb-4 text-center">Notícias por Canal</h3>
                         <canvas id="channel-chart"></canvas>
                     </div>
-                    <div class="p-4 border rounded-lg min-h-[400px] sm:min-h-[500px]">
+                    <div class="p-4 border rounded-lg min-h-[300px] sm:min-h-[400px]">
                         <h3 class="text-xl font-semibold mb-4 text-center">Notícias por Período</h3>
                          <canvas id="date-chart"></canvas>
                     </div>
-                    <div class="p-4 border rounded-lg min-h-[400px] sm:min-h-[500px]">
+                    <div class="p-4 border rounded-lg min-h-[300px] sm:min-h-[400px]">
                         <h3 class="text-xl font-semibold mb-4 text-center">Análise de Sentimento</h3>
                         <canvas id="sentiment-chart"></canvas>
                     </div>
@@ -445,34 +445,50 @@
         <section id="super-admin-report-page" class="page-section fade-in">
              <button id="back-to-dashboard-3" class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar</button>
             <h2 class="text-2xl sm:text-3xl font-bold mb-6">Relatório Geral de Empresas</h2>
-            <div class="bg-white p-4 sm:p-6 rounded-lg shadow-lg overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Empresa</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total de Alertas</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sentimento (%)</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sentimento Predominante</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Canal Principal</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Veículo Principal</th>
-                        </tr>
-                    </thead>
-                    <tbody id="super-admin-report-body" class="bg-white divide-y divide-gray-200">
-                        <tr><td colspan="6" class="text-center py-4">Gerando relatório...</td></tr>
-                    </tbody>
-                </table>
+            <div class="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
+                <div class="mb-8">
+                    <h3 class="text-xl font-semibold text-center mb-4">Total de Alertas por Empresa</h3>
+                    <div class="relative h-96">
+                         <canvas id="company-summary-chart"></canvas>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Empresa</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total de Alertas</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sentimento (%)</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sentimento Predominante</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Canal Principal</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Veículo Principal</th>
+                            </tr>
+                        </thead>
+                        <tbody id="super-admin-report-body" class="bg-white divide-y divide-gray-200">
+                            <tr><td colspan="6" class="text-center py-4">Gerando relatório...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </section>
         
         <section id="article-detail-page" class="page-section fade-in">
             <button id="back-to-dashboard-5" class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">← Voltar</button>
-            <div class="bg-white p-6 sm:p-8 rounded-lg shadow-lg">
-                <h1 id="detail-title" class="text-2xl sm:text-3xl font-bold text-gray-800 mb-4"></h1>
+            <div class="bg-white p-6 sm:p-8 rounded-lg shadow-lg relative">
+                 <div class="absolute top-6 right-6 sm:top-8 sm:right-8 flex items-center gap-3">
+                    <button id="share-whatsapp-btn" title="Compartilhar no WhatsApp" class="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors">
+                        <svg class="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M16.75 13.96c.25.13.43.2.5.33.07.13.07.66 0 1.14-.07.48-.83 1-1.25 1.13-.42.13-1.14.2-3.13-.62-2-.82-3.5-2.25-4.63-3.8-1.13-1.55-1.7-3.13-1.63-3.6.07-.48.5-1 .63-1.14.13-.13.3-.13.42-.13h.5c.13 0 .25.07.38.38.13.25.43.98.5 1.05.07.07.07.13 0 .25-.07.13-.13.25-.25.38-.13.13-.25.25-.38.38-.07.07-.07.13.07.38.2.13.83.82 1.63 1.55.8.73 1.5 1 1.63 1.13.13.13.25.2.38.07.13-.13.38-.5.5-.63.13-.13.25-.25.38-.25s.33.07.43.13c.1.13.58.57.68.68.1.1.18.2.2.3.03.17.03.25.03.38v.12Z M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm0 18.13a8.13 8.13 0 1 1 0-16.26 8.13 8.13 0 0 1 0 16.26Z" clip-rule="evenodd" fill-rule="evenodd"></path></svg>
+                    </button>
+                     <button id="share-email-btn" title="Compartilhar por E-mail" class="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors">
+                         <svg class="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M2.25 5.63a2.5 2.5 0 0 1 2.5-2.5h14.5a2.5 2.5 0 0 1 2.5 2.5v12.5a2.5 2.5 0 0 1-2.5 2.5H4.75a2.5 2.5 0 0 1-2.5-2.5V5.63Zm3.12 1.88 5.63 4.25a2 2 0 0 0 2.5 0l5.63-4.25a.5.5 0 0 0-.63-.75L12 10.13 5.9 6.75a.5.5 0 0 0-.5.88Z" clip-rule="evenodd" fill-rule="evenodd"></path></svg>
+                    </button>
+                </div>
+
+                <h1 id="detail-title" class="text-2xl sm:text-3xl font-bold text-gray-800 mb-4 pr-24"></h1>
                 <div id="detail-meta" class="flex flex-wrap gap-x-6 gap-y-2 text-sm text-gray-500 mb-6 border-b pb-4"></div>
-                <div id="detail-content" class="prose max-w-none text-gray-700"></div>
+                <div id="detail-content" class="prose max-w-none text-gray-700 leading-relaxed"></div>
             </div>
         </section>
-
     </main>
 
     <div id="justification-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
@@ -568,13 +584,14 @@
         // --- ESTADO DA APLICAÇÃO ---
         const appId = firebaseConfig.projectId;
         let currentUser = null, clockInterval = null, selectedCompanyForManagement = null, allCompanyArticles = [], companyIdToDelete = null, articleToDeleteInfo = null;
-        let sourceChartInstance = null, dateChartInstance = null, sentimentChartInstance = null, channelChartInstance = null;
+        let sourceChartInstance = null, dateChartInstance = null, sentimentChartInstance = null, channelChartInstance = null, companySummaryChartInstance = null;
         let superAdminCredentials = { user: 'ulysses', pass: 'adminqwert' };
         let notificationListener = null, companiesListener = null, deletionRequestsListener = null, pendingAlertsListener = null;
         let keywordToDeleteInfo = null;
+        let currentDetailArticle = null;
 
         // --- ELEMENTOS DO DOM ---
-        let pageSections, navLoggedIn, navInicio, navRelatorio, navPesquisa, navSuperAdmin, navLogout, navConfiguracoesAdmin, globalAlert, loginPage, dashboardPage, searchPage, superAdminPage, companyKeywordAdminPage, companySettingsAdminPage, reportPage, companyUserAdminPage, configuracoesAdminPage, loginForm, dashboardTitle, currentDateTimeEl, dashboardKeywordList, newsAlertsContainer, newsAlerts, alertDateFilter, reportAccessToggle, logoUploadInput, headerLogoContainer, loginLogoContainer, filterContainer, searchInput, searchResults, companyForm, companyList, backToSuperAdminKwBtn, backToSuperAdminSettingsBtn, backToSuperAdminUsersBtn, companyKeywordAdminTitle, companySettingsAdminTitle, companyUserAdminTitle, keywordForm, keywordInput, keywordIdInput, adminKeywordList, userForm, userInput, userPasswordInput, userIdInput, adminUserList, notificationBell, notificationBadge, manualTriggerBtn, deleteModal, confirmDeleteBtn, cancelDeleteBtn, companyNameToDeleteEl, newsScopeContainer, startDateInput, endDateInput, linkModal, accessLinkInput, copyLinkBtn, closeLinkModalBtn, reportKeywordFilterContainer, stateSelectContainer, stateSelect, changePasswordForm, apiKeyNewsApiInput, apiKeyFirebaseNewsInput, apiKeyGNewsInput1, apiKeyGNewsInput2, apiKeyGNewsInput3, apiKeyGNewsInput4, apiKeyYoutubeInput, apiKeyBloggerInput, apiKeyVisionInput, apiKeyVideoIntelligenceInput, showAllAlertsBtn, deletionAccessToggle, justificationModal, justificationText, submitJustificationBtn, cancelJustificationBtn, btnManualAlert, btnDeletionRequests, btnSuperAdminReport, manualAlertPage, deletionRequestsPage, superAdminReportPage, backToDashboard1, backToDashboard2, backToDashboard3, manualAlertForm, deletionRequestsList, superAdminReportBody, deletionRequestsBadge, pendingAlertsPage, pendingAlertsList, btnPendingAlerts, backToDashboard4, confirmDeleteKeywordBtn, cancelDeleteKeywordBtn, confirmDeleteKeywordModal, keywordToDeleteNameEl, bloggerIdInput, rssUrlInput, fetchOnlyNewToggle, changePasswordPage, globalKeysPage, globalSourcesPage, btnChangePassword, btnGlobalKeys, btnNewsSources, backToAdminConfig1, backToAdminConfig2, backToAdminConfig3, globalLogoPage, btnGlobalLogo, backToAdminConfig4, globalLogoUpload, globalLogoArea, logoLink, btnRadioSources, globalRadioSourcesPage, backToAdminConfig5, radioSourcesInput, articleDetailPage, backToDashboard5, detailTitle, detailMeta, detailContent;
+        let pageSections, navLoggedIn, navInicio, navRelatorio, navPesquisa, navSuperAdmin, navLogout, navConfiguracoesAdmin, globalAlert, loginPage, dashboardPage, searchPage, superAdminPage, companyKeywordAdminPage, companySettingsAdminPage, reportPage, companyUserAdminPage, configuracoesAdminPage, loginForm, dashboardTitle, currentDateTimeEl, dashboardKeywordList, newsAlertsContainer, newsAlerts, alertDateFilter, reportAccessToggle, logoUploadInput, headerLogoContainer, loginLogoContainer, filterContainer, searchInput, searchResults, companyForm, companyList, backToSuperAdminKwBtn, backToSuperAdminSettingsBtn, backToSuperAdminUsersBtn, companyKeywordAdminTitle, companySettingsAdminTitle, companyUserAdminTitle, keywordForm, keywordInput, keywordIdInput, adminKeywordList, userForm, userInput, userPasswordInput, userIdInput, adminUserList, notificationBell, notificationBadge, manualTriggerBtn, deleteModal, confirmDeleteBtn, cancelDeleteBtn, companyNameToDeleteEl, newsScopeContainer, startDateInput, endDateInput, linkModal, accessLinkInput, copyLinkBtn, closeLinkModalBtn, reportKeywordFilterContainer, stateSelectContainer, stateSelect, changePasswordForm, apiKeyNewsApiInput, apiKeyFirebaseNewsInput, apiKeyGNewsInput1, apiKeyGNewsInput2, apiKeyGNewsInput3, apiKeyGNewsInput4, apiKeyYoutubeInput, apiKeyBloggerInput, apiKeyVisionInput, apiKeyVideoIntelligenceInput, showAllAlertsBtn, deletionAccessToggle, justificationModal, justificationText, submitJustificationBtn, cancelJustificationBtn, btnManualAlert, btnDeletionRequests, btnSuperAdminReport, manualAlertPage, deletionRequestsPage, superAdminReportPage, backToDashboard1, backToDashboard2, backToDashboard3, manualAlertForm, deletionRequestsList, superAdminReportBody, deletionRequestsBadge, pendingAlertsPage, pendingAlertsList, btnPendingAlerts, backToDashboard4, confirmDeleteKeywordBtn, cancelDeleteKeywordBtn, confirmDeleteKeywordModal, keywordToDeleteNameEl, bloggerIdInput, rssUrlInput, fetchOnlyNewToggle, changePasswordPage, globalKeysPage, globalSourcesPage, btnChangePassword, btnGlobalKeys, btnNewsSources, backToAdminConfig1, backToAdminConfig2, backToAdminConfig3, globalLogoPage, btnGlobalLogo, backToAdminConfig4, globalLogoUpload, globalLogoArea, logoLink, btnRadioSources, globalRadioSourcesPage, backToAdminConfig5, radioSourcesInput, articleDetailPage, backToDashboard5, detailTitle, detailMeta, detailContent, shareWhatsappBtn, shareEmailBtn;
 
         // --- FUNÇÕES DE UTILIDADE ---
         function showAlert(message, type = 'success') { const c = type === 'success' ? 'bg-green-100 border-green-500 text-green-700' : 'bg-red-100 border-red-500 text-red-700'; globalAlert.innerHTML = `<div class="${c} border-l-4 p-4 rounded-md fade-in" role="alert"><p>${message}</p></div>`; setTimeout(() => { globalAlert.innerHTML = ''; }, 4000); }
@@ -982,7 +999,7 @@
                             </div>
                         </div>
                     </div>
-                    <p class="text-sm text-gray-600 mt-2">${article.description || 'Descrição não disponível.'}</p>
+                    <p class="text-sm text-gray-600 mt-2 line-clamp-2">${article.description || 'Descrição não disponível.'}</p>
                 </div>
                 <div class="text-xs text-gray-500 mt-3 flex justify-between items-center">
                     <span>Fonte: ${article.source.name} | Publicado: ${formattedDate}</span>
@@ -1312,7 +1329,7 @@
             });
         }
 
-        // --- AÇÕES DO CARTÃO DE ALERTA ---
+        // --- AÇÕES DO CARTÃO DE ALERTA E DETALHES ---
         async function handleAlertCardActions(e) {
             const target = e.target;
             if(!target) return;
@@ -1345,7 +1362,8 @@
                     const articleRef = doc(db, "artifacts", appId, "users", currentUser.companyId, "articles", articleId);
                     const docSnap = await getDoc(articleRef);
                     if (docSnap.exists()) {
-                        renderArticleDetailPage(docSnap.data());
+                        currentDetailArticle = docSnap.data();
+                        renderArticleDetailPage(currentDetailArticle);
                         updateView('article-detail');
                     } else {
                         showAlert('Não foi possível encontrar os detalhes deste alerta.', 'error');
@@ -1357,7 +1375,6 @@
             }
         }
         
-        // --- LÓGICA DA PÁGINA DE DETALHES DO ALERTA ---
         function renderArticleDetailPage(article) {
             if (!detailTitle || !detailMeta || !detailContent) return;
 
@@ -1365,7 +1382,7 @@
             detailContent.innerHTML = `<p>${article.description || 'Conteúdo não disponível.'}</p>`;
 
             const pubDate = new Date(article.publishedAt.seconds ? article.publishedAt.toDate() : article.publishedAt);
-            const formattedDate = pubDate.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+            const formattedDate = pubDate.toLocaleString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
             let score = article.sentiment?.score ?? 0;
             let sentimentText = 'Neutro';
@@ -1383,6 +1400,18 @@
             }
 
             detailMeta.innerHTML = metaHTML;
+        }
+
+        function handleShareActions(e) {
+            if (!currentDetailArticle) return;
+            const title = encodeURIComponent(`[Clipping] ${currentDetailArticle.title}`);
+            const url = encodeURIComponent(currentDetailArticle.url);
+            
+            if (e.currentTarget.id === 'share-whatsapp-btn') {
+                window.open(`https://api.whatsapp.com/send?text=${title}%0A${url}`, '_blank');
+            } else if (e.currentTarget.id === 'share-email-btn') {
+                window.location.href = `mailto:?subject=${title}&body=Leia a notícia completa em:%0A${url}`;
+            }
         }
 
         // --- LÓGICA DA FILA DE ALERTA PENDENTE DO SUPER ADMIN ---
@@ -1643,6 +1672,11 @@
         async function renderSuperAdminReport() {
             if (!superAdminReportBody) return;
             superAdminReportBody.innerHTML = '<tr><td colspan="6" class="text-center py-4">Gerando relatório...</td></tr>';
+            
+            if (companySummaryChartInstance) {
+                companySummaryChartInstance.destroy();
+            }
+
             try {
                 const generateReport = httpsCallable(functions, 'generateSuperAdminReport');
                 const result = await generateReport({ appId });
@@ -1657,7 +1691,7 @@
                 reportData.forEach(item => {
                     const row = document.createElement('tr');
                     row.className = 'hover:bg-gray-50';
-                    let sentimentClass = '';
+                    let sentimentClass = 'text-gray-600';
                     if (item.predominantSentiment === 'Positivo') sentimentClass = 'text-green-600 font-semibold';
                     if (item.predominantSentiment === 'Negativo') sentimentClass = 'text-red-600 font-semibold';
 
@@ -1675,11 +1709,30 @@
                     `;
                     superAdminReportBody.appendChild(row);
                 });
+                
+                // Renderizar o novo gráfico de resumo
+                const chartLabels = reportData.map(d => d.companyName);
+                const chartValues = reportData.map(d => d.totalAlerts);
+                companySummaryChartInstance = createChart('company-summary-chart', companySummaryChartInstance, 'bar', {
+                    labels: chartLabels,
+                    datasets: [{
+                        label: 'Total de Alertas',
+                        data: chartValues,
+                        backgroundColor: chartColors,
+                        borderColor: chartColors,
+                        borderWidth: 1
+                    }]
+                }, {
+                     indexAxis: 'y', // Faz o gráfico de barras ser horizontal
+                     plugins: { legend: { display: false } }
+                });
+
             } catch (error) {
                 console.error("Erro ao gerar relatório:", error);
                 superAdminReportBody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-red-500">Erro: ${error.message}</td></tr>`;
             }
         }
+
 
         // --- INICIALIZAÇÃO E OUVINTES DE EVENTOS ---
         document.addEventListener('DOMContentLoaded', () => {
@@ -1814,6 +1867,8 @@
             detailTitle = document.getElementById('detail-title');
             detailMeta = document.getElementById('detail-meta');
             detailContent = document.getElementById('detail-content');
+            shareWhatsappBtn = document.getElementById('share-whatsapp-btn');
+            shareEmailBtn = document.getElementById('share-email-btn');
 
             const states = {"AC": "Acre", "AL": "Alagoas", "AP": "Amapá", "AM": "Amazonas", "BA": "Bahia", "CE": "Ceará", "DF": "Distrito Federal", "ES": "Espírito Santo", "GO": "Goiás", "MA": "Maranhão", "MT": "Mato Grosso", "MS": "Mato Grosso do Sul", "MG": "Minas Gerais", "PA": "Pará", "PB": "Paraíba", "PR": "Paraná", "PE": "Pernambuco", "PI": "Piauí", "RJ": "Rio de Janeiro", "RN": "Rio Grande do Norte", "RS": "Rio Grande do Sul", "RO": "Rondônia", "RR": "Roraima", "SC": "Santa Catarina", "SP": "São Paulo", "SE": "Sergipe", "TO": "Tocantins"};
             for (const [uf, name] of Object.entries(states)) {
@@ -1934,6 +1989,8 @@
             if (btnPendingAlerts) btnPendingAlerts.addEventListener('click', () => updateView('super-admin-queue'));
             if (pendingAlertsList) pendingAlertsList.addEventListener('click', handlePendingAlertAction);
             if (backToDashboard4) backToDashboard4.addEventListener('click', () => updateView('dashboard'));
+            if (shareWhatsappBtn) shareWhatsappBtn.addEventListener('click', handleShareActions);
+            if (shareEmailBtn) shareEmailBtn.addEventListener('click', handleShareActions);
             
             const urlParams = new URLSearchParams(window.location.search);
             const companyParam = urlParams.get('company');
