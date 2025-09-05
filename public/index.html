@@ -53,7 +53,7 @@
         .sentiment-container:hover .sentiment-menu {
             display: block;
         }
-        #report-keyword-filter {
+        #report-keyword-filter, #manual-alert-keyword {
             height: 100px;
         }
     </style>
@@ -62,7 +62,7 @@
 
     <header class="bg-white shadow-md">
         <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
-            <div class="text-2xl font-bold text-indigo-600 flex items-center">
+            <div id="global-logo-area" class="text-2xl font-bold text-indigo-600 flex items-center">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline-block mr-2 h-8 w-8"><path d="M2.5 17a2.4 2.4 0 0 1 3 0L12 23l6.5-6.5a2.4 2.4 0 0 1 3 0Z"/><path d="M5 11.5a2.5 2.5 0 0 1 0-5c1.5 0 2.8 1.3 2.8 2.8V13c0 1.4-1.3 2.8-2.8 2.8-1.5 0-2.8-1.3-2.8-2.8V8.5"/><path d="M19 11.5a2.5 2.5 0 0 0 0-5c-1.5 0-2.8 1.3-2.8 2.8V13c0 1.4 1.3 2.8 2.8 2.8 1.5 0-2.8-1.3-2.8-2.8V8.5"/></svg>
                 Aurora clipping
             </div>
@@ -94,7 +94,7 @@
                 <p class="text-center text-gray-500 mt-2 mb-6">Informe os seus dados de acesso</p>
                 <form id="login-form">
                     <div id="login-company-wrapper" class="mb-4"><label for="login-company" class="block text-sm font-medium text-gray-700 mb-1">Empresa</label><input type="text" id="login-company" class="w-full px-3 py-2 border border-gray-300 rounded-md"></div>
-                    <div class="mb-4"><label for="login-user" class="block text-sm font-medium text-gray-700 mb-1">Utilizador</label><input type="text" id="login-user" class="w-full px-3 py-2 border border-gray-300 rounded-md" required></div>
+                    <div class="mb-4"><label for="login-user" class="block text-sm font-medium text-gray-700 mb-1">Usuário</label><input type="text" id="login-user" class="w-full px-3 py-2 border border-gray-300 rounded-md" required></div>
                     <div class="mb-6"><label for="login-password" class="block text-sm font-medium text-gray-700 mb-1">Palavra-passe</label><input type="password" id="login-password" class="w-full px-3 py-2 border border-gray-300 rounded-md" required></div>
                     <button type="submit" class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700">Entrar</button>
                 </form>
@@ -173,7 +173,7 @@
 
         <section id="configuracoes-admin-page" class="page-section fade-in">
             <h2 class="text-3xl font-bold mb-6">Configurações do Super Admin</h2>
-            <div class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <button id="btn-change-password" class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow">
                     <h3 class="text-xl font-semibold">Alterar Palavra-passe</h3>
                 </button>
@@ -182,6 +182,9 @@
                 </button>
                 <button id="btn-news-sources" class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow">
                     <h3 class="text-xl font-semibold">Fontes de Notícias</h3>
+                </button>
+                 <button id="btn-global-logo" class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow">
+                    <h3 class="text-xl font-semibold">Logótipo Global</h3>
                 </button>
             </div>
         </section>
@@ -264,12 +267,24 @@
             </div>
         </section>
 
+        <section id="global-logo-page" class="page-section fade-in">
+            <button id="back-to-admin-config-4" class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar</button>
+            <h2 class="text-3xl font-bold mb-6">Logótipo Global da Aplicação</h2>
+            <div class="max-w-lg mx-auto bg-white p-6 rounded-lg shadow-lg">
+                <p class="text-gray-600 mb-4">Faça o upload do logótipo que aparecerá no cabeçalho de todas as páginas, substituindo o nome "Aurora clipping".</p>
+                <div>
+                    <h4 class="text-lg font-semibold mb-2">Logótipo da Aplicação</h4>
+                    <input type="file" id="global-logo-upload" accept="image/*" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                </div>
+            </div>
+        </section>
+
         <section id="company-user-admin-page" class="page-section fade-in">
             <button id="back-to-super-admin-users" class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar para Super Admin</button>
-            <h2 id="company-user-admin-title" class="text-3xl font-bold mb-6">Gerir Utilizadores</h2>
+            <h2 id="company-user-admin-title" class="text-3xl font-bold mb-6">Gerir Usuários</h2>
             <div class="bg-white p-6 rounded-lg shadow-lg">
                 <form id="user-form" class="flex flex-col sm:flex-row gap-2 mb-4">
-                    <input type="text" id="user-input" placeholder="Nome do utilizador" class="flex-grow px-3 py-2 border border-gray-300 rounded-md">
+                    <input type="text" id="user-input" placeholder="Nome do usuário" class="flex-grow px-3 py-2 border border-gray-300 rounded-md">
                     <input type="text" id="user-password-input" placeholder="Palavra-passe" class="flex-grow px-3 py-2 border border-gray-300 rounded-md">
                     <input type="hidden" id="user-id">
                     <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Guardar</button>
@@ -298,7 +313,7 @@
                 <div class="space-y-6">
                     <div class="flex items-center"><input type="checkbox" id="report-access-toggle" class="h-4 w-4 text-indigo-600 border-gray-300 rounded"><label for="report-access-toggle" class="ml-2 block text-sm text-gray-900">Permitir o acesso ao relatório de alertas na página inicial.</label></div>
                     <div class="flex items-center"><input type="checkbox" id="fetch-only-new-toggle" class="h-4 w-4 text-indigo-600 border-gray-300 rounded"><label for="fetch-only-new-toggle" class="ml-2 block text-sm text-gray-900">Capturar apenas notícias novas (evita duplicados).</label></div>
-                    <div class="flex items-center"><input type="checkbox" id="deletion-access-toggle" class="h-4 w-4 text-indigo-600 border-gray-300 rounded"><label for="deletion-access-toggle" class="ml-2 block text-sm text-gray-900">Permitir que os utilizadores solicitem a exclusão de alertas.</label></div>
+                    <div class="flex items-center"><input type="checkbox" id="deletion-access-toggle" class="h-4 w-4 text-indigo-600 border-gray-300 rounded"><label for="deletion-access-toggle" class="ml-2 block text-sm text-gray-900">Permitir que os usuários solicitem a exclusão de alertas.</label></div>
                     <div><h4 class="text-lg font-semibold mb-2">Logótipo da Empresa</h4><input type="file" id="logo-upload" accept="image/*" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"></div>
                     <div>
                         <h4 class="text-lg font-semibold mb-2">Âmbito das Notícias</h4>
@@ -378,7 +393,12 @@
                     <div><label for="manual-alert-desc" class="block text-sm font-medium text-gray-700">Descrição</label><textarea id="manual-alert-desc" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md"></textarea></div>
                     <div><label for="manual-alert-url" class="block text-sm font-medium text-gray-700">URL</label><input type="url" id="manual-alert-url" class="w-full px-3 py-2 border border-gray-300 rounded-md" required></div>
                     <div><label for="manual-alert-source" class="block text-sm font-medium text-gray-700">Fonte (Veículo)</label><input type="text" id="manual-alert-source" class="w-full px-3 py-2 border border-gray-300 rounded-md" required></div>
-                    <div><label for="manual-alert-keyword" class="block text-sm font-medium text-gray-700">Palavras-Chave (separadas por vírgula)</label><input type="text" id="manual-alert-keyword" class="w-full px-3 py-2 border border-gray-300 rounded-md" required></div>
+                    <div>
+                        <label for="manual-alert-keyword" class="block text-sm font-medium text-gray-700">Palavras-Chave</label>
+                        <select id="manual-alert-keyword" class="w-full px-3 py-2 border border-gray-300 rounded-md" multiple required>
+                            <option disabled>Selecione uma empresa primeiro</option>
+                        </select>
+                    </div>
                     <button type="submit" class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700">Adicionar Alerta</button>
                 </form>
             </div>
@@ -524,7 +544,7 @@
         let keywordToDeleteInfo = null;
 
         // --- ELEMENTOS DO DOM ---
-        let pageSections, navLoggedIn, navInicio, navRelatorio, navPesquisa, navSuperAdmin, navLogout, navConfiguracoesAdmin, globalAlert, loginPage, dashboardPage, searchPage, superAdminPage, companyKeywordAdminPage, companySettingsAdminPage, reportPage, companyUserAdminPage, configuracoesAdminPage, loginForm, dashboardTitle, currentDateTimeEl, dashboardKeywordList, newsAlertsContainer, newsAlerts, alertDateFilter, reportAccessToggle, logoUploadInput, headerLogoContainer, loginLogoContainer, filterContainer, searchInput, searchResults, companyForm, companyList, backToSuperAdminKwBtn, backToSuperAdminSettingsBtn, backToSuperAdminUsersBtn, companyKeywordAdminTitle, companySettingsAdminTitle, companyUserAdminTitle, keywordForm, keywordInput, keywordIdInput, adminKeywordList, userForm, userInput, userPasswordInput, userIdInput, adminUserList, notificationBell, notificationBadge, manualTriggerBtn, deleteModal, confirmDeleteBtn, cancelDeleteBtn, companyNameToDeleteEl, newsScopeContainer, startDateInput, endDateInput, linkModal, accessLinkInput, copyLinkBtn, closeLinkModalBtn, reportKeywordFilter, stateSelectContainer, stateSelect, changePasswordForm, apiKeyNewsApiInput, apiKeyFirebaseNewsInput, apiKeyGNewsInput1, apiKeyGNewsInput2, apiKeyGNewsInput3, apiKeyGNewsInput4, apiKeyYoutubeInput, apiKeyBloggerInput, apiKeyVisionInput, apiKeyVideoIntelligenceInput, showAllAlertsBtn, deletionAccessToggle, justificationModal, justificationText, submitJustificationBtn, cancelJustificationBtn, btnManualAlert, btnDeletionRequests, btnSuperAdminReport, manualAlertPage, deletionRequestsPage, superAdminReportPage, backToDashboard1, backToDashboard2, backToDashboard3, manualAlertForm, deletionRequestsList, superAdminReportBody, deletionRequestsBadge, pendingAlertsPage, pendingAlertsList, btnPendingAlerts, backToDashboard4, confirmDeleteKeywordBtn, cancelDeleteKeywordBtn, confirmDeleteKeywordModal, keywordToDeleteNameEl, bloggerIdInput, rssUrlInput, fetchOnlyNewToggle, changePasswordPage, globalKeysPage, globalSourcesPage, btnChangePassword, btnGlobalKeys, btnNewsSources, backToAdminConfig1, backToAdminConfig2, backToAdminConfig3;
+        let pageSections, navLoggedIn, navInicio, navRelatorio, navPesquisa, navSuperAdmin, navLogout, navConfiguracoesAdmin, globalAlert, loginPage, dashboardPage, searchPage, superAdminPage, companyKeywordAdminPage, companySettingsAdminPage, reportPage, companyUserAdminPage, configuracoesAdminPage, loginForm, dashboardTitle, currentDateTimeEl, dashboardKeywordList, newsAlertsContainer, newsAlerts, alertDateFilter, reportAccessToggle, logoUploadInput, headerLogoContainer, loginLogoContainer, filterContainer, searchInput, searchResults, companyForm, companyList, backToSuperAdminKwBtn, backToSuperAdminSettingsBtn, backToSuperAdminUsersBtn, companyKeywordAdminTitle, companySettingsAdminTitle, companyUserAdminTitle, keywordForm, keywordInput, keywordIdInput, adminKeywordList, userForm, userInput, userPasswordInput, userIdInput, adminUserList, notificationBell, notificationBadge, manualTriggerBtn, deleteModal, confirmDeleteBtn, cancelDeleteBtn, companyNameToDeleteEl, newsScopeContainer, startDateInput, endDateInput, linkModal, accessLinkInput, copyLinkBtn, closeLinkModalBtn, reportKeywordFilter, stateSelectContainer, stateSelect, changePasswordForm, apiKeyNewsApiInput, apiKeyFirebaseNewsInput, apiKeyGNewsInput1, apiKeyGNewsInput2, apiKeyGNewsInput3, apiKeyGNewsInput4, apiKeyYoutubeInput, apiKeyBloggerInput, apiKeyVisionInput, apiKeyVideoIntelligenceInput, showAllAlertsBtn, deletionAccessToggle, justificationModal, justificationText, submitJustificationBtn, cancelJustificationBtn, btnManualAlert, btnDeletionRequests, btnSuperAdminReport, manualAlertPage, deletionRequestsPage, superAdminReportPage, backToDashboard1, backToDashboard2, backToDashboard3, manualAlertForm, deletionRequestsList, superAdminReportBody, deletionRequestsBadge, pendingAlertsPage, pendingAlertsList, btnPendingAlerts, backToDashboard4, confirmDeleteKeywordBtn, cancelDeleteKeywordBtn, confirmDeleteKeywordModal, keywordToDeleteNameEl, bloggerIdInput, rssUrlInput, fetchOnlyNewToggle, changePasswordPage, globalKeysPage, globalSourcesPage, btnChangePassword, btnGlobalKeys, btnNewsSources, backToAdminConfig1, backToAdminConfig2, backToAdminConfig3, globalLogoPage, btnGlobalLogo, backToAdminConfig4, globalLogoUpload, globalLogoArea;
 
 
         // --- FUNÇÕES DE UTILIDADE ---
@@ -538,6 +558,7 @@
             if (navConfiguracoesAdmin) navConfiguracoesAdmin.classList.toggle('hidden', !currentUser || !currentUser.isSuperAdmin); 
             if (clockInterval) clearInterval(clockInterval); 
             loadAndDisplayLogo(); 
+            loadAndDisplayGlobalLogo();
             switch (pageName) { 
                 case 'login': loginPage.classList.add('active'); break; 
                 case 'dashboard': dashboardPage.classList.add('active'); renderDashboard(); updateDateTime(); clockInterval = setInterval(updateDateTime, 60000); break; 
@@ -551,6 +572,7 @@
                 case 'change-password': changePasswordPage.classList.add('active'); break; 
                 case 'global-keys': globalKeysPage.classList.add('active'); renderGlobalKeysPage(); break; 
                 case 'global-sources': globalSourcesPage.classList.add('active'); renderGlobalSourcesPage(); break; 
+                case 'global-logo': globalLogoPage.classList.add('active'); break;
                 case 'manual-alert': manualAlertPage.classList.add('active'); renderManualAlertPage(); break; 
                 case 'deletion-requests': deletionRequestsPage.classList.add('active'); setupDeletionRequestsListener(); break; 
                 case 'super-admin-report': superAdminReportPage.classList.add('active'); renderSuperAdminReport(); break; 
@@ -580,9 +602,24 @@
             }
         }
 
-        // --- LÓGICA DO LOGÓTIPO ---
+        // --- LÓGICA DOS LOGÓTIPOS ---
         async function handleLogoUpload(e) { const file = e.target.files[0]; if (!file) return; const companyId = currentUser.isSuperAdmin ? selectedCompanyForManagement.id : currentUser.companyId; if (!companyId) return; const reader = new FileReader(); reader.onloadend = async () => { try { const settingsRef = doc(db, "artifacts", appId, "public/data/settings", companyId); await setDoc(settingsRef, { logo: reader.result }, { merge: true }); loadAndDisplayLogo(); showAlert('Logótipo atualizado com sucesso!'); } catch (error) { console.error("Erro ao guardar o logótipo:", error); showAlert("Erro ao guardar o logótipo.", "error"); } }; reader.readAsDataURL(file); }
         async function loadAndDisplayLogo() { const companyId = currentUser ? currentUser.companyId : null; if (!companyId) { if(headerLogoContainer) headerLogoContainer.innerHTML = ''; if(loginLogoContainer) loginLogoContainer.innerHTML = ''; return; } const settingsRef = doc(db, "artifacts", appId, "public/data/settings", companyId); try { const docSnap = await getDoc(settingsRef); const logoData = docSnap.exists() ? docSnap.data().logo : null; const logoHtml = logoData ? `<img src="${logoData}" alt="Logótipo da Empresa" class="h-full w-auto object-contain">` : ''; if(headerLogoContainer) headerLogoContainer.innerHTML = logoHtml; if(loginLogoContainer) loginLogoContainer.innerHTML = logoHtml; } catch (error) { console.error("Erro ao carregar o logótipo:", error); } }
+        async function handleGlobalLogoUpload(e) { const file = e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onloadend = async () => { try { const settingsRef = doc(db, "artifacts", appId, "public/data/settings", "global"); await setDoc(settingsRef, { appLogo: reader.result }, { merge: true }); loadAndDisplayGlobalLogo(); showAlert('Logótipo global atualizado com sucesso!'); } catch (error) { console.error("Erro ao guardar o logótipo global:", error); showAlert("Erro ao guardar o logótipo global.", "error"); } }; reader.readAsDataURL(file); }
+        async function loadAndDisplayGlobalLogo() {
+            const settingsRef = doc(db, "artifacts", appId, "public/data/settings", "global");
+            try {
+                const docSnap = await getDoc(settingsRef);
+                const logoData = docSnap.exists() ? docSnap.data().appLogo : null;
+                if (logoData) {
+                    globalLogoArea.innerHTML = `<img src="${logoData}" alt="Logótipo da Aplicação" class="h-10 w-auto object-contain">`;
+                } else {
+                    globalLogoArea.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline-block mr-2 h-8 w-8"><path d="M2.5 17a2.4 2.4 0 0 1 3 0L12 23l6.5-6.5a2.4 2.4 0 0 1 3 0Z"/><path d="M5 11.5a2.5 2.5 0 0 1 0-5c1.5 0 2.8 1.3 2.8 2.8V13c0 1.4-1.3 2.8-2.8 2.8-1.5 0-2.8-1.3-2.8-2.8V8.5"/><path d="M19 11.5a2.5 2.5 0 0 0 0-5c-1.5 0-2.8 1.3-2.8 2.8V13c0 1.4 1.3 2.8 2.8 2.8 1.5 0-2.8-1.3-2.8-2.8V8.5"/></svg> Aurora clipping`;
+                }
+            } catch (error) {
+                console.error("Erro ao carregar o logótipo global:", error);
+            }
+        }
 
         // --- LÓGICA DE AUTENTICAÇÃO ---
         async function handleLogin(e) { 
@@ -620,7 +657,7 @@
                     setStorage('clipping_currentUser', currentUser); 
                     updateView('dashboard'); 
                 } else { 
-                    showAlert('Utilizador ou palavra-passe inválidos para esta empresa.', 'error'); 
+                    showAlert('Usuário ou palavra-passe inválidos para esta empresa.', 'error'); 
                 } 
             } catch (error) { 
                 console.error("Erro de login:", error); 
@@ -688,7 +725,7 @@
                     } else {
                         actionButtons = `<button data-id="${c.id}" class="deactivate-company-btn bg-gray-500 text-white px-3 py-1 rounded-md text-sm hover:bg-gray-600">Inativar</button>`;
                     }
-                    li.innerHTML = `<div><span class="font-bold">${c.name}</span> <span class="text-sm ${statusClass}">(${statusText})</span></div><div class="mt-2 sm:mt-0 flex flex-wrap gap-2"><button data-company-name="${c.name}" class="view-access-link-btn bg-teal-500 text-white px-3 py-1 rounded-md text-sm hover:bg-teal-600">Link de Acesso</button><button data-company-id="${c.id}" data-company-name="${c.name}" class="manage-company-users-btn bg-purple-500 text-white px-3 py-1 rounded-md text-sm hover:bg-purple-600">Utilizadores</button><button data-company-id="${c.id}" data-company-name="${c.name}" class="manage-company-keywords-btn bg-blue-500 text-white px-3 py-1 rounded-md text-sm hover:bg-blue-600">Palavras-Chave</button><button data-company-id="${c.id}" data-company-name="${c.name}" class="manage-company-settings-btn bg-green-500 text-white px-3 py-1 rounded-md text-sm hover:bg-green-600">Opções</button>${actionButtons}<button data-company-id="${c.id}" data-company-name="${c.name}" class="delete-company-btn bg-red-600 text-white px-3 py-1 rounded-md text-sm hover:bg-red-800">Excluir</button></div>`;
+                    li.innerHTML = `<div><span class="font-bold">${c.name}</span> <span class="text-sm ${statusClass}">(${statusText})</span></div><div class="mt-2 sm:mt-0 flex flex-wrap gap-2"><button data-company-name="${c.name}" class="view-access-link-btn bg-teal-500 text-white px-3 py-1 rounded-md text-sm hover:bg-teal-600">Link de Acesso</button><button data-company-id="${c.id}" data-company-name="${c.name}" class="manage-company-users-btn bg-purple-500 text-white px-3 py-1 rounded-md text-sm hover:bg-purple-600">Usuários</button><button data-company-id="${c.id}" data-company-name="${c.name}" class="manage-company-keywords-btn bg-blue-500 text-white px-3 py-1 rounded-md text-sm hover:bg-blue-600">Palavras-Chave</button><button data-company-id="${c.id}" data-company-name="${c.name}" class="manage-company-settings-btn bg-green-500 text-white px-3 py-1 rounded-md text-sm hover:bg-green-600">Opções</button>${actionButtons}<button data-company-id="${c.id}" data-company-name="${c.name}" class="delete-company-btn bg-red-600 text-white px-3 py-1 rounded-md text-sm hover:bg-red-800">Excluir</button></div>`;
                     companyList.appendChild(li);
                 });
             }, (error) => {
@@ -719,11 +756,11 @@
             }
         }
 
-        // --- LÓGICA DE GESTÃO DE UTILIZADORES (PELO SUPER ADMIN) ---
-        async function renderCompanyUserAdminPage() { if (!selectedCompanyForManagement || !companyUserAdminTitle) return; companyUserAdminTitle.textContent = `Gerir Utilizadores para: ${selectedCompanyForManagement.name}`; renderUsersForSelectedCompany(); }
-        async function renderUsersForSelectedCompany() { try { const usersRef = collection(db, "artifacts", appId, "users", selectedCompanyForManagement.id, "users"); const querySnapshot = await getDocs(usersRef); const companyUsers = querySnapshot.docs.map(doc => ({id: doc.id, ...doc.data()})); if(!adminUserList) return; adminUserList.innerHTML = ''; companyUsers.forEach(user => { const li = document.createElement('li'); li.className = 'flex justify-between items-center bg-gray-100 p-2 rounded-md'; li.innerHTML = `<span>${user.username}</span><div><button data-id="${user.id}" class="edit-user-btn text-blue-500 hover:text-blue-700 mr-2">Editar</button><button data-id="${user.id}" class="delete-user-btn text-red-500 hover:text-red-700">Excluir</button></div>`; adminUserList.appendChild(li); }); } catch (error) { console.error("Erro ao renderizar utilizadores:", error); } }
-        async function handleUserSubmit(e) { e.preventDefault(); const username = userInput.value.trim(), password = userPasswordInput.value.trim(), id = userIdInput.value; if (!username || !password || !selectedCompanyForManagement) return; try { const usersRef = collection(db, "artifacts", appId, "users", selectedCompanyForManagement.id, "users"); const q = query(usersRef, where("username", "==", username)); const querySnapshot = await getDocs(q); if (!querySnapshot.empty && querySnapshot.docs[0].id !== id) { showAlert('Este nome de utilizador já está em uso nesta empresa.', 'error'); return; } if (id) { await updateDoc(doc(db, "artifacts", appId, "users", selectedCompanyForManagement.id, "users", id), { username, password }); } else { await addDoc(usersRef, { username, password }); } if(userInput) userInput.value = ''; if(userPasswordInput) userPasswordInput.value = ''; if(userIdInput) userIdInput.value = ''; renderUsersForSelectedCompany(); } catch (error) { console.error("Erro ao guardar o utilizador:", error); showAlert("Erro ao guardar o utilizador.", "error"); } }
-        async function handleUserActions(e) { if (!selectedCompanyForManagement) return; const id = e.target.dataset.id; if (!id) return; try { if (e.target.classList.contains('edit-user-btn')) { const userDoc = await getDoc(doc(db, "artifacts", appId, "users", selectedCompanyForManagement.id, "users", id)); if (userDoc.exists()) { const user = userDoc.data(); if(userInput) userInput.value = user.username; if(userPasswordInput) userPasswordInput.value = user.password; if(userIdInput) userIdInput.value = id; if(userInput) userInput.focus(); } } if (e.target.classList.contains('delete-user-btn')) { await deleteDoc(doc(db, "artifacts", appId, "users", selectedCompanyForManagement.id, "users", id)); renderUsersForSelectedCompany(); } } catch (error) { console.error("Erro ao lidar com a ação do utilizador:", error); } }
+        // --- LÓGICA DE GESTÃO DE USUÁRIOS (PELO SUPER ADMIN) ---
+        async function renderCompanyUserAdminPage() { if (!selectedCompanyForManagement || !companyUserAdminTitle) return; companyUserAdminTitle.textContent = `Gerir Usuários para: ${selectedCompanyForManagement.name}`; renderUsersForSelectedCompany(); }
+        async function renderUsersForSelectedCompany() { try { const usersRef = collection(db, "artifacts", appId, "users", selectedCompanyForManagement.id, "users"); const querySnapshot = await getDocs(usersRef); const companyUsers = querySnapshot.docs.map(doc => ({id: doc.id, ...doc.data()})); if(!adminUserList) return; adminUserList.innerHTML = ''; companyUsers.forEach(user => { const li = document.createElement('li'); li.className = 'flex justify-between items-center bg-gray-100 p-2 rounded-md'; li.innerHTML = `<span>${user.username}</span><div><button data-id="${user.id}" class="edit-user-btn text-blue-500 hover:text-blue-700 mr-2">Editar</button><button data-id="${user.id}" class="delete-user-btn text-red-500 hover:text-red-700">Excluir</button></div>`; adminUserList.appendChild(li); }); } catch (error) { console.error("Erro ao renderizar usuários:", error); } }
+        async function handleUserSubmit(e) { e.preventDefault(); const username = userInput.value.trim(), password = userPasswordInput.value.trim(), id = userIdInput.value; if (!username || !password || !selectedCompanyForManagement) return; try { const usersRef = collection(db, "artifacts", appId, "users", selectedCompanyForManagement.id, "users"); const q = query(usersRef, where("username", "==", username)); const querySnapshot = await getDocs(q); if (!querySnapshot.empty && querySnapshot.docs[0].id !== id) { showAlert('Este nome de usuário já está em uso nesta empresa.', 'error'); return; } if (id) { await updateDoc(doc(db, "artifacts", appId, "users", selectedCompanyForManagement.id, "users", id), { username, password }); } else { await addDoc(usersRef, { username, password }); } if(userInput) userInput.value = ''; if(userPasswordInput) userPasswordInput.value = ''; if(userIdInput) userIdInput.value = ''; renderUsersForSelectedCompany(); } catch (error) { console.error("Erro ao guardar o usuário:", error); showAlert("Erro ao guardar o usuário.", "error"); } }
+        async function handleUserActions(e) { if (!selectedCompanyForManagement) return; const id = e.target.dataset.id; if (!id) return; try { if (e.target.classList.contains('edit-user-btn')) { const userDoc = await getDoc(doc(db, "artifacts", appId, "users", selectedCompanyForManagement.id, "users", id)); if (userDoc.exists()) { const user = userDoc.data(); if(userInput) userInput.value = user.username; if(userPasswordInput) userPasswordInput.value = user.password; if(userIdInput) userIdInput.value = id; if(userInput) userInput.focus(); } } if (e.target.classList.contains('delete-user-btn')) { await deleteDoc(doc(db, "artifacts", appId, "users", selectedCompanyForManagement.id, "users", id)); renderUsersForSelectedCompany(); } } catch (error) { console.error("Erro ao lidar com a ação do usuário:", error); } }
 
         // --- LÓGICA DE GESTÃO DE PALAVRAS-CHAVE (PELO SUPER ADMIN) ---
         async function renderCompanyKeywordAdminPage() { if (!selectedCompanyForManagement || !companyKeywordAdminTitle) return; companyKeywordAdminTitle.textContent = `Gerir Palavras-Chave para: ${selectedCompanyForManagement.name}`; renderKeywordsForSelectedCompany(); }
@@ -876,7 +913,6 @@
             alertEl.className = 'bg-white p-4 rounded-lg shadow-md border-l-4 border-green-500 fade-in';
             alertEl.dataset.id = article.id;
             alertEl.dataset.date = dateForFilter;
-            // **ALTERAÇÃO**: Armazena palavras-chave como uma string separada por vírgulas
             alertEl.dataset.keywords = (article.keywords || [article.keyword]).join(',');
             alertEl.dataset.title = article.title.toLowerCase();
             alertEl.dataset.description = article.description ? article.description.toLowerCase() : '';
@@ -902,7 +938,6 @@
 
             const deleteButtonHTML = currentUser && currentUser.canRequestDeletion ? `<button class="request-delete-btn text-red-500 hover:text-red-700 ml-4" title="Solicitar Exclusão">🗑️</button>` : '';
 
-            // **ALTERAÇÃO**: Gera um badge para cada palavra-chave
             const keywordsArray = article.keywords || [article.keyword];
             const keywordsHTML = keywordsArray.map(kw => 
                 `<span class="flex-shrink-0 text-xs font-semibold bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full">${kw}</span>`
@@ -926,7 +961,7 @@
                 <div class="text-xs text-gray-500 mt-3 flex justify-between items-center">
                     <span>Fonte: ${article.source.name} | Publicado: ${formattedDate}</span>
                     <div>
-                        <a href="${article.url}" target="_blank" rel="noopener noreferrer" class="text-indigo-600 hover:underline font-semibold">Ler mais &rarr;</a>
+                        <a href="${article.url}" target="_blank" rel="noopener noreferrer" class="text-indigo-600 hover:underline font-semibold">Ler mais →</a>
                         ${deleteButtonHTML}
                     </div>
                 </div>`;
@@ -1013,7 +1048,6 @@
                 const filteredArticles = allCompanyArticles.filter(article => {
                     const pubDate = article.publishedAt.toDate();
                     const dateMatch = (!startDate || pubDate >= startDate) && (!endDate || pubDate <= endDate);
-                    // **ALTERAÇÃO**: Verifica se o artigo contém pelo menos uma das palavras-chave selecionadas
                     const articleKeywords = article.keywords || [article.keyword];
                     const keywordMatch = (selectedKeywords.length === 0 || selectedKeywords.some(sk => articleKeywords.includes(sk)));
                     return dateMatch && keywordMatch;
@@ -1041,7 +1075,7 @@
             const defaultOptions = { 
                 responsive: true, 
                 interaction: { mode: 'index', intersect: false }, 
-                plugins: { legend: { position: 'top' } } 
+                plugins: { legend: { position: 'left' } }  // ALTERADO AQUI
             };
             const options = { ...defaultOptions, ...customOptions };
             return new Chart(ctx, { type, data, options });
@@ -1154,7 +1188,7 @@
 
             const sentimentChartOptions = {
                 plugins: {
-                    legend: { position: 'top' },
+                    legend: { position: 'left' }, // ALTERADO AQUI
                     tooltip: {
                         callbacks: {
                             label: function(context) {
@@ -1214,7 +1248,6 @@
             const allAlerts = newsAlerts.querySelectorAll('.fade-in');
             
             allAlerts.forEach(alert => {
-                // **ALTERAÇÃO**: Verifica se a palavra-chave selecionada está na lista de palavras-chave do alerta
                 const alertKeywords = alert.dataset.keywords.split(',');
                 const keywordMatch = selectedKeyword === 'all' || alertKeywords.includes(selectedKeyword);
                 alert.style.display = keywordMatch ? 'block' : 'none';
@@ -1239,7 +1272,7 @@
                     title: alertEl.querySelector('h4').textContent
                 };
                 if(justificationText) justificationText.value = '';
-                if(submitJustificationBtn) submitJustificationBtn.disabled = true; // Desabilita o botão ao abrir
+                if(submitJustificationBtn) submitJustificationBtn.disabled = true;
                 if(justificationModal) justificationModal.classList.remove('hidden');
             }
         }
@@ -1311,7 +1344,6 @@
             alertEl.dataset.id = alert.id;
             alertEl.dataset.companyId = alert.companyId;
 
-            // **ALTERAÇÃO**: Lida com `keywords` (array) ou `keyword` (string) para compatibilidade
             const keywordsString = Array.isArray(alert.keywords) ? alert.keywords.join(', ') : alert.keyword;
 
             alertEl.innerHTML = `
@@ -1333,8 +1365,12 @@
         // --- NOVAS FUNÇÕES DO SUPER ADMIN ---
         async function renderManualAlertPage() {
             const companySelect = document.getElementById('manual-alert-company');
-            if (!companySelect) return;
+            const keywordSelect = document.getElementById('manual-alert-keyword');
+            if (!companySelect || !keywordSelect) return;
+            
             companySelect.innerHTML = '<option value="">Selecione uma empresa</option>';
+            keywordSelect.innerHTML = '<option disabled>Selecione uma empresa primeiro</option>';
+            
             const companiesSnapshot = await getDocs(query(collection(db, "artifacts", appId, "public/data/companies"), where("status", "==", "active")));
             companiesSnapshot.forEach(doc => {
                 const option = document.createElement('option');
@@ -1344,6 +1380,35 @@
             });
         }
 
+        async function populateManualAlertKeywords() {
+            const companySelect = document.getElementById('manual-alert-company');
+            const keywordSelect = document.getElementById('manual-alert-keyword');
+            const companyId = companySelect.value;
+
+            keywordSelect.innerHTML = '';
+            if (!companyId) {
+                keywordSelect.innerHTML = '<option disabled>Selecione uma empresa primeiro</option>';
+                return;
+            }
+
+            try {
+                const keywordsSnapshot = await getDocs(query(collection(db, "artifacts", appId, "users", companyId, "keywords")));
+                if (keywordsSnapshot.empty) {
+                    keywordSelect.innerHTML = '<option disabled>Nenhuma palavra-chave encontrada</option>';
+                    return;
+                }
+                keywordsSnapshot.forEach(doc => {
+                    const option = document.createElement('option');
+                    option.value = doc.data().word;
+                    option.textContent = doc.data().word;
+                    keywordSelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error("Erro ao buscar palavras-chave para alerta manual:", error);
+                keywordSelect.innerHTML = '<option disabled>Erro ao carregar palavras-chave</option>';
+            }
+        }
+
         async function handleManualAlertSubmit(e) {
             e.preventDefault();
             const companyId = document.getElementById('manual-alert-company').value;
@@ -1351,19 +1416,19 @@
             const description = document.getElementById('manual-alert-desc').value;
             const url = document.getElementById('manual-alert-url').value;
             const source = document.getElementById('manual-alert-source').value;
-            const keywords = document.getElementById('manual-alert-keyword').value; // Agora pode ser "kw1, kw2"
+            const selectedKeywords = Array.from(document.getElementById('manual-alert-keyword').selectedOptions).map(opt => opt.value);
 
-            if (!companyId) {
-                showAlert('Por favor, selecione uma empresa.', 'error');
+            if (!companyId || selectedKeywords.length === 0) {
+                showAlert('Por favor, selecione uma empresa e pelo menos uma palavra-chave.', 'error');
                 return;
             }
 
             try {
                 const manualAddAlert = httpsCallable(functions, 'manualAddAlert');
-                // **ALTERAÇÃO**: Envia a string de palavras-chave, o backend irá processá-la
-                await manualAddAlert({ appId, companyId, title, description, url, source, keywords });
+                await manualAddAlert({ appId, companyId, title, description, url, source, keywords: selectedKeywords });
                 showAlert('Alerta manual adicionado com sucesso!', 'success');
                 if (manualAlertForm) manualAlertForm.reset();
+                populateManualAlertKeywords(); // Reseta a lista de palavras-chave
             } catch (error) {
                 console.error("Erro ao adicionar alerta manual:", error);
                 showAlert(`Erro: ${error.message}`, 'error');
@@ -1622,6 +1687,11 @@
             confirmDeleteKeywordBtn = document.getElementById('confirm-delete-keyword-btn');
             cancelDeleteKeywordBtn = document.getElementById('cancel-delete-keyword-btn');
             keywordToDeleteNameEl = document.getElementById('keyword-to-delete-name');
+            globalLogoPage = document.getElementById('global-logo-page');
+            btnGlobalLogo = document.getElementById('btn-global-logo');
+            backToAdminConfig4 = document.getElementById('back-to-admin-config-4');
+            globalLogoUpload = document.getElementById('global-logo-upload');
+            globalLogoArea = document.getElementById('global-logo-area');
 
 
             const states = {"AC": "Acre", "AL": "Alagoas", "AP": "Amapá", "AM": "Amazonas", "BA": "Bahia", "CE": "Ceará", "DF": "Distrito Federal", "ES": "Espírito Santo", "GO": "Goiás", "MA": "Maranhão", "MT": "Mato Grosso", "MS": "Mato Grosso do Sul", "MG": "Minas Gerais", "PA": "Pará", "PB": "Paraíba", "PR": "Paraná", "PE": "Pernambuco", "PI": "Piauí", "RJ": "Rio de Janeiro", "RN": "Rio Grande do Norte", "RS": "Rio Grande do Sul", "RO": "Rondônia", "RR": "Roraima", "SC": "Santa Catarina", "SP": "São Paulo", "SE": "Sergipe", "TO": "Tocantins"};
@@ -1641,14 +1711,12 @@
                         const savedUser = getStorage('clipping_currentUser', null);
                         if (savedUser) {
                             currentUser = savedUser;
-                            // For a clean start, remove existing listeners
                             if (notificationListener) notificationListener(); 
                             if (companiesListener) companiesListener(); 
                             if (deletionRequestsListener) deletionRequestsListener(); 
                             if (pendingAlertsListener) pendingAlertsListener(); 
                             updateView('dashboard'); 
                         } else {
-                            // User exists in auth but not local storage, force login
                             currentUser = null;
                             updateView('login');
                         }
@@ -1679,11 +1747,7 @@
             if (confirmDeleteBtn) confirmDeleteBtn.addEventListener('click', handleConfirmDelete);
             if (cancelDeleteBtn) cancelDeleteBtn.addEventListener('click', () => { if(deleteModal) deleteModal.classList.add('hidden')});
             if (closeLinkModalBtn) closeLinkModalBtn.addEventListener('click', () => { if(linkModal) linkModal.classList.add('hidden')});
-            if (copyLinkBtn) copyLinkBtn.addEventListener('click', () => {
-                if(accessLinkInput) accessLinkInput.select();
-                document.execCommand('copy');
-                showAlert('Link copiado para a área de transferência!', 'success');
-            });
+            if (copyLinkBtn) copyLinkBtn.addEventListener('click', () => { if(accessLinkInput) accessLinkInput.select(); document.execCommand('copy'); showAlert('Link copiado para a área de transferência!', 'success'); });
             if (newsScopeContainer) newsScopeContainer.addEventListener('change', (e) => { handleSettingsChange(e); handleScopeChange(); });
             if (apiKeyNewsApiInput) apiKeyNewsApiInput.addEventListener('change', handleGlobalKeyChange);
             if (apiKeyFirebaseNewsInput) apiKeyFirebaseNewsInput.addEventListener('change', handleGlobalKeyChange);
@@ -1722,10 +1786,13 @@
             if (btnChangePassword) btnChangePassword.addEventListener('click', () => updateView('change-password'));
             if (btnGlobalKeys) btnGlobalKeys.addEventListener('click', () => updateView('global-keys'));
             if (btnNewsSources) btnNewsSources.addEventListener('click', () => updateView('global-sources'));
+            if (btnGlobalLogo) btnGlobalLogo.addEventListener('click', () => updateView('global-logo'));
             if (backToAdminConfig1) backToAdminConfig1.addEventListener('click', () => updateView('configuracoes-admin'));
             if (backToAdminConfig2) backToAdminConfig2.addEventListener('click', () => updateView('configuracoes-admin'));
             if (backToAdminConfig3) backToAdminConfig3.addEventListener('click', () => updateView('configuracoes-admin'));
+            if (backToAdminConfig4) backToAdminConfig4.addEventListener('click', () => updateView('configuracoes-admin'));
             if (logoUploadInput) logoUploadInput.addEventListener('change', handleLogoUpload);
+            if (globalLogoUpload) globalLogoUpload.addEventListener('change', handleGlobalLogoUpload);
             if (btnManualAlert) btnManualAlert.addEventListener('click', () => updateView('manual-alert'));
             if (btnDeletionRequests) btnDeletionRequests.addEventListener('click', () => updateView('deletion-requests'));
             if (btnSuperAdminReport) btnSuperAdminReport.addEventListener('click', () => updateView('super-admin-report'));
@@ -1733,12 +1800,12 @@
             if (backToDashboard2) backToDashboard2.addEventListener('click', () => updateView('dashboard'));
             if (backToDashboard3) backToDashboard3.addEventListener('click', () => updateView('dashboard'));
             if (manualAlertForm) manualAlertForm.addEventListener('submit', handleManualAlertSubmit);
+            const manualAlertCompanySelect = document.getElementById('manual-alert-company');
+            if (manualAlertCompanySelect) manualAlertCompanySelect.addEventListener('change', populateManualAlertKeywords);
             if (cancelJustificationBtn) cancelJustificationBtn.addEventListener('click', () => { if(justificationModal) justificationModal.classList.add('hidden')});
             if (submitJustificationBtn) submitJustificationBtn.addEventListener('click', handleSubmitJustification);
             if (deletionRequestsList) deletionRequestsList.addEventListener('click', handleDeletionRequestAction);
-            if (justificationText && submitJustificationBtn) justificationText.addEventListener('input', () => {
-                if(submitJustificationBtn) submitJustificationBtn.disabled = justificationText.value.trim() === '';
-            });
+            if (justificationText && submitJustificationBtn) justificationText.addEventListener('input', () => { if(submitJustificationBtn) submitJustificationBtn.disabled = justificationText.value.trim() === ''; });
             if (btnPendingAlerts) btnPendingAlerts.addEventListener('click', () => updateView('super-admin-queue'));
             if (pendingAlertsList) pendingAlertsList.addEventListener('click', handlePendingAlertAction);
             if (backToDashboard4) backToDashboard4.addEventListener('click', () => updateView('dashboard'));

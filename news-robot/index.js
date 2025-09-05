@@ -4,7 +4,7 @@
  * 1.  Busca por palavras-chave agora retorna TODAS as correspondências, não apenas a primeira.
  * 2.  Adicionada a busca de vídeos no YouTube.
  * 3.  Otimização da lógica para evitar alertas duplicados.
- * 4.  Ajustes nas funções auxiliares para suportar múltiplas palavras-chave.
+ * 4.  Ajuste na função `manualAddAlert` para receber um array de palavras-chave.
  */
 
 const functions = require("firebase-functions");
@@ -27,7 +27,7 @@ const regionalFunctions = functions.region("southamerica-east1");
 // --- Funções Auxiliares ---
 
 /**
- * **ALTERADO**: Procura por TODAS as palavras-chave correspondentes no título ou no corpo de um artigo.
+ * Procura por TODAS as palavras-chave correspondentes no título ou no corpo de um artigo.
  * A busca já incluía o corpo do texto, atendendo ao primeiro requisito.
  * @param {object} article O artigo da notícia.
  * @param {string[]} keywords A lista de palavras-chave a procurar.
@@ -87,15 +87,14 @@ function normalizeArticle(article, sourceApi) {
                     publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.pubDate)),
                     source: { name: article.author || 'RSS Feed', url: article.link },
                 };
-            // **NOVO**: Normalizador para o YouTube
             case 'youtube':
                 return {
                     title: article.snippet.title,
                     description: article.snippet.description,
-                    url: `https://www.youtube.com/watch?v=${article.id.videoId}`,
+                    url: `https://www.youtube.com/watch?v=$${article.id.videoId}`,
                     image: article.snippet.thumbnails.high.url || null,
                     publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.snippet.publishedAt)),
-                    source: { name: 'YouTube', url: `https://www.youtube.com/channel/${article.snippet.channelId}` }
+                    source: { name: 'YouTube', url: `https://www.youtube.com/channel/$${article.snippet.channelId}` }
                 };
             default:
                 return null;
@@ -172,12 +171,12 @@ async function fetchAllNews() {
                         for (const article of response.data.articles) {
                             if (existingUrls.has(article.url)) continue;
                             const matchedKeywords = findMatchingKeywords(article, keywordsList);
-                            if (matchedKeywords.length > 0) { // **ALTERAÇÃO**
+                            if (matchedKeywords.length > 0) {
                                 const normalized = normalizeArticle(article, 'gnews');
                                 if (normalized) {
                                     const pendingAlertRef = db.collection(`artifacts/${APP_ID}/public/data/pendingAlerts`).doc();
                                     batch.set(pendingAlertRef, {
-                                        ...normalized, keywords: matchedKeywords, // **ALTERAÇÃO**
+                                        ...normalized, keywords: matchedKeywords,
                                         companyId, companyName, status: "pending"
                                     });
                                     existingUrls.add(article.url);
@@ -200,12 +199,12 @@ async function fetchAllNews() {
                     for (const article of response.data.articles) {
                         if (existingUrls.has(article.url)) continue;
                         const matchedKeywords = findMatchingKeywords(article, keywordsList);
-                        if (matchedKeywords.length > 0) { // **ALTERAÇÃO**
+                        if (matchedKeywords.length > 0) {
                             const normalized = normalizeArticle(article, 'newsapi');
                             if(normalized) {
                                 const pendingAlertRef = db.collection(`artifacts/${APP_ID}/public/data/pendingAlerts`).doc();
                                 batch.set(pendingAlertRef, {
-                                    ...normalized, keywords: matchedKeywords, // **ALTERAÇÃO**
+                                    ...normalized, keywords: matchedKeywords,
                                     companyId, companyName, status: "pending"
                                 });
                                 existingUrls.add(article.url);
@@ -217,25 +216,24 @@ async function fetchAllNews() {
             } catch (e) { functions.logger.error(`Erro na NewsAPI para ${companyName}:`, e.message); }
         }
 
-        // **NOVO**: 3. Busca no YouTube
+        // 3. Busca no YouTube
         if (settings.apiKeyYoutube) {
-            const queryUrl = `${YOUTUBE_URL}?part=snippet&q=${encodeURIComponent(searchQuery)}&type=video&relevanceLanguage=pt&regionCode=BR&key=${settings.apiKeyYoutube}`;
+            const queryUrl = `${YOUTUBE_URL}?part=snippet&q=${encodeURIComponent(searchQuery)}&type=video&relevanceLanguage=pt&regionCode=BR&maxResults=10&key=${settings.apiKeyYoutube}`;
             try {
                 const response = await axios.get(queryUrl);
                 if (response.data && response.data.items) {
                     functions.logger.info(`YouTube encontrou ${response.data.items.length} vídeos para ${companyName}`);
                     for (const item of response.data.items) {
-                        const videoUrl = `https://www.youtube.com/watch?v=${item.id.videoId}`;
+                        const videoUrl = `https://www.youtube.com/watch?v=$${item.id.videoId}`;
                         if (existingUrls.has(videoUrl)) continue;
                         
-                        // O `findMatchingKeywords` precisa do objeto `snippet`
                         const matchedKeywords = findMatchingKeywords(item.snippet, keywordsList);
-                        if (matchedKeywords.length > 0) { // **ALTERAÇÃO**
+                        if (matchedKeywords.length > 0) {
                             const normalized = normalizeArticle(item, 'youtube');
                             if (normalized) {
                                 const pendingAlertRef = db.collection(`artifacts/${APP_ID}/public/data/pendingAlerts`).doc();
                                 batch.set(pendingAlertRef, {
-                                    ...normalized, keywords: matchedKeywords, // **ALTERAÇÃO**
+                                    ...normalized, keywords: matchedKeywords,
                                     companyId, companyName, status: "pending"
                                 });
                                 existingUrls.add(videoUrl);
@@ -258,12 +256,12 @@ async function fetchAllNews() {
                         for (const item of response.data.items) {
                              if (existingUrls.has(item.link)) continue;
                              const matchedKeywords = findMatchingKeywords(item, keywordsList);
-                             if (matchedKeywords.length > 0) { // **ALTERAÇÃO**
+                             if (matchedKeywords.length > 0) {
                                 const normalized = normalizeArticle(item, 'rss');
                                 if(normalized){
                                     const pendingAlertRef = db.collection(`artifacts/${APP_ID}/public/data/pendingAlerts`).doc();
                                     batch.set(pendingAlertRef, {
-                                        ...normalized, keywords: matchedKeywords, // **ALTERAÇÃO**
+                                        ...normalized, keywords: matchedKeywords,
                                         companyId, companyName, status: "pending"
                                     });
                                     existingUrls.add(item.link);
@@ -288,12 +286,12 @@ async function fetchAllNews() {
                          for (const item of response.data.items) {
                              if (existingUrls.has(item.url)) continue;
                              const matchedKeywords = findMatchingKeywords(item, keywordsList);
-                             if(matchedKeywords.length > 0) { // **ALTERAÇÃO**
+                             if(matchedKeywords.length > 0) {
                                 const normalized = normalizeArticle(item, 'blogger');
                                 if(normalized){
                                     const pendingAlertRef = db.collection(`artifacts/${APP_ID}/public/data/pendingAlerts`).doc();
                                     batch.set(pendingAlertRef, {
-                                        ...normalized, keywords: matchedKeywords, // **ALTERAÇÃO**
+                                        ...normalized, keywords: matchedKeywords,
                                         companyId, companyName, status: "pending"
                                     });
                                     existingUrls.add(item.url);
@@ -383,6 +381,9 @@ exports.rejectAlert = regionalFunctions.https.onCall(async (data, context) => {
 
 async function deleteCollection(collectionRef) {
     const snapshot = await collectionRef.get();
+    if (snapshot.size === 0) {
+        return;
+    }
     const batch = db.batch();
     snapshot.docs.forEach(doc => batch.delete(doc.ref));
     await batch.commit();
@@ -414,7 +415,6 @@ exports.deleteKeywordAndArticles = regionalFunctions.https.onCall(async (data, c
     if (!appId || !companyId || !keyword) {
         throw new functions.https.HttpsError("invalid-argument", "ID da aplicação, da empresa e palavra-chave são necessários.");
     }
-    // **ALTERAÇÃO**: Usa 'array-contains' para encontrar artigos com a palavra-chave em uma lista
     const articlesToDelete = await db.collection(`artifacts/${appId}/users/${companyId}/articles`).where("keywords", "array-contains", keyword).get();
     const batch = db.batch();
     articlesToDelete.docs.forEach(doc => {
@@ -473,17 +473,14 @@ exports.requestAlertDeletion = regionalFunctions.https.onCall(async (data, conte
 });
 
 exports.manualAddAlert = regionalFunctions.https.onCall(async (data, context) => {
-    const { appId, companyId, title, description, url, source, keywords } = data; // Alterado para 'keywords'
-    if (!appId || !companyId || !title || !url || !source || !keywords) {
-        throw new functions.https.HttpsError("invalid-argument", "Dados incompletos para adicionar um alerta.");
+    const { appId, companyId, title, description, url, source, keywords } = data;
+    if (!appId || !companyId || !title || !url || !source || !keywords || !Array.isArray(keywords) || keywords.length === 0) {
+        throw new functions.https.HttpsError("invalid-argument", "Dados incompletos ou inválidos para adicionar um alerta.");
     }
     const companyDoc = await db.doc(`artifacts/${appId}/public/data/companies/${companyId}`).get();
     if (!companyDoc.exists) {
         throw new functions.https.HttpsError("not-found", "Empresa não encontrada.");
     }
-    // **ALTERAÇÃO**: Processa a string de palavras-chave para um array
-    const keywordsArray = keywords.split(',').map(kw => kw.trim()).filter(kw => kw);
-
     const companyName = companyDoc.data()?.name;
     const alertData = {
         title,
@@ -491,7 +488,7 @@ exports.manualAddAlert = regionalFunctions.https.onCall(async (data, context) =>
         url,
         source: { name: source, url: "" },
         publishedAt: admin.firestore.FieldValue.serverTimestamp(),
-        keywords: keywordsArray, // Salva como array
+        keywords: keywords, // Recebe o array diretamente
         companyId,
         companyName,
         status: "approved",
@@ -506,14 +503,6 @@ exports.manualAddAlert = regionalFunctions.https.onCall(async (data, context) =>
     return { success: true };
 });
 
-function getChannelCategory(sourceName) {
-    const name = (sourceName || "").toLowerCase();
-    if (name.includes('youtube')) return 'YouTube';
-    if (name.includes('globo') || name.includes('g1') || name.includes('uol') || name.includes('terra') || name.includes('r7')) return 'Sites';
-    if (name.includes('veja') || name.includes('istoé') || name.includes('exame')) return 'Revistas';
-    if (name.includes('cbn') || name.includes('bandeirantes')) return 'Rádios';
-    return 'Sites';
-}
 function getPredominantSentiment(percentages) {
     if (percentages.positive > percentages.neutral && percentages.positive > percentages.negative) return 'Positivo';
     if (percentages.negative > percentages.positive && percentages.negative > percentages.neutral) return 'Negativo';
