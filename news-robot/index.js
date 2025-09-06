@@ -1,7 +1,8 @@
 /**
  * IMPORTANTE: Este é o código COMPLETO e ATUALIZADO para o servidor (Firebase Cloud Functions).
  * * LÓGICA ATUAL: Busca cada palavra-chave individualmente, inclui uma pausa (delay) de 1 segundo
- * * para evitar o erro 429, busca em TODAS as fontes e aplica um filtro de 24 horas quando solicitado.
+ * * para evitar o erro 429, busca em TODAS as fontes (GNews, NewsAPI, YouTube, Blogger, RSS) e 
+ * * aplica um filtro de 24 horas quando solicitado.
  */
 
 const functions = require("firebase-functions");
@@ -19,7 +20,7 @@ const YOUTUBE_URL = "https://www.googleapis.com/youtube/v3/search";
 const RSS2JSON_URL = "https://api.rss2json.com/v1/api.json";
 const APP_ID = "noticias-6e952";
 
-// CORREÇÃO 6: Aumenta o tempo limite da função para 5 minutos (300 segundos) para evitar timeouts.
+// Aumenta o tempo limite da função para 5 minutos (300 segundos) para evitar timeouts.
 const runtimeOpts = {
   timeoutSeconds: 300,
   memory: '1GB'
@@ -58,10 +59,12 @@ function normalizeArticle(article, sourceApi) {
                     source: { name: article.source.name, url: null }, author: article.author || null,
                 };
             case 'blogger':
+                 // Blogger API pode não retornar o nome do blog diretamente no item do post, pegamos da URL
+                const blogName = article.blog ? article.blog.name : 'Blogger';
                 return {
                     title: article.title, description: (article.content || "").substring(0, 250).replace(/<[^>]*>?/gm, '') + '...',
                     url: article.url, image: null, publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.published)),
-                    source: { name: article.blog.name || 'Blogger', url: article.url }, author: article.author?.displayName || null,
+                    source: { name: blogName, url: article.url }, author: article.author?.displayName || null,
                 };
             case 'rss':
                 return {
@@ -79,7 +82,7 @@ function normalizeArticle(article, sourceApi) {
             default: return null;
         }
     } catch (e) {
-        functions.logger.error(`Erro ao normalizar artigo da fonte ${sourceApi}:`, e);
+        functions.logger.error(`Erro ao normalizar artigo da fonte ${sourceApi}:`, e, article);
         return null;
     }
 }
@@ -139,10 +142,7 @@ async function fetchAllNews() {
             await delay(1000); // Pausa para evitar erro 429
             const searchQuery = `"${keyword}"`;
             
-            // ATENÇÃO: A lógica para NewsAPI, Blogger, RSS e YouTube precisa ser adicionada aqui.
-            // O código abaixo é apenas para GNews, como no seu arquivo original.
-            
-            // Busca no GNews
+            // 1. Busca no GNews
             if (settings.apiKeyGNews1) {
                 const currentHour = new Date().getHours();
                 let gnewsApiKey = '';
@@ -173,6 +173,109 @@ async function fetchAllNews() {
                         }
                     } catch (e) { functions.logger.error(`Erro GNews (keyword: ${keyword}):`, e.message); }
                 }
+            }
+            
+            // 2. Busca no NewsAPI
+            if (settings.apiKeyNewsApi) {
+                const queryUrl = `${NEWSAPI_URL}?q=${encodeURIComponent(searchQuery)}&language=pt&apiKey=${settings.apiKeyNewsApi}`;
+                 try {
+                    const response = await axios.get(queryUrl);
+                    if (response.data && response.data.articles) {
+                        for (const article of response.data.articles) {
+                            if (fetchOnlyNew && new Date(article.publishedAt) < twentyFourHoursAgo) continue;
+                            if (existingUrls.has(article.url)) continue;
+                             const matchedKeywords = findMatchingKeywords(article, [keyword]);
+                             if (matchedKeywords.length > 0) {
+                                const normalized = normalizeArticle(article, 'newsapi');
+                                if (normalized) {
+                                    const pendingAlertRef = db.collection(`artifacts/${APP_ID}/public/data/pendingAlerts`).doc();
+                                    batch.set(pendingAlertRef, { ...normalized, keywords: matchedKeywords, companyId, companyName, status: "pending" });
+                                    existingUrls.add(article.url);
+                                    articlesToSaveCount++;
+                                }
+                            }
+                        }
+                    }
+                } catch (e) { functions.logger.error(`Erro NewsAPI (keyword: ${keyword}):`, e.message); }
+            }
+
+            // 3. Busca no YouTube
+            if (settings.apiKeyYoutube) {
+                const queryUrl = `${YOUTUBE_URL}?part=snippet&q=${encodeURIComponent(searchQuery)}&type=video&key=${settings.apiKeyYoutube}`;
+                try {
+                    const response = await axios.get(queryUrl);
+                    if (response.data && response.data.items) {
+                        for (const item of response.data.items) {
+                            const articleUrl = `https://www.youtube.com/watch?v=${item.id.videoId}`;
+                            if (fetchOnlyNew && new Date(item.snippet.publishedAt) < twentyFourHoursAgo) continue;
+                            if (existingUrls.has(articleUrl)) continue;
+                            const matchedKeywords = findMatchingKeywords(item.snippet, [keyword]);
+                             if (matchedKeywords.length > 0) {
+                                const normalized = normalizeArticle(item, 'youtube');
+                                if (normalized) {
+                                    const pendingAlertRef = db.collection(`artifacts/${APP_ID}/public/data/pendingAlerts`).doc();
+                                    batch.set(pendingAlertRef, { ...normalized, keywords: matchedKeywords, companyId, companyName, status: "pending" });
+                                    existingUrls.add(articleUrl);
+                                    articlesToSaveCount++;
+                                }
+                            }
+                        }
+                    }
+                } catch (e) { functions.logger.error(`Erro YouTube (keyword: ${keyword}):`, e.message); }
+            }
+            
+            // 4. Busca em Blogs (Blogger)
+            if (settings.apiKeyBlogger && settings.bloggerId) {
+                const blogIds = settings.bloggerId.split('\n').filter(id => id.trim() !== '');
+                for (const blogId of blogIds) {
+                    const queryUrl = `${BLOGGER_URL}/${blogId}/posts/search?q=${encodeURIComponent(searchQuery)}&key=${settings.apiKeyBlogger}`;
+                    try {
+                        const response = await axios.get(queryUrl);
+                         if (response.data && response.data.items) {
+                            for (const item of response.data.items) {
+                                if (fetchOnlyNew && new Date(item.published) < twentyFourHoursAgo) continue;
+                                if (existingUrls.has(item.url)) continue;
+                                const matchedKeywords = findMatchingKeywords(item, [keyword]);
+                                 if (matchedKeywords.length > 0) {
+                                    const normalized = normalizeArticle(item, 'blogger');
+                                    if (normalized) {
+                                        const pendingAlertRef = db.collection(`artifacts/${APP_ID}/public/data/pendingAlerts`).doc();
+                                        batch.set(pendingAlertRef, { ...normalized, keywords: matchedKeywords, companyId, companyName, status: "pending" });
+                                        existingUrls.add(item.url);
+                                        articlesToSaveCount++;
+                                    }
+                                }
+                            }
+                        }
+                    } catch (e) { functions.logger.error(`Erro Blogger (blogId: ${blogId}, keyword: ${keyword}):`, e.message); }
+                }
+            }
+
+            // 5. Busca em Feeds RSS
+            if (settings.rssUrl) {
+                 const rssUrls = settings.rssUrl.split('\n').filter(url => url.trim() !== '');
+                 for (const rss of rssUrls) {
+                     const queryUrl = `${RSS2JSON_URL}?rss_url=${encodeURIComponent(rss)}`;
+                     try {
+                        const response = await axios.get(queryUrl);
+                         if (response.data && response.data.items) {
+                             for (const item of response.data.items) {
+                                 if (fetchOnlyNew && new Date(item.pubDate) < twentyFourHoursAgo) continue;
+                                 if (existingUrls.has(item.link)) continue;
+                                 const matchedKeywords = findMatchingKeywords(item, [keyword]);
+                                 if (matchedKeywords.length > 0) {
+                                     const normalized = normalizeArticle(item, 'rss');
+                                     if (normalized) {
+                                        const pendingAlertRef = db.collection(`artifacts/${APP_ID}/public/data/pendingAlerts`).doc();
+                                        batch.set(pendingAlertRef, { ...normalized, keywords: matchedKeywords, companyId, companyName, status: "pending" });
+                                        existingUrls.add(item.link);
+                                        articlesToSaveCount++;
+                                     }
+                                 }
+                             }
+                         }
+                     } catch (e) { functions.logger.error(`Erro RSS (feed: ${rss}, keyword: ${keyword}):`, e.message); }
+                 }
             }
         }
     }
