@@ -1,6 +1,7 @@
 /**
  * IMPORTANTE: Este é o código COMPLETO e ATUALIZADO para o servidor (Firebase Cloud Functions).
- * * Esta versão contém LOGS DE DIAGNÓSTICO para investigar por que os alertas não estão sendo capturados.
+ * * ALTERAÇÃO PRINCIPAL: A lógica de busca foi modificada para pesquisar cada palavra-chave individualmente,
+ * * em vez de agrupá-las em uma única consulta. Isso aumenta a precisão, mas também o consumo da cota de API.
  */
 
 const functions = require("firebase-functions");
@@ -25,12 +26,10 @@ const regionalFunctions = functions.region("southamerica-east1");
 const findMatchingKeywords = (article, keywords) => {
     const title = (article.title || "").toLowerCase();
     const bodyText = (article.description || article.content || "").toLowerCase();
-
     const matchedKeywords = keywords.filter(kw => {
         const lowerCaseKw = kw.toLowerCase();
         return title.includes(lowerCaseKw) || bodyText.includes(lowerCaseKw);
     });
-
     return matchedKeywords;
 };
 
@@ -78,7 +77,7 @@ function normalizeArticle(article, sourceApi) {
 
 async function fetchAllNews() {
     functions.logger.info("=======================================");
-    functions.logger.info("INICIANDO BUSCA DE NOTÍCIAS MULTI-FONTE...");
+    functions.logger.info("INICIANDO BUSCA DE NOTÍCIAS (INDIVIDUAL POR PALAVRA-CHAVE)...");
 
     const globalSettingsRef = db.doc(`artifacts/${APP_ID}/public/data/settings/global`);
     const globalSettingsDoc = await globalSettingsRef.get();
@@ -116,31 +115,55 @@ async function fetchAllNews() {
         }
 
         const keywordsList = keywordsSnapshot.docs.map(doc => doc.data().word);
-        const searchQuery = keywordsList.map(kw => `"${kw}"`).join(" OR ");
         
-        functions.logger.log(`[DIAGNÓSTICO] Buscando por: "${searchQuery}" para a empresa ${companyName}`);
+        // **NOVO LOOP**: Itera sobre cada palavra-chave individualmente
+        for (const keyword of keywordsList) {
+            const searchQuery = `"${keyword}"`; // Busca pela palavra-chave exata
+            functions.logger.log(`[BUSCA INDIVIDUAL] Palavra-chave: "${keyword}" para a empresa ${companyName}`);
 
-        // --- Busca no GNews ---
-        if (settings.apiKeyGNews1) {
-            const currentHour = new Date().getHours();
-            let gnewsApiKey = '';
-            if (currentHour >= 0 && currentHour < 6) gnewsApiKey = settings.apiKeyGNews1;
-            else if (currentHour >= 6 && currentHour < 12) gnewsApiKey = settings.apiKeyGNews2;
-            else if (currentHour >= 12 && currentHour < 18) gnewsApiKey = settings.apiKeyGNews3;
-            else gnewsApiKey = settings.apiKeyGNews4;
+            // --- Busca no GNews ---
+            if (settings.apiKeyGNews1) {
+                const currentHour = new Date().getHours();
+                let gnewsApiKey = '';
+                if (currentHour >= 0 && currentHour < 6) gnewsApiKey = settings.apiKeyGNews1;
+                else if (currentHour >= 6 && currentHour < 12) gnewsApiKey = settings.apiKeyGNews2;
+                else if (currentHour >= 12 && currentHour < 18) gnewsApiKey = settings.apiKeyGNews3;
+                else gnewsApiKey = settings.apiKeyGNews4;
 
-            if(gnewsApiKey) {
-                const queryUrl = `${GNEWS_URL}?q=${encodeURIComponent(searchQuery)}&lang=pt&country=br&token=${gnewsApiKey}`;
+                if(gnewsApiKey) {
+                    const queryUrl = `${GNEWS_URL}?q=${encodeURIComponent(searchQuery)}&lang=pt&country=br&token=${gnewsApiKey}`;
+                    try {
+                        const response = await axios.get(queryUrl);
+                        if (response.data && response.data.articles) {
+                            for (const article of response.data.articles) {
+                                if (existingUrls.has(article.url)) continue;
+                                const matchedKeywords = findMatchingKeywords(article, [keyword]); // Verifica apenas a palavra-chave atual
+                                if (matchedKeywords.length > 0) {
+                                    const normalized = normalizeArticle(article, 'gnews');
+                                    if (normalized) {
+                                        const pendingAlertRef = db.collection(`artifacts/${APP_ID}/public/data/pendingAlerts`).doc();
+                                        batch.set(pendingAlertRef, { ...normalized, keywords: matchedKeywords, companyId, companyName, status: "pending" });
+                                        existingUrls.add(article.url);
+                                        articlesToSaveCount++;
+                                    }
+                                }
+                            }
+                        }
+                    } catch (e) { functions.logger.error(`Erro GNews (keyword: ${keyword}):`, e.message); }
+                }
+            }
+
+            // --- Busca no NewsAPI ---
+             if (settings.apiKeyNewsApi) {
+                const queryUrl = `${NEWSAPI_URL}?q=${encodeURIComponent(searchQuery)}&language=pt&apiKey=${settings.apiKeyNewsApi}`;
                 try {
                     const response = await axios.get(queryUrl);
-                    functions.logger.log(`[DIAGNÓSTICO GNews] API respondeu com ${response.data.articles?.length || 0} artigos.`);
                     if (response.data && response.data.articles) {
                         for (const article of response.data.articles) {
                             if (existingUrls.has(article.url)) continue;
-                            const matchedKeywords = findMatchingKeywords(article, keywordsList);
+                            const matchedKeywords = findMatchingKeywords(article, [keyword]);
                             if (matchedKeywords.length > 0) {
-                                functions.logger.info(`[DIAGNÓSTICO GNews] CORRESPONDÊNCIA ENCONTRADA: "${article.title}"`);
-                                const normalized = normalizeArticle(article, 'gnews');
+                                const normalized = normalizeArticle(article, 'newsapi');
                                 if (normalized) {
                                     const pendingAlertRef = db.collection(`artifacts/${APP_ID}/public/data/pendingAlerts`).doc();
                                     batch.set(pendingAlertRef, { ...normalized, keywords: matchedKeywords, companyId, companyName, status: "pending" });
@@ -150,61 +173,34 @@ async function fetchAllNews() {
                             }
                         }
                     }
-                } catch (e) { functions.logger.error(`Erro na API GNews para ${companyName}:`, e.message); }
+                } catch (e) { functions.logger.error(`Erro NewsAPI (keyword: ${keyword}):`, e.message); }
             }
-        }
 
-        // --- Busca no NewsAPI ---
-        if (settings.apiKeyNewsApi) {
-            const queryUrl = `${NEWSAPI_URL}?q=${encodeURIComponent(searchQuery)}&language=pt&apiKey=${settings.apiKeyNewsApi}`;
-            try {
-                const response = await axios.get(queryUrl);
-                functions.logger.log(`[DIAGNÓSTICO NewsAPI] API respondeu com ${response.data.articles?.length || 0} artigos.`);
-                if (response.data && response.data.articles) {
-                    for (const article of response.data.articles) {
-                        if (existingUrls.has(article.url)) continue;
-                        const matchedKeywords = findMatchingKeywords(article, keywordsList);
-                        if (matchedKeywords.length > 0) {
-                            functions.logger.info(`[DIAGNÓSTICO NewsAPI] CORRESPONDÊNCIA ENCONTRADA: "${article.title}"`);
-                            const normalized = normalizeArticle(article, 'newsapi');
-                            if (normalized) {
-                                const pendingAlertRef = db.collection(`artifacts/${APP_ID}/public/data/pendingAlerts`).doc();
-                                batch.set(pendingAlertRef, { ...normalized, keywords: matchedKeywords, companyId, companyName, status: "pending" });
-                                existingUrls.add(article.url);
-                                articlesToSaveCount++;
+            // --- Busca no YouTube ---
+            if (settings.apiKeyYoutube) {
+                const queryUrl = `${YOUTUBE_URL}?part=snippet&q=${encodeURIComponent(searchQuery)}&type=video&relevanceLanguage=pt&regionCode=BR&maxResults=10&key=${settings.apiKeyYoutube}`;
+                try {
+                    const response = await axios.get(queryUrl);
+                    if (response.data && response.data.items) {
+                        for (const item of response.data.items) {
+                            const videoUrl = `https://www.youtube.com/watch?v=${item.id.videoId}`;
+                            if (existingUrls.has(videoUrl)) continue;
+                            const matchedKeywords = findMatchingKeywords(item.snippet, [keyword]);
+                            if (matchedKeywords.length > 0) {
+                                const normalized = normalizeArticle(item, 'youtube');
+                                if (normalized) {
+                                    const pendingAlertRef = db.collection(`artifacts/${APP_ID}/public/data/pendingAlerts`).doc();
+                                    batch.set(pendingAlertRef, { ...normalized, keywords: matchedKeywords, companyId, companyName, status: "pending" });
+                                    existingUrls.add(videoUrl);
+                                    articlesToSaveCount++;
+                                }
                             }
                         }
                     }
-                }
-            } catch (e) { functions.logger.error(`Erro na API NewsAPI para ${companyName}:`, e.message); }
-        }
-
-        // --- Busca no YouTube ---
-        if (settings.apiKeyYoutube) {
-            const queryUrl = `${YOUTUBE_URL}?part=snippet&q=${encodeURIComponent(searchQuery)}&type=video&relevanceLanguage=pt&regionCode=BR&maxResults=10&key=${settings.apiKeyYoutube}`;
-            try {
-                const response = await axios.get(queryUrl);
-                functions.logger.log(`[DIAGNÓSTICO YouTube] API respondeu com ${response.data.items?.length || 0} vídeos.`);
-                if (response.data && response.data.items) {
-                    for (const item of response.data.items) {
-                        const videoUrl = `https://www.youtube.com/watch?v=${item.id.videoId}`;
-                        if (existingUrls.has(videoUrl)) continue;
-                        const matchedKeywords = findMatchingKeywords(item.snippet, keywordsList);
-                        if (matchedKeywords.length > 0) {
-                            functions.logger.info(`[DIAGNÓSTICO YouTube] CORRESPONDÊNCIA ENCONTRADA: "${item.snippet.title}"`);
-                            const normalized = normalizeArticle(item, 'youtube');
-                            if (normalized) {
-                                const pendingAlertRef = db.collection(`artifacts/${APP_ID}/public/data/pendingAlerts`).doc();
-                                batch.set(pendingAlertRef, { ...normalized, keywords: matchedKeywords, companyId, companyName, status: "pending" });
-                                existingUrls.add(videoUrl);
-                                articlesToSaveCount++;
-                            }
-                        }
-                    }
-                }
-            } catch (e) { functions.logger.error(`Erro na API do YouTube para ${companyName}:`, e.message); }
-        }
-    }
+                } catch (e) { functions.logger.error(`Erro YouTube (keyword: ${keyword}):`, e.message); }
+            }
+        } // Fim do loop de palavras-chave
+    } // Fim do loop de empresas
     
     if (articlesToSaveCount > 0) {
         await batch.commit();
@@ -214,6 +210,7 @@ async function fetchAllNews() {
     return { success: true, totalSaved: articlesToSaveCount };
 }
 
+// --- Funções Principais (Callable e Scheduled) ---
 
 exports.manualFetch = regionalFunctions.https.onCall(async (data, context) => {
     try {
@@ -236,26 +233,19 @@ exports.scheduledFetch = regionalFunctions.pubsub.schedule("every 30 minutes")
     }
 });
 
+// O restante das funções (approveAlert, rejectAlert, etc.) permanecem as mesmas.
+// O código completo está oculto por brevidade, mas use a versão anterior.
+
 exports.approveAlert = regionalFunctions.https.onCall(async (data, context) => {
     const { appId, alertId } = data;
-    if (!appId || !alertId) {
-      throw new functions.https.HttpsError("invalid-argument", "O ID da aplicação e do alerta são necessários.");
-    }
+    if (!appId || !alertId) { throw new functions.https.HttpsError("invalid-argument", "O ID da aplicação e do alerta são necessários."); }
     const pendingAlertRef = db.doc(`artifacts/${appId}/public/data/pendingAlerts/${alertId}`);
     const pendingAlertDoc = await pendingAlertRef.get();
-    if (!pendingAlertDoc.exists) {
-      throw new functions.https.HttpsError("not-found", "Alerta pendente não encontrado.");
-    }
+    if (!pendingAlertDoc.exists) { throw new functions.https.HttpsError("not-found", "Alerta pendente não encontrado."); }
     const alertData = pendingAlertDoc.data();
-    if (!alertData) {
-      throw new functions.https.HttpsError("internal", "Dados do alerta estão corrompidos.");
-    }
+    if (!alertData) { throw new functions.https.HttpsError("internal", "Dados do alerta estão corrompidos."); }
     const companyId = alertData.companyId;
-    await db.collection(`artifacts/${appId}/users/${companyId}/articles`).add({
-      ...alertData,
-      status: "approved",
-      approvedAt: admin.firestore.FieldValue.serverTimestamp(),
-    });
+    await db.collection(`artifacts/${appId}/users/${companyId}/articles`).add({ ...alertData, status: "approved", approvedAt: admin.firestore.FieldValue.serverTimestamp() });
     await pendingAlertRef.delete();
     const settingsRef = db.doc(`artifacts/${appId}/public/data/settings/${companyId}`);
     await db.runTransaction(async (transaction) => {
@@ -268,9 +258,7 @@ exports.approveAlert = regionalFunctions.https.onCall(async (data, context) => {
 
 exports.rejectAlert = regionalFunctions.https.onCall(async (data, context) => {
     const { appId, alertId } = data;
-    if (!appId || !alertId) {
-      throw new functions.https.HttpsError("invalid-argument", "O ID da aplicação e do alerta são necessários.");
-    }
+    if (!appId || !alertId) { throw new functions.https.HttpsError("invalid-argument", "O ID da aplicação e do alerta são necessários."); }
     const pendingAlertRef = db.doc(`artifacts/${appId}/public/data/pendingAlerts/${alertId}`);
     await pendingAlertRef.delete();
     return { success: true };
@@ -278,9 +266,7 @@ exports.rejectAlert = regionalFunctions.https.onCall(async (data, context) => {
 
 async function deleteCollection(collectionRef) {
     const snapshot = await collectionRef.get();
-    if (snapshot.size === 0) {
-        return;
-    }
+    if (snapshot.size === 0) return;
     const batch = db.batch();
     snapshot.docs.forEach(doc => batch.delete(doc.ref));
     await batch.commit();
@@ -288,9 +274,7 @@ async function deleteCollection(collectionRef) {
 
 exports.deleteCompany = regionalFunctions.https.onCall(async (data, context) => {
     const { appId, companyId } = data;
-    if (!appId || !companyId) {
-      throw new functions.https.HttpsError("invalid-argument", "O ID da aplicação e da empresa são necessários.");
-    }
+    if (!appId || !companyId) { throw new functions.https.HttpsError("invalid-argument", "O ID da aplicação e da empresa são necessários."); }
     await deleteCollection(db.collection(`artifacts/${appId}/users/${companyId}/users`));
     await deleteCollection(db.collection(`artifacts/${appId}/users/${companyId}/keywords`));
     await deleteCollection(db.collection(`artifacts/${appId}/users/${companyId}/articles`));
@@ -309,14 +293,10 @@ exports.deleteCompany = regionalFunctions.https.onCall(async (data, context) => 
 
 exports.deleteKeywordAndArticles = regionalFunctions.https.onCall(async (data, context) => {
     const { appId, companyId, keyword } = data;
-    if (!appId || !companyId || !keyword) {
-        throw new functions.https.HttpsError("invalid-argument", "ID da aplicação, da empresa e palavra-chave são necessários.");
-    }
+    if (!appId || !companyId || !keyword) { throw new functions.https.HttpsError("invalid-argument", "ID da aplicação, da empresa e palavra-chave são necessários."); }
     const articlesToDelete = await db.collection(`artifacts/${appId}/users/${companyId}/articles`).where("keywords", "array-contains", keyword).get();
     const batch = db.batch();
-    articlesToDelete.docs.forEach(doc => {
-        batch.delete(doc.ref);
-    });
+    articlesToDelete.docs.forEach(doc => { batch.delete(doc.ref); });
     await batch.commit();
     const keywordRef = await db.collection(`artifacts/${appId}/users/${companyId}/keywords`).where("word", "==", keyword).get();
     if (!keywordRef.empty) {
@@ -327,18 +307,12 @@ exports.deleteKeywordAndArticles = regionalFunctions.https.onCall(async (data, c
 
 exports.manageDeletionRequest = regionalFunctions.https.onCall(async (data, context) => {
     const { appId, requestId, approve } = data;
-    if (!appId || !requestId) {
-      throw new functions.https.HttpsError("invalid-argument", "O ID da aplicação e da solicitação são necessários.");
-    }
+    if (!appId || !requestId) { throw new functions.https.HttpsError("invalid-argument", "O ID da aplicação e da solicitação são necessários."); }
     const requestRef = db.doc(`artifacts/${appId}/public/data/deletionRequests/${requestId}`);
     const requestDoc = await requestRef.get();
-    if (!requestDoc.exists) {
-      throw new functions.https.HttpsError("not-found", "Solicitação de exclusão não encontrada.");
-    }
+    if (!requestDoc.exists) { throw new functions.https.HttpsError("not-found", "Solicitação de exclusão não encontrada."); }
     const requestData = requestDoc.data();
-    if (!requestData) {
-      throw new functions.https.HttpsError("internal", "Dados da solicitação estão corrompidos.");
-    }
+    if (!requestData) { throw new functions.https.HttpsError("internal", "Dados da solicitação estão corrompidos."); }
     const articleRef = db.doc(`artifacts/${appId}/users/${requestData.companyId}/articles/${requestData.articleId}`);
     if (approve) {
       await articleRef.delete();
@@ -352,18 +326,8 @@ exports.manageDeletionRequest = regionalFunctions.https.onCall(async (data, cont
 
 exports.requestAlertDeletion = regionalFunctions.https.onCall(async (data, context) => {
     const { appId, companyId, companyName, articleId, articleTitle, justification } = data;
-    if (!appId || !companyId || !articleId || !justification) {
-      throw new functions.https.HttpsError("invalid-argument", "Informações incompletas para a solicitação de exclusão.");
-    }
-    await db.collection(`artifacts/${appId}/public/data/deletionRequests`).add({
-      companyId,
-      companyName,
-      articleId,
-      articleTitle,
-      justification,
-      status: "pending",
-      requestedAt: admin.firestore.FieldValue.serverTimestamp(),
-    });
+    if (!appId || !companyId || !articleId || !justification) { throw new functions.https.HttpsError("invalid-argument", "Informações incompletas para a solicitação de exclusão."); }
+    await db.collection(`artifacts/${appId}/public/data/deletionRequests`).add({ companyId, companyName, articleId, articleTitle, justification, status: "pending", requestedAt: admin.firestore.FieldValue.serverTimestamp() });
     const articleRef = db.doc(`artifacts/${appId}/users/${companyId}/articles/${articleId}`);
     await articleRef.update({ deletionRequestStatus: 'pending' });
     return { success: true };
@@ -371,25 +335,11 @@ exports.requestAlertDeletion = regionalFunctions.https.onCall(async (data, conte
 
 exports.manualAddAlert = regionalFunctions.https.onCall(async (data, context) => {
     const { appId, companyId, title, description, url, source, keywords } = data;
-    if (!appId || !companyId || !title || !url || !source || !keywords || !Array.isArray(keywords) || keywords.length === 0) {
-        throw new functions.https.HttpsError("invalid-argument", "Dados incompletos ou inválidos para adicionar um alerta.");
-    }
+    if (!appId || !companyId || !title || !url || !source || !keywords || !Array.isArray(keywords) || keywords.length === 0) { throw new functions.https.HttpsError("invalid-argument", "Dados incompletos ou inválidos para adicionar um alerta."); }
     const companyDoc = await db.doc(`artifacts/${appId}/public/data/companies/${companyId}`).get();
-    if (!companyDoc.exists) {
-        throw new functions.https.HttpsError("not-found", "Empresa não encontrada.");
-    }
+    if (!companyDoc.exists) { throw new functions.https.HttpsError("not-found", "Empresa não encontrada."); }
     const companyName = companyDoc.data()?.name;
-    const alertData = {
-        title,
-        description,
-        url,
-        source: { name: source, url: "" },
-        publishedAt: admin.firestore.FieldValue.serverTimestamp(),
-        keywords: keywords,
-        companyId,
-        companyName,
-        status: "approved",
-    };
+    const alertData = { title, description, url, source: { name: source, url: "" }, publishedAt: admin.firestore.FieldValue.serverTimestamp(), keywords, companyId, companyName, status: "approved", };
     await db.collection(`artifacts/${appId}/users/${companyId}/articles`).add(alertData);
     const settingsRef = db.doc(`artifacts/${appId}/public/data/settings/${companyId}`);
     await db.runTransaction(async (transaction) => {
