@@ -69,9 +69,8 @@
     <header class="bg-white shadow-md">
         <nav class="container mx-auto px-4 sm:px-6 py-3 flex justify-between items-center">
             <a href="#" id="logo-link" class="cursor-pointer">
+                <!-- CORREÇÃO 5: Removido o texto "Aurora clipping" para evitar o flash na atualização da página. O JS irá preencher esta área. -->
                 <div id="global-logo-area" class="text-xl sm:text-2xl font-bold text-indigo-600 flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline-block mr-2 h-7 w-7 sm:h-8 sm:w-8"><path d="M2.5 17a2.4 2.4 0 0 1 3 0L12 23l6.5-6.5a2.4 2.4 0 0 1 3 0Z"/><path d="M5 11.5a2.5 2.5 0 0 1 0-5c1.5 0 2.8 1.3 2.8 2.8V13c0 1.4-1.3 2.8-2.8 2.8-1.5 0-2.8-1.3-2.8-2.8V8.5"/><path d="M19 11.5a2.5 2.5 0 0 0 0-5c-1.5 0-2.8 1.3-2.8 2.8V13c0 1.4 1.3 2.8 2.8 2.8 1.5 0-2.8-1.3-2.8-2.8V8.5"/></svg>
-                    Aurora clipping
                 </div>
             </a>
             <div class="flex items-center">
@@ -2078,8 +2077,9 @@
             if (btnSuperAdminReport) btnSuperAdminReport.addEventListener('click', () => updateView('super-admin-report'));
             if (backToDashboard1) backToDashboard1.addEventListener('click', () => updateView('dashboard'));
             if (backToDashboard2) backToDashboard2.addEventListener('click', () => updateView('dashboard'));
-            if (backToDashboard3) backToDashboard3.addEventListener('click', () => updateView('super-admin-report'));
-            if (backFromDetail) backFromDetail.addEventListener('click', () => window.history.back());
+            if (backToDashboard3) backToDashboard3.addEventListener('click', () => updateView('dashboard'));
+            // CORREÇÃO 4: O botão voltar agora direciona para o dashboard, garantindo um comportamento consistente.
+            if (backFromDetail) backFromDetail.addEventListener('click', () => updateView('dashboard')); 
             if (backToSuperAdminReportBtn) backToSuperAdminReportBtn.addEventListener('click', () => updateView('super-admin-report'));
             if (manualAlertForm) manualAlertForm.addEventListener('submit', handleManualAlertSubmit);
             const manualAlertCompanySelect = document.getElementById('manual-alert-company');

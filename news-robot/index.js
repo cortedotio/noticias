@@ -19,7 +19,13 @@ const YOUTUBE_URL = "https://www.googleapis.com/youtube/v3/search";
 const RSS2JSON_URL = "https://api.rss2json.com/v1/api.json";
 const APP_ID = "noticias-6e952";
 
-const regionalFunctions = functions.region("southamerica-east1");
+// CORREÇÃO 6: Aumenta o tempo limite da função para 5 minutos (300 segundos) para evitar timeouts.
+const runtimeOpts = {
+  timeoutSeconds: 300,
+  memory: '1GB'
+};
+const regionalFunctions = functions.region("southamerica-east1").runWith(runtimeOpts);
+
 
 // --- Funções Auxiliares ---
 
@@ -130,8 +136,11 @@ async function fetchAllNews() {
         const keywordsList = keywordsSnapshot.docs.map(doc => doc.data().word);
         
         for (const keyword of keywordsList) {
-            await delay(1000);
+            await delay(1000); // Pausa para evitar erro 429
             const searchQuery = `"${keyword}"`;
+            
+            // ATENÇÃO: A lógica para NewsAPI, Blogger, RSS e YouTube precisa ser adicionada aqui.
+            // O código abaixo é apenas para GNews, como no seu arquivo original.
             
             // Busca no GNews
             if (settings.apiKeyGNews1) {
@@ -332,13 +341,17 @@ exports.generateSuperAdminReport = regionalFunctions.https.onCall(async (data, c
     if (!appId) {
         throw new functions.https.HttpsError("invalid-argument", "O ID da aplicação é necessário.");
     }
+    functions.logger.info("Iniciando geração do relatório geral de empresas...");
     const companiesSnapshot = await db.collection(`artifacts/${appId}/public/data/companies`).get();
     const reportData = [];
     for (const companyDoc of companiesSnapshot.docs) {
       const companyId = companyDoc.id;
       const companyName = companyDoc.data().name;
+      functions.logger.info(`Processando relatório para: ${companyName} (ID: ${companyId})`);
+      
       const articlesSnapshot = await db.collection(`artifacts/${appId}/users/${companyId}/articles`).get();
       const totalAlerts = articlesSnapshot.size;
+      
       let positiveCount = 0, neutralCount = 0, negativeCount = 0;
       const channelCounts = {}, vehicleCounts = {};
       
@@ -368,5 +381,6 @@ exports.generateSuperAdminReport = regionalFunctions.https.onCall(async (data, c
       const topVehicle = getTopCount(vehicleCounts);
       reportData.push({ companyId, companyName, totalAlerts, sentimentPercentage, predominantSentiment, topChannel, topVehicle });
     }
+    functions.logger.info("Relatório geral gerado com sucesso.");
     return reportData;
 });
