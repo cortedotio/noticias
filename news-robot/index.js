@@ -1,7 +1,6 @@
 /**
  * IMPORTANTE: Este é o código COMPLETO e ATUALIZADO para o servidor (Firebase Cloud Functions).
- * * Nenhuma alteração de lógica foi feita nesta versão, mas é crucial garantir que esta
- * * versão, que contém correções de estabilidade para o relatório, esteja em produção.
+ * * Esta versão contém LOGS DE DIAGNÓSTICO para investigar por que os alertas não estão sendo capturados.
  */
 
 const functions = require("firebase-functions");
@@ -23,17 +22,10 @@ const regionalFunctions = functions.region("southamerica-east1");
 
 // --- Funções Auxiliares ---
 
-/**
- * Procura por TODAS as palavras-chave correspondentes no título ou no corpo de um artigo.
- * @param {object} article O artigo da notícia.
- * @param {string[]} keywords A lista de palavras-chave a procurar.
- * @returns {string[]} Um array com todas as palavras-chave encontradas.
- */
 const findMatchingKeywords = (article, keywords) => {
     const title = (article.title || "").toLowerCase();
     const bodyText = (article.description || article.content || "").toLowerCase();
 
-    // Filtra para encontrar todas as palavras-chave que correspondem
     const matchedKeywords = keywords.filter(kw => {
         const lowerCaseKw = kw.toLowerCase();
         return title.includes(lowerCaseKw) || bodyText.includes(lowerCaseKw);
@@ -42,63 +34,41 @@ const findMatchingKeywords = (article, keywords) => {
     return matchedKeywords;
 };
 
-
-// Função para normalizar artigos de diferentes fontes para um formato padrão
 function normalizeArticle(article, sourceApi) {
     try {
         switch (sourceApi) {
             case 'gnews':
                 return {
-                    title: article.title,
-                    description: article.description,
-                    url: article.url,
-                    image: article.image || null,
+                    title: article.title, description: article.description, url: article.url, image: article.image || null,
                     publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.publishedAt)),
-                    source: { name: article.source.name, url: article.source.url },
-                    author: article.author || null,
+                    source: { name: article.source.name, url: article.source.url }, author: article.author || null,
                 };
             case 'newsapi':
                 return {
-                    title: article.title,
-                    description: article.description,
-                    url: article.url,
-                    image: article.urlToImage || null,
+                    title: article.title, description: article.description, url: article.url, image: article.urlToImage || null,
                     publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.publishedAt)),
-                    source: { name: article.source.name, url: null },
-                    author: article.author || null,
+                    source: { name: article.source.name, url: null }, author: article.author || null,
                 };
             case 'blogger':
                 return {
-                    title: article.title,
-                    description: (article.content || "").substring(0, 250).replace(/<[^>]*>?/gm, '') + '...',
-                    url: article.url,
-                    image: null,
-                    publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.published)),
-                    source: { name: article.blog.name || 'Blogger', url: article.url },
-                    author: article.author?.displayName || null,
+                    title: article.title, description: (article.content || "").substring(0, 250).replace(/<[^>]*>?/gm, '') + '...',
+                    url: article.url, image: null, publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.published)),
+                    source: { name: article.blog.name || 'Blogger', url: article.url }, author: article.author?.displayName || null,
                 };
             case 'rss':
                 return {
-                    title: article.title,
-                    description: (article.description || "").substring(0, 250).replace(/<[^>]*>?/gm, '') + '...',
-                    url: article.link,
-                    image: article.thumbnail || null,
-                    publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.pubDate)),
-                    source: { name: article.author || 'RSS Feed', url: article.link },
-                    author: article.author || null,
+                    title: article.title, description: (article.description || "").substring(0, 250).replace(/<[^>]*>?/gm, '') + '...',
+                    url: article.link, image: article.thumbnail || null, publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.pubDate)),
+                    source: { name: article.author || 'RSS Feed', url: article.link }, author: article.author || null,
                 };
             case 'youtube':
                 return {
-                    title: article.snippet.title,
-                    description: article.snippet.description,
-                    url: `http://googleusercontent.com/youtube.com/5{article.id.videoId}`,
+                    title: article.snippet.title, description: article.snippet.description, url: `https://www.youtube.com/watch?v=${article.id.videoId}`,
                     image: article.snippet.thumbnails.high.url || null,
                     publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.snippet.publishedAt)),
-                    source: { name: 'YouTube', url: `http://googleusercontent.com/youtube.com/6{article.snippet.channelId}` },
-                    author: article.snippet.channelTitle || null,
+                    source: { name: 'YouTube', url: `https://www.youtube.com/channel/${article.snippet.channelId}` }, author: article.snippet.channelTitle || null,
                 };
-            default:
-                return null;
+            default: return null;
         }
     } catch (e) {
         functions.logger.error(`Erro ao normalizar artigo da fonte ${sourceApi}:`, e);
@@ -106,10 +76,6 @@ function normalizeArticle(article, sourceApi) {
     }
 }
 
-
-/**
- * Função principal e centralizada para buscar notícias de todas as fontes.
- */
 async function fetchAllNews() {
     functions.logger.info("=======================================");
     functions.logger.info("INICIANDO BUSCA DE NOTÍCIAS MULTI-FONTE...");
@@ -138,13 +104,11 @@ async function fetchAllNews() {
         const existingUrls = new Set();
         const articlesQuery = db.collection(`artifacts/${APP_ID}/users/${companyId}/articles`).select('url');
         const pendingQuery = db.collection(`artifacts/${APP_ID}/public/data/pendingAlerts`).where('companyId', '==', companyId).select('url');
-
         const [articlesSnapshot, pendingSnapshot] = await Promise.all([articlesQuery.get(), pendingQuery.get()]);
         
         articlesSnapshot.forEach(doc => existingUrls.add(doc.data().url));
         pendingSnapshot.forEach(doc => existingUrls.add(doc.data().url));
-        functions.logger.info(`Encontradas ${existingUrls.size} URLs existentes para ${companyName}.`);
-
+        
         const keywordsSnapshot = await db.collection(`artifacts/${APP_ID}/users/${companyId}/keywords`).get();
         if (keywordsSnapshot.empty) {
             functions.logger.warn(`Nenhuma palavra-chave para a empresa ${companyName}, a saltar.`);
@@ -153,13 +117,93 @@ async function fetchAllNews() {
 
         const keywordsList = keywordsSnapshot.docs.map(doc => doc.data().word);
         const searchQuery = keywordsList.map(kw => `"${kw}"`).join(" OR ");
-
-        // Lógica para buscar em GNews, NewsAPI, YouTube, RSS, Blogger...
-        // (O código para as buscas permanece o mesmo da versão anterior)
         
-        // ... (código das buscas omitido por brevidade, mas é o mesmo da resposta anterior)
-        // A lógica de busca em todas as fontes já está implementada aqui.
+        functions.logger.log(`[DIAGNÓSTICO] Buscando por: "${searchQuery}" para a empresa ${companyName}`);
 
+        // --- Busca no GNews ---
+        if (settings.apiKeyGNews1) {
+            const currentHour = new Date().getHours();
+            let gnewsApiKey = '';
+            if (currentHour >= 0 && currentHour < 6) gnewsApiKey = settings.apiKeyGNews1;
+            else if (currentHour >= 6 && currentHour < 12) gnewsApiKey = settings.apiKeyGNews2;
+            else if (currentHour >= 12 && currentHour < 18) gnewsApiKey = settings.apiKeyGNews3;
+            else gnewsApiKey = settings.apiKeyGNews4;
+
+            if(gnewsApiKey) {
+                const queryUrl = `${GNEWS_URL}?q=${encodeURIComponent(searchQuery)}&lang=pt&country=br&token=${gnewsApiKey}`;
+                try {
+                    const response = await axios.get(queryUrl);
+                    functions.logger.log(`[DIAGNÓSTICO GNews] API respondeu com ${response.data.articles?.length || 0} artigos.`);
+                    if (response.data && response.data.articles) {
+                        for (const article of response.data.articles) {
+                            if (existingUrls.has(article.url)) continue;
+                            const matchedKeywords = findMatchingKeywords(article, keywordsList);
+                            if (matchedKeywords.length > 0) {
+                                functions.logger.info(`[DIAGNÓSTICO GNews] CORRESPONDÊNCIA ENCONTRADA: "${article.title}"`);
+                                const normalized = normalizeArticle(article, 'gnews');
+                                if (normalized) {
+                                    const pendingAlertRef = db.collection(`artifacts/${APP_ID}/public/data/pendingAlerts`).doc();
+                                    batch.set(pendingAlertRef, { ...normalized, keywords: matchedKeywords, companyId, companyName, status: "pending" });
+                                    existingUrls.add(article.url);
+                                    articlesToSaveCount++;
+                                }
+                            }
+                        }
+                    }
+                } catch (e) { functions.logger.error(`Erro na API GNews para ${companyName}:`, e.message); }
+            }
+        }
+
+        // --- Busca no NewsAPI ---
+        if (settings.apiKeyNewsApi) {
+            const queryUrl = `${NEWSAPI_URL}?q=${encodeURIComponent(searchQuery)}&language=pt&apiKey=${settings.apiKeyNewsApi}`;
+            try {
+                const response = await axios.get(queryUrl);
+                functions.logger.log(`[DIAGNÓSTICO NewsAPI] API respondeu com ${response.data.articles?.length || 0} artigos.`);
+                if (response.data && response.data.articles) {
+                    for (const article of response.data.articles) {
+                        if (existingUrls.has(article.url)) continue;
+                        const matchedKeywords = findMatchingKeywords(article, keywordsList);
+                        if (matchedKeywords.length > 0) {
+                            functions.logger.info(`[DIAGNÓSTICO NewsAPI] CORRESPONDÊNCIA ENCONTRADA: "${article.title}"`);
+                            const normalized = normalizeArticle(article, 'newsapi');
+                            if (normalized) {
+                                const pendingAlertRef = db.collection(`artifacts/${APP_ID}/public/data/pendingAlerts`).doc();
+                                batch.set(pendingAlertRef, { ...normalized, keywords: matchedKeywords, companyId, companyName, status: "pending" });
+                                existingUrls.add(article.url);
+                                articlesToSaveCount++;
+                            }
+                        }
+                    }
+                }
+            } catch (e) { functions.logger.error(`Erro na API NewsAPI para ${companyName}:`, e.message); }
+        }
+
+        // --- Busca no YouTube ---
+        if (settings.apiKeyYoutube) {
+            const queryUrl = `${YOUTUBE_URL}?part=snippet&q=${encodeURIComponent(searchQuery)}&type=video&relevanceLanguage=pt&regionCode=BR&maxResults=10&key=${settings.apiKeyYoutube}`;
+            try {
+                const response = await axios.get(queryUrl);
+                functions.logger.log(`[DIAGNÓSTICO YouTube] API respondeu com ${response.data.items?.length || 0} vídeos.`);
+                if (response.data && response.data.items) {
+                    for (const item of response.data.items) {
+                        const videoUrl = `https://www.youtube.com/watch?v=${item.id.videoId}`;
+                        if (existingUrls.has(videoUrl)) continue;
+                        const matchedKeywords = findMatchingKeywords(item.snippet, keywordsList);
+                        if (matchedKeywords.length > 0) {
+                            functions.logger.info(`[DIAGNÓSTICO YouTube] CORRESPONDÊNCIA ENCONTRADA: "${item.snippet.title}"`);
+                            const normalized = normalizeArticle(item, 'youtube');
+                            if (normalized) {
+                                const pendingAlertRef = db.collection(`artifacts/${APP_ID}/public/data/pendingAlerts`).doc();
+                                batch.set(pendingAlertRef, { ...normalized, keywords: matchedKeywords, companyId, companyName, status: "pending" });
+                                existingUrls.add(videoUrl);
+                                articlesToSaveCount++;
+                            }
+                        }
+                    }
+                }
+            } catch (e) { functions.logger.error(`Erro na API do YouTube para ${companyName}:`, e.message); }
+        }
     }
     
     if (articlesToSaveCount > 0) {
@@ -170,9 +214,6 @@ async function fetchAllNews() {
     return { success: true, totalSaved: articlesToSaveCount };
 }
 
-// O restante do arquivo (exports.manualFetch, exports.scheduledFetch, etc.) permanece o mesmo da versão anterior.
-// É crucial garantir que a função generateSuperAdminReport e suas funções auxiliares (getTopCount)
-// que contêm as validações para evitar o erro "INTERNAL" estejam presentes.
 
 exports.manualFetch = regionalFunctions.https.onCall(async (data, context) => {
     try {
@@ -194,7 +235,6 @@ exports.scheduledFetch = regionalFunctions.pubsub.schedule("every 30 minutes")
         return null;
     }
 });
-
 
 exports.approveAlert = regionalFunctions.https.onCall(async (data, context) => {
     const { appId, alertId } = data;
@@ -360,14 +400,6 @@ exports.manualAddAlert = regionalFunctions.https.onCall(async (data, context) =>
     return { success: true };
 });
 
-function getChannelCategory(sourceName) {
-    const name = (sourceName || "").toLowerCase();
-    if (name.includes('youtube')) return 'YouTube';
-    if (name.includes('globo') || name.includes('g1') || name.includes('uol') || name.includes('terra') || name.includes('r7')) return 'Sites';
-    if (name.includes('veja') || name.includes('istoé') || name.includes('exame')) return 'Revistas';
-    if (name.includes('cbn') || name.includes('bandeirantes')) return 'Rádios';
-    return 'Sites';
-}
 function getPredominantSentiment(percentages) {
     if (percentages.positive > percentages.neutral && percentages.positive > percentages.negative) return 'Positivo';
     if (percentages.negative > percentages.positive && percentages.negative > percentages.neutral) return 'Negativo';
@@ -390,11 +422,8 @@ exports.generateSuperAdminReport = regionalFunctions.https.onCall(async (data, c
       const companyName = companyDoc.data().name;
       const articlesSnapshot = await db.collection(`artifacts/${appId}/users/${companyId}/articles`).get();
       const totalAlerts = articlesSnapshot.size;
-      let positiveCount = 0;
-      let neutralCount = 0;
-      let negativeCount = 0;
-      const channelCounts = {};
-      const vehicleCounts = {};
+      let positiveCount = 0, neutralCount = 0, negativeCount = 0;
+      const channelCounts = {}, vehicleCounts = {};
       
       if (articlesSnapshot.size > 0) {
           articlesSnapshot.docs.forEach(doc => {
@@ -412,15 +441,15 @@ exports.generateSuperAdminReport = regionalFunctions.https.onCall(async (data, c
 
       const totalSentiments = positiveCount + neutralCount + negativeCount;
       const sentimentPercentage = {
-        positive: totalSentiments > 0 ? parseFloat((positiveCount / totalSentiments * 100).toFixed(2)) : 0,
-        neutral: totalSentiments > 0 ? parseFloat((neutralCount / totalSentiments * 100).toFixed(2)) : 0,
-        negative: totalSentiments > 0 ? parseFloat((negativeCount / totalSentiments * 100).toFixed(2)) : 0,
+        positive: totalSentiments > 0 ? parseFloat(((positiveCount / totalSentiments) * 100).toFixed(2)) : 0,
+        neutral: totalSentiments > 0 ? parseFloat(((neutralCount / totalSentiments) * 100).toFixed(2)) : 0,
+        negative: totalSentiments > 0 ? parseFloat(((negativeCount / totalSentiments) * 100).toFixed(2)) : 0,
       };
       
       const predominantSentiment = getPredominantSentiment(sentimentPercentage);
       const topChannel = getTopCount(channelCounts);
       const topVehicle = getTopCount(vehicleCounts);
-      reportData.push({ companyName, totalAlerts, sentimentPercentage, predominantSentiment, topChannel, topVehicle });
+      reportData.push({ companyId, companyName, totalAlerts, sentimentPercentage, predominantSentiment, topChannel, topVehicle });
     }
     return reportData;
 });
