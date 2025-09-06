@@ -116,7 +116,8 @@ async function fetchAllNews() {
 
         const companySettingsRef = db.doc(`artifacts/${APP_ID}/public/data/settings/${companyId}`);
         const companySettingsDoc = await companySettingsRef.get();
-        const fetchOnlyNew = companySettingsDoc.exists() && companySettingsDoc.data().fetchOnlyNew === true;
+        // CORREÇÃO: trocado .exists() por .exists
+        const fetchOnlyNew = companySettingsDoc.exists && companySettingsDoc.data().fetchOnlyNew === true;
         
         if (fetchOnlyNew) {
             functions.logger.log(`[FILTRO ATIVO] Para ${companyName}, buscando apenas notícias das últimas 24 horas.`);
@@ -320,6 +321,7 @@ exports.approveAlert = regionalFunctions.https.onCall(async (data, context) => {
     if (!appId || !alertId) { throw new functions.https.HttpsError("invalid-argument", "O ID da aplicação e do alerta são necessários."); }
     const pendingAlertRef = db.doc(`artifacts/${appId}/public/data/pendingAlerts/${alertId}`);
     const pendingAlertDoc = await pendingAlertRef.get();
+    // CORREÇÃO: trocado .exists() por .exists
     if (!pendingAlertDoc.exists) { throw new functions.https.HttpsError("not-found", "Alerta pendente não encontrado."); }
     const alertData = pendingAlertDoc.data();
     if (!alertData) { throw new functions.https.HttpsError("internal", "Dados do alerta estão corrompidos."); }
@@ -389,6 +391,7 @@ exports.manageDeletionRequest = regionalFunctions.https.onCall(async (data, cont
     if (!appId || !requestId) { throw new functions.https.HttpsError("invalid-argument", "O ID da aplicação e da solicitação são necessários."); }
     const requestRef = db.doc(`artifacts/${appId}/public/data/deletionRequests/${requestId}`);
     const requestDoc = await requestRef.get();
+    // CORREÇÃO: trocado .exists() por .exists
     if (!requestDoc.exists) { throw new functions.https.HttpsError("not-found", "Solicitação de exclusão não encontrada."); }
     const requestData = requestDoc.data();
     if (!requestData) { throw new functions.https.HttpsError("internal", "Dados da solicitação estão corrompidos."); }
@@ -416,6 +419,7 @@ exports.manualAddAlert = regionalFunctions.https.onCall(async (data, context) =>
     const { appId, companyId, title, description, url, source, keywords } = data;
     if (!appId || !companyId || !title || !url || !source || !keywords || !Array.isArray(keywords) || keywords.length === 0) { throw new functions.https.HttpsError("invalid-argument", "Dados incompletos ou inválidos para adicionar um alerta."); }
     const companyDoc = await db.doc(`artifacts/${appId}/public/data/companies/${companyId}`).get();
+    // CORREÇÃO: trocado .exists() por .exists
     if (!companyDoc.exists) { throw new functions.https.HttpsError("not-found", "Empresa não encontrada."); }
     const companyName = companyDoc.data()?.name;
     const alertData = { title, description, url, source: { name: source, url: "" }, publishedAt: admin.firestore.FieldValue.serverTimestamp(), keywords, companyId, companyName, status: "approved", };
@@ -487,3 +491,4 @@ exports.generateSuperAdminReport = regionalFunctions.https.onCall(async (data, c
     functions.logger.info("Relatório geral gerado com sucesso.");
     return reportData;
 });
+
