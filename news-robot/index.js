@@ -256,6 +256,8 @@ async function fetchAllNews() {
             if (settings.rssUrl) {
                  const rssUrls = settings.rssUrl.split('\n').filter(url => url.trim() !== '');
                  for (const rss of rssUrls) {
+                     // CORREÇÃO: Adicionada pausa para evitar 429 no serviço de RSS
+                     await delay(1000);
                      const queryUrl = `${RSS2JSON_URL}?rss_url=${encodeURIComponent(rss)}`;
                      try {
                         const response = await axios.get(queryUrl);
@@ -491,4 +493,3 @@ exports.generateSuperAdminReport = regionalFunctions.https.onCall(async (data, c
     functions.logger.info("Relatório geral gerado com sucesso.");
     return reportData;
 });
-
