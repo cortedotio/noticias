@@ -1,7 +1,7 @@
 /**
  * IMPORTANTE: Este é o código COMPLETO e ATUALIZADO para o servidor (Firebase Cloud Functions).
- * * LÓGICA ATUAL: Busca cada palavra-chave individualmente e inclui uma pausa (delay) de 1 segundo
- * * entre cada busca para evitar o erro 429 (Too Many Requests) das APIs de notícias.
+ * * LÓGICA ATUAL: Busca cada palavra-chave individualmente, inclui uma pausa (delay) de 1 segundo
+ * * para evitar o erro 429, busca em TODAS as fontes e aplica um filtro de 24 horas quando solicitado.
  */
 
 const functions = require("firebase-functions");
@@ -88,6 +88,8 @@ async function fetchAllNews() {
         throw new Error("Configurações globais não encontradas.");
     }
     const settings = globalSettingsDoc.data();
+    
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
     const companiesSnapshot = await db.collection(`artifacts/${APP_ID}/public/data/companies`).where("status", "==", "active").get();
     if (companiesSnapshot.empty) {
@@ -102,6 +104,14 @@ async function fetchAllNews() {
         const companyId = companyDoc.id;
         const companyName = companyDoc.data().name;
         functions.logger.info(`--- A processar empresa: ${companyName} ---`);
+
+        const companySettingsRef = db.doc(`artifacts/${APP_ID}/public/data/settings/${companyId}`);
+        const companySettingsDoc = await companySettingsRef.get();
+        const fetchOnlyNew = companySettingsDoc.exists() && companySettingsDoc.data().fetchOnlyNew === true;
+        
+        if (fetchOnlyNew) {
+            functions.logger.log(`[FILTRO ATIVO] Para ${companyName}, buscando apenas notícias das últimas 24 horas.`);
+        }
 
         const existingUrls = new Set();
         const articlesQuery = db.collection(`artifacts/${APP_ID}/users/${companyId}/articles`).select('url');
@@ -120,11 +130,9 @@ async function fetchAllNews() {
         const keywordsList = keywordsSnapshot.docs.map(doc => doc.data().word);
         
         for (const keyword of keywordsList) {
-            await delay(1000); // Pausa de 1 segundo
-
+            await delay(1000);
             const searchQuery = `"${keyword}"`;
-            functions.logger.log(`[BUSCA INDIVIDUAL] Palavra-chave: "${keyword}" para a empresa ${companyName}`);
-
+            
             // Busca no GNews
             if (settings.apiKeyGNews1) {
                 const currentHour = new Date().getHours();
@@ -140,6 +148,7 @@ async function fetchAllNews() {
                         const response = await axios.get(queryUrl);
                         if (response.data && response.data.articles) {
                             for (const article of response.data.articles) {
+                                if (fetchOnlyNew && new Date(article.publishedAt) < twentyFourHoursAgo) continue;
                                 if (existingUrls.has(article.url)) continue;
                                 const matchedKeywords = findMatchingKeywords(article, [keyword]);
                                 if (matchedKeywords.length > 0) {
@@ -167,6 +176,9 @@ async function fetchAllNews() {
     return { success: true, totalSaved: articlesToSaveCount };
 }
 
+
+// --- Funções Principais (Callable e Scheduled) ---
+
 exports.manualFetch = regionalFunctions.https.onCall(async (data, context) => {
     try {
         return await fetchAllNews();
@@ -187,6 +199,9 @@ exports.scheduledFetch = regionalFunctions.pubsub.schedule("every 30 minutes")
         return null;
     }
 });
+
+
+// --- Outras Funções ---
 
 exports.approveAlert = regionalFunctions.https.onCall(async (data, context) => {
     const { appId, alertId } = data;
