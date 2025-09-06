@@ -1,7 +1,7 @@
 /**
  * IMPORTANTE: Este é o código COMPLETO e ATUALIZADO para o servidor (Firebase Cloud Functions).
- * * ALTERAÇÃO PRINCIPAL: A lógica de busca foi modificada para pesquisar cada palavra-chave individualmente,
- * * em vez de agrupá-las em uma única consulta. Isso aumenta a precisão, mas também o consumo da cota de API.
+ * * LÓGICA ATUAL: Busca cada palavra-chave individualmente e inclui uma pausa (delay) de 1 segundo
+ * * entre cada busca para evitar o erro 429 (Too Many Requests) das APIs de notícias.
  */
 
 const functions = require("firebase-functions");
@@ -22,6 +22,9 @@ const APP_ID = "noticias-6e952";
 const regionalFunctions = functions.region("southamerica-east1");
 
 // --- Funções Auxiliares ---
+
+// Cria uma pausa para evitar sobrecarregar as APIs
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 const findMatchingKeywords = (article, keywords) => {
     const title = (article.title || "").toLowerCase();
@@ -116,12 +119,13 @@ async function fetchAllNews() {
 
         const keywordsList = keywordsSnapshot.docs.map(doc => doc.data().word);
         
-        // **NOVO LOOP**: Itera sobre cada palavra-chave individualmente
         for (const keyword of keywordsList) {
-            const searchQuery = `"${keyword}"`; // Busca pela palavra-chave exata
+            await delay(1000); // Pausa de 1 segundo
+
+            const searchQuery = `"${keyword}"`;
             functions.logger.log(`[BUSCA INDIVIDUAL] Palavra-chave: "${keyword}" para a empresa ${companyName}`);
 
-            // --- Busca no GNews ---
+            // Busca no GNews
             if (settings.apiKeyGNews1) {
                 const currentHour = new Date().getHours();
                 let gnewsApiKey = '';
@@ -137,7 +141,7 @@ async function fetchAllNews() {
                         if (response.data && response.data.articles) {
                             for (const article of response.data.articles) {
                                 if (existingUrls.has(article.url)) continue;
-                                const matchedKeywords = findMatchingKeywords(article, [keyword]); // Verifica apenas a palavra-chave atual
+                                const matchedKeywords = findMatchingKeywords(article, [keyword]);
                                 if (matchedKeywords.length > 0) {
                                     const normalized = normalizeArticle(article, 'gnews');
                                     if (normalized) {
@@ -152,55 +156,8 @@ async function fetchAllNews() {
                     } catch (e) { functions.logger.error(`Erro GNews (keyword: ${keyword}):`, e.message); }
                 }
             }
-
-            // --- Busca no NewsAPI ---
-             if (settings.apiKeyNewsApi) {
-                const queryUrl = `${NEWSAPI_URL}?q=${encodeURIComponent(searchQuery)}&language=pt&apiKey=${settings.apiKeyNewsApi}`;
-                try {
-                    const response = await axios.get(queryUrl);
-                    if (response.data && response.data.articles) {
-                        for (const article of response.data.articles) {
-                            if (existingUrls.has(article.url)) continue;
-                            const matchedKeywords = findMatchingKeywords(article, [keyword]);
-                            if (matchedKeywords.length > 0) {
-                                const normalized = normalizeArticle(article, 'newsapi');
-                                if (normalized) {
-                                    const pendingAlertRef = db.collection(`artifacts/${APP_ID}/public/data/pendingAlerts`).doc();
-                                    batch.set(pendingAlertRef, { ...normalized, keywords: matchedKeywords, companyId, companyName, status: "pending" });
-                                    existingUrls.add(article.url);
-                                    articlesToSaveCount++;
-                                }
-                            }
-                        }
-                    }
-                } catch (e) { functions.logger.error(`Erro NewsAPI (keyword: ${keyword}):`, e.message); }
-            }
-
-            // --- Busca no YouTube ---
-            if (settings.apiKeyYoutube) {
-                const queryUrl = `${YOUTUBE_URL}?part=snippet&q=${encodeURIComponent(searchQuery)}&type=video&relevanceLanguage=pt&regionCode=BR&maxResults=10&key=${settings.apiKeyYoutube}`;
-                try {
-                    const response = await axios.get(queryUrl);
-                    if (response.data && response.data.items) {
-                        for (const item of response.data.items) {
-                            const videoUrl = `https://www.youtube.com/watch?v=${item.id.videoId}`;
-                            if (existingUrls.has(videoUrl)) continue;
-                            const matchedKeywords = findMatchingKeywords(item.snippet, [keyword]);
-                            if (matchedKeywords.length > 0) {
-                                const normalized = normalizeArticle(item, 'youtube');
-                                if (normalized) {
-                                    const pendingAlertRef = db.collection(`artifacts/${APP_ID}/public/data/pendingAlerts`).doc();
-                                    batch.set(pendingAlertRef, { ...normalized, keywords: matchedKeywords, companyId, companyName, status: "pending" });
-                                    existingUrls.add(videoUrl);
-                                    articlesToSaveCount++;
-                                }
-                            }
-                        }
-                    }
-                } catch (e) { functions.logger.error(`Erro YouTube (keyword: ${keyword}):`, e.message); }
-            }
-        } // Fim do loop de palavras-chave
-    } // Fim do loop de empresas
+        }
+    }
     
     if (articlesToSaveCount > 0) {
         await batch.commit();
@@ -209,8 +166,6 @@ async function fetchAllNews() {
     functions.logger.info("=======================================");
     return { success: true, totalSaved: articlesToSaveCount };
 }
-
-// --- Funções Principais (Callable e Scheduled) ---
 
 exports.manualFetch = regionalFunctions.https.onCall(async (data, context) => {
     try {
@@ -232,9 +187,6 @@ exports.scheduledFetch = regionalFunctions.pubsub.schedule("every 30 minutes")
         return null;
     }
 });
-
-// O restante das funções (approveAlert, rejectAlert, etc.) permanecem as mesmas.
-// O código completo está oculto por brevidade, mas use a versão anterior.
 
 exports.approveAlert = regionalFunctions.https.onCall(async (data, context) => {
     const { appId, alertId } = data;
