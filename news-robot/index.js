@@ -1,8 +1,8 @@
 /**
  * IMPORTANTE: Este é o código COMPLETO e ATUALIZADO para o servidor (Firebase Cloud Functions).
  * ...
- * * * * CORREÇÃO (SET/2025): Revertida a lógica de busca do GNews para uma palavra-chave por vez
- * * para evitar o erro "400 Bad Request" causado por queries muito longas.
+ * * * * CORREÇÃO (SET/2025): Removida a chamada de 'classifyText' da Natural Language AI,
+ * * pois não suporta o idioma português ('pt'), o que causava um erro fatal.
  */
 
 const functions = require("firebase-functions");
@@ -143,14 +143,15 @@ async function analyzeArticleWithAI(article, settings) {
     if (textContent && textContent.length > 50 && !textContent.startsWith('http')) {
         try {
             const document = { content: textContent, type: 'PLAIN_TEXT', language: 'pt' };
-            const [sentimentResult, entitiesResult, categoriesResult] = await Promise.all([
+            // CORREÇÃO: Removida a chamada para classifyText
+            const [sentimentResult, entitiesResult] = await Promise.all([
                 languageClient.analyzeSentiment({ document }),
                 languageClient.analyzeEntities({ document }),
-                languageClient.classifyText({ document })
             ]);
             languageData.sentiment = sentimentResult[0].documentSentiment;
             languageData.entities = entitiesResult[0].entities.filter(e => e.salience > 0.01 && e.type !== 'OTHER').map(e => ({ name: e.name, type: e.type, salience: e.salience }));
-            languageData.categories = categoriesResult[0].categories.map(c => ({ name: c.name, confidence: c.confidence }));
+            // A funcionalidade de categorias foi removida, então definimos como um array vazio.
+            languageData.categories = []; 
         } catch (error) {
             functions.logger.error("Erro na Natural Language AI:", error.message);
         }
@@ -264,7 +265,7 @@ async function fetchAllNews() {
         functions.logger.info(`--- Processando empresa: ${company.companyName} ---`);
         const combinedQuery = company.keywordsList.map(kw => `"${kw}"`).join(" OR ");
         
-        // CORREÇÃO: GNews volta a buscar uma palavra-chave por vez
+        // GNews
         if (settings.apiKeyGNews1) {
             const currentHour = new Date().getHours();
             let gnewsApiKey = settings.apiKeyGNews4;
@@ -273,7 +274,7 @@ async function fetchAllNews() {
             else if (currentHour >= 12 && currentHour < 18) gnewsApiKey = settings.apiKeyGNews3;
             if (gnewsApiKey) {
                 for (const keyword of company.keywordsList) {
-                    await delay(1000); // Pausa entre cada palavra-chave
+                    await delay(1000);
                     const searchQuery = `"${keyword}"`;
                     const queryUrl = `${GNEWS_URL}?q=${encodeURIComponent(searchQuery)}&lang=pt,en,es&token=${gnewsApiKey}`;
                     try {
@@ -337,7 +338,9 @@ async function fetchAllNews() {
     return { success: true, totalSaved: articlesToSaveCount };
 }
 
-// O restante das funções (manualFetch, scheduledFetch, approveAlert, etc.) permanece o mesmo.
+// O restante do seu arquivo
+// ...
+
 exports.manualFetch = regionalFunctions.https.onCall(async (data, context) => {
     try {
         return await fetchAllNews();
@@ -539,4 +542,3 @@ exports.generateSuperAdminReport = regionalFunctions.https.onCall(async (data, c
     functions.logger.info("Relatório geral gerado com sucesso.");
     return reportData;
 });
-
