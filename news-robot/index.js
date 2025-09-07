@@ -1,8 +1,8 @@
 /**
  * IMPORTANTE: Este é o código COMPLETO e ATUALIZADO para o servidor (Firebase Cloud Functions).
  * ...
- * * * * NOVA FUNCIONALIDADE (SET/2025): Integração com a Cloud Translation AI para detectar e
- * * traduzir notícias de outros idiomas para o português antes da análise de IA.
+ * * * * NOVA FUNCIONALIDADE (SET/2025): Integração com a Google Maps Platform (Geocoding API)
+ * * para obter e salvar as coordenadas geográficas das notícias. Inclui cache de geolocalização.
  */
 
 const functions = require("firebase-functions");
@@ -10,24 +10,26 @@ const admin = require("firebase-admin");
 const axios = require("axios");
 const Parser = require('rss-parser');
 
-// Importa as bibliotecas do Google Cloud
 const { LanguageServiceClient } = require('@google-cloud/language');
 const { TranslationServiceClient } = require('@google-cloud/translate');
+// ADICIONADO: Importa a biblioteca do Google Maps
+const { Client } = require("@googlemaps/google-maps-services-js");
 
 admin.initializeApp();
 const db = admin.firestore();
 const parser = new Parser();
 
-// Inicializa os clientes das novas APIs
 const languageClient = new LanguageServiceClient();
 const translationClient = new TranslationServiceClient();
+// ADICIONADO: Inicializa o cliente do Google Maps
+const mapsClient = new Client({});
 
 const GNEWS_URL = "https://gnews.io/api/v4/search";
 const NEWSAPI_URL = "https://newsapi.org/v2/everything";
 const BLOGGER_URL = "https://www.googleapis.com/blogger/v3/blogs";
 const YOUTUBE_URL = "https://www.googleapis.com/youtube/v3/search";
 const APP_ID = "noticias-6e952";
-const GOOGLE_PROJECT_ID = "noticias-6e952"; // ADICIONADO: ID do projeto para a API de Tradução
+const GOOGLE_PROJECT_ID = "noticias-6e952";
 
 const runtimeOpts = {
   timeoutSeconds: 540,
@@ -49,22 +51,55 @@ const findMatchingKeywords = (article, keywords) => {
     return matchedKeywords;
 };
 
-// NOVA FUNÇÃO: Detecta e traduz o texto se não estiver em português
+// NOVA FUNÇÃO: Obtém coordenadas de um local, com cache no Firestore
+async function geocodeLocation(locationName, apiKey) {
+    if (!locationName || !apiKey) return null;
+    
+    const locationKey = locationName.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const cacheRef = db.doc(`artifacts/${APP_ID}/public/data/geocache/${locationKey}`);
+
+    try {
+        const cacheDoc = await cacheRef.get();
+        if (cacheDoc.exists) {
+            return cacheDoc.data(); // Retorna do cache
+        }
+
+        // Se não está no cache, busca na API
+        const response = await mapsClient.geocode({
+            params: {
+                address: `${locationName}, Brasil`,
+                key: apiKey,
+                language: 'pt-BR',
+                region: 'BR'
+            }
+        });
+
+        if (response.data.results && response.data.results.length > 0) {
+            const location = response.data.results[0].geometry.location; // { lat, lng }
+            await cacheRef.set(location); // Salva no cache para a próxima vez
+            return location;
+        }
+
+        return null;
+    } catch (error) {
+        functions.logger.error(`Erro de Geocoding para '${locationName}':`, error.message);
+        return null;
+    }
+}
+
+
 async function detectAndTranslate(text) {
     if (!text || text.length < 20) {
         return { originalText: text, translatedText: text, languageCode: 'pt', translated: false };
     }
-
     const request = {
         parent: `projects/${GOOGLE_PROJECT_ID}/locations/global`,
         content: text,
         mimeType: 'text/plain',
     };
-
     try {
         const [response] = await translationClient.detectLanguage(request);
         const detectedLanguage = response.languages[0];
-
         if (detectedLanguage.languageCode.toLowerCase() !== 'pt') {
             const translateRequest = {
                 parent: `projects/${GOOGLE_PROJECT_ID}/locations/global`,
@@ -75,21 +110,12 @@ async function detectAndTranslate(text) {
             };
             const [translateResponse] = await translationClient.translateText(translateRequest);
             const translation = translateResponse.translations[0];
-            
-            return {
-                originalText: text,
-                translatedText: translation.translatedText,
-                languageCode: detectedLanguage.languageCode,
-                translated: true
-            };
+            return { originalText: text, translatedText: translation.translatedText, languageCode: detectedLanguage.languageCode, translated: true };
         }
-
-        // Se já for português, não faz nada
         return { originalText: text, translatedText: text, languageCode: 'pt', translated: false };
-
     } catch (error) {
         functions.logger.error("Erro na API de Tradução:", error.message);
-        return { originalText: text, translatedText: text, languageCode: 'und', translated: false }; // und = undefined
+        return { originalText: text, translatedText: text, languageCode: 'und', translated: false };
     }
 }
 
@@ -99,27 +125,19 @@ async function analyzeArticleWithAI(article) {
     if (!text || text.length < 50 || text.startsWith('http')) {
         return { sentiment: { score: 0, magnitude: 0 }, entities: [], categories: [] };
     }
-
     try {
-        const document = {
-            content: text,
-            type: 'PLAIN_TEXT',
-            language: 'pt',
-        };
-
+        const document = { content: text, type: 'PLAIN_TEXT', language: 'pt' };
         const [sentimentResult, entitiesResult, categoriesResult] = await Promise.all([
             languageClient.analyzeSentiment({ document }),
             languageClient.analyzeEntities({ document }),
             languageClient.classifyText({ document })
         ]);
-
         const sentiment = sentimentResult[0].documentSentiment;
         const entities = entitiesResult[0].entities
             .filter(e => e.salience > 0.01 && e.type !== 'OTHER')
             .map(e => ({ name: e.name, type: e.type, salience: e.salience }));
         const categories = categoriesResult[0].categories
             .map(c => ({ name: c.name, confidence: c.confidence }));
-
         return { sentiment, entities, categories };
     } catch (error) {
         functions.logger.error("Erro na análise da Natural Language AI:", error.message);
@@ -129,7 +147,7 @@ async function analyzeArticleWithAI(article) {
 
 
 function normalizeArticle(article, sourceApi) {
-    // ... (Esta função permanece exatamente a mesma da versão anterior)
+    // ... (Esta função permanece a mesma)
     try {
         switch (sourceApi) {
             case 'gnews':
@@ -175,7 +193,7 @@ function normalizeArticle(article, sourceApi) {
 
 async function fetchAllNews() {
     functions.logger.info("=======================================");
-    functions.logger.info("INICIANDO BUSCA DE NOTÍCIAS COM TRADUÇÃO E ANÁLISE DE IA...");
+    functions.logger.info("INICIANDO BUSCA DE NOTÍCIAS COM TRADUÇÃO, IA E GEOCODIFICAÇÃO...");
 
     const globalSettingsRef = db.doc(`artifacts/${APP_ID}/public/data/settings/global`);
     const globalSettingsDoc = await globalSettingsRef.get();
@@ -183,6 +201,8 @@ async function fetchAllNews() {
         throw new Error("Configurações globais não encontradas.");
     }
     const settings = globalSettingsDoc.data();
+    // Chave de API do Firebase para o Geocoding
+    const firebaseApiKey = settings.apiKeyFirebaseNews; 
 
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
@@ -196,6 +216,7 @@ async function fetchAllNews() {
     const allCompaniesData = []; 
 
     for (const companyDoc of companiesSnapshot.docs) {
+        //... (lógica para preparar dados da empresa, igual à anterior)
         const companyId = companyDoc.id;
         const companyName = companyDoc.data().name;
 
@@ -222,7 +243,6 @@ async function fetchAllNews() {
             return;
         }
         
-        // ATUALIZADO: Lógica de tradução antes da análise de IA
         const translatedTitle = await detectAndTranslate(normalizedArticle.title);
         const translatedDesc = await detectAndTranslate(normalizedArticle.description);
 
@@ -230,6 +250,15 @@ async function fetchAllNews() {
         normalizedArticle.description = translatedDesc.translatedText;
         
         const aiData = await analyzeArticleWithAI(normalizedArticle);
+
+        // ATUALIZADO: Lógica de geocodificação
+        let geolocation = null;
+        if (aiData.entities && aiData.entities.length > 0) {
+            const firstLocation = aiData.entities.find(e => e.type === 'LOCATION');
+            if (firstLocation) {
+                geolocation = await geocodeLocation(firstLocation.name, firebaseApiKey);
+            }
+        }
 
         const articleData = {
             ...normalizedArticle,
@@ -239,10 +268,11 @@ async function fetchAllNews() {
             status: "pending",
             ai: aiData,
             sentiment: { score: aiData.sentiment.score, magnitude: aiData.sentiment.magnitude },
-            translationInfo: { // Salva a informação da tradução
+            translationInfo: {
                 translated: translatedTitle.translated || translatedDesc.translated,
                 originalLanguage: translatedTitle.languageCode
-            }
+            },
+            geolocation: geolocation // Salva as coordenadas
         };
 
         const pendingAlertRef = db.collection(`artifacts/${APP_ID}/public/data/pendingAlerts`).doc();
@@ -254,11 +284,11 @@ async function fetchAllNews() {
         articlesToSaveCount++;
     };
 
-    // O restante da função fetchAllNews permanece o mesmo, chamando a nova processAndSaveArticle
+    // O restante da função fetchAllNews para buscar nas APIs e RSS continua o mesmo
+    // ...
     for (const company of allCompaniesData) {
         functions.logger.info(`--- Processando empresa: ${company.companyName} ---`);
         const combinedQuery = company.keywordsList.map(kw => `"${kw}"`).join(" OR ");
-        const langQuery = " lang:pt,en,es"; // Exemplo de busca em múltiplos idiomas para GNews
         
         // GNews
         if (settings.apiKeyGNews1) {
@@ -269,7 +299,7 @@ async function fetchAllNews() {
             else if (currentHour >= 6 && currentHour < 12) gnewsApiKey = settings.apiKeyGNews2;
             else if (currentHour >= 12 && currentHour < 18) gnewsApiKey = settings.apiKeyGNews3;
             if(gnewsApiKey) {
-                const queryUrl = `${GNEWS_URL}?q=${encodeURIComponent(combinedQuery)}&token=${gnewsApiKey}`;
+                const queryUrl = `${GNEWS_URL}?q=${encodeURIComponent(combinedQuery)}&lang=pt,en,es&token=${gnewsApiKey}`;
                 try {
                     const response = await axios.get(queryUrl);
                     if (response.data && response.data.articles) {
@@ -288,7 +318,7 @@ async function fetchAllNews() {
         // NewsAPI
         if (settings.apiKeyNewsApi) {
             await delay(1000);
-            const queryUrl = `${NEWSAPI_URL}?q=${encodeURIComponent(combinedQuery)}&language=pt,en,es&apiKey=${settings.apiKeyNewsApi}`; // Adicionado en,es
+            const queryUrl = `${NEWSAPI_URL}?q=${encodeURIComponent(combinedQuery)}&language=pt,en,es&apiKey=${settings.apiKeyNewsApi}`;
             try {
                 const response = await axios.get(queryUrl);
                 if (response.data && response.data.articles) {
@@ -333,8 +363,8 @@ async function fetchAllNews() {
 }
 
 
-// --- Funções Principais e Restante do Arquivo (sem alterações) ---
-
+// --- Funções Principais e Restante do Arquivo ---
+// O restante do seu arquivo (manualFetch, scheduledFetch, approveAlert, rejectAlert, etc.) permanece o mesmo.
 exports.manualFetch = regionalFunctions.https.onCall(async (data, context) => {
     try {
         return await fetchAllNews();
@@ -355,8 +385,6 @@ exports.scheduledFetch = regionalFunctions.pubsub.schedule("every 30 minutes")
         return null;
     }
 });
-// ... cole o restante do seu arquivo index.js a partir daqui (approveAlert, rejectAlert, etc.)
-// ...
 exports.approveAlert = regionalFunctions.https.onCall(async (data, context) => {
     const { appId, alertId } = data;
     if (!appId || !alertId) { throw new functions.https.HttpsError("invalid-argument", "O ID da aplicação e do alerta são necessários."); }
