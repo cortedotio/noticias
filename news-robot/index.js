@@ -3,23 +3,27 @@
  * * LÓGICA ATUAL: Busca cada palavra-chave individualmente, inclui uma pausa (delay) de 1 segundo
  * * para evitar o erro 429, busca em TODAS as fontes (GNews, NewsAPI, YouTube, Blogger, RSS) e 
  * * aplica um filtro de 24 horas quando solicitado.
- * * * * CORREÇÃO (SET/2025): Refatorada a lógica de busca RSS para ser mais eficiente, buscando cada 
- * * feed apenas uma vez e verificando contra todas as palavras-chave, evitando erros 429.
+ * * * * CORREÇÃO (SET/2025): Removida a dependência do rss2json.com. A análise de RSS agora é feita
+ * * diretamente com a biblioteca 'rss-parser' para maior confiabilidade e para evitar erros 429.
  */
 
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const axios = require("axios");
+// ADICIONADO: Importa a nova biblioteca para ler RSS
+const Parser = require('rss-parser');
 
 admin.initializeApp();
 const db = admin.firestore();
+// ADICIONADO: Cria uma instância do leitor de RSS
+const parser = new Parser();
 
 // URLs das APIs
 const GNEWS_URL = "https://gnews.io/api/v4/search";
 const NEWSAPI_URL = "https://newsapi.org/v2/everything";
 const BLOGGER_URL = "https://www.googleapis.com/blogger/v3/blogs";
 const YOUTUBE_URL = "https://www.googleapis.com/youtube/v3/search";
-const RSS2JSON_URL = "https://api.rss2json.com/v1/api.json";
+// REMOVIDO: const RSS2JSON_URL = "https://api.rss2json.com/v1/api.json";
 const APP_ID = "noticias-6e952";
 
 // Aumenta o tempo limite da função para 5 minutos (300 segundos) para evitar timeouts.
@@ -37,7 +41,8 @@ const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 const findMatchingKeywords = (article, keywords) => {
     const title = (article.title || "").toLowerCase();
-    const bodyText = (article.description || article.content || "").toLowerCase();
+    // Usa 'contentSnippet' do rss-parser ou a descrição padrão
+    const bodyText = (article.contentSnippet || article.description || article.content || "").toLowerCase();
     const matchedKeywords = keywords.filter(kw => {
         const lowerCaseKw = kw.toLowerCase();
         return title.includes(lowerCaseKw) || bodyText.includes(lowerCaseKw);
@@ -61,7 +66,6 @@ function normalizeArticle(article, sourceApi) {
                     source: { name: article.source.name, url: null }, author: article.author || null,
                 };
             case 'blogger':
-                 // Blogger API pode não retornar o nome do blog diretamente no item do post, pegamos da URL
                 const blogName = article.blog ? article.blog.name : 'Blogger';
                 return {
                     title: article.title, description: (article.content || "").substring(0, 250).replace(/<[^>]*>?/gm, '') + '...',
@@ -69,10 +73,12 @@ function normalizeArticle(article, sourceApi) {
                     source: { name: blogName, url: article.url }, author: article.author?.displayName || null,
                 };
             case 'rss':
+                // ATUALIZADO: Ajustado para os campos da biblioteca rss-parser
                 return {
-                    title: article.title, description: (article.description || "").substring(0, 250).replace(/<[^>]*>?/gm, '') + '...',
-                    url: article.link, image: article.thumbnail || null, publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.pubDate)),
-                    source: { name: article.author || 'RSS Feed', url: article.link }, author: article.author || null,
+                    title: article.title, description: (article.contentSnippet || article.content || "").substring(0, 250),
+                    url: article.link, image: article.enclosure?.url || null,
+                    publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.isoDate)),
+                    source: { name: article.creator || 'RSS Feed', url: article.link }, author: article.creator || null,
                 };
             case 'youtube':
                 return {
@@ -145,14 +151,14 @@ async function fetchAllNews() {
 
         const keywordsList = keywordsSnapshot.docs.map(doc => doc.data().word);
         
-        // Armazena os dados para o passo de busca RSS
         allCompaniesData.push({ companyId, companyName, keywordsList, fetchOnlyNew, existingUrls });
 
         for (const keyword of keywordsList) {
-            await delay(1000); // Pausa para evitar erro 429
+            await delay(1000); 
             const searchQuery = `"${keyword}"`;
 
-            // 1. Busca no GNews
+            // Lógicas de GNews, NewsAPI, YouTube, Blogger (sem alteração)
+            // 1. GNews
             if (settings.apiKeyGNews1) {
                 const currentHour = new Date().getHours();
                 let gnewsApiKey = '';
@@ -160,8 +166,7 @@ async function fetchAllNews() {
                 else if (currentHour >= 6 && currentHour < 12) gnewsApiKey = settings.apiKeyGNews2;
                 else if (currentHour >= 12 && currentHour < 18) gnewsApiKey = settings.apiKeyGNews3;
                 else gnewsApiKey = settings.apiKeyGNews4;
-
-                if (gnewsApiKey) {
+                if(gnewsApiKey) {
                     const queryUrl = `${GNEWS_URL}?q=${encodeURIComponent(searchQuery)}&lang=pt&country=br&token=${gnewsApiKey}`;
                     try {
                         const response = await axios.get(queryUrl);
@@ -184,8 +189,7 @@ async function fetchAllNews() {
                     } catch (e) { functions.logger.error(`Erro GNews (keyword: ${keyword}):`, e.message); }
                 }
             }
-
-            // 2. Busca no NewsAPI
+            // 2. NewsAPI
             if (settings.apiKeyNewsApi) {
                 const queryUrl = `${NEWSAPI_URL}?q=${encodeURIComponent(searchQuery)}&language=pt&apiKey=${settings.apiKeyNewsApi}`;
                 try {
@@ -208,8 +212,7 @@ async function fetchAllNews() {
                     }
                 } catch (e) { functions.logger.error(`Erro NewsAPI (keyword: ${keyword}):`, e.message); }
             }
-
-            // 3. Busca no YouTube
+            // 3. YouTube
             if (settings.apiKeyYoutube) {
                 const queryUrl = `${YOUTUBE_URL}?part=snippet&q=${encodeURIComponent(searchQuery)}&type=video&key=${settings.apiKeyYoutube}`;
                 try {
@@ -233,8 +236,7 @@ async function fetchAllNews() {
                     }
                 } catch (e) { functions.logger.error(`Erro YouTube (keyword: ${keyword}):`, e.message); }
             }
-
-            // 4. Busca em Blogs (Blogger)
+            // 4. Blogger
             if (settings.apiKeyBlogger && settings.bloggerId) {
                 const blogIds = settings.bloggerId.split('\n').filter(id => id.trim() !== '');
                 for (const blogId of blogIds) {
@@ -272,29 +274,27 @@ async function fetchAllNews() {
         functions.logger.info(`PASSO 2: Buscando em ${rssUrls.length} feeds RSS de forma otimizada...`);
 
         for (const rssUrl of rssUrls) {
-            await delay(1500); // Pausa maior entre cada requisição de RSS
+            await delay(1000); 
             let rssItems = [];
             try {
                 functions.logger.log(`- Buscando feed: ${rssUrl}`);
-                const queryUrl = `${RSS2JSON_URL}?rss_url=${encodeURIComponent(rssUrl)}`;
-                const response = await axios.get(queryUrl);
-                if (response.data && response.data.items) {
-                    rssItems = response.data.items;
+                // ALTERADO: Usa o rss-parser em vez do axios para o rss2json
+                const feed = await parser.parseURL(rssUrl);
+                if (feed && feed.items) {
+                    rssItems = feed.items;
                 }
             } catch (e) {
-                functions.logger.error(`Erro ao buscar o feed RSS: ${rssUrl}. Status: ${e.response?.status}. Mensagem: ${e.message}`);
-                continue; // Pula para o próximo feed se este falhar
+                functions.logger.error(`Erro ao buscar o feed RSS: ${rssUrl}. Mensagem: ${e.message}`);
+                continue; 
             }
 
             if (rssItems.length > 0) {
-                // Agora que temos os artigos, verificamos para cada empresa
                 for (const company of allCompaniesData) {
                     for (const item of rssItems) {
-                        // Aplica filtros de data e URLs duplicadas
-                        if (company.fetchOnlyNew && new Date(item.pubDate) < twentyFourHoursAgo) continue;
-                        if (company.existingUrls.has(item.link)) continue;
+                        const articleUrl = item.link;
+                        if (company.fetchOnlyNew && new Date(item.isoDate) < twentyFourHoursAgo) continue;
+                        if (company.existingUrls.has(articleUrl)) continue;
 
-                        // Verifica se o artigo corresponde a alguma palavra-chave da empresa
                         const matchedKeywords = findMatchingKeywords(item, company.keywordsList);
 
                         if (matchedKeywords.length > 0) {
@@ -308,7 +308,7 @@ async function fetchAllNews() {
                                     companyName: company.companyName,
                                     status: "pending"
                                 });
-                                company.existingUrls.add(item.link); // Adiciona à lista para não duplicar nesta mesma execução
+                                company.existingUrls.add(articleUrl);
                                 articlesToSaveCount++;
                             }
                         }
