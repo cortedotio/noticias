@@ -3,6 +3,8 @@
  * * LÓGICA ATUAL: Busca cada palavra-chave individualmente, inclui uma pausa (delay) de 1 segundo
  * * para evitar o erro 429, busca em TODAS as fontes (GNews, NewsAPI, YouTube, Blogger, RSS) e 
  * * aplica um filtro de 24 horas quando solicitado.
+ * * * * CORREÇÃO (SET/2025): Refatorada a lógica de busca RSS para ser mais eficiente, buscando cada 
+ * * feed apenas uma vez e verificando contra todas as palavras-chave, evitando erros 429.
  */
 
 const functions = require("firebase-functions");
@@ -89,7 +91,7 @@ function normalizeArticle(article, sourceApi) {
 
 async function fetchAllNews() {
     functions.logger.info("=======================================");
-    functions.logger.info("INICIANDO BUSCA DE NOTÍCIAS (INDIVIDUAL POR PALAVRA-CHAVE)...");
+    functions.logger.info("INICIANDO BUSCA DE NOTÍCIAS...");
 
     const globalSettingsRef = db.doc(`artifacts/${APP_ID}/public/data/settings/global`);
     const globalSettingsDoc = await globalSettingsRef.get();
@@ -97,7 +99,7 @@ async function fetchAllNews() {
         throw new Error("Configurações globais não encontradas.");
     }
     const settings = globalSettingsDoc.data();
-    
+
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
     const companiesSnapshot = await db.collection(`artifacts/${APP_ID}/public/data/companies`).where("status", "==", "active").get();
@@ -108,7 +110,12 @@ async function fetchAllNews() {
 
     const batch = db.batch();
     let articlesToSaveCount = 0;
+    const allCompaniesData = []; // Armazena dados das empresas para o passo 2 (RSS)
 
+    // =======================================================================
+    // PASSO 1: Busca em APIs que suportam palavras-chave na query (GNews, NewsAPI, etc.)
+    // =======================================================================
+    functions.logger.info("PASSO 1: Buscando em GNews, NewsAPI, YouTube e Blogger...");
     for (const companyDoc of companiesSnapshot.docs) {
         const companyId = companyDoc.id;
         const companyName = companyDoc.data().name;
@@ -116,9 +123,8 @@ async function fetchAllNews() {
 
         const companySettingsRef = db.doc(`artifacts/${APP_ID}/public/data/settings/${companyId}`);
         const companySettingsDoc = await companySettingsRef.get();
-        // CORREÇÃO: trocado .exists() por .exists
         const fetchOnlyNew = companySettingsDoc.exists && companySettingsDoc.data().fetchOnlyNew === true;
-        
+
         if (fetchOnlyNew) {
             functions.logger.log(`[FILTRO ATIVO] Para ${companyName}, buscando apenas notícias das últimas 24 horas.`);
         }
@@ -130,7 +136,7 @@ async function fetchAllNews() {
         
         articlesSnapshot.forEach(doc => existingUrls.add(doc.data().url));
         pendingSnapshot.forEach(doc => existingUrls.add(doc.data().url));
-        
+
         const keywordsSnapshot = await db.collection(`artifacts/${APP_ID}/users/${companyId}/keywords`).get();
         if (keywordsSnapshot.empty) {
             functions.logger.warn(`Nenhuma palavra-chave para a empresa ${companyName}, a saltar.`);
@@ -139,10 +145,13 @@ async function fetchAllNews() {
 
         const keywordsList = keywordsSnapshot.docs.map(doc => doc.data().word);
         
+        // Armazena os dados para o passo de busca RSS
+        allCompaniesData.push({ companyId, companyName, keywordsList, fetchOnlyNew, existingUrls });
+
         for (const keyword of keywordsList) {
             await delay(1000); // Pausa para evitar erro 429
             const searchQuery = `"${keyword}"`;
-            
+
             // 1. Busca no GNews
             if (settings.apiKeyGNews1) {
                 const currentHour = new Date().getHours();
@@ -152,7 +161,7 @@ async function fetchAllNews() {
                 else if (currentHour >= 12 && currentHour < 18) gnewsApiKey = settings.apiKeyGNews3;
                 else gnewsApiKey = settings.apiKeyGNews4;
 
-                if(gnewsApiKey) {
+                if (gnewsApiKey) {
                     const queryUrl = `${GNEWS_URL}?q=${encodeURIComponent(searchQuery)}&lang=pt&country=br&token=${gnewsApiKey}`;
                     try {
                         const response = await axios.get(queryUrl);
@@ -175,18 +184,18 @@ async function fetchAllNews() {
                     } catch (e) { functions.logger.error(`Erro GNews (keyword: ${keyword}):`, e.message); }
                 }
             }
-            
+
             // 2. Busca no NewsAPI
             if (settings.apiKeyNewsApi) {
                 const queryUrl = `${NEWSAPI_URL}?q=${encodeURIComponent(searchQuery)}&language=pt&apiKey=${settings.apiKeyNewsApi}`;
-                 try {
+                try {
                     const response = await axios.get(queryUrl);
                     if (response.data && response.data.articles) {
                         for (const article of response.data.articles) {
                             if (fetchOnlyNew && new Date(article.publishedAt) < twentyFourHoursAgo) continue;
                             if (existingUrls.has(article.url)) continue;
-                             const matchedKeywords = findMatchingKeywords(article, [keyword]);
-                             if (matchedKeywords.length > 0) {
+                            const matchedKeywords = findMatchingKeywords(article, [keyword]);
+                            if (matchedKeywords.length > 0) {
                                 const normalized = normalizeArticle(article, 'newsapi');
                                 if (normalized) {
                                     const pendingAlertRef = db.collection(`artifacts/${APP_ID}/public/data/pendingAlerts`).doc();
@@ -211,7 +220,7 @@ async function fetchAllNews() {
                             if (fetchOnlyNew && new Date(item.snippet.publishedAt) < twentyFourHoursAgo) continue;
                             if (existingUrls.has(articleUrl)) continue;
                             const matchedKeywords = findMatchingKeywords(item.snippet, [keyword]);
-                             if (matchedKeywords.length > 0) {
+                            if (matchedKeywords.length > 0) {
                                 const normalized = normalizeArticle(item, 'youtube');
                                 if (normalized) {
                                     const pendingAlertRef = db.collection(`artifacts/${APP_ID}/public/data/pendingAlerts`).doc();
@@ -224,7 +233,7 @@ async function fetchAllNews() {
                     }
                 } catch (e) { functions.logger.error(`Erro YouTube (keyword: ${keyword}):`, e.message); }
             }
-            
+
             // 4. Busca em Blogs (Blogger)
             if (settings.apiKeyBlogger && settings.bloggerId) {
                 const blogIds = settings.bloggerId.split('\n').filter(id => id.trim() !== '');
@@ -232,12 +241,12 @@ async function fetchAllNews() {
                     const queryUrl = `${BLOGGER_URL}/${blogId}/posts/search?q=${encodeURIComponent(searchQuery)}&key=${settings.apiKeyBlogger}`;
                     try {
                         const response = await axios.get(queryUrl);
-                         if (response.data && response.data.items) {
+                        if (response.data && response.data.items) {
                             for (const item of response.data.items) {
                                 if (fetchOnlyNew && new Date(item.published) < twentyFourHoursAgo) continue;
                                 if (existingUrls.has(item.url)) continue;
                                 const matchedKeywords = findMatchingKeywords(item, [keyword]);
-                                 if (matchedKeywords.length > 0) {
+                                if (matchedKeywords.length > 0) {
                                     const normalized = normalizeArticle(item, 'blogger');
                                     if (normalized) {
                                         const pendingAlertRef = db.collection(`artifacts/${APP_ID}/public/data/pendingAlerts`).doc();
@@ -251,34 +260,60 @@ async function fetchAllNews() {
                     } catch (e) { functions.logger.error(`Erro Blogger (blogId: ${blogId}, keyword: ${keyword}):`, e.message); }
                 }
             }
+        }
+    }
 
-            // 5. Busca em Feeds RSS
-            if (settings.rssUrl) {
-                 const rssUrls = settings.rssUrl.split('\n').filter(url => url.trim() !== '');
-                 for (const rss of rssUrls) {
-                     // CORREÇÃO: Adicionada pausa para evitar 429 no serviço de RSS
-                     await delay(1000);
-                     const queryUrl = `${RSS2JSON_URL}?rss_url=${encodeURIComponent(rss)}`;
-                     try {
-                        const response = await axios.get(queryUrl);
-                         if (response.data && response.data.items) {
-                             for (const item of response.data.items) {
-                                 if (fetchOnlyNew && new Date(item.pubDate) < twentyFourHoursAgo) continue;
-                                 if (existingUrls.has(item.link)) continue;
-                                 const matchedKeywords = findMatchingKeywords(item, [keyword]);
-                                 if (matchedKeywords.length > 0) {
-                                     const normalized = normalizeArticle(item, 'rss');
-                                     if (normalized) {
-                                        const pendingAlertRef = db.collection(`artifacts/${APP_ID}/public/data/pendingAlerts`).doc();
-                                        batch.set(pendingAlertRef, { ...normalized, keywords: matchedKeywords, companyId, companyName, status: "pending" });
-                                        existingUrls.add(item.link);
-                                        articlesToSaveCount++;
-                                     }
-                                 }
-                             }
-                         }
-                     } catch (e) { functions.logger.error(`Erro RSS (feed: ${rss}, keyword: ${keyword}):`, e.message); }
-                 }
+
+    // =======================================================================
+    // PASSO 2: Busca em Feeds RSS de forma otimizada
+    // =======================================================================
+    const rssUrls = settings.rssUrl ? settings.rssUrl.split('\n').filter(url => url.trim() !== '') : [];
+    if (rssUrls.length > 0) {
+        functions.logger.info(`PASSO 2: Buscando em ${rssUrls.length} feeds RSS de forma otimizada...`);
+
+        for (const rssUrl of rssUrls) {
+            await delay(1500); // Pausa maior entre cada requisição de RSS
+            let rssItems = [];
+            try {
+                functions.logger.log(`- Buscando feed: ${rssUrl}`);
+                const queryUrl = `${RSS2JSON_URL}?rss_url=${encodeURIComponent(rssUrl)}`;
+                const response = await axios.get(queryUrl);
+                if (response.data && response.data.items) {
+                    rssItems = response.data.items;
+                }
+            } catch (e) {
+                functions.logger.error(`Erro ao buscar o feed RSS: ${rssUrl}. Status: ${e.response?.status}. Mensagem: ${e.message}`);
+                continue; // Pula para o próximo feed se este falhar
+            }
+
+            if (rssItems.length > 0) {
+                // Agora que temos os artigos, verificamos para cada empresa
+                for (const company of allCompaniesData) {
+                    for (const item of rssItems) {
+                        // Aplica filtros de data e URLs duplicadas
+                        if (company.fetchOnlyNew && new Date(item.pubDate) < twentyFourHoursAgo) continue;
+                        if (company.existingUrls.has(item.link)) continue;
+
+                        // Verifica se o artigo corresponde a alguma palavra-chave da empresa
+                        const matchedKeywords = findMatchingKeywords(item, company.keywordsList);
+
+                        if (matchedKeywords.length > 0) {
+                            const normalized = normalizeArticle(item, 'rss');
+                            if (normalized) {
+                                const pendingAlertRef = db.collection(`artifacts/${APP_ID}/public/data/pendingAlerts`).doc();
+                                batch.set(pendingAlertRef, {
+                                    ...normalized,
+                                    keywords: matchedKeywords,
+                                    companyId: company.companyId,
+                                    companyName: company.companyName,
+                                    status: "pending"
+                                });
+                                company.existingUrls.add(item.link); // Adiciona à lista para não duplicar nesta mesma execução
+                                articlesToSaveCount++;
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -323,7 +358,6 @@ exports.approveAlert = regionalFunctions.https.onCall(async (data, context) => {
     if (!appId || !alertId) { throw new functions.https.HttpsError("invalid-argument", "O ID da aplicação e do alerta são necessários."); }
     const pendingAlertRef = db.doc(`artifacts/${appId}/public/data/pendingAlerts/${alertId}`);
     const pendingAlertDoc = await pendingAlertRef.get();
-    // CORREÇÃO: trocado .exists() por .exists
     if (!pendingAlertDoc.exists) { throw new functions.https.HttpsError("not-found", "Alerta pendente não encontrado."); }
     const alertData = pendingAlertDoc.data();
     if (!alertData) { throw new functions.https.HttpsError("internal", "Dados do alerta estão corrompidos."); }
@@ -332,9 +366,9 @@ exports.approveAlert = regionalFunctions.https.onCall(async (data, context) => {
     await pendingAlertRef.delete();
     const settingsRef = db.doc(`artifacts/${appId}/public/data/settings/${companyId}`);
     await db.runTransaction(async (transaction) => {
-      const settingsDoc = await transaction.get(settingsRef);
-      const newAlertsCount = (settingsDoc.data()?.newAlertsCount || 0) + 1;
-      transaction.set(settingsRef, { newAlertsCount }, { merge: true });
+        const settingsDoc = await transaction.get(settingsRef);
+        const newAlertsCount = (settingsDoc.data()?.newAlertsCount || 0) + 1;
+        transaction.set(settingsRef, { newAlertsCount }, { merge: true });
     });
     return { success: true };
 });
@@ -393,17 +427,16 @@ exports.manageDeletionRequest = regionalFunctions.https.onCall(async (data, cont
     if (!appId || !requestId) { throw new functions.https.HttpsError("invalid-argument", "O ID da aplicação e da solicitação são necessários."); }
     const requestRef = db.doc(`artifacts/${appId}/public/data/deletionRequests/${requestId}`);
     const requestDoc = await requestRef.get();
-    // CORREÇÃO: trocado .exists() por .exists
     if (!requestDoc.exists) { throw new functions.https.HttpsError("not-found", "Solicitação de exclusão não encontrada."); }
     const requestData = requestDoc.data();
     if (!requestData) { throw new functions.https.HttpsError("internal", "Dados da solicitação estão corrompidos."); }
     const articleRef = db.doc(`artifacts/${appId}/users/${requestData.companyId}/articles/${requestData.articleId}`);
     if (approve) {
-      await articleRef.delete();
-      await requestRef.update({ status: "approved" });
+        await articleRef.delete();
+        await requestRef.update({ status: "approved" });
     } else {
-      await articleRef.update({ deletionRequestStatus: null });
-      await requestRef.update({ status: "denied" });
+        await articleRef.update({ deletionRequestStatus: null });
+        await requestRef.update({ status: "denied" });
     }
     return { success: true };
 });
@@ -421,7 +454,6 @@ exports.manualAddAlert = regionalFunctions.https.onCall(async (data, context) =>
     const { appId, companyId, title, description, url, source, keywords } = data;
     if (!appId || !companyId || !title || !url || !source || !keywords || !Array.isArray(keywords) || keywords.length === 0) { throw new functions.https.HttpsError("invalid-argument", "Dados incompletos ou inválidos para adicionar um alerta."); }
     const companyDoc = await db.doc(`artifacts/${appId}/public/data/companies/${companyId}`).get();
-    // CORREÇÃO: trocado .exists() por .exists
     if (!companyDoc.exists) { throw new functions.https.HttpsError("not-found", "Empresa não encontrada."); }
     const companyName = companyDoc.data()?.name;
     const alertData = { title, description, url, source: { name: source, url: "" }, publishedAt: admin.firestore.FieldValue.serverTimestamp(), keywords, companyId, companyName, status: "approved", };
@@ -434,6 +466,15 @@ exports.manualAddAlert = regionalFunctions.https.onCall(async (data, context) =>
     });
     return { success: true };
 });
+
+function getChannelCategory(sourceName) {
+    const name = (sourceName || "").toLowerCase();
+    if (name.includes('youtube')) return 'YouTube';
+    if (name.includes('globo') || name.includes('g1') || name.includes('uol') || name.includes('terra') || name.includes('r7')) return 'Sites';
+    if (name.includes('veja') || name.includes('istoé') || name.includes('exame')) return 'Revistas';
+    if (name.includes('cbn') || name.includes('bandeirantes')) return 'Rádios';
+    return 'Sites';
+}
 
 function getPredominantSentiment(percentages) {
     if (percentages.positive > percentages.neutral && percentages.positive > percentages.negative) return 'Positivo';
@@ -454,41 +495,41 @@ exports.generateSuperAdminReport = regionalFunctions.https.onCall(async (data, c
     const companiesSnapshot = await db.collection(`artifacts/${appId}/public/data/companies`).get();
     const reportData = [];
     for (const companyDoc of companiesSnapshot.docs) {
-      const companyId = companyDoc.id;
-      const companyName = companyDoc.data().name;
-      functions.logger.info(`Processando relatório para: ${companyName} (ID: ${companyId})`);
-      
-      const articlesSnapshot = await db.collection(`artifacts/${appId}/users/${companyId}/articles`).get();
-      const totalAlerts = articlesSnapshot.size;
-      
-      let positiveCount = 0, neutralCount = 0, negativeCount = 0;
-      const channelCounts = {}, vehicleCounts = {};
-      
-      if (articlesSnapshot.size > 0) {
-          articlesSnapshot.docs.forEach(doc => {
-            const article = doc.data();
-            const score = article.sentiment?.score ?? 0;
-            if (score > 0.2) positiveCount++;
-            else if (score < -0.2) negativeCount++;
-            else neutralCount++;
-            const channel = article.source?.name ? getChannelCategory(article.source.name) : 'Outros';
-            channelCounts[channel] = (channelCounts[channel] || 0) + 1;
-            const vehicle = article.source?.name || 'Outros';
-            vehicleCounts[vehicle] = (vehicleCounts[vehicle] || 0) + 1;
-          });
-      }
+        const companyId = companyDoc.id;
+        const companyName = companyDoc.data().name;
+        functions.logger.info(`Processando relatório para: ${companyName} (ID: ${companyId})`);
+        
+        const articlesSnapshot = await db.collection(`artifacts/${appId}/users/${companyId}/articles`).get();
+        const totalAlerts = articlesSnapshot.size;
+        
+        let positiveCount = 0, neutralCount = 0, negativeCount = 0;
+        const channelCounts = {}, vehicleCounts = {};
+        
+        if (articlesSnapshot.size > 0) {
+            articlesSnapshot.docs.forEach(doc => {
+                const article = doc.data();
+                const score = article.sentiment?.score ?? 0;
+                if (score > 0.2) positiveCount++;
+                else if (score < -0.2) negativeCount++;
+                else neutralCount++;
+                const channel = article.source?.name ? getChannelCategory(article.source.name) : 'Outros';
+                channelCounts[channel] = (channelCounts[channel] || 0) + 1;
+                const vehicle = article.source?.name || 'Outros';
+                vehicleCounts[vehicle] = (vehicleCounts[vehicle] || 0) + 1;
+            });
+        }
 
-      const totalSentiments = positiveCount + neutralCount + negativeCount;
-      const sentimentPercentage = {
-        positive: totalSentiments > 0 ? parseFloat(((positiveCount / totalSentiments) * 100).toFixed(2)) : 0,
-        neutral: totalSentiments > 0 ? parseFloat(((neutralCount / totalSentiments) * 100).toFixed(2)) : 0,
-        negative: totalSentiments > 0 ? parseFloat(((negativeCount / totalSentiments) * 100).toFixed(2)) : 0,
-      };
-      
-      const predominantSentiment = getPredominantSentiment(sentimentPercentage);
-      const topChannel = getTopCount(channelCounts);
-      const topVehicle = getTopCount(vehicleCounts);
-      reportData.push({ companyId, companyName, totalAlerts, sentimentPercentage, predominantSentiment, topChannel, topVehicle });
+        const totalSentiments = positiveCount + neutralCount + negativeCount;
+        const sentimentPercentage = {
+            positive: totalSentiments > 0 ? parseFloat(((positiveCount / totalSentiments) * 100).toFixed(2)) : 0,
+            neutral: totalSentiments > 0 ? parseFloat(((neutralCount / totalSentiments) * 100).toFixed(2)) : 0,
+            negative: totalSentiments > 0 ? parseFloat(((negativeCount / totalSentiments) * 100).toFixed(2)) : 0,
+        };
+        
+        const predominantSentiment = getPredominantSentiment(sentimentPercentage);
+        const topChannel = getTopCount(channelCounts);
+        const topVehicle = getTopCount(vehicleCounts);
+        reportData.push({ companyId, companyName, totalAlerts, sentimentPercentage, predominantSentiment, topChannel, topVehicle });
     }
     functions.logger.info("Relatório geral gerado com sucesso.");
     return reportData;
