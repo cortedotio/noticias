@@ -1035,7 +1035,7 @@
         }
 
         // --- LÓGICA DE EXIBIÇÃO DE ALERTA E SENTIMENTO ---
-        // ATUALIZADO: Função modificada para mostrar os dados da IA
+        // ATUALIZADO: Função modificada para mostrar os dados da IA e Tradução
         function displayNewsAlert(article, container) {
             const pubDate = new Date(article.publishedAt.seconds ? article.publishedAt.toDate() : article.publishedAt);
             const formattedDate = pubDate.toLocaleDateString('pt-BR');
@@ -1047,7 +1047,6 @@
             alertEl.dataset.date = dateForFilter;
             alertEl.dataset.keywords = (article.keywords || [article.keyword]).join(',');
 
-            // Usa o score da IA se existir, senão usa o antigo
             const sentimentScore = article.ai?.sentiment?.score ?? article.sentiment?.score ?? 0;
 
             const getSentimentHTML = (score) => {
@@ -1075,35 +1074,17 @@
                 `<span class="flex-shrink-0 text-xs font-semibold bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full">${kw}</span>`
             ).join('');
 
-            // NOVO: Gera as tags de Entidades e Categorias
             let aiInsightsHTML = '';
             if (article.ai && (article.ai.entities?.length > 0 || article.ai.categories?.length > 0)) {
-                
-                const entityColors = {
-                    PERSON: 'bg-blue-100 text-blue-800',
-                    LOCATION: 'bg-green-100 text-green-800',
-                    ORGANIZATION: 'bg-purple-100 text-purple-800',
-                    EVENT: 'bg-yellow-100 text-yellow-800',
-                    WORK_OF_ART: 'bg-pink-100 text-pink-800',
-                    CONSUMER_GOOD: 'bg-indigo-100 text-indigo-800'
-                };
+                const entityColors = { PERSON: 'bg-blue-100 text-blue-800', LOCATION: 'bg-green-100 text-green-800', ORGANIZATION: 'bg-purple-100 text-purple-800', EVENT: 'bg-yellow-100 text-yellow-800', WORK_OF_ART: 'bg-pink-100 text-pink-800', CONSUMER_GOOD: 'bg-indigo-100 text-indigo-800' };
+                const entitiesHTML = (article.ai.entities || []).slice(0, 5).map(e => `<span class="ai-tag ${entityColors[e.type] || 'bg-gray-100 text-gray-800'}">${e.name}</span>`).join('');
+                const categoriesHTML = (article.ai.categories || []).slice(0, 2).map(c => `<span class="ai-tag bg-gray-200 text-gray-900">${c.name.split('/').pop()}</span>`).join('');
+                aiInsightsHTML = `<div class="mt-3 pt-3 border-t border-gray-200">${entitiesHTML}${categoriesHTML}</div>`;
+            }
 
-                const entitiesHTML = (article.ai.entities || [])
-                    .slice(0, 5) // Pega as 5 entidades mais relevantes
-                    .map(e => `<span class="ai-tag ${entityColors[e.type] || 'bg-gray-100 text-gray-800'}">${e.name}</span>`)
-                    .join('');
-
-                const categoriesHTML = (article.ai.categories || [])
-                    .slice(0, 2) // Pega as 2 categorias mais relevantes
-                    .map(c => `<span class="ai-tag bg-gray-200 text-gray-900">${c.name.split('/').pop()}</span>`)
-                    .join('');
-                
-                aiInsightsHTML = `
-                    <div class="mt-3 pt-3 border-t border-gray-200">
-                        ${entitiesHTML}
-                        ${categoriesHTML}
-                    </div>
-                `;
+            let translationHTML = '';
+            if (article.translationInfo?.translated) {
+                translationHTML = `<span title="Traduzido do ${article.translationInfo.originalLanguage.toUpperCase()}" class="mr-2">🌐</span>`;
             }
 
             alertEl.innerHTML = `
@@ -1111,20 +1092,15 @@
                     <div class="flex justify-between items-start">
                         <h4 class="text-lg font-bold text-gray-800 pr-2">${article.title}</h4>
                         <div class="flex items-center gap-2 flex-shrink-0">
-                            <div class="flex flex-col items-end gap-1">
-                                ${keywordsHTML}
-                            </div>
-                            <div class="sentiment-container relative">
-                                ${getSentimentHTML(sentimentScore)}
-                                ${sentimentMenuHTML}
-                            </div>
+                            <div class="flex flex-col items-end gap-1">${keywordsHTML}</div>
+                            <div class="sentiment-container relative">${getSentimentHTML(sentimentScore)}${sentimentMenuHTML}</div>
                         </div>
                     </div>
                     <p class="text-sm text-gray-600 mt-2 line-clamp-2">${article.description || 'Descrição não disponível.'}</p>
                 </div>
                 ${aiInsightsHTML}
                 <div class="text-xs text-gray-500 mt-3 flex justify-between items-center">
-                    <span>Fonte: ${article.source.name} | Publicado: ${formattedDate}</span>
+                    <span>${translationHTML}Fonte: ${article.source.name} | Publicado: ${formattedDate}</span>
                     <div>
                         <a href="${article.url}" target="_blank" rel="noopener noreferrer" class="text-indigo-600 hover:underline font-semibold">Ler no site original →</a>
                         ${deleteButtonHTML}
@@ -1137,27 +1113,21 @@
             const newScore = parseFloat(e.target.dataset.sentiment);
             const alertEl = e.target.closest('.fade-in');
             const articleId = alertEl.dataset.id;
-
             if (!articleId || !currentUser) return;
-
             try {
                 const articleRef = doc(db, "artifacts", appId, "users", currentUser.companyId, "articles", articleId);
                 await updateDoc(articleRef, {
                     "sentiment.score": newScore,
-                    "ai.sentiment.score": newScore // Atualiza também o score da IA para consistência
+                    "ai.sentiment.score": newScore
                 });
-
                 const sentimentContainer = alertEl.querySelector('.sentiment-container');
                 let emoji = '😐'; let color = 'gray'; let text = 'Neutro';
                 if (newScore > 0.25) { emoji = '😊'; color = 'green'; text = 'Positivo'; } 
                 else if (newScore < -0.25) { emoji = '😠'; color = 'red'; text = 'Negativo'; }
-                
                 alertEl.classList.remove('border-gray-400', 'border-green-500', 'border-red-500');
                 alertEl.classList.add(`border-${color}-500`);
-
                 const newButtonHTML = `<button class="sentiment-btn text-xs font-semibold text-${color}-600 bg-${color}-100 px-2 py-1 rounded-full">${emoji} ${text}</button>`;
                 sentimentContainer.querySelector('.sentiment-btn').outerHTML = newButtonHTML;
-
             } catch (error) {
                 console.error("Erro ao atualizar o sentimento:", error);
                 showAlert("Erro ao atualizar o sentimento.", "error");
@@ -1580,7 +1550,7 @@
         }
         
         // --- LÓGICA DA PÁGINA DE DETALHES DO ALERTA ---
-        // ATUALIZADO: Função modificada para mostrar os dados da IA
+        // ATUALIZADO: Função modificada para mostrar os dados da IA e Tradução
         function renderArticleDetailPage(article) {
             if (!detailTitle || !detailMeta || !detailContent || !detailAiInsights) return;
 
@@ -1596,17 +1566,22 @@
             if (sentimentScore > 0.25) { sentimentText = 'Positivo'; sentimentColor = 'text-green-600'; }
             else if (sentimentScore < -0.25) { sentimentText = 'Negativo'; sentimentColor = 'text-red-600'; }
 
+            let translationHTML = '';
+            if (article.translationInfo?.translated) {
+                translationHTML = `<span class="mr-4">🌐 <strong>Traduzido de:</strong> ${article.translationInfo.originalLanguage.toUpperCase()}</span>`;
+            }
+
             let metaHTML = `
+                ${translationHTML}
                 <span><strong>Fonte:</strong> ${article.source.name}</span>
-                <span><strong>Data:</strong> ${formattedDate}</span>
-                <span class="${sentimentColor}" title="Score: ${sentimentScore.toFixed(2)}"><strong>Sentimento:</strong> ${sentimentText}</span>
+                <span class="ml-4"><strong>Data:</strong> ${formattedDate}</span>
+                <span class="${sentimentColor} ml-4" title="Score: ${sentimentScore.toFixed(2)}"><strong>Sentimento:</strong> ${sentimentText}</span>
             `;
             if (article.author) {
-                 metaHTML += `<span><strong>Autor:</strong> ${article.author}</span>`;
+                 metaHTML += `<span class="ml-4"><strong>Autor:</strong> ${article.author}</span>`;
             }
             detailMeta.innerHTML = metaHTML;
 
-            // NOVO: Renderiza os insights da IA na página de detalhes
             let aiInsightsHTML = '';
              if (article.ai) {
                 if (article.ai.entities?.length > 0) {
@@ -1795,7 +1770,7 @@
                 await manualAddAlert({ appId, companyId, title, description, url, source, keywords: selectedKeywords });
                 showAlert('Alerta manual adicionado com sucesso!', 'success');
                 if (manualAlertForm) manualAlertForm.reset();
-                populateManualAlertKeywords(); // Reseta a lista de palavras-chave
+                populateManualAlertKeywords();
             } catch (error) {
                 console.error("Erro ao adicionar alerta manual:", error);
                 showAlert(`Erro: ${error.message}`, 'error');
@@ -2166,7 +2141,7 @@
             companyKeywordReportPage = document.getElementById('company-keyword-report-page');
             backToSuperAdminReportBtn = document.getElementById('back-to-super-admin-report');
             companyKeywordReportTitle = document.getElementById('company-keyword-report-title');
-
+            
             const states = {"AC": "Acre", "AL": "Alagoas", "AP": "Amapá", "AM": "Amazonas", "BA": "Bahia", "CE": "Ceará", "DF": "Distrito Federal", "ES": "Espírito Santo", "GO": "Goiás", "MA": "Maranhão", "MT": "Mato Grosso", "MS": "Mato Grosso do Sul", "MG": "Minas Gerais", "PA": "Pará", "PB": "Paraíba", "PR": "Paraná", "PE": "Pernambuco", "PI": "Piauí", "RJ": "Rio de Janeiro", "RN": "Rio Grande do Norte", "RS": "Rio Grande do Sul", "RO": "Rondônia", "RR": "Roraima", "SC": "Santa Catarina", "SP": "São Paulo", "SE": "Sergipe", "TO": "Tocantins"};
             for (const [uf, name] of Object.entries(states)) {
                 const option = document.createElement('option');
