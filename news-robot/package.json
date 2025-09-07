@@ -3,6 +3,8 @@
   "description": "Cloud Functions para o Robô de Notícias",
   "main": "index.js",
   "dependencies": {
+    "@google-cloud/language": "^6.3.0",
+    "@google-cloud/translate": "^8.2.0",
     "axios": "^1.7.2",
     "firebase-admin": "^12.1.1",
     "firebase-functions": "^5.0.1",

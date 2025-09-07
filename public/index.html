@@ -62,6 +62,16 @@
         .company-report-row {
             cursor: pointer;
         }
+        /* NOVOS ESTILOS PARA TAGS DE IA */
+        .ai-tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            line-height: 1.2;
+            margin: 2px;
+        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
@@ -442,7 +452,7 @@
                         </div>
                     </div>
                     <div id="keyword-filter-buttons">
-                        </div>
+                    </div>
                 </div>
                 <input type="text" id="search-input" placeholder="Digite para pesquisar em títulos ou descrições..." class="w-full p-3 border border-gray-300 rounded-md mb-6">
                 <div id="search-results" class="space-y-4 max-h-[60vh] overflow-y-auto"><p class="text-gray-500">Digite algo para começar a pesquisar ou use os filtros.</p></div>
@@ -548,6 +558,7 @@
 
                 <h1 id="detail-title" class="text-2xl sm:text-3xl font-bold text-gray-800 mb-4 pr-24"></h1>
                 <div id="detail-meta" class="flex flex-wrap gap-x-6 gap-y-2 text-sm text-gray-500 mb-6 border-b pb-4"></div>
+                <div id="detail-ai-insights" class="mb-6"></div>
                 <div id="detail-content" class="prose max-w-none text-gray-700 leading-relaxed"></div>
             </div>
         </section>
@@ -653,7 +664,7 @@
         let currentDetailArticle = null;
 
         // --- ELEMENTOS DO DOM ---
-        let pageSections, navLoggedIn, navInicio, navRelatorio, navPesquisa, navSuperAdmin, navLogout, navConfiguracoesAdmin, globalAlert, loginPage, dashboardPage, searchPage, superAdminPage, companyKeywordAdminPage, companySettingsAdminPage, reportPage, companyUserAdminPage, configuracoesAdminPage, loginForm, dashboardTitle, currentDateTimeEl, dashboardKeywordList, newsAlertsContainer, newsAlerts, alertDateFilter, reportAccessToggle, logoUploadInput, headerLogoContainer, loginLogoContainer, filterContainer, searchInput, searchResults, companyForm, companyList, backToSuperAdminKwBtn, backToSuperAdminSettingsBtn, backToSuperAdminUsersBtn, companyKeywordAdminTitle, companySettingsAdminTitle, companyUserAdminTitle, keywordForm, keywordInput, keywordIdInput, adminKeywordList, userForm, userInput, userPasswordInput, userIdInput, adminUserList, notificationBell, notificationBadge, manualTriggerBtn, deleteModal, confirmDeleteBtn, cancelDeleteBtn, companyNameToDeleteEl, newsScopeContainer, startDateInput, endDateInput, linkModal, accessLinkInput, copyLinkBtn, closeLinkModalBtn, reportKeywordFilterContainer, stateSelectContainer, stateSelect, changePasswordForm, apiKeyNewsApiInput, apiKeyFirebaseNewsInput, apiKeyGNewsInput1, apiKeyGNewsInput2, apiKeyGNewsInput3, apiKeyGNewsInput4, apiKeyYoutubeInput, apiKeyBloggerInput, apiKeyVisionInput, apiKeyVideoIntelligenceInput, showAllAlertsBtn, deletionAccessToggle, justificationModal, justificationText, submitJustificationBtn, cancelJustificationBtn, btnManualAlert, btnDeletionRequests, btnSuperAdminReport, manualAlertPage, deletionRequestsPage, superAdminReportPage, backToDashboard1, backToDashboard2, backToDashboard3, manualAlertForm, deletionRequestsList, superAdminReportBody, deletionRequestsBadge, pendingAlertsPage, pendingAlertsList, btnPendingAlerts, backToDashboard4, confirmDeleteKeywordBtn, cancelDeleteKeywordBtn, confirmDeleteKeywordModal, keywordToDeleteNameEl, bloggerIdInput, rssUrlInput, fetchOnlyNewToggle, changePasswordPage, globalKeysPage, globalSourcesPage, btnChangePassword, btnGlobalKeys, btnNewsSources, backToAdminConfig1, backToAdminConfig2, backToAdminConfig3, globalLogoPage, btnGlobalLogo, backToAdminConfig4, globalLogoUpload, globalLogoArea, logoLink, btnRadioSources, globalRadioSourcesPage, backToAdminConfig5, radioSourcesInput, articleDetailPage, backFromDetail, detailTitle, detailMeta, detailContent, shareWhatsappBtn, shareEmailBtn, companyKeywordReportPage, backToSuperAdminReportBtn, companyKeywordReportTitle;
+        let pageSections, navLoggedIn, navInicio, navRelatorio, navPesquisa, navSuperAdmin, navLogout, navConfiguracoesAdmin, globalAlert, loginPage, dashboardPage, searchPage, superAdminPage, companyKeywordAdminPage, companySettingsAdminPage, reportPage, companyUserAdminPage, configuracoesAdminPage, loginForm, dashboardTitle, currentDateTimeEl, dashboardKeywordList, newsAlertsContainer, newsAlerts, alertDateFilter, reportAccessToggle, logoUploadInput, headerLogoContainer, loginLogoContainer, filterContainer, searchInput, searchResults, companyForm, companyList, backToSuperAdminKwBtn, backToSuperAdminSettingsBtn, backToSuperAdminUsersBtn, companyKeywordAdminTitle, companySettingsAdminTitle, companyUserAdminTitle, keywordForm, keywordInput, keywordIdInput, adminKeywordList, userForm, userInput, userPasswordInput, userIdInput, adminUserList, notificationBell, notificationBadge, manualTriggerBtn, deleteModal, confirmDeleteBtn, cancelDeleteBtn, companyNameToDeleteEl, newsScopeContainer, startDateInput, endDateInput, linkModal, accessLinkInput, copyLinkBtn, closeLinkModalBtn, reportKeywordFilterContainer, stateSelectContainer, stateSelect, changePasswordForm, apiKeyNewsApiInput, apiKeyFirebaseNewsInput, apiKeyGNewsInput1, apiKeyGNewsInput2, apiKeyGNewsInput3, apiKeyGNewsInput4, apiKeyYoutubeInput, apiKeyBloggerInput, apiKeyVisionInput, apiKeyVideoIntelligenceInput, showAllAlertsBtn, deletionAccessToggle, justificationModal, justificationText, submitJustificationBtn, cancelJustificationBtn, btnManualAlert, btnDeletionRequests, btnSuperAdminReport, manualAlertPage, deletionRequestsPage, superAdminReportPage, backToDashboard1, backToDashboard2, backToDashboard3, manualAlertForm, deletionRequestsList, superAdminReportBody, deletionRequestsBadge, pendingAlertsPage, pendingAlertsList, btnPendingAlerts, backToDashboard4, confirmDeleteKeywordBtn, cancelDeleteKeywordBtn, confirmDeleteKeywordModal, keywordToDeleteNameEl, bloggerIdInput, rssUrlInput, fetchOnlyNewToggle, changePasswordPage, globalKeysPage, globalSourcesPage, btnChangePassword, btnGlobalKeys, btnNewsSources, backToAdminConfig1, backToAdminConfig2, backToAdminConfig3, globalLogoPage, btnGlobalLogo, backToAdminConfig4, globalLogoUpload, globalLogoArea, logoLink, btnRadioSources, globalRadioSourcesPage, backToAdminConfig5, radioSourcesInput, articleDetailPage, backFromDetail, detailTitle, detailMeta, detailContent, shareWhatsappBtn, shareEmailBtn, companyKeywordReportPage, backToSuperAdminReportBtn, companyKeywordReportTitle, detailAiInsights;
 
         // --- FUNÇÕES DE UTILIDADE ---
         function showAlert(message, type = 'success') { const c = type === 'success' ? 'bg-green-100 border-green-500 text-green-700' : 'bg-red-100 border-red-500 text-red-700'; globalAlert.innerHTML = `<div class="${c} border-l-4 p-4 rounded-md fade-in" role="alert"><p>${message}</p></div>`; setTimeout(() => { globalAlert.innerHTML = ''; }, 4000); }
@@ -1024,21 +1035,29 @@
         }
 
         // --- LÓGICA DE EXIBIÇÃO DE ALERTA E SENTIMENTO ---
+        // ATUALIZADO: Função modificada para mostrar os dados da IA
         function displayNewsAlert(article, container) {
             const pubDate = new Date(article.publishedAt.seconds ? article.publishedAt.toDate() : article.publishedAt);
             const formattedDate = pubDate.toLocaleDateString('pt-BR');
             const dateForFilter = pubDate.toISOString().split('T')[0];
             
             const alertEl = document.createElement('div');
-            alertEl.className = 'bg-white p-4 rounded-lg shadow-md border-l-4 border-green-500 fade-in';
+            alertEl.className = 'bg-white p-4 rounded-lg shadow-md border-l-4 border-gray-400 fade-in';
             alertEl.dataset.id = article.id;
             alertEl.dataset.date = dateForFilter;
             alertEl.dataset.keywords = (article.keywords || [article.keyword]).join(',');
 
+            // Usa o score da IA se existir, senão usa o antigo
+            const sentimentScore = article.ai?.sentiment?.score ?? article.sentiment?.score ?? 0;
+
             const getSentimentHTML = (score) => {
                 let emoji = '😐'; let color = 'gray'; let text = 'Neutro';
-                if (score > 0.2) { emoji = '😊'; color = 'green'; text = 'Positivo'; } 
-                else if (score < -0.2) { emoji = '😠'; color = 'red'; text = 'Negativo'; }
+                if (score > 0.25) { emoji = '😊'; color = 'green'; text = 'Positivo'; } 
+                else if (score < -0.25) { emoji = '😠'; color = 'red'; text = 'Negativo'; }
+                
+                alertEl.classList.remove('border-gray-400', 'border-green-500', 'border-red-500');
+                alertEl.classList.add(`border-${color}-500`);
+                
                 return `<button class="sentiment-btn text-xs font-semibold text-${color}-600 bg-${color}-100 px-2 py-1 rounded-full">${emoji} ${text}</button>`;
             };
 
@@ -1056,22 +1075,54 @@
                 `<span class="flex-shrink-0 text-xs font-semibold bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full">${kw}</span>`
             ).join('');
 
+            // NOVO: Gera as tags de Entidades e Categorias
+            let aiInsightsHTML = '';
+            if (article.ai && (article.ai.entities?.length > 0 || article.ai.categories?.length > 0)) {
+                
+                const entityColors = {
+                    PERSON: 'bg-blue-100 text-blue-800',
+                    LOCATION: 'bg-green-100 text-green-800',
+                    ORGANIZATION: 'bg-purple-100 text-purple-800',
+                    EVENT: 'bg-yellow-100 text-yellow-800',
+                    WORK_OF_ART: 'bg-pink-100 text-pink-800',
+                    CONSUMER_GOOD: 'bg-indigo-100 text-indigo-800'
+                };
+
+                const entitiesHTML = (article.ai.entities || [])
+                    .slice(0, 5) // Pega as 5 entidades mais relevantes
+                    .map(e => `<span class="ai-tag ${entityColors[e.type] || 'bg-gray-100 text-gray-800'}">${e.name}</span>`)
+                    .join('');
+
+                const categoriesHTML = (article.ai.categories || [])
+                    .slice(0, 2) // Pega as 2 categorias mais relevantes
+                    .map(c => `<span class="ai-tag bg-gray-200 text-gray-900">${c.name.split('/').pop()}</span>`)
+                    .join('');
+                
+                aiInsightsHTML = `
+                    <div class="mt-3 pt-3 border-t border-gray-200">
+                        ${entitiesHTML}
+                        ${categoriesHTML}
+                    </div>
+                `;
+            }
+
             alertEl.innerHTML = `
                 <div class="alert-body-clickable">
                     <div class="flex justify-between items-start">
                         <h4 class="text-lg font-bold text-gray-800 pr-2">${article.title}</h4>
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-2 flex-shrink-0">
                             <div class="flex flex-col items-end gap-1">
                                 ${keywordsHTML}
                             </div>
                             <div class="sentiment-container relative">
-                                ${getSentimentHTML(article.sentiment ? article.sentiment.score : 0)}
+                                ${getSentimentHTML(sentimentScore)}
                                 ${sentimentMenuHTML}
                             </div>
                         </div>
                     </div>
                     <p class="text-sm text-gray-600 mt-2 line-clamp-2">${article.description || 'Descrição não disponível.'}</p>
                 </div>
+                ${aiInsightsHTML}
                 <div class="text-xs text-gray-500 mt-3 flex justify-between items-center">
                     <span>Fonte: ${article.source.name} | Publicado: ${formattedDate}</span>
                     <div>
@@ -1092,13 +1143,18 @@
             try {
                 const articleRef = doc(db, "artifacts", appId, "users", currentUser.companyId, "articles", articleId);
                 await updateDoc(articleRef, {
-                    "sentiment.score": newScore
+                    "sentiment.score": newScore,
+                    "ai.sentiment.score": newScore // Atualiza também o score da IA para consistência
                 });
 
                 const sentimentContainer = alertEl.querySelector('.sentiment-container');
                 let emoji = '😐'; let color = 'gray'; let text = 'Neutro';
-                if (newScore > 0.2) { emoji = '😊'; color = 'green'; text = 'Positivo'; } 
-                else if (newScore < -0.2) { emoji = '😠'; color = 'red'; text = 'Negativo'; }
+                if (newScore > 0.25) { emoji = '😊'; color = 'green'; text = 'Positivo'; } 
+                else if (newScore < -0.25) { emoji = '😠'; color = 'red'; text = 'Negativo'; }
+                
+                alertEl.classList.remove('border-gray-400', 'border-green-500', 'border-red-500');
+                alertEl.classList.add(`border-${color}-500`);
+
                 const newButtonHTML = `<button class="sentiment-btn text-xs font-semibold text-${color}-600 bg-${color}-100 px-2 py-1 rounded-full">${emoji} ${text}</button>`;
                 sentimentContainer.querySelector('.sentiment-btn').outerHTML = newButtonHTML;
 
@@ -1192,7 +1248,7 @@
             const ctx = canvasEl.getContext('2d');
             
             const defaultOptions = { 
-                responsive: false, // Alterado para false para forçar tamanho fixo
+                responsive: false,
                 maintainAspectRatio: false,
                 interaction: { mode: 'index', intersect: false }, 
                 plugins: { 
@@ -1297,14 +1353,10 @@
                 const sentimentCounts = { positive: 0, neutral: 0, negative: 0 };
                 
                 keywordArticles.forEach(article => {
-                    if (article.sentiment) {
-                        const score = article.sentiment.score;
-                        if (score > 0.2) sentimentCounts.positive++;
-                        else if (score < -0.2) sentimentCounts.negative++;
-                        else sentimentCounts.neutral++;
-                    } else {
-                        sentimentCounts.neutral++;
-                    }
+                    const score = article.ai?.sentiment?.score ?? article.sentiment?.score ?? 0;
+                    if (score > 0.25) sentimentCounts.positive++;
+                    else if (score < -0.25) sentimentCounts.negative++;
+                    else sentimentCounts.neutral++;
                 });
 
                 const totalSentiments = sentimentCounts.positive + sentimentCounts.neutral + sentimentCounts.negative;
@@ -1431,10 +1483,10 @@
             }
             if (sentimentFilterValue) {
                 filteredArticles = filteredArticles.filter(a => {
-                    const score = a.sentiment?.score ?? 0;
-                    if (sentimentFilterValue === 'positive') return score > 0.2;
-                    if (sentimentFilterValue === 'negative') return score < -0.2;
-                    if (sentimentFilterValue === 'neutral') return score >= -0.2 && score <= 0.2;
+                    const score = a.ai?.sentiment?.score ?? a.sentiment?.score ?? 0;
+                    if (sentimentFilterValue === 'positive') return score > 0.25;
+                    if (sentimentFilterValue === 'negative') return score < -0.25;
+                    if (sentimentFilterValue === 'neutral') return score >= -0.25 && score <= 0.25;
                     return false;
                 });
             }
@@ -1528,8 +1580,9 @@
         }
         
         // --- LÓGICA DA PÁGINA DE DETALHES DO ALERTA ---
+        // ATUALIZADO: Função modificada para mostrar os dados da IA
         function renderArticleDetailPage(article) {
-            if (!detailTitle || !detailMeta || !detailContent) return;
+            if (!detailTitle || !detailMeta || !detailContent || !detailAiInsights) return;
 
             detailTitle.textContent = article.title;
             detailContent.innerHTML = `<p>${article.description || 'Conteúdo não disponível.'}</p>`;
@@ -1537,22 +1590,46 @@
             const pubDate = new Date(article.publishedAt.seconds ? article.publishedAt.toDate() : article.publishedAt);
             const formattedDate = pubDate.toLocaleString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
-            let score = article.sentiment?.score ?? 0;
+            const sentimentScore = article.ai?.sentiment?.score ?? article.sentiment?.score ?? 0;
             let sentimentText = 'Neutro';
             let sentimentColor = 'text-gray-600';
-            if (score > 0.2) { sentimentText = 'Positivo'; sentimentColor = 'text-green-600'; }
-            else if (score < -0.2) { sentimentText = 'Negativo'; sentimentColor = 'text-red-600'; }
+            if (sentimentScore > 0.25) { sentimentText = 'Positivo'; sentimentColor = 'text-green-600'; }
+            else if (sentimentScore < -0.25) { sentimentText = 'Negativo'; sentimentColor = 'text-red-600'; }
 
             let metaHTML = `
                 <span><strong>Fonte:</strong> ${article.source.name}</span>
                 <span><strong>Data:</strong> ${formattedDate}</span>
-                <span class="${sentimentColor}"><strong>Sentimento:</strong> ${sentimentText}</span>
+                <span class="${sentimentColor}" title="Score: ${sentimentScore.toFixed(2)}"><strong>Sentimento:</strong> ${sentimentText}</span>
             `;
             if (article.author) {
                  metaHTML += `<span><strong>Autor:</strong> ${article.author}</span>`;
             }
-
             detailMeta.innerHTML = metaHTML;
+
+            // NOVO: Renderiza os insights da IA na página de detalhes
+            let aiInsightsHTML = '';
+             if (article.ai) {
+                if (article.ai.entities?.length > 0) {
+                    const entityColors = { PERSON: 'bg-blue-100 text-blue-800', LOCATION: 'bg-green-100 text-green-800', ORGANIZATION: 'bg-purple-100 text-purple-800', EVENT: 'bg-yellow-100 text-yellow-800' };
+                    const entitiesHTML = article.ai.entities
+                        .map(e => `<span class="ai-tag ${entityColors[e.type] || 'bg-gray-100 text-gray-800'}">${e.name}</span>`)
+                        .join('');
+                    aiInsightsHTML += `<div class="mb-4">
+                        <h3 class="text-md font-semibold text-gray-700 mb-2">Entidades Mencionadas</h3>
+                        <div>${entitiesHTML}</div>
+                    </div>`;
+                }
+                if (article.ai.categories?.length > 0) {
+                     const categoriesHTML = article.ai.categories
+                        .map(c => `<span class="ai-tag bg-gray-200 text-gray-900" title="Confiança: ${(c.confidence * 100).toFixed(0)}%">${c.name.split('/').pop()}</span>`)
+                        .join('');
+                    aiInsightsHTML += `<div class="mb-4">
+                        <h3 class="text-md font-semibold text-gray-700 mb-2">Categorias</h3>
+                        <div>${categoriesHTML}</div>
+                    </div>`;
+                }
+             }
+             detailAiInsights.innerHTML = aiInsightsHTML;
         }
 
         function handleShareActions(e) {
@@ -1914,9 +1991,9 @@
                     
                     const sentimentCounts = { positive: 0, neutral: 0, negative: 0 };
                     articlesForKw.forEach(article => {
-                        const score = article.sentiment?.score ?? 0;
-                        if (score > 0.2) sentimentCounts.positive++;
-                        else if (score < -0.2) sentimentCounts.negative++;
+                        const score = article.ai?.sentiment?.score ?? article.sentiment?.score ?? 0;
+                        if (score > 0.25) sentimentCounts.positive++;
+                        else if (score < -0.25) sentimentCounts.negative++;
                         else sentimentCounts.neutral++;
                     });
                     keywordSentiments[kw] = sentimentCounts;
@@ -2083,6 +2160,7 @@
             detailTitle = document.getElementById('detail-title');
             detailMeta = document.getElementById('detail-meta');
             detailContent = document.getElementById('detail-content');
+            detailAiInsights = document.getElementById('detail-ai-insights');
             shareWhatsappBtn = document.getElementById('share-whatsapp-btn');
             shareEmailBtn = document.getElementById('share-email-btn');
             companyKeywordReportPage = document.getElementById('company-keyword-report-page');
@@ -2216,7 +2294,6 @@
             if (backToDashboard1) backToDashboard1.addEventListener('click', () => updateView('dashboard'));
             if (backToDashboard2) backToDashboard2.addEventListener('click', () => updateView('dashboard'));
             if (backToDashboard3) backToDashboard3.addEventListener('click', () => updateView('dashboard'));
-            // CORREÇÃO 4: O botão voltar agora direciona para o dashboard, garantindo um comportamento consistente.
             if (backFromDetail) backFromDetail.addEventListener('click', () => updateView('dashboard')); 
             if (backToSuperAdminReportBtn) backToSuperAdminReportBtn.addEventListener('click', () => updateView('super-admin-report'));
             if (manualAlertForm) manualAlertForm.addEventListener('submit', handleManualAlertSubmit);

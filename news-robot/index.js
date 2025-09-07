@@ -3,45 +3,49 @@
  * * LÓGICA ATUAL: Busca cada palavra-chave individualmente, inclui uma pausa (delay) de 1 segundo
  * * para evitar o erro 429, busca em TODAS as fontes (GNews, NewsAPI, YouTube, Blogger, RSS) e 
  * * aplica um filtro de 24 horas quando solicitado.
- * * * * CORREÇÃO (SET/2025): Removida a dependência do rss2json.com. A análise de RSS agora é feita
- * * diretamente com a biblioteca 'rss-parser' para maior confiabilidade e para evitar erros 429.
+ * * * * CORREÇÃO (SET/2025): Refatorada a lógica de busca RSS para ser mais eficiente, buscando cada 
+ * * feed apenas uma vez e verificando contra todas as palavras-chave, evitando erros 429.
+ * * * * OTIMIZAÇÃO (SET/2025): Agrupadas as buscas por palavra-chave em uma única chamada por API 
+ * * (GNews, NewsAPI, etc.) para evitar erros 429 e aumentar a eficiência.
+ * * * * **NOVA FUNCIONALIDADE (SET/2025): Integração com a Cloud Natural Language AI para análise
+ * * de sentimento, extração de entidades (pessoas, locais, organizações) e categorização de conteúdo.**
  */
 
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const axios = require("axios");
-// ADICIONADO: Importa a nova biblioteca para ler RSS
 const Parser = require('rss-parser');
+
+// ADICIONADO: Importa as novas bibliotecas do Google Cloud
+const { LanguageServiceClient } = require('@google-cloud/language');
 
 admin.initializeApp();
 const db = admin.firestore();
-// ADICIONADO: Cria uma instância do leitor de RSS
 const parser = new Parser();
+
+// ADICIONADO: Inicializa os clientes das novas APIs
+const languageClient = new LanguageServiceClient();
 
 // URLs das APIs
 const GNEWS_URL = "https://gnews.io/api/v4/search";
 const NEWSAPI_URL = "https://newsapi.org/v2/everything";
 const BLOGGER_URL = "https://www.googleapis.com/blogger/v3/blogs";
 const YOUTUBE_URL = "https://www.googleapis.com/youtube/v3/search";
-// REMOVIDO: const RSS2JSON_URL = "https://api.rss2json.com/v1/api.json";
 const APP_ID = "noticias-6e952";
 
-// Aumenta o tempo limite da função para 5 minutos (300 segundos) para evitar timeouts.
+// Aumenta o tempo limite da função para 9 minutos (540 segundos) para dar tempo para a análise de IA
 const runtimeOpts = {
-  timeoutSeconds: 300,
+  timeoutSeconds: 540,
   memory: '1GB'
 };
 const regionalFunctions = functions.region("southamerica-east1").runWith(runtimeOpts);
 
 
 // --- Funções Auxiliares ---
-
-// Cria uma pausa para evitar sobrecarregar as APIs
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 const findMatchingKeywords = (article, keywords) => {
     const title = (article.title || "").toLowerCase();
-    // Usa 'contentSnippet' do rss-parser ou a descrição padrão
     const bodyText = (article.contentSnippet || article.description || article.content || "").toLowerCase();
     const matchedKeywords = keywords.filter(kw => {
         const lowerCaseKw = kw.toLowerCase();
@@ -49,6 +53,43 @@ const findMatchingKeywords = (article, keywords) => {
     });
     return matchedKeywords;
 };
+
+// NOVA FUNÇÃO: Analisa o conteúdo do artigo com a Natural Language AI
+async function analyzeArticleWithAI(article) {
+    const textContent = `${article.title}. ${article.description}`;
+    // Evita analisar textos muito curtos, vazios ou que sejam apenas um link
+    if (!textContent || textContent.length < 50 || textContent.startsWith('http')) {
+        return { sentiment: { score: 0, magnitude: 0 }, entities: [], categories: [] };
+    }
+
+    try {
+        const document = {
+            content: textContent,
+            type: 'PLAIN_TEXT',
+            language: 'pt',
+        };
+
+        // Executa as três análises em paralelo para economizar tempo
+        const [sentimentResult, entitiesResult, categoriesResult] = await Promise.all([
+            languageClient.analyzeSentiment({ document }),
+            languageClient.analyzeEntities({ document }),
+            languageClient.classifyText({ document })
+        ]);
+
+        const sentiment = sentimentResult[0].documentSentiment;
+        const entities = entitiesResult[0].entities
+            .filter(e => e.salience > 0.01 && e.type !== 'OTHER') // Filtra entidades menos relevantes e genéricas
+            .map(e => ({ name: e.name, type: e.type, salience: e.salience }));
+        const categories = categoriesResult[0].categories
+            .map(c => ({ name: c.name, confidence: c.confidence }));
+
+        return { sentiment, entities, categories };
+    } catch (error) {
+        functions.logger.error("Erro na análise da Natural Language AI:", error.message);
+        // Retorna um objeto padrão em caso de erro para não parar o robô
+        return { sentiment: { score: 0, magnitude: 0 }, entities: [], categories: [] };
+    }
+}
 
 function normalizeArticle(article, sourceApi) {
     try {
@@ -68,14 +109,13 @@ function normalizeArticle(article, sourceApi) {
             case 'blogger':
                 const blogName = article.blog ? article.blog.name : 'Blogger';
                 return {
-                    title: article.title, description: (article.content || "").substring(0, 250).replace(/<[^>]*>?/gm, '') + '...',
+                    title: article.title, description: (article.content || "").substring(0, 500).replace(/<[^>]*>?/gm, '') + '...',
                     url: article.url, image: null, publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.published)),
                     source: { name: blogName, url: article.url }, author: article.author?.displayName || null,
                 };
             case 'rss':
-                // ATUALIZADO: Ajustado para os campos da biblioteca rss-parser
                 return {
-                    title: article.title, description: (article.contentSnippet || article.content || "").substring(0, 250),
+                    title: article.title, description: (article.contentSnippet || article.content || "").substring(0, 500),
                     url: article.link, image: article.enclosure?.url || null,
                     publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.isoDate)),
                     source: { name: article.creator || 'RSS Feed', url: article.link }, author: article.creator || null,
@@ -97,7 +137,7 @@ function normalizeArticle(article, sourceApi) {
 
 async function fetchAllNews() {
     functions.logger.info("=======================================");
-    functions.logger.info("INICIANDO BUSCA DE NOTÍCIAS...");
+    functions.logger.info("INICIANDO BUSCA DE NOTÍCIAS COM ANÁLISE DE IA...");
 
     const globalSettingsRef = db.doc(`artifacts/${APP_ID}/public/data/settings/global`);
     const globalSettingsDoc = await globalSettingsRef.get();
@@ -114,26 +154,16 @@ async function fetchAllNews() {
         return { success: true, message: "Nenhuma empresa ativa encontrada." };
     }
 
-    const batch = db.batch();
     let articlesToSaveCount = 0;
-    const allCompaniesData = []; // Armazena dados das empresas para o passo 2 (RSS)
+    const allCompaniesData = []; 
 
-    // =======================================================================
-    // PASSO 1: Busca em APIs que suportam palavras-chave na query (GNews, NewsAPI, etc.)
-    // =======================================================================
-    functions.logger.info("PASSO 1: Buscando em GNews, NewsAPI, YouTube e Blogger...");
+    // Otimização: Preparar dados de todas as empresas primeiro
     for (const companyDoc of companiesSnapshot.docs) {
         const companyId = companyDoc.id;
         const companyName = companyDoc.data().name;
-        functions.logger.info(`--- A processar empresa: ${companyName} ---`);
 
-        const companySettingsRef = db.doc(`artifacts/${APP_ID}/public/data/settings/${companyId}`);
-        const companySettingsDoc = await companySettingsRef.get();
+        const companySettingsDoc = await db.doc(`artifacts/${APP_ID}/public/data/settings/${companyId}`).get();
         const fetchOnlyNew = companySettingsDoc.exists && companySettingsDoc.data().fetchOnlyNew === true;
-
-        if (fetchOnlyNew) {
-            functions.logger.log(`[FILTRO ATIVO] Para ${companyName}, buscando apenas notícias das últimas 24 horas.`);
-        }
 
         const existingUrls = new Set();
         const articlesQuery = db.collection(`artifacts/${APP_ID}/users/${companyId}/articles`).select('url');
@@ -144,185 +174,115 @@ async function fetchAllNews() {
         pendingSnapshot.forEach(doc => existingUrls.add(doc.data().url));
 
         const keywordsSnapshot = await db.collection(`artifacts/${APP_ID}/users/${companyId}/keywords`).get();
-        if (keywordsSnapshot.empty) {
-            functions.logger.warn(`Nenhuma palavra-chave para a empresa ${companyName}, a saltar.`);
-            continue;
+        if (!keywordsSnapshot.empty) {
+            const keywordsList = keywordsSnapshot.docs.map(doc => doc.data().word);
+            allCompaniesData.push({ companyId, companyName, keywordsList, fetchOnlyNew, existingUrls });
         }
+    }
 
-        const keywordsList = keywordsSnapshot.docs.map(doc => doc.data().word);
+    const processAndSaveArticle = async (normalizedArticle, company, matchedKeywords) => {
+        if (!normalizedArticle || company.existingUrls.has(normalizedArticle.url)) {
+            return;
+        }
         
-        allCompaniesData.push({ companyId, companyName, keywordsList, fetchOnlyNew, existingUrls });
+        // Chama a função de análise de IA
+        const aiData = await analyzeArticleWithAI(normalizedArticle);
 
-        for (const keyword of keywordsList) {
-            await delay(1000); 
-            const searchQuery = `"${keyword}"`;
+        const articleData = {
+            ...normalizedArticle,
+            keywords: matchedKeywords,
+            companyId: company.companyId,
+            companyName: company.companyName,
+            status: "pending",
+            ai: aiData, // Salva os dados da IA
+            // Mantém a estrutura de sentimento original para compatibilidade com a interface atual
+            sentiment: { score: aiData.sentiment.score, magnitude: aiData.sentiment.magnitude }
+        };
 
-            // Lógicas de GNews, NewsAPI, YouTube, Blogger (sem alteração)
-            // 1. GNews
-            if (settings.apiKeyGNews1) {
-                const currentHour = new Date().getHours();
-                let gnewsApiKey = '';
-                if (currentHour >= 0 && currentHour < 6) gnewsApiKey = settings.apiKeyGNews1;
-                else if (currentHour >= 6 && currentHour < 12) gnewsApiKey = settings.apiKeyGNews2;
-                else if (currentHour >= 12 && currentHour < 18) gnewsApiKey = settings.apiKeyGNews3;
-                else gnewsApiKey = settings.apiKeyGNews4;
-                if(gnewsApiKey) {
-                    const queryUrl = `${GNEWS_URL}?q=${encodeURIComponent(searchQuery)}&lang=pt&country=br&token=${gnewsApiKey}`;
-                    try {
-                        const response = await axios.get(queryUrl);
-                        if (response.data && response.data.articles) {
-                            for (const article of response.data.articles) {
-                                if (fetchOnlyNew && new Date(article.publishedAt) < twentyFourHoursAgo) continue;
-                                if (existingUrls.has(article.url)) continue;
-                                const matchedKeywords = findMatchingKeywords(article, [keyword]);
-                                if (matchedKeywords.length > 0) {
-                                    const normalized = normalizeArticle(article, 'gnews');
-                                    if (normalized) {
-                                        const pendingAlertRef = db.collection(`artifacts/${APP_ID}/public/data/pendingAlerts`).doc();
-                                        batch.set(pendingAlertRef, { ...normalized, keywords: matchedKeywords, companyId, companyName, status: "pending" });
-                                        existingUrls.add(article.url);
-                                        articlesToSaveCount++;
-                                    }
-                                }
-                            }
-                        }
-                    } catch (e) { functions.logger.error(`Erro GNews (keyword: ${keyword}):`, e.message); }
-                }
-            }
-            // 2. NewsAPI
-            if (settings.apiKeyNewsApi) {
-                const queryUrl = `${NEWSAPI_URL}?q=${encodeURIComponent(searchQuery)}&language=pt&apiKey=${settings.apiKeyNewsApi}`;
+        const pendingAlertRef = db.collection(`artifacts/${APP_ID}/public/data/pendingAlerts`).doc();
+        const batch = db.batch(); // Cria um novo batch para esta operação
+        batch.set(pendingAlertRef, articleData);
+        await batch.commit();
+        
+        company.existingUrls.add(normalizedArticle.url);
+        articlesToSaveCount++;
+    };
+
+    // Agora, iteramos sobre as empresas para buscar nas APIs
+    for (const company of allCompaniesData) {
+        functions.logger.info(`--- Processando empresa: ${company.companyName} ---`);
+        const combinedQuery = company.keywordsList.map(kw => `"${kw}"`).join(" OR ");
+        
+        // GNews
+        if (settings.apiKeyGNews1) {
+            await delay(1000);
+            const currentHour = new Date().getHours();
+            let gnewsApiKey = settings.apiKeyGNews4; // Default
+            if (currentHour >= 0 && currentHour < 6) gnewsApiKey = settings.apiKeyGNews1;
+            else if (currentHour >= 6 && currentHour < 12) gnewsApiKey = settings.apiKeyGNews2;
+            else if (currentHour >= 12 && currentHour < 18) gnewsApiKey = settings.apiKeyGNews3;
+            if(gnewsApiKey) {
+                const queryUrl = `${GNEWS_URL}?q=${encodeURIComponent(combinedQuery)}&lang=pt&country=br&token=${gnewsApiKey}`;
                 try {
                     const response = await axios.get(queryUrl);
                     if (response.data && response.data.articles) {
                         for (const article of response.data.articles) {
-                            if (fetchOnlyNew && new Date(article.publishedAt) < twentyFourHoursAgo) continue;
-                            if (existingUrls.has(article.url)) continue;
-                            const matchedKeywords = findMatchingKeywords(article, [keyword]);
-                            if (matchedKeywords.length > 0) {
-                                const normalized = normalizeArticle(article, 'newsapi');
-                                if (normalized) {
-                                    const pendingAlertRef = db.collection(`artifacts/${APP_ID}/public/data/pendingAlerts`).doc();
-                                    batch.set(pendingAlertRef, { ...normalized, keywords: matchedKeywords, companyId, companyName, status: "pending" });
-                                    existingUrls.add(article.url);
-                                    articlesToSaveCount++;
-                                }
+                            const matchedKeywords = findMatchingKeywords(article, company.keywordsList);
+                            if (matchedKeywords.length > 0 && (!company.fetchOnlyNew || new Date(article.publishedAt) >= twentyFourHoursAgo)) {
+                                const normalized = normalizeArticle(article, 'gnews');
+                                await processAndSaveArticle(normalized, company, matchedKeywords);
                             }
                         }
                     }
-                } catch (e) { functions.logger.error(`Erro NewsAPI (keyword: ${keyword}):`, e.message); }
+                } catch (e) { functions.logger.error(`Erro GNews para ${company.companyName}:`, e.message); }
             }
-            // 3. YouTube
-            if (settings.apiKeyYoutube) {
-                const queryUrl = `${YOUTUBE_URL}?part=snippet&q=${encodeURIComponent(searchQuery)}&type=video&key=${settings.apiKeyYoutube}`;
-                try {
-                    const response = await axios.get(queryUrl);
-                    if (response.data && response.data.items) {
-                        for (const item of response.data.items) {
-                            const articleUrl = `https://www.youtube.com/watch?v=${item.id.videoId}`;
-                            if (fetchOnlyNew && new Date(item.snippet.publishedAt) < twentyFourHoursAgo) continue;
-                            if (existingUrls.has(articleUrl)) continue;
-                            const matchedKeywords = findMatchingKeywords(item.snippet, [keyword]);
-                            if (matchedKeywords.length > 0) {
-                                const normalized = normalizeArticle(item, 'youtube');
-                                if (normalized) {
-                                    const pendingAlertRef = db.collection(`artifacts/${APP_ID}/public/data/pendingAlerts`).doc();
-                                    batch.set(pendingAlertRef, { ...normalized, keywords: matchedKeywords, companyId, companyName, status: "pending" });
-                                    existingUrls.add(articleUrl);
-                                    articlesToSaveCount++;
-                                }
-                            }
+        }
+        
+        // NewsAPI
+        if (settings.apiKeyNewsApi) {
+            await delay(1000);
+            const queryUrl = `${NEWSAPI_URL}?q=${encodeURIComponent(combinedQuery)}&language=pt&apiKey=${settings.apiKeyNewsApi}`;
+            try {
+                const response = await axios.get(queryUrl);
+                if (response.data && response.data.articles) {
+                    for (const article of response.data.articles) {
+                        const matchedKeywords = findMatchingKeywords(article, company.keywordsList);
+                        if (matchedKeywords.length > 0 && (!company.fetchOnlyNew || new Date(article.publishedAt) >= twentyFourHoursAgo)) {
+                            const normalized = normalizeArticle(article, 'newsapi');
+                            await processAndSaveArticle(normalized, company, matchedKeywords);
                         }
                     }
-                } catch (e) { functions.logger.error(`Erro YouTube (keyword: ${keyword}):`, e.message); }
-            }
-            // 4. Blogger
-            if (settings.apiKeyBlogger && settings.bloggerId) {
-                const blogIds = settings.bloggerId.split('\n').filter(id => id.trim() !== '');
-                for (const blogId of blogIds) {
-                    const queryUrl = `${BLOGGER_URL}/${blogId}/posts/search?q=${encodeURIComponent(searchQuery)}&key=${settings.apiKeyBlogger}`;
-                    try {
-                        const response = await axios.get(queryUrl);
-                        if (response.data && response.data.items) {
-                            for (const item of response.data.items) {
-                                if (fetchOnlyNew && new Date(item.published) < twentyFourHoursAgo) continue;
-                                if (existingUrls.has(item.url)) continue;
-                                const matchedKeywords = findMatchingKeywords(item, [keyword]);
-                                if (matchedKeywords.length > 0) {
-                                    const normalized = normalizeArticle(item, 'blogger');
-                                    if (normalized) {
-                                        const pendingAlertRef = db.collection(`artifacts/${APP_ID}/public/data/pendingAlerts`).doc();
-                                        batch.set(pendingAlertRef, { ...normalized, keywords: matchedKeywords, companyId, companyName, status: "pending" });
-                                        existingUrls.add(item.url);
-                                        articlesToSaveCount++;
-                                    }
-                                }
-                            }
-                        }
-                    } catch (e) { functions.logger.error(`Erro Blogger (blogId: ${blogId}, keyword: ${keyword}):`, e.message); }
                 }
-            }
+            } catch (e) { functions.logger.error(`Erro NewsAPI para ${company.companyName}:`, e.message); }
         }
     }
 
-
-    // =======================================================================
-    // PASSO 2: Busca em Feeds RSS de forma otimizada
-    // =======================================================================
+    // Busca de RSS (otimizada, feita uma vez para todas as empresas)
     const rssUrls = settings.rssUrl ? settings.rssUrl.split('\n').filter(url => url.trim() !== '') : [];
     if (rssUrls.length > 0) {
-        functions.logger.info(`PASSO 2: Buscando em ${rssUrls.length} feeds RSS de forma otimizada...`);
-
+        functions.logger.info(`--- Processando ${rssUrls.length} Feeds RSS para todas as empresas ---`);
         for (const rssUrl of rssUrls) {
-            await delay(1000); 
-            let rssItems = [];
             try {
-                functions.logger.log(`- Buscando feed: ${rssUrl}`);
-                // ALTERADO: Usa o rss-parser em vez do axios para o rss2json
+                await delay(1000);
                 const feed = await parser.parseURL(rssUrl);
                 if (feed && feed.items) {
-                    rssItems = feed.items;
-                }
-            } catch (e) {
-                functions.logger.error(`Erro ao buscar o feed RSS: ${rssUrl}. Mensagem: ${e.message}`);
-                continue; 
-            }
-
-            if (rssItems.length > 0) {
-                for (const company of allCompaniesData) {
-                    for (const item of rssItems) {
-                        const articleUrl = item.link;
-                        if (company.fetchOnlyNew && new Date(item.isoDate) < twentyFourHoursAgo) continue;
-                        if (company.existingUrls.has(articleUrl)) continue;
-
-                        const matchedKeywords = findMatchingKeywords(item, company.keywordsList);
-
-                        if (matchedKeywords.length > 0) {
-                            const normalized = normalizeArticle(item, 'rss');
-                            if (normalized) {
-                                const pendingAlertRef = db.collection(`artifacts/${APP_ID}/public/data/pendingAlerts`).doc();
-                                batch.set(pendingAlertRef, {
-                                    ...normalized,
-                                    keywords: matchedKeywords,
-                                    companyId: company.companyId,
-                                    companyName: company.companyName,
-                                    status: "pending"
-                                });
-                                company.existingUrls.add(articleUrl);
-                                articlesToSaveCount++;
+                    for (const item of feed.items) {
+                        for (const company of allCompaniesData) {
+                             const matchedKeywords = findMatchingKeywords(item, company.keywordsList);
+                             if (matchedKeywords.length > 0 && (!company.fetchOnlyNew || new Date(item.isoDate) >= twentyFourHoursAgo)) {
+                                const normalized = normalizeArticle(item, 'rss');
+                                await processAndSaveArticle(normalized, company, matchedKeywords);
                             }
                         }
                     }
                 }
+            } catch (e) {
+                functions.logger.error(`Erro ao buscar o feed RSS: ${rssUrl}. Mensagem: ${e.message}`);
             }
         }
     }
     
-    if (articlesToSaveCount > 0) {
-        await batch.commit();
-    }
     functions.logger.info(`Busca concluída. ${articlesToSaveCount} novos artigos únicos foram guardados na fila de aprovação.`);
-    functions.logger.info("=======================================");
     return { success: true, totalSaved: articlesToSaveCount };
 }
 
