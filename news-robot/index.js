@@ -1,8 +1,8 @@
 /**
  * IMPORTANTE: Este é o código COMPLETO e ATUALIZADO para o servidor (Firebase Cloud Functions).
  * ...
- * * * * NOVA FUNCIONALIDADE (SET/2025): Integração com Vision AI e Video Intelligence AI
- * * para análise de logotipos, OCR em imagens e transcrição de áudio de vídeos.
+ * * * * CORREÇÃO (SET/2025): Revertida a lógica de busca do GNews para uma palavra-chave por vez
+ * * para evitar o erro "400 Bad Request" causado por queries muito longas.
  */
 
 const functions = require("firebase-functions");
@@ -10,7 +10,6 @@ const admin = require("firebase-admin");
 const axios = require("axios");
 const Parser = require('rss-parser');
 
-// ADICIONADO: Importa as novas bibliotecas do Google Cloud
 const { LanguageServiceClient } = require('@google-cloud/language');
 const { TranslationServiceClient } = require('@google-cloud/translate');
 const { ImageAnnotatorClient } = require('@google-cloud/vision');
@@ -21,7 +20,6 @@ admin.initializeApp();
 const db = admin.firestore();
 const parser = new Parser();
 
-// ADICIONADO: Inicializa os clientes das novas APIs
 const languageClient = new LanguageServiceClient();
 const translationClient = new TranslationServiceClient();
 const visionClient = new ImageAnnotatorClient();
@@ -35,13 +33,11 @@ const YOUTUBE_URL = "https://www.googleapis.com/youtube/v3/search";
 const APP_ID = "noticias-6e952";
 const GOOGLE_PROJECT_ID = "noticias-6e952";
 
-// Aumentado para 9 minutos para dar tempo para a análise de IA, especialmente vídeo
 const runtimeOpts = {
-  timeoutSeconds: 540, 
-  memory: '2GB' // Aumenta a memória para processamento de vídeo
+  timeoutSeconds: 540,
+  memory: '2GB'
 };
 const regionalFunctions = functions.region("southamerica-east1").runWith(runtimeOpts);
-
 
 // --- Funções Auxiliares ---
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -49,7 +45,6 @@ const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 const findMatchingKeywords = (article, keywords) => {
     let contentToSearch = (article.title || "").toLowerCase();
     contentToSearch += " " + (article.contentSnippet || article.description || article.content || "").toLowerCase();
-    // Adiciona a transcrição do vídeo e o texto da imagem (OCR) à busca de palavras-chave
     if (article.ai?.videoTranscription) {
         contentToSearch += " " + article.ai.videoTranscription.toLowerCase();
     }
@@ -126,40 +121,11 @@ async function detectAndTranslate(text) {
 function normalizeArticle(article, sourceApi) {
     try {
         switch (sourceApi) {
-            case 'gnews':
-                return {
-                    title: article.title, description: article.description, url: article.url, image: article.image || null,
-                    publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.publishedAt)),
-                    source: { name: article.source.name, url: article.source.url }, author: article.author || null,
-                };
-            case 'newsapi':
-                return {
-                    title: article.title, description: article.description, url: article.url, image: article.urlToImage || null,
-                    publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.publishedAt)),
-                    source: { name: article.source.name, url: null }, author: article.author || null,
-                };
-            case 'blogger':
-                const blogName = article.blog ? article.blog.name : 'Blogger';
-                return {
-                    title: article.title, description: (article.content || "").substring(0, 500).replace(/<[^>]*>?/gm, '') + '...',
-                    url: article.url, image: null, publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.published)),
-                    source: { name: blogName, url: article.url }, author: article.author?.displayName || null,
-                };
-            case 'rss':
-                return {
-                    title: article.title, description: (article.contentSnippet || article.content || "").substring(0, 500),
-                    url: article.link, image: article.enclosure?.url || null,
-                    publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.isoDate)),
-                    source: { name: article.creator || 'RSS Feed', url: article.link }, author: article.creator || null,
-                };
-            case 'youtube':
-                return {
-                    title: article.snippet.title, description: article.snippet.description, url: `https://www.youtube.com/watch?v=${article.id.videoId}`,
-                    image: article.snippet.thumbnails.high.url || null,
-                    publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.snippet.publishedAt)),
-                    source: { name: 'YouTube', url: `https://www.youtube.com/channel/${article.snippet.channelId}` }, author: article.snippet.channelTitle || null,
-                    videoId: article.id.videoId
-                };
+            case 'gnews': return { title: article.title, description: article.description, url: article.url, image: article.image || null, publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.publishedAt)), source: { name: article.source.name, url: article.source.url }, author: article.author || null, };
+            case 'newsapi': return { title: article.title, description: article.description, url: article.url, image: article.urlToImage || null, publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.publishedAt)), source: { name: article.source.name, url: null }, author: article.author || null, };
+            case 'blogger': const blogName = article.blog ? article.blog.name : 'Blogger'; return { title: article.title, description: (article.content || "").substring(0, 500).replace(/<[^>]*>?/gm, '') + '...', url: article.url, image: null, publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.published)), source: { name: blogName, url: article.url }, author: article.author?.displayName || null, };
+            case 'rss': return { title: article.title, description: (article.contentSnippet || article.content || "").substring(0, 500), url: article.link, image: article.enclosure?.url || null, publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.isoDate)), source: { name: article.creator || 'RSS Feed', url: article.link }, author: article.creator || null, };
+            case 'youtube': return { title: article.snippet.title, description: article.snippet.description, url: `https://www.youtube.com/watch?v=${article.id.videoId}`, image: article.snippet.thumbnails.high.url || null, publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.snippet.publishedAt)), source: { name: 'YouTube', url: `https://www.youtube.com/channel/${article.snippet.channelId}` }, author: article.snippet.channelTitle || null, videoId: article.id.videoId };
             default: return null;
         }
     } catch (e) {
@@ -214,9 +180,7 @@ async function fetchAllNews() {
 
     const globalSettingsRef = db.doc(`artifacts/${APP_ID}/public/data/settings/global`);
     const globalSettingsDoc = await globalSettingsRef.get();
-    if (!globalSettingsDoc.exists) {
-        throw new Error("Configurações globais não encontradas.");
-    }
+    if (!globalSettingsDoc.exists) { throw new Error("Configurações globais não encontradas."); }
     const settings = globalSettingsDoc.data();
     const firebaseApiKey = settings.apiKeyFirebaseNews; 
 
@@ -283,10 +247,7 @@ async function fetchAllNews() {
             status: "pending",
             ai: aiData,
             sentiment: { score: aiData.sentiment.score, magnitude: aiData.sentiment.magnitude },
-            translationInfo: {
-                translated: translatedTitle.translated || translatedDesc.translated,
-                originalLanguage: translatedTitle.languageCode
-            },
+            translationInfo: { translated: translatedTitle.translated || translatedDesc.translated, originalLanguage: translatedTitle.languageCode },
             geolocation: geolocation
         };
 
@@ -303,27 +264,30 @@ async function fetchAllNews() {
         functions.logger.info(`--- Processando empresa: ${company.companyName} ---`);
         const combinedQuery = company.keywordsList.map(kw => `"${kw}"`).join(" OR ");
         
+        // CORREÇÃO: GNews volta a buscar uma palavra-chave por vez
         if (settings.apiKeyGNews1) {
-            await delay(1000);
             const currentHour = new Date().getHours();
             let gnewsApiKey = settings.apiKeyGNews4;
             if (currentHour >= 0 && currentHour < 6) gnewsApiKey = settings.apiKeyGNews1;
             else if (currentHour >= 6 && currentHour < 12) gnewsApiKey = settings.apiKeyGNews2;
             else if (currentHour >= 12 && currentHour < 18) gnewsApiKey = settings.apiKeyGNews3;
-            if(gnewsApiKey) {
-                const queryUrl = `${GNEWS_URL}?q=${encodeURIComponent(combinedQuery)}&lang=pt,en,es&token=${gnewsApiKey}`;
-                try {
-                    const response = await axios.get(queryUrl);
-                    if (response.data && response.data.articles) {
-                        for (const article of response.data.articles) {
-                            const matchedKeywords = findMatchingKeywords(article, company.keywordsList);
-                            if (matchedKeywords.length > 0 && (!company.fetchOnlyNew || new Date(article.publishedAt) >= twentyFourHoursAgo)) {
-                                const normalized = normalizeArticle(article, 'gnews');
-                                await processAndSaveArticle(normalized, company, matchedKeywords);
+            if (gnewsApiKey) {
+                for (const keyword of company.keywordsList) {
+                    await delay(1000); // Pausa entre cada palavra-chave
+                    const searchQuery = `"${keyword}"`;
+                    const queryUrl = `${GNEWS_URL}?q=${encodeURIComponent(searchQuery)}&lang=pt,en,es&token=${gnewsApiKey}`;
+                    try {
+                        const response = await axios.get(queryUrl);
+                        if (response.data && response.data.articles) {
+                            for (const article of response.data.articles) {
+                                if (!company.fetchOnlyNew || new Date(article.publishedAt) >= twentyFourHoursAgo) {
+                                    const normalized = normalizeArticle(article, 'gnews');
+                                    await processAndSaveArticle(normalized, company, [keyword]);
+                                }
                             }
                         }
-                    }
-                } catch (e) { functions.logger.error(`Erro GNews para ${company.companyName}:`, e.message); }
+                    } catch (e) { functions.logger.error(`Erro GNews (keyword: ${keyword}):`, e.message); }
+                }
             }
         }
         
@@ -373,6 +337,7 @@ async function fetchAllNews() {
     return { success: true, totalSaved: articlesToSaveCount };
 }
 
+// O restante das funções (manualFetch, scheduledFetch, approveAlert, etc.) permanece o mesmo.
 exports.manualFetch = regionalFunctions.https.onCall(async (data, context) => {
     try {
         return await fetchAllNews();
