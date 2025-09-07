@@ -69,7 +69,6 @@
     <header class="bg-white shadow-md">
         <nav class="container mx-auto px-4 sm:px-6 py-3 flex justify-between items-center">
             <a href="#" id="logo-link" class="cursor-pointer">
-                <!-- CORREÇÃO 5: Removido o texto "Aurora clipping" para evitar o flash na atualização da página. O JS irá preencher esta área. -->
                 <div id="global-logo-area" class="text-xl sm:text-2xl font-bold text-indigo-600 flex items-center">
                 </div>
             </a>
@@ -406,7 +405,45 @@
         <section id="search-page" class="page-section fade-in">
              <div class="bg-white p-4 sm:p-6 md:p-8 rounded-lg shadow-lg">
                 <h2 class="text-xl sm:text-2xl md:text-3xl font-bold mb-6">Pesquisar nos Alertas Guardados</h2>
-                <div id="filter-container" class="mb-8 p-4 border border-gray-200 rounded-lg bg-gray-50"></div>
+                <div id="filter-container" class="mb-8 p-4 border border-gray-200 rounded-lg bg-gray-50">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                        <div>
+                            <label for="search-source-filter" class="block text-sm font-medium text-gray-700">Notícias por Veículo</label>
+                            <select id="search-source-filter" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                                <option value="">Todos</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="search-channel-filter" class="block text-sm font-medium text-gray-700">Notícias por Canal</label>
+                            <select id="search-channel-filter" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                                <option value="">Todos</option>
+                                <option value="YouTube">YouTube</option>
+                                <option value="Sites">Sites</option>
+                                <option value="Revistas">Revistas</option>
+                                <option value="Rádios">Rádios</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Notícias por Período</label>
+                            <div class="flex items-center gap-2 mt-1">
+                                <input type="date" id="search-start-date" class="w-full px-2 py-1 border rounded-md text-sm">
+                                <span class="text-gray-500 text-sm">até</span>
+                                <input type="date" id="search-end-date" class="w-full px-2 py-1 border rounded-md text-sm">
+                            </div>
+                        </div>
+                        <div>
+                            <label for="search-sentiment-filter" class="block text-sm font-medium text-gray-700">Análise de Sentimento</label>
+                            <select id="search-sentiment-filter" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                                <option value="">Todos</option>
+                                <option value="positive">Positivo</option>
+                                <option value="neutral">Neutro</option>
+                                <option value="negative">Negativo</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="keyword-filter-buttons">
+                        </div>
+                </div>
                 <input type="text" id="search-input" placeholder="Digite para pesquisar em títulos ou descrições..." class="w-full p-3 border border-gray-300 rounded-md mb-6">
                 <div id="search-results" class="space-y-4 max-h-[60vh] overflow-y-auto"><p class="text-gray-500">Digite algo para começar a pesquisar ou use os filtros.</p></div>
             </div>
@@ -504,8 +541,8 @@
                     <button id="share-whatsapp-btn" title="Compartilhar no WhatsApp" class="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors">
                         <svg class="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M16.75 13.96c.25.13.43.2.5.33.07.13.07.66 0 1.14-.07.48-.83 1-1.25 1.13-.42.13-1.14.2-3.13-.62-2-.82-3.5-2.25-4.63-3.8-1.13-1.55-1.7-3.13-1.63-3.6.07-.48.5-1 .63-1.14.13-.13.3-.13.42-.13h.5c.13 0 .25.07.38.38.13.25.43.98.5 1.05.07.07.07.13 0 .25-.07.13-.13.25-.25.38-.13.13-.25.25-.38.38-.07.07-.07.13.07.38.2.13.83.82 1.63 1.55.8.73 1.5 1 1.63 1.13.13.13.25.2.38.07.13-.13.38-.5.5-.63.13-.13.25-.25.38-.25s.33.07.43.13c.1.13.58.57.68.68.1.1.18.2.2.3.03.17.03.25.03.38v.12Z M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm0 18.13a8.13 8.13 0 1 1 0-16.26 8.13 8.13 0 0 1 0 16.26Z" clip-rule="evenodd" fill-rule="evenodd"></path></svg>
                     </button>
-                     <button id="share-email-btn" title="Compartilhar por E-mail" class="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors">
-                         <svg class="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M2.25 5.63a2.5 2.5 0 0 1 2.5-2.5h14.5a2.5 2.5 0 0 1 2.5 2.5v12.5a2.5 2.5 0 0 1-2.5-2.5H4.75a2.5 2.5 0 0 1-2.5-2.5V5.63Zm3.12 1.88 5.63 4.25a2 2 0 0 0 2.5 0l5.63-4.25a.5.5 0 0 0-.63-.75L12 10.13 5.9 6.75a.5.5 0 0 0-.5.88Z" clip-rule="evenodd" fill-rule="evenodd"></path></svg>
+                      <button id="share-email-btn" title="Compartilhar por E-mail" class="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors">
+                          <svg class="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M2.25 5.63a2.5 2.5 0 0 1 2.5-2.5h14.5a2.5 2.5 0 0 1 2.5 2.5v12.5a2.5 2.5 0 0 1-2.5-2.5H4.75a2.5 2.5 0 0 1-2.5-2.5V5.63Zm3.12 1.88 5.63 4.25a2 2 0 0 0 2.5 0l5.63-4.25a.5.5 0 0 0-.63-.75L12 10.13 5.9 6.75a.5.5 0 0 0-.5.88Z" clip-rule="evenodd" fill-rule="evenodd"></path></svg>
                     </button>
                 </div>
 
@@ -620,6 +657,14 @@
 
         // --- FUNÇÕES DE UTILIDADE ---
         function showAlert(message, type = 'success') { const c = type === 'success' ? 'bg-green-100 border-green-500 text-green-700' : 'bg-red-100 border-red-500 text-red-700'; globalAlert.innerHTML = `<div class="${c} border-l-4 p-4 rounded-md fade-in" role="alert"><p>${message}</p></div>`; setTimeout(() => { globalAlert.innerHTML = ''; }, 4000); }
+        function getChannelCategory(sourceName) {
+            const name = (sourceName || "").toLowerCase();
+            if (name.includes('youtube')) return 'YouTube';
+            if (name.includes('globo') || name.includes('g1') || name.includes('uol') || name.includes('terra') || name.includes('r7')) return 'Sites';
+            if (name.includes('veja') || name.includes('istoé') || name.includes('exame')) return 'Revistas';
+            if (name.includes('cbn') || name.includes('bandeirantes')) return 'Rádios';
+            return 'Sites';
+        }
         function updateView(pageName) { 
             pageSections.forEach(s => s.classList.remove('active')); 
             const i = !!currentUser; 
@@ -1199,15 +1244,6 @@
             sourceChartInstance = createChart('source-chart', sourceChartInstance, 'line', { labels: allSources, datasets });
         }
         
-        function getChannelCategory(sourceName) {
-            const name = (sourceName || "").toLowerCase();
-            if (name.includes('youtube')) return 'YouTube';
-            if (name.includes('globo') || name.includes('g1') || name.includes('uol') || name.includes('terra') || name.includes('r7')) return 'Sites';
-            if (name.includes('veja') || name.includes('istoé') || name.includes('exame')) return 'Revistas';
-            if (name.includes('cbn') || name.includes('bandeirantes')) return 'Rádios';
-            return 'Sites';
-        }
-
         function renderChannelChart(articles, selectedKeywords) {
             const datasets = [];
             if (selectedKeywords.length === 0) { if(channelChartInstance) channelChartInstance.destroy(); return; };
@@ -1319,8 +1355,98 @@
 
         // --- LÓGICA DA PÁGINA DE PESQUISA ---
         async function setupSearchPage() { if (!currentUser) return; if(searchInput) searchInput.value = ''; if(searchResults) searchResults.innerHTML = '<p class="text-gray-500">A carregar todos os artigos para pesquisa...</p>'; try { const q = query(collection(db, "artifacts", appId, "users", currentUser.companyId, "articles"), orderBy("publishedAt", "desc")); const articlesSnapshot = await getDocs(q); allCompanyArticles = articlesSnapshot.docs.map(d => ({...d.data(), id: d.id})); if(searchResults) searchResults.innerHTML = `<p class="text-gray-500">Pronto para pesquisar em ${allCompanyArticles.length} artigos. Digite um termo ou utilize os filtros.</p>`; setupFilters(); } catch (error) { console.error("Erro ao buscar artigos para pesquisa:", error); if(searchResults) searchResults.innerHTML = '<p class="text-red-500">Não foi possível carregar os artigos para pesquisa.</p>'; } }
-        function setupFilters() { if(!filterContainer) return; filterContainer.innerHTML = ''; const keywords = [...new Set(allCompanyArticles.flatMap(a => a.keywords || [a.keyword]))]; if (keywords.length > 0) { let keywordButtons = keywords.map(kw => `<button class="filter-btn bg-gray-200 hover:bg-indigo-200 text-gray-800 text-sm font-medium px-3 py-1 rounded-full" data-keyword="${kw}">${kw}</button>`).join(''); filterContainer.innerHTML = `<div class="flex flex-wrap gap-2"><span class="font-semibold self-center">Filtrar por Palavra-Chave:</span>${keywordButtons}</div>`; } }
-        function handleSearch() { if(!searchInput || !searchResults || !filterContainer) return; const searchTerm = searchInput.value.toLowerCase().trim(); const activeFilter = filterContainer.querySelector('.bg-indigo-500'); const keywordFilter = activeFilter ? activeFilter.dataset.keyword : null; if (!searchTerm && !keywordFilter) { searchResults.innerHTML = `<p class="text-gray-500">Digite algo para começar a pesquisar ou use os filtros.</p>`; return; } let filteredArticles = allCompanyArticles; if (keywordFilter) { filteredArticles = filteredArticles.filter(a => (a.keywords || [a.keyword]).includes(keywordFilter)); } if (searchTerm) { filteredArticles = filteredArticles.filter(a => a.title.toLowerCase().includes(searchTerm) || (a.description && a.description.toLowerCase().includes(searchTerm))); } renderSearchResults(filteredArticles); }
+        
+        function setupFilters() {
+            if (!filterContainer) return;
+
+            const keywordButtonsContainer = document.getElementById('keyword-filter-buttons');
+            if (keywordButtonsContainer) {
+                keywordButtonsContainer.innerHTML = '';
+                const keywords = [...new Set(allCompanyArticles.flatMap(a => a.keywords || [a.keyword]))];
+                if (keywords.length > 0) {
+                    let keywordButtons = keywords.map(kw => `<button class="filter-btn bg-gray-200 hover:bg-indigo-200 text-gray-800 text-sm font-medium px-3 py-1 rounded-full" data-keyword="${kw}">${kw}</button>`).join('');
+                    keywordButtonsContainer.innerHTML = `<div class="flex flex-wrap gap-2"><span class="font-semibold self-center">Filtrar por Palavra-Chave:</span>${keywordButtons}</div>`;
+                }
+            }
+
+            const sourceFilter = document.getElementById('search-source-filter');
+            if (sourceFilter) {
+                const sources = [...new Set(allCompanyArticles.map(a => a.source.name))].sort();
+                sourceFilter.innerHTML = '<option value="">Todos</option>';
+                sources.forEach(source => {
+                    const option = document.createElement('option');
+                    option.value = source;
+                    option.textContent = source;
+                    sourceFilter.appendChild(option);
+                });
+            }
+
+            document.getElementById('search-source-filter')?.addEventListener('change', handleSearch);
+            document.getElementById('search-channel-filter')?.addEventListener('change', handleSearch);
+            document.getElementById('search-start-date')?.addEventListener('change', handleSearch);
+            document.getElementById('search-end-date')?.addEventListener('change', handleSearch);
+            document.getElementById('search-sentiment-filter')?.addEventListener('change', handleSearch);
+        }
+
+        function handleSearch() {
+            if (!searchInput || !searchResults || !filterContainer) return;
+            const searchTerm = searchInput.value.toLowerCase().trim();
+            
+            const activeKeywordFilter = filterContainer.querySelector('.filter-btn.bg-indigo-500');
+            const keywordFilter = activeKeywordFilter ? activeKeywordFilter.dataset.keyword : null;
+
+            const sourceFilterValue = document.getElementById('search-source-filter')?.value;
+            const channelFilterValue = document.getElementById('search-channel-filter')?.value;
+            const startDateValue = document.getElementById('search-start-date')?.value;
+            const endDateValue = document.getElementById('search-end-date')?.value;
+            const sentimentFilterValue = document.getElementById('search-sentiment-filter')?.value;
+
+            const hasActiveFilters = keywordFilter || sourceFilterValue || channelFilterValue || startDateValue || endDateValue || sentimentFilterValue;
+
+            if (!searchTerm && !hasActiveFilters) {
+                searchResults.innerHTML = `<p class="text-gray-500">Digite algo para começar a pesquisar ou use os filtros.</p>`;
+                return;
+            }
+
+            let filteredArticles = allCompanyArticles;
+
+            if (keywordFilter) {
+                filteredArticles = filteredArticles.filter(a => (a.keywords || [a.keyword]).includes(keywordFilter));
+            }
+            if (sourceFilterValue) {
+                filteredArticles = filteredArticles.filter(a => a.source.name === sourceFilterValue);
+            }
+            if (channelFilterValue) {
+                filteredArticles = filteredArticles.filter(a => getChannelCategory(a.source.name) === channelFilterValue);
+            }
+            if (startDateValue) {
+                const startDate = new Date(startDateValue);
+                startDate.setHours(0, 0, 0, 0);
+                filteredArticles = filteredArticles.filter(a => a.publishedAt.toDate() >= startDate);
+            }
+            if (endDateValue) {
+                const endDate = new Date(endDateValue);
+                endDate.setHours(23, 59, 59, 999);
+                filteredArticles = filteredArticles.filter(a => a.publishedAt.toDate() <= endDate);
+            }
+            if (sentimentFilterValue) {
+                filteredArticles = filteredArticles.filter(a => {
+                    const score = a.sentiment?.score ?? 0;
+                    if (sentimentFilterValue === 'positive') return score > 0.2;
+                    if (sentimentFilterValue === 'negative') return score < -0.2;
+                    if (sentimentFilterValue === 'neutral') return score >= -0.2 && score <= 0.2;
+                    return false;
+                });
+            }
+            if (searchTerm) {
+                filteredArticles = filteredArticles.filter(a =>
+                    a.title.toLowerCase().includes(searchTerm) ||
+                    (a.description && a.description.toLowerCase().includes(searchTerm))
+                );
+            }
+
+            renderSearchResults(filteredArticles);
+        }
         function renderSearchResults(articles) { if(!searchResults) return; searchResults.innerHTML = ''; if (articles.length === 0) { searchResults.innerHTML = '<p class="text-gray-500">Nenhum resultado encontrado.</p>'; return; } articles.forEach(article => displayNewsAlert(article, searchResults)); }
 
         // --- LÓGICA DE FILTRO DO PAINEL DE CONTROLO ---
@@ -1395,8 +1521,8 @@
                         showAlert('Não foi possível encontrar os detalhes deste alerta.', 'error');
                     }
                 } catch (error) {
-                     console.error("Erro ao buscar detalhes do artigo:", error);
-                     showAlert('Erro ao carregar os detalhes do alerta.', 'error');
+                       console.error("Erro ao buscar detalhes do artigo:", error);
+                         showAlert('Erro ao carregar os detalhes do alerta.', 'error');
                 }
             }
         }
@@ -2049,7 +2175,19 @@
             if (userForm) userForm.addEventListener('submit', handleUserSubmit);
             if (adminUserList) adminUserList.addEventListener('click', handleUserActions);
             if (searchInput) searchInput.addEventListener('input', handleSearch);
-            if (filterContainer) filterContainer.addEventListener('click', (e) => { if (e.target.classList.contains('filter-btn')) { document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('bg-indigo-500', 'text-white')); e.target.classList.add('bg-indigo-500', 'text-white'); handleSearch(); } });
+            if (filterContainer) {
+                filterContainer.addEventListener('click', (e) => {
+                    const target = e.target.closest('.filter-btn');
+                    if (target) {
+                        const wasActive = target.classList.contains('bg-indigo-500');
+                        document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('bg-indigo-500', 'text-white'));
+                        if (!wasActive) {
+                            target.classList.add('bg-indigo-500', 'text-white');
+                        }
+                        handleSearch();
+                    }
+                });
+            }
             if (notificationBell) notificationBell.addEventListener('click', showOnlyNewAlerts);
             if (showAllAlertsBtn) showAllAlertsBtn.addEventListener('click', populateInitialAlerts);
             if (backToSuperAdminKwBtn) backToSuperAdminKwBtn.addEventListener('click', () => updateView('super-admin'));
