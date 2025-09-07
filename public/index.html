@@ -11,6 +11,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
+    <!-- API do Google Maps com a sua chave -->
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDC4vQ3PiAAy0WYIrLUTKZGb6WejSVdLrE&callback=initMap"></script>
+    
     <style>
         body { font-family: 'Inter', sans-serif; }
         header { position: fixed; top: 0; left: 0; width: 100%; z-index: 1000; }
@@ -62,7 +65,6 @@
         .company-report-row {
             cursor: pointer;
         }
-        /* NOVOS ESTILOS PARA TAGS DE IA */
         .ai-tag {
             display: inline-block;
             padding: 2px 8px;
@@ -71,6 +73,11 @@
             font-weight: 500;
             line-height: 1.2;
             margin: 2px;
+        }
+        #map {
+            height: 70vh;
+            width: 100%;
+            border-radius: 0.5rem;
         }
     </style>
 </head>
@@ -86,6 +93,7 @@
                 <div id="nav-logged-in" class="hidden items-center flex-wrap justify-end">
                     <a href="#" id="nav-inicio" class="text-gray-600 hover:text-indigo-600 px-2 py-1 sm:px-3 sm:py-2 rounded-md text-sm font-medium">Início</a>
                     <a href="#" id="nav-relatorio" class="hidden text-gray-600 hover:text-indigo-600 px-2 py-1 sm:px-3 sm:py-2 rounded-md text-sm font-medium">Relatório</a>
+                    <a href="#" id="nav-mapa" class="hidden text-gray-600 hover:text-indigo-600 px-2 py-1 sm:px-3 sm:py-2 rounded-md text-sm font-medium">Mapa de Notícias</a>
                     <a href="#" id="nav-pesquisa" class="text-gray-600 hover:text-indigo-600 px-2 py-1 sm:px-3 sm:py-2 rounded-md text-sm font-medium">Pesquisa</a>
                     <a href="#" id="nav-super-admin" class="hidden text-red-600 hover:text-red-800 px-2 py-1 sm:px-3 sm:py-2 rounded-md text-sm font-bold">Super Admin</a>
                     <a href="#" id="nav-configuracoes-admin" class="hidden text-gray-600 hover:text-indigo-600 px-2 py-1 sm:px-3 sm:py-2 rounded-md text-sm font-medium">Configurações</a>
@@ -662,9 +670,11 @@
         let notificationListener = null, companiesListener = null, deletionRequestsListener = null, pendingAlertsListener = null;
         let keywordToDeleteInfo = null;
         let currentDetailArticle = null;
+        let mapInstance = null;
+        let mapMarkers = [];
 
         // --- ELEMENTOS DO DOM ---
-        let pageSections, navLoggedIn, navInicio, navRelatorio, navPesquisa, navSuperAdmin, navLogout, navConfiguracoesAdmin, globalAlert, loginPage, dashboardPage, searchPage, superAdminPage, companyKeywordAdminPage, companySettingsAdminPage, reportPage, companyUserAdminPage, configuracoesAdminPage, loginForm, dashboardTitle, currentDateTimeEl, dashboardKeywordList, newsAlertsContainer, newsAlerts, alertDateFilter, reportAccessToggle, logoUploadInput, headerLogoContainer, loginLogoContainer, filterContainer, searchInput, searchResults, companyForm, companyList, backToSuperAdminKwBtn, backToSuperAdminSettingsBtn, backToSuperAdminUsersBtn, companyKeywordAdminTitle, companySettingsAdminTitle, companyUserAdminTitle, keywordForm, keywordInput, keywordIdInput, adminKeywordList, userForm, userInput, userPasswordInput, userIdInput, adminUserList, notificationBell, notificationBadge, manualTriggerBtn, deleteModal, confirmDeleteBtn, cancelDeleteBtn, companyNameToDeleteEl, newsScopeContainer, startDateInput, endDateInput, linkModal, accessLinkInput, copyLinkBtn, closeLinkModalBtn, reportKeywordFilterContainer, stateSelectContainer, stateSelect, changePasswordForm, apiKeyNewsApiInput, apiKeyFirebaseNewsInput, apiKeyGNewsInput1, apiKeyGNewsInput2, apiKeyGNewsInput3, apiKeyGNewsInput4, apiKeyYoutubeInput, apiKeyBloggerInput, apiKeyVisionInput, apiKeyVideoIntelligenceInput, showAllAlertsBtn, deletionAccessToggle, justificationModal, justificationText, submitJustificationBtn, cancelJustificationBtn, btnManualAlert, btnDeletionRequests, btnSuperAdminReport, manualAlertPage, deletionRequestsPage, superAdminReportPage, backToDashboard1, backToDashboard2, backToDashboard3, manualAlertForm, deletionRequestsList, superAdminReportBody, deletionRequestsBadge, pendingAlertsPage, pendingAlertsList, btnPendingAlerts, backToDashboard4, confirmDeleteKeywordBtn, cancelDeleteKeywordBtn, confirmDeleteKeywordModal, keywordToDeleteNameEl, bloggerIdInput, rssUrlInput, fetchOnlyNewToggle, changePasswordPage, globalKeysPage, globalSourcesPage, btnChangePassword, btnGlobalKeys, btnNewsSources, backToAdminConfig1, backToAdminConfig2, backToAdminConfig3, globalLogoPage, btnGlobalLogo, backToAdminConfig4, globalLogoUpload, globalLogoArea, logoLink, btnRadioSources, globalRadioSourcesPage, backToAdminConfig5, radioSourcesInput, articleDetailPage, backFromDetail, detailTitle, detailMeta, detailContent, shareWhatsappBtn, shareEmailBtn, companyKeywordReportPage, backToSuperAdminReportBtn, companyKeywordReportTitle, detailAiInsights;
+        let pageSections, navLoggedIn, navInicio, navRelatorio, navMapa, navPesquisa, navSuperAdmin, navLogout, navConfiguracoesAdmin, globalAlert, loginPage, dashboardPage, mapPage, searchPage, superAdminPage, companyKeywordAdminPage, companySettingsAdminPage, reportPage, companyUserAdminPage, configuracoesAdminPage, loginForm, dashboardTitle, currentDateTimeEl, dashboardKeywordList, newsAlertsContainer, newsAlerts, alertDateFilter, reportAccessToggle, logoUploadInput, headerLogoContainer, loginLogoContainer, filterContainer, searchInput, searchResults, companyForm, companyList, backToSuperAdminKwBtn, backToSuperAdminSettingsBtn, backToSuperAdminUsersBtn, companyKeywordAdminTitle, companySettingsAdminTitle, companyUserAdminTitle, keywordForm, keywordInput, keywordIdInput, adminKeywordList, userForm, userInput, userPasswordInput, userIdInput, adminUserList, notificationBell, notificationBadge, manualTriggerBtn, deleteModal, confirmDeleteBtn, cancelDeleteBtn, companyNameToDeleteEl, newsScopeContainer, startDateInput, endDateInput, linkModal, accessLinkInput, copyLinkBtn, closeLinkModalBtn, reportKeywordFilterContainer, stateSelectContainer, stateSelect, changePasswordForm, apiKeyNewsApiInput, apiKeyFirebaseNewsInput, apiKeyGNewsInput1, apiKeyGNewsInput2, apiKeyGNewsInput3, apiKeyGNewsInput4, apiKeyYoutubeInput, apiKeyBloggerInput, apiKeyVisionInput, apiKeyVideoIntelligenceInput, showAllAlertsBtn, deletionAccessToggle, justificationModal, justificationText, submitJustificationBtn, cancelJustificationBtn, btnManualAlert, btnDeletionRequests, btnSuperAdminReport, manualAlertPage, deletionRequestsPage, superAdminReportPage, backToDashboard1, backToDashboard2, backToDashboard3, manualAlertForm, deletionRequestsList, superAdminReportBody, deletionRequestsBadge, pendingAlertsPage, pendingAlertsList, btnPendingAlerts, backToDashboard4, confirmDeleteKeywordBtn, cancelDeleteKeywordBtn, confirmDeleteKeywordModal, keywordToDeleteNameEl, bloggerIdInput, rssUrlInput, fetchOnlyNewToggle, changePasswordPage, globalKeysPage, globalSourcesPage, btnChangePassword, btnGlobalKeys, btnNewsSources, backToAdminConfig1, backToAdminConfig2, backToAdminConfig3, globalLogoPage, btnGlobalLogo, backToAdminConfig4, globalLogoUpload, globalLogoArea, logoLink, btnRadioSources, globalRadioSourcesPage, backToAdminConfig5, radioSourcesInput, articleDetailPage, backFromDetail, detailTitle, detailMeta, detailContent, shareWhatsappBtn, shareEmailBtn, companyKeywordReportPage, backToSuperAdminReportBtn, companyKeywordReportTitle, detailAiInsights;
 
         // --- FUNÇÕES DE UTILIDADE ---
         function showAlert(message, type = 'success') { const c = type === 'success' ? 'bg-green-100 border-green-500 text-green-700' : 'bg-red-100 border-red-500 text-red-700'; globalAlert.innerHTML = `<div class="${c} border-l-4 p-4 rounded-md fade-in" role="alert"><p>${message}</p></div>`; setTimeout(() => { globalAlert.innerHTML = ''; }, 4000); }
@@ -681,6 +691,7 @@
             const i = !!currentUser; 
             if (navLoggedIn) navLoggedIn.style.display = i ? 'flex' : 'none'; 
             if (navRelatorio) navRelatorio.classList.toggle('hidden', !currentUser || currentUser.isSuperAdmin);
+            if (navMapa) navMapa.classList.toggle('hidden', !currentUser || currentUser.isSuperAdmin);
             if (navSuperAdmin) navSuperAdmin.classList.toggle('hidden', !currentUser || !currentUser.isSuperAdmin); 
             if (navConfiguracoesAdmin) navConfiguracoesAdmin.classList.toggle('hidden', !currentUser || !currentUser.isSuperAdmin); 
             if (clockInterval) clearInterval(clockInterval); 
@@ -689,6 +700,7 @@
             switch (pageName) { 
                 case 'login': loginPage.classList.add('active'); break; 
                 case 'dashboard': dashboardPage.classList.add('active'); renderDashboard(); updateDateTime(); clockInterval = setInterval(updateDateTime, 60000); break; 
+                case 'map': mapPage.classList.add('active'); renderMapPage(); break;
                 case 'super-admin': superAdminPage.classList.add('active'); setupCompaniesListener(); break; 
                 case 'search': searchPage.classList.add('active'); setupSearchPage(); break; 
                 case 'company-keyword-admin': companyKeywordAdminPage.classList.add('active'); renderCompanyKeywordAdminPage(); break; 
@@ -712,6 +724,73 @@
         function getStorage(key, defaultValue) { try { const d = localStorage.getItem(key); return d ? JSON.parse(d) : defaultValue; } catch (e) { console.error(e); return defaultValue; } }
         function setStorage(key, value) { localStorage.setItem(key, JSON.stringify(value)); }
         function updateDateTime() { if (!currentDateTimeEl) return; const n = new Date(), f = { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }; currentDateTimeEl.textContent = `Data: ${n.toLocaleDateString('pt-BR', f).replace(',', ' -')}`; }
+
+        // --- LÓGICA DO MAPA ---
+        function clearMarkers() {
+            mapMarkers.forEach(marker => marker.setMap(null));
+            mapMarkers = [];
+        }
+
+        async function renderMapPage() {
+            if (!currentUser) return;
+            if (!mapInstance) {
+                return;
+            }
+
+            clearMarkers();
+
+            try {
+                const articlesWithGeoQuery = query(
+                    collection(db, "artifacts", appId, "users", currentUser.companyId, "articles"),
+                    where("geolocation", "!=", null),
+                    orderBy("geolocation"), 
+                    orderBy("publishedAt", "desc"),
+                    limit(200) 
+                );
+
+                const articlesSnapshot = await getDocs(articlesWithGeoQuery);
+                const infoWindow = new google.maps.InfoWindow();
+                
+                if (articlesSnapshot.empty) {
+                    showAlert("Nenhuma notícia com geolocalização encontrada para exibir no mapa.", "success");
+                    return;
+                }
+
+                articlesSnapshot.forEach(doc => {
+                    const article = { id: doc.id, ...doc.data() };
+                    const marker = new google.maps.Marker({
+                        position: article.geolocation,
+                        map: mapInstance,
+                        title: article.title,
+                        animation: google.maps.Animation.DROP,
+                    });
+                    mapMarkers.push(marker);
+
+                    marker.addListener('mouseover', () => {
+                        infoWindow.setContent(`
+                            <div class="font-sans p-1">
+                                <p class="font-bold text-sm">${article.title}</p>
+                                <p class="text-xs text-gray-500">${article.source.name}</p>
+                            </div>
+                        `);
+                        infoWindow.open({
+                            anchor: marker,
+                            map: mapInstance,
+                        });
+                    });
+
+                    marker.addListener('click', () => {
+                        currentDetailArticle = article;
+                        renderArticleDetailPage(article);
+                        updateView('article-detail');
+                    });
+                });
+
+            } catch (error) {
+                console.error("Erro ao carregar notícias para o mapa:", error);
+                showAlert("Não foi possível carregar as notícias no mapa.", "error");
+            }
+        }
 
         // --- LÓGICA DO ACIONAMENTO MANUAL ---
         async function handleManualTrigger() {
@@ -1035,7 +1114,6 @@
         }
 
         // --- LÓGICA DE EXIBIÇÃO DE ALERTA E SENTIMENTO ---
-        // ATUALIZADO: Função modificada para mostrar os dados da IA e Tradução
         function displayNewsAlert(article, container) {
             const pubDate = new Date(article.publishedAt.seconds ? article.publishedAt.toDate() : article.publishedAt);
             const formattedDate = pubDate.toLocaleDateString('pt-BR');
@@ -1156,39 +1234,29 @@
         }
         function filterAlertsByDate() { if(!newsAlerts || !alertDateFilter) return; const selectedDate = alertDateFilter.value; const allAlerts = newsAlerts.querySelectorAll('.fade-in'); let visibleCount = 0; allAlerts.forEach(alert => { const isVisible = !selectedDate || alert.dataset.date === selectedDate; alert.style.display = isVisible ? 'block' : 'none'; if(isVisible) visibleCount++; }); if(visibleCount === 0 && !newsAlerts.querySelector('.text-gray-500')) { newsAlerts.insertAdjacentHTML('beforeend', `<p class="text-gray-500">Nenhum alerta encontrado para a data selecionada.</p>`); } else if (visibleCount > 0) { const noAlertsMsg = newsAlerts.querySelector('.text-gray-500'); if (noAlertsMsg) noAlertsMsg.remove(); } }
         
-        // --- LÓGICA DA PÁGINA DE RELATÓRIO ---
         async function renderReportPage() {
             if (!currentUser) return;
             const articlesQuery = query(collection(db, "artifacts", appId, "users", currentUser.companyId, "articles"), orderBy("publishedAt", "desc"));
             const keywordsQuery = query(collection(db, "artifacts", appId, "users", currentUser.companyId, "keywords"));
-
             const [articlesSnapshot, keywordsSnapshot] = await Promise.all([getDocs(articlesQuery), getDocs(keywordsQuery)]);
-            
             allCompanyArticles = articlesSnapshot.docs.map(doc => doc.data());
             const keywords = keywordsSnapshot.docs.map(doc => doc.data().word);
-
             if (reportKeywordFilterContainer) {
                reportKeywordFilterContainer.innerHTML = '';
                keywords.forEach(kw => {
                     const id = `kw-filter-${kw.replace(/\s+/g, '-')}`;
                     const filterEl = document.createElement('div');
                     filterEl.className = 'flex items-center';
-                    filterEl.innerHTML = `
-                        <input type="checkbox" id="${id}" value="${kw}" class="report-kw-checkbox h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
-                        <label for="${id}" class="ml-2 block text-sm text-gray-900">${kw}</label>
-                    `;
+                    filterEl.innerHTML = `<input type="checkbox" id="${id}" value="${kw}" class="report-kw-checkbox h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"><label for="${id}" class="ml-2 block text-sm text-gray-900">${kw}</label>`;
                    reportKeywordFilterContainer.appendChild(filterEl);
                });
             }
-            
             const updateCharts = () => {
                 const startDate = startDateInput && startDateInput.value ? new Date(startDateInput.value) : null;
                 const endDate = endDateInput && endDateInput.value ? new Date(endDateInput.value) : null;
                 const selectedKeywords = reportKeywordFilterContainer ? Array.from(reportKeywordFilterContainer.querySelectorAll('.report-kw-checkbox:checked')).map(cb => cb.value) : [];
-
                 if (startDate) startDate.setHours(0, 0, 0, 0);
                 if (endDate) endDate.setHours(23, 59, 59, 999);
-
                 const filteredArticles = allCompanyArticles.filter(article => {
                     const pubDate = article.publishedAt.toDate();
                     const dateMatch = (!startDate || pubDate >= startDate) && (!endDate || pubDate <= endDate);
@@ -1202,7 +1270,6 @@
                 renderSentimentChart(filteredArticles, keywordsToDisplay);
                 renderChannelChart(filteredArticles, keywordsToDisplay);
             };
-            
             if (startDateInput) startDateInput.addEventListener('change', updateCharts);
             if (endDateInput) endDateInput.addEventListener('change', updateCharts);
             if (reportKeywordFilterContainer) reportKeywordFilterContainer.addEventListener('change', updateCharts);
@@ -1210,17 +1277,13 @@
         }
         
         const chartColors = ['#4F46E5', '#06B6D4', '#F59E0B', '#10B981', '#EF4444', '#8B5CF6', '#EC4899'];
-
         function createChart(canvasId, instanceVar, type, data, customOptions = {}) {
             const canvasEl = document.getElementById(canvasId);
             if (!canvasEl) return;
             if (instanceVar) instanceVar.destroy();
             const ctx = canvasEl.getContext('2d');
-            
             const defaultOptions = { 
-                responsive: false,
-                maintainAspectRatio: false,
-                interaction: { mode: 'index', intersect: false }, 
+                responsive: false, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, 
                 plugins: { 
                     legend: { 
                         position: 'left',
@@ -1249,138 +1312,61 @@
             const options = { ...defaultOptions, ...customOptions };
             return new Chart(ctx, { type, data, options });
         }
-
         function renderSourceChart(articles, selectedKeywords) {
             const datasets = [];
             if (selectedKeywords.length === 0) { if(sourceChartInstance) sourceChartInstance.destroy(); return; }
             const allSources = [...new Set(articles.map(a => a.source.name))].sort();
-            
             selectedKeywords.forEach((keyword, index) => {
-                const sourceCounts = allSources.map(source => 
-                    articles.filter(a => (a.keywords || [a.keyword]).includes(keyword) && a.source.name === source).length
-                );
-                datasets.push({
-                    label: keyword,
-                    data: sourceCounts,
-                    borderColor: chartColors[index % chartColors.length],
-                    borderWidth: 2,
-                    fill: false
-                });
+                const sourceCounts = allSources.map(source => articles.filter(a => (a.keywords || [a.keyword]).includes(keyword) && a.source.name === source).length);
+                datasets.push({ label: keyword, data: sourceCounts, borderColor: chartColors[index % chartColors.length], borderWidth: 2, fill: false });
             });
             sourceChartInstance = createChart('source-chart', sourceChartInstance, 'line', { labels: allSources, datasets });
         }
-        
         function renderChannelChart(articles, selectedKeywords) {
             const datasets = [];
             if (selectedKeywords.length === 0) { if(channelChartInstance) channelChartInstance.destroy(); return; };
             const allChannels = ['YouTube', 'Sites', 'Revistas', 'Rádios'];
-
             selectedKeywords.forEach((keyword, index) => {
-                const channelCounts = allChannels.map(channel => 
-                    articles.filter(a => (a.keywords || [a.keyword]).includes(keyword) && getChannelCategory(a.source.name) === channel).length
-                );
-                datasets.push({
-                    label: keyword,
-                    data: channelCounts,
-                    borderColor: chartColors[index % chartColors.length],
-                    borderWidth: 2,
-                    fill: false
-                });
+                const channelCounts = allChannels.map(channel => articles.filter(a => (a.keywords || [a.keyword]).includes(keyword) && getChannelCategory(a.source.name) === channel).length);
+                datasets.push({ label: keyword, data: channelCounts, borderColor: chartColors[index % chartColors.length], borderWidth: 2, fill: false });
             });
             channelChartInstance = createChart('channel-chart', channelChartInstance, 'line', { labels: allChannels, datasets });
         }
-
         function renderDateChart(articles, selectedKeywords) {
             const datasets = [];
             if (selectedKeywords.length === 0) { if(dateChartInstance) dateChartInstance.destroy(); return; };
-
-            const allDates = [...new Set(articles.map(a => a.publishedAt.toDate().toLocaleDateString('pt-BR')))]
-                .sort((a, b) => new Date(a.split('/').reverse().join('-')) - new Date(b.split('/').reverse().join('-')));
-
+            const allDates = [...new Set(articles.map(a => a.publishedAt.toDate().toLocaleDateString('pt-BR')))].sort((a, b) => new Date(a.split('/').reverse().join('-')) - new Date(b.split('/').reverse().join('-')));
             selectedKeywords.forEach((keyword, index) => {
-                const dateCounts = allDates.map(date => 
-                    articles.filter(a => (a.keywords || [a.keyword]).includes(keyword) && a.publishedAt.toDate().toLocaleDateString('pt-BR') === date).length
-                );
-                datasets.push({
-                    label: keyword,
-                    data: dateCounts,
-                    borderColor: chartColors[index % chartColors.length],
-                    borderWidth: 2,
-                    fill: false,
-                    tension: 0.1
-                });
+                const dateCounts = allDates.map(date => articles.filter(a => (a.keywords || [a.keyword]).includes(keyword) && a.publishedAt.toDate().toLocaleDateString('pt-BR') === date).length);
+                datasets.push({ label: keyword, data: dateCounts, borderColor: chartColors[index % chartColors.length], borderWidth: 2, fill: false, tension: 0.1 });
             });
             dateChartInstance = createChart('date-chart', dateChartInstance, 'line', { labels: allDates, datasets });
         }
-        
         function renderSentimentChart(articles, selectedKeywords) {
             const datasets = [];
             if (selectedKeywords.length === 0) { if(sentimentChartInstance) sentimentChartInstance.destroy(); return; };
             const allSentiments = ['Positivo', 'Neutro', 'Negativo'];
-
             selectedKeywords.forEach((keyword, index) => {
                 const keywordArticles = articles.filter(a => (a.keywords || [a.keyword]).includes(keyword));
                 const sentimentCounts = { positive: 0, neutral: 0, negative: 0 };
-                
                 keywordArticles.forEach(article => {
                     const score = article.ai?.sentiment?.score ?? article.sentiment?.score ?? 0;
                     if (score > 0.25) sentimentCounts.positive++;
                     else if (score < -0.25) sentimentCounts.negative++;
                     else sentimentCounts.neutral++;
                 });
-
                 const totalSentiments = sentimentCounts.positive + sentimentCounts.neutral + sentimentCounts.negative;
-                
-                const dataInPercentage = totalSentiments > 0 ? [
-                    (sentimentCounts.positive / totalSentiments) * 100,
-                    (sentimentCounts.neutral / totalSentiments) * 100,
-                    (sentimentCounts.negative / totalSentiments) * 100
-                ] : [0, 0, 0];
-
-                datasets.push({
-                    label: keyword,
-                    data: dataInPercentage,
-                    borderColor: chartColors[index % chartColors.length],
-                    borderWidth: 2,
-                    fill: false
-                });
+                const dataInPercentage = totalSentiments > 0 ? [(sentimentCounts.positive / totalSentiments) * 100, (sentimentCounts.neutral / totalSentiments) * 100, (sentimentCounts.negative / totalSentiments) * 100] : [0, 0, 0];
+                datasets.push({ label: keyword, data: dataInPercentage, borderColor: chartColors[index % chartColors.length], borderWidth: 2, fill: false });
             });
-
-            const sentimentChartOptions = {
-                scales: {
-                    y: {
-                        ticks: {
-                            callback: function(value) { return value + '%'; }
-                        },
-                        min: 0,
-                        max: 100
-                    }
-                },
-                plugins: {
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                let label = context.dataset.label || '';
-                                if (label) { label += ': '; }
-                                if (context.parsed.y !== null) {
-                                    label += context.parsed.y.toFixed(2) + '%';
-                                }
-                                return label;
-                            }
-                        }
-                    }
-                }
-            };
-            
+            const sentimentChartOptions = { scales: { y: { ticks: { callback: function(value) { return value + '%'; } }, min: 0, max: 100 } }, plugins: { tooltip: { callbacks: { label: function(context) { let label = context.dataset.label || ''; if (label) { label += ': '; } if (context.parsed.y !== null) { label += context.parsed.y.toFixed(2) + '%'; } return label; } } } } };
             sentimentChartInstance = createChart('sentiment-chart', sentimentChartInstance, 'line', { labels: allSentiments, datasets }, sentimentChartOptions);
         }
 
-        // --- LÓGICA DA PÁGINA DE PESQUISA ---
         async function setupSearchPage() { if (!currentUser) return; if(searchInput) searchInput.value = ''; if(searchResults) searchResults.innerHTML = '<p class="text-gray-500">A carregar todos os artigos para pesquisa...</p>'; try { const q = query(collection(db, "artifacts", appId, "users", currentUser.companyId, "articles"), orderBy("publishedAt", "desc")); const articlesSnapshot = await getDocs(q); allCompanyArticles = articlesSnapshot.docs.map(d => ({...d.data(), id: d.id})); if(searchResults) searchResults.innerHTML = `<p class="text-gray-500">Pronto para pesquisar em ${allCompanyArticles.length} artigos. Digite um termo ou utilize os filtros.</p>`; setupFilters(); } catch (error) { console.error("Erro ao buscar artigos para pesquisa:", error); if(searchResults) searchResults.innerHTML = '<p class="text-red-500">Não foi possível carregar os artigos para pesquisa.</p>'; } }
         
         function setupFilters() {
             if (!filterContainer) return;
-
             const keywordButtonsContainer = document.getElementById('keyword-filter-buttons');
             if (keywordButtonsContainer) {
                 keywordButtonsContainer.innerHTML = '';
@@ -1390,7 +1376,6 @@
                     keywordButtonsContainer.innerHTML = `<div class="flex flex-wrap gap-2"><span class="font-semibold self-center">Filtrar por Palavra-Chave:</span>${keywordButtons}</div>`;
                 }
             }
-
             const sourceFilter = document.getElementById('search-source-filter');
             if (sourceFilter) {
                 const sources = [...new Set(allCompanyArticles.map(a => a.source.name))].sort();
@@ -1402,55 +1387,33 @@
                     sourceFilter.appendChild(option);
                 });
             }
-
             document.getElementById('search-source-filter')?.addEventListener('change', handleSearch);
             document.getElementById('search-channel-filter')?.addEventListener('change', handleSearch);
             document.getElementById('search-start-date')?.addEventListener('change', handleSearch);
             document.getElementById('search-end-date')?.addEventListener('change', handleSearch);
             document.getElementById('search-sentiment-filter')?.addEventListener('change', handleSearch);
         }
-
         function handleSearch() {
             if (!searchInput || !searchResults || !filterContainer) return;
             const searchTerm = searchInput.value.toLowerCase().trim();
-            
             const activeKeywordFilter = filterContainer.querySelector('.filter-btn.bg-indigo-500');
             const keywordFilter = activeKeywordFilter ? activeKeywordFilter.dataset.keyword : null;
-
             const sourceFilterValue = document.getElementById('search-source-filter')?.value;
             const channelFilterValue = document.getElementById('search-channel-filter')?.value;
             const startDateValue = document.getElementById('search-start-date')?.value;
             const endDateValue = document.getElementById('search-end-date')?.value;
             const sentimentFilterValue = document.getElementById('search-sentiment-filter')?.value;
-
             const hasActiveFilters = keywordFilter || sourceFilterValue || channelFilterValue || startDateValue || endDateValue || sentimentFilterValue;
-
             if (!searchTerm && !hasActiveFilters) {
                 searchResults.innerHTML = `<p class="text-gray-500">Digite algo para começar a pesquisar ou use os filtros.</p>`;
                 return;
             }
-
             let filteredArticles = allCompanyArticles;
-
-            if (keywordFilter) {
-                filteredArticles = filteredArticles.filter(a => (a.keywords || [a.keyword]).includes(keywordFilter));
-            }
-            if (sourceFilterValue) {
-                filteredArticles = filteredArticles.filter(a => a.source.name === sourceFilterValue);
-            }
-            if (channelFilterValue) {
-                filteredArticles = filteredArticles.filter(a => getChannelCategory(a.source.name) === channelFilterValue);
-            }
-            if (startDateValue) {
-                const startDate = new Date(startDateValue);
-                startDate.setHours(0, 0, 0, 0);
-                filteredArticles = filteredArticles.filter(a => a.publishedAt.toDate() >= startDate);
-            }
-            if (endDateValue) {
-                const endDate = new Date(endDateValue);
-                endDate.setHours(23, 59, 59, 999);
-                filteredArticles = filteredArticles.filter(a => a.publishedAt.toDate() <= endDate);
-            }
+            if (keywordFilter) { filteredArticles = filteredArticles.filter(a => (a.keywords || [a.keyword]).includes(keywordFilter)); }
+            if (sourceFilterValue) { filteredArticles = filteredArticles.filter(a => a.source.name === sourceFilterValue); }
+            if (channelFilterValue) { filteredArticles = filteredArticles.filter(a => getChannelCategory(a.source.name) === channelFilterValue); }
+            if (startDateValue) { const startDate = new Date(startDateValue); startDate.setHours(0, 0, 0, 0); filteredArticles = filteredArticles.filter(a => a.publishedAt.toDate() >= startDate); }
+            if (endDateValue) { const endDate = new Date(endDateValue); endDate.setHours(23, 59, 59, 999); filteredArticles = filteredArticles.filter(a => a.publishedAt.toDate() <= endDate); }
             if (sentimentFilterValue) {
                 filteredArticles = filteredArticles.filter(a => {
                     const score = a.ai?.sentiment?.score ?? a.sentiment?.score ?? 0;
@@ -1460,42 +1423,25 @@
                     return false;
                 });
             }
-            if (searchTerm) {
-                filteredArticles = filteredArticles.filter(a =>
-                    a.title.toLowerCase().includes(searchTerm) ||
-                    (a.description && a.description.toLowerCase().includes(searchTerm))
-                );
-            }
-
+            if (searchTerm) { filteredArticles = filteredArticles.filter(a => a.title.toLowerCase().includes(searchTerm) || (a.description && a.description.toLowerCase().includes(searchTerm))); }
             renderSearchResults(filteredArticles);
         }
         function renderSearchResults(articles) { if(!searchResults) return; searchResults.innerHTML = ''; if (articles.length === 0) { searchResults.innerHTML = '<p class="text-gray-500">Nenhum resultado encontrado.</p>'; return; } articles.forEach(article => displayNewsAlert(article, searchResults)); }
-
-        // --- LÓGICA DE FILTRO DO PAINEL DE CONTROLO ---
+        
         function handleDashboardKeywordFilter(e) {
             const target = e.target.closest('.keyword-filter');
             if (!target) return;
-
             const isAlreadyActive = target.classList.contains('active');
             const keywordToFilter = target.dataset.keyword;
-            
             document.querySelectorAll('.keyword-filter').forEach(el => el.classList.remove('active'));
-
-            if (isAlreadyActive && keywordToFilter !== 'all') {
-                document.querySelector('.keyword-filter[data-keyword="all"]').classList.add('active');
-            } else {
-                target.classList.add('active');
-            }
-            
+            if (isAlreadyActive && keywordToFilter !== 'all') { document.querySelector('.keyword-filter[data-keyword="all"]').classList.add('active'); } else { target.classList.add('active'); }
             filterDashboardAlerts();
         }
-
         function filterDashboardAlerts() {
             if(!dashboardKeywordList || !newsAlerts) return;
             const activeKeywordEl = dashboardKeywordList.querySelector('.keyword-filter.active');
             const selectedKeyword = activeKeywordEl ? activeKeywordEl.dataset.keyword : 'all';
             const allAlerts = newsAlerts.querySelectorAll('.fade-in');
-            
             allAlerts.forEach(alert => {
                 const alertKeywords = alert.dataset.keywords.split(',');
                 const keywordMatch = selectedKeyword === 'all' || alertKeywords.includes(selectedKeyword);
@@ -1503,35 +1449,24 @@
             });
         }
 
-        // --- AÇÕES DO CARTÃO DE ALERTA E DETALHES ---
         async function handleAlertCardActions(e) {
             const target = e.target;
             if(!target) return;
-
-            if (target.closest('.sentiment-option')) {
-                handleSentimentChange(e);
-                return;
-            }
-
+            if (target.closest('.sentiment-option')) { handleSentimentChange(e); return; }
             if (target.closest('.request-delete-btn')) {
                 const alertEl = target.closest('.fade-in');
                 if(!alertEl) return;
-                articleToDeleteInfo = {
-                    id: alertEl.dataset.id,
-                    title: alertEl.querySelector('h4').textContent
-                };
+                articleToDeleteInfo = { id: alertEl.dataset.id, title: alertEl.querySelector('h4').textContent };
                 if(justificationText) justificationText.value = '';
                 if(submitJustificationBtn) submitJustificationBtn.disabled = true;
                 if(justificationModal) justificationModal.classList.remove('hidden');
                 return;
             }
-
             const alertBody = target.closest('.alert-body-clickable');
             if(alertBody){
                 const alertEl = alertBody.closest('.fade-in');
                 const articleId = alertEl.dataset.id;
                 if (!articleId || !currentUser) return;
-                
                 try {
                     const articleRef = doc(db, "artifacts", appId, "users", currentUser.companyId, "articles", articleId);
                     const docSnap = await getDoc(articleRef);
@@ -1539,87 +1474,19 @@
                         currentDetailArticle = docSnap.data();
                         renderArticleDetailPage(currentDetailArticle);
                         updateView('article-detail');
-                    } else {
-                        showAlert('Não foi possível encontrar os detalhes deste alerta.', 'error');
-                    }
-                } catch (error) {
-                       console.error("Erro ao buscar detalhes do artigo:", error);
-                         showAlert('Erro ao carregar os detalhes do alerta.', 'error');
-                }
+                    } else { showAlert('Não foi possível encontrar os detalhes deste alerta.', 'error'); }
+                } catch (error) { console.error("Erro ao buscar detalhes do artigo:", error); showAlert('Erro ao carregar os detalhes do alerta.', 'error'); }
             }
         }
         
-        // --- LÓGICA DA PÁGINA DE DETALHES DO ALERTA ---
-        // ATUALIZADO: Função modificada para mostrar os dados da IA e Tradução
-        function renderArticleDetailPage(article) {
-            if (!detailTitle || !detailMeta || !detailContent || !detailAiInsights) return;
-
-            detailTitle.textContent = article.title;
-            detailContent.innerHTML = `<p>${article.description || 'Conteúdo não disponível.'}</p>`;
-
-            const pubDate = new Date(article.publishedAt.seconds ? article.publishedAt.toDate() : article.publishedAt);
-            const formattedDate = pubDate.toLocaleString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-
-            const sentimentScore = article.ai?.sentiment?.score ?? article.sentiment?.score ?? 0;
-            let sentimentText = 'Neutro';
-            let sentimentColor = 'text-gray-600';
-            if (sentimentScore > 0.25) { sentimentText = 'Positivo'; sentimentColor = 'text-green-600'; }
-            else if (sentimentScore < -0.25) { sentimentText = 'Negativo'; sentimentColor = 'text-red-600'; }
-
-            let translationHTML = '';
-            if (article.translationInfo?.translated) {
-                translationHTML = `<span class="mr-4">🌐 <strong>Traduzido de:</strong> ${article.translationInfo.originalLanguage.toUpperCase()}</span>`;
-            }
-
-            let metaHTML = `
-                ${translationHTML}
-                <span><strong>Fonte:</strong> ${article.source.name}</span>
-                <span class="ml-4"><strong>Data:</strong> ${formattedDate}</span>
-                <span class="${sentimentColor} ml-4" title="Score: ${sentimentScore.toFixed(2)}"><strong>Sentimento:</strong> ${sentimentText}</span>
-            `;
-            if (article.author) {
-                 metaHTML += `<span class="ml-4"><strong>Autor:</strong> ${article.author}</span>`;
-            }
-            detailMeta.innerHTML = metaHTML;
-
-            let aiInsightsHTML = '';
-             if (article.ai) {
-                if (article.ai.entities?.length > 0) {
-                    const entityColors = { PERSON: 'bg-blue-100 text-blue-800', LOCATION: 'bg-green-100 text-green-800', ORGANIZATION: 'bg-purple-100 text-purple-800', EVENT: 'bg-yellow-100 text-yellow-800' };
-                    const entitiesHTML = article.ai.entities
-                        .map(e => `<span class="ai-tag ${entityColors[e.type] || 'bg-gray-100 text-gray-800'}">${e.name}</span>`)
-                        .join('');
-                    aiInsightsHTML += `<div class="mb-4">
-                        <h3 class="text-md font-semibold text-gray-700 mb-2">Entidades Mencionadas</h3>
-                        <div>${entitiesHTML}</div>
-                    </div>`;
-                }
-                if (article.ai.categories?.length > 0) {
-                     const categoriesHTML = article.ai.categories
-                        .map(c => `<span class="ai-tag bg-gray-200 text-gray-900" title="Confiança: ${(c.confidence * 100).toFixed(0)}%">${c.name.split('/').pop()}</span>`)
-                        .join('');
-                    aiInsightsHTML += `<div class="mb-4">
-                        <h3 class="text-md font-semibold text-gray-700 mb-2">Categorias</h3>
-                        <div>${categoriesHTML}</div>
-                    </div>`;
-                }
-             }
-             detailAiInsights.innerHTML = aiInsightsHTML;
-        }
-
         function handleShareActions(e) {
             if (!currentDetailArticle) return;
             const title = encodeURIComponent(`[Clipping] ${currentDetailArticle.title}`);
             const url = encodeURIComponent(currentDetailArticle.url);
-            
-            if (e.currentTarget.id === 'share-whatsapp-btn') {
-                window.open(`https://api.whatsapp.com/send?text=${title}%0A${url}`, '_blank');
-            } else if (e.currentTarget.id === 'share-email-btn') {
-                window.location.href = `mailto:?subject=${title}&body=Leia a notícia completa em:%0A${url}`;
-            }
+            if (e.currentTarget.id === 'share-whatsapp-btn') { window.open(`https://api.whatsapp.com/send?text=${title}%0A${url}`, '_blank'); } 
+            else if (e.currentTarget.id === 'share-email-btn') { window.location.href = `mailto:?subject=${title}&body=Leia a notícia completa em:%0A${url}`; }
         }
 
-        // --- LÓGICA DA FILA DE ALERTA PENDENTE DO SUPER ADMIN ---
         function setupPendingAlertsListener() {
             if (pendingAlertsListener) pendingAlertsListener();
             const q = query(collection(db, "artifacts", appId, "public/data/pendingAlerts"), orderBy("publishedAt", "desc"));
@@ -1632,9 +1499,7 @@
                 }
             }, (error) => {
                 console.error("Erro ao escutar alertas pendentes:", error);
-                if (pendingAlertsList) {
-                    pendingAlertsList.innerHTML = '<p class="text-red-500">Erro ao carregar alertas.</p>';
-                }
+                if (pendingAlertsList) { pendingAlertsList.innerHTML = '<p class="text-red-500">Erro ao carregar alertas.</p>'; }
             });
         }
         
@@ -1656,25 +1521,14 @@
             const alertEl = target.closest('.fade-in');
             if (!alertEl) return;
             const alertId = alertEl.dataset.id;
-            
             if (target.classList.contains('approve-alert-btn')) {
                 const approveAlert = httpsCallable(functions, 'approveAlert');
-                try {
-                    await approveAlert({ appId, alertId });
-                    showAlert('Alerta aprovado e enviado para a empresa com sucesso!', 'success');
-                } catch (error) {
-                    console.error("Erro ao aprovar alerta:", error);
-                    showAlert(`Erro ao aprovar alerta: ${error.message}`, 'error');
-                }
+                try { await approveAlert({ appId, alertId }); showAlert('Alerta aprovado e enviado para a empresa com sucesso!', 'success'); } 
+                catch (error) { console.error("Erro ao aprovar alerta:", error); showAlert(`Erro ao aprovar alerta: ${error.message}`, 'error'); }
             } else if (target.classList.contains('reject-alert-btn')) {
                 const rejectAlert = httpsCallable(functions, 'rejectAlert');
-                try {
-                    await rejectAlert({ appId, alertId });
-                    showAlert('Alerta rejeitado com sucesso!', 'success');
-                } catch (error) {
-                    console.error("Erro ao rejeitar alerta:", error);
-                    showAlert(`Erro ao rejeitar alerta: ${error.message}`, 'error');
-                }
+                try { await rejectAlert({ appId, alertId }); showAlert('Alerta rejeitado com sucesso!', 'success'); } 
+                catch (error) { console.error("Erro ao rejeitar alerta:", error); showAlert(`Erro ao rejeitar alerta: ${error.message}`, 'error'); }
             }
         }
         
@@ -1685,34 +1539,17 @@
             alertEl.className = 'bg-white p-4 rounded-lg shadow-md border-l-4 border-yellow-500 fade-in';
             alertEl.dataset.id = alert.id;
             alertEl.dataset.companyId = alert.companyId;
-
             const keywordsString = Array.isArray(alert.keywords) ? alert.keywords.join(', ') : alert.keyword;
-
-            alertEl.innerHTML = `
-                <div class="flex justify-between items-start">
-                    <h4 class="text-lg font-bold text-gray-800 pr-2">${alert.title}</h4>
-                    <span class="flex-shrink-0 text-xs font-semibold bg-gray-100 text-gray-800 px-2 py-1 rounded-full">${alert.companyName} - ${keywordsString}</span>
-                </div>
-                <p class="text-sm text-gray-600 mt-2">${alert.description || 'Descrição não disponível.'}</p>
-                <div class="text-xs text-gray-500 mt-3 flex justify-between items-center">
-                    <span>Fonte: ${alert.source.name} | Publicado: ${formattedDate}</span>
-                    <div class="flex gap-2">
-                        <button class="approve-alert-btn bg-green-500 text-white px-3 py-1 rounded-md text-sm hover:bg-green-600">Aprovar</button>
-                        <button class="reject-alert-btn bg-red-500 text-white px-3 py-1 rounded-md text-sm hover:bg-red-600">Rejeitar</button>
-                    </div>
-                </div>`;
+            alertEl.innerHTML = `<div class="flex justify-between items-start"><h4 class="text-lg font-bold text-gray-800 pr-2">${alert.title}</h4><span class="flex-shrink-0 text-xs font-semibold bg-gray-100 text-gray-800 px-2 py-1 rounded-full">${alert.companyName} - ${keywordsString}</span></div><p class="text-sm text-gray-600 mt-2">${alert.description || 'Descrição não disponível.'}</p><div class="text-xs text-gray-500 mt-3 flex justify-between items-center"><span>Fonte: ${alert.source.name} | Publicado: ${formattedDate}</span><div class="flex gap-2"><button class="approve-alert-btn bg-green-500 text-white px-3 py-1 rounded-md text-sm hover:bg-green-600">Aprovar</button><button class="reject-alert-btn bg-red-500 text-white px-3 py-1 rounded-md text-sm hover:bg-red-600">Rejeitar</button></div></div>`;
             container.appendChild(alertEl);
         }
 
-        // --- NOVAS FUNÇÕES DO SUPER ADMIN ---
         async function renderManualAlertPage() {
             const companySelect = document.getElementById('manual-alert-company');
             const keywordSelect = document.getElementById('manual-alert-keyword');
             if (!companySelect || !keywordSelect) return;
-            
             companySelect.innerHTML = '<option value="">Selecione uma empresa</option>';
             keywordSelect.innerHTML = '<option disabled>Selecione uma empresa primeiro</option>';
-            
             const companiesSnapshot = await getDocs(query(collection(db, "artifacts", appId, "public/data/companies"), where("status", "==", "active")));
             companiesSnapshot.forEach(doc => {
                 const option = document.createElement('option');
@@ -1726,13 +1563,11 @@
             const companySelect = document.getElementById('manual-alert-company');
             const keywordSelect = document.getElementById('manual-alert-keyword');
             const companyId = companySelect.value;
-
             keywordSelect.innerHTML = '';
             if (!companyId) {
                 keywordSelect.innerHTML = '<option disabled>Selecione uma empresa primeiro</option>';
                 return;
             }
-
             try {
                 const keywordsSnapshot = await getDocs(query(collection(db, "artifacts", appId, "users", companyId, "keywords")));
                 if (keywordsSnapshot.empty) {
@@ -1764,7 +1599,6 @@
                 showAlert('Por favor, selecione uma empresa e pelo menos uma palavra-chave.', 'error');
                 return;
             }
-
             try {
                 const manualAddAlert = httpsCallable(functions, 'manualAddAlert');
                 await manualAddAlert({ appId, companyId, title, description, url, source, keywords: selectedKeywords });
@@ -1807,25 +1641,11 @@
                 const reqEl = document.createElement('div');
                 reqEl.className = 'bg-white p-4 rounded-lg shadow';
                 const statusColor = request.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : (request.status === 'approved' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800');
-                
                 let buttonsHTML = '';
                 if (request.status === 'pending') {
-                    buttonsHTML = `
-                        <div class="mt-4 flex gap-2">
-                            <button data-id="${doc.id}" class="approve-request-btn bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600">Aprovar</button>
-                            <button data-id="${doc.id}" class="deny-request-btn bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600">Negar</button>
-                        </div>`;
+                    buttonsHTML = `<div class="mt-4 flex gap-2"><button data-id="${doc.id}" class="approve-request-btn bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600">Aprovar</button><button data-id="${doc.id}" class="deny-request-btn bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600">Negar</button></div>`;
                 }
-
-                reqEl.innerHTML = `
-                    <div class="flex justify-between items-center">
-                        <h4 class="font-bold text-gray-800">${request.companyName}</h4>
-                        <span class="text-xs font-medium px-2 py-1 rounded-full ${statusColor}">${request.status}</span>
-                    </div>
-                    <p class="text-sm text-gray-600 mt-2"><strong>Alerta:</strong> ${request.articleTitle}</p>
-                    <p class="text-sm text-gray-500 mt-2 bg-gray-50 p-2 rounded"><strong>Justificação:</strong> ${request.justification}</p>
-                    ${buttonsHTML}
-                `;
+                reqEl.innerHTML = `<div class="flex justify-between items-center"><h4 class="font-bold text-gray-800">${request.companyName}</h4><span class="text-xs font-medium px-2 py-1 rounded-full ${statusColor}">${request.status}</span></div><p class="text-sm text-gray-600 mt-2"><strong>Alerta:</strong> ${request.articleTitle}</p><p class="text-sm text-gray-500 mt-2 bg-gray-50 p-2 rounded"><strong>Justificação:</strong> ${request.justification}</p>${buttonsHTML}`;
                 deletionRequestsList.appendChild(reqEl);
             });
         }
@@ -1833,10 +1653,8 @@
         async function handleDeletionRequestAction(e) {
             const target = e.target.closest('button');
             if (!target) return;
-
             const requestId = target.dataset.id;
             const approve = target.classList.contains('approve-request-btn');
-
             try {
                 const manageDeletionRequest = httpsCallable(functions, 'manageDeletionRequest');
                 await manageDeletionRequest({ appId, requestId, approve });
@@ -1854,17 +1672,9 @@
                 showAlert('Por favor, forneça uma justificação.', 'error');
                 return;
             }
-
             try {
                 const requestAlertDeletion = httpsCallable(functions, 'requestAlertDeletion');
-                await requestAlertDeletion({
-                    appId,
-                    companyId: currentUser.companyId,
-                    companyName: currentUser.companyName,
-                    articleId: articleToDeleteInfo.id,
-                    articleTitle: articleToDeleteInfo.title,
-                    justification: justification
-                });
+                await requestAlertDeletion({ appId, companyId: currentUser.companyId, companyName: currentUser.companyName, articleId: articleToDeleteInfo.id, articleTitle: articleToDeleteInfo.title, justification: justification });
                 showAlert('Pedido de exclusão enviado com sucesso!', 'success');
                 if (justificationModal) justificationModal.classList.add('hidden');
                 articleToDeleteInfo = null;
@@ -1877,16 +1687,13 @@
         async function renderSuperAdminReport() {
             if (!superAdminReportBody) return;
             superAdminReportBody.innerHTML = '<tr><td colspan="6" class="text-center py-4">Gerando relatório...</td></tr>';
-            
             if (companySummaryChartInstance) {
                 companySummaryChartInstance.destroy();
             }
-
             try {
                 const generateReport = httpsCallable(functions, 'generateSuperAdminReport');
                 const result = await generateReport({ appId });
                 const reportData = result.data;
-
                 superAdminReportBody.innerHTML = '';
                 if (reportData.length === 0) {
                     superAdminReportBody.innerHTML = '<tr><td colspan="6" class="text-center py-4">Nenhum dado para exibir.</td></tr>';
@@ -1894,49 +1701,23 @@
                     return;
                 }
                  document.getElementById('company-summary-chart').style.display = 'block';
-
                 reportData.forEach(item => {
                     const row = document.createElement('tr');
                     row.className = 'hover:bg-gray-50 company-report-row';
                     row.dataset.companyId = item.companyId;
                     row.dataset.companyName = item.companyName;
-
                     let sentimentClass = 'text-gray-600';
                     if (item.predominantSentiment === 'Positivo') sentimentClass = 'text-green-600 font-semibold';
                     if (item.predominantSentiment === 'Negativo') sentimentClass = 'text-red-600 font-semibold';
-
-                    row.innerHTML = `
-                        <td class="px-6 py-4 whitespace-nowrap font-medium text-gray-900">${item.companyName}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-gray-500">${item.totalAlerts}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-xs">
-                            <span class="text-green-600">P: ${item.sentimentPercentage.positive}%</span>, 
-                            <span class="text-gray-600">N: ${item.sentimentPercentage.neutral}%</span>, 
-                            <span class="text-red-600">Ng: ${item.sentimentPercentage.negative}%</span>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap ${sentimentClass}">${item.predominantSentiment}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-gray-500">${item.topChannel}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-gray-500">${item.topVehicle}</td>
-                    `;
+                    row.innerHTML = `<td class="px-6 py-4 whitespace-nowrap font-medium text-gray-900">${item.companyName}</td><td class="px-6 py-4 whitespace-nowrap text-gray-500">${item.totalAlerts}</td><td class="px-6 py-4 whitespace-nowrap text-xs"><span class="text-green-600">P: ${item.sentimentPercentage.positive}%</span>, <span class="text-gray-600">N: ${item.sentimentPercentage.neutral}%</span>, <span class="text-red-600">Ng: ${item.sentimentPercentage.negative}%</span></td><td class="px-6 py-4 whitespace-nowrap ${sentimentClass}">${item.predominantSentiment}</td><td class="px-6 py-4 whitespace-nowrap text-gray-500">${item.topChannel}</td><td class="px-6 py-4 whitespace-nowrap text-gray-500">${item.topVehicle}</td>`;
                     superAdminReportBody.appendChild(row);
                 });
-                
                 const chartLabels = reportData.map(d => d.companyName);
                 const chartValues = reportData.map(d => d.totalAlerts);
                 companySummaryChartInstance = createChart('company-summary-chart', companySummaryChartInstance, 'line', {
                     labels: chartLabels,
-                    datasets: [{
-                        label: 'Total de Alertas',
-                        data: chartValues,
-                        borderColor: '#4F46E5',
-                        backgroundColor: 'rgba(79, 70, 229, 0.1)',
-                        fill: true,
-                        tension: 0.1,
-                        borderWidth: 2
-                    }]
-                }, {
-                     plugins: { legend: { display: false } }
-                });
-
+                    datasets: [{ label: 'Total de Alertas', data: chartValues, borderColor: '#4F46E5', backgroundColor: 'rgba(79, 70, 229, 0.1)', fill: true, tension: 0.1, borderWidth: 2 }]
+                }, { plugins: { legend: { display: false } } });
             } catch (error) {
                 console.error("Erro ao gerar relatório:", error);
                 superAdminReportBody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-red-500">Erro ao gerar relatório: ${error.message}</td></tr>`;
@@ -1946,24 +1727,18 @@
         async function renderCompanyKeywordReport(companyId, companyName) {
             if (!companyKeywordReportTitle) return;
             companyKeywordReportTitle.textContent = `Análise por Palavra-Chave: ${companyName}`;
-            
             if (keywordTotalChartInstance) keywordTotalChartInstance.destroy();
             if (keywordSentimentChartInstance) keywordSentimentChartInstance.destroy();
-
             try {
                 const articlesSnapshot = await getDocs(query(collection(db, `artifacts/${appId}/users/${companyId}/articles`)));
                 const keywordsSnapshot = await getDocs(query(collection(db, `artifacts/${appId}/users/${companyId}/keywords`)));
-                
                 const articles = articlesSnapshot.docs.map(doc => doc.data());
                 const keywords = keywordsSnapshot.docs.map(doc => doc.data().word);
-
                 const keywordTotals = {};
                 const keywordSentiments = {};
-
                 keywords.forEach(kw => {
                     const articlesForKw = articles.filter(a => (a.keywords || []).includes(kw));
                     keywordTotals[kw] = articlesForKw.length;
-                    
                     const sentimentCounts = { positive: 0, neutral: 0, negative: 0 };
                     articlesForKw.forEach(article => {
                         const score = article.ai?.sentiment?.score ?? article.sentiment?.score ?? 0;
@@ -1973,29 +1748,9 @@
                     });
                     keywordSentiments[kw] = sentimentCounts;
                 });
-
-                // Renderizar gráfico de totais
-                keywordTotalChartInstance = createChart('keyword-total-chart', keywordTotalChartInstance, 'bar', {
-                    labels: Object.keys(keywordTotals),
-                    datasets: [{
-                        label: 'Nº de Alertas',
-                        data: Object.values(keywordTotals),
-                        backgroundColor: chartColors,
-                    }]
-                }, { plugins: { legend: { display: false } }, indexAxis: 'y' });
-                
-                // Renderizar gráfico de sentimentos
-                keywordSentimentChartInstance = createChart('keyword-sentiment-chart', keywordSentimentChartInstance, 'bar', {
-                    labels: keywords,
-                    datasets: [
-                        { label: 'Positivo', data: keywords.map(kw => keywordSentiments[kw].positive), backgroundColor: '#10B981' },
-                        { label: 'Neutro', data: keywords.map(kw => keywordSentiments[kw].neutral), backgroundColor: '#6B7280' },
-                        { label: 'Negativo', data: keywords.map(kw => keywordSentiments[kw].negative), backgroundColor: '#EF4444' },
-                    ]
-                }, { scales: { x: { stacked: true }, y: { stacked: true } } });
-
+                keywordTotalChartInstance = createChart('keyword-total-chart', keywordTotalChartInstance, 'bar', { labels: Object.keys(keywordTotals), datasets: [{ label: 'Nº de Alertas', data: Object.values(keywordTotals), backgroundColor: chartColors, }] }, { plugins: { legend: { display: false } }, indexAxis: 'y' });
+                keywordSentimentChartInstance = createChart('keyword-sentiment-chart', keywordSentimentChartInstance, 'bar', { labels: keywords, datasets: [ { label: 'Positivo', data: keywords.map(kw => keywordSentiments[kw].positive), backgroundColor: '#10B981' }, { label: 'Neutro', data: keywords.map(kw => keywordSentiments[kw].neutral), backgroundColor: '#6B7280' }, { label: 'Negativo', data: keywords.map(kw => keywordSentiments[kw].negative), backgroundColor: '#EF4444' }, ] }, { scales: { x: { stacked: true }, y: { stacked: true } } });
                 updateView('company-keyword-report');
-
             } catch (error) {
                 console.error('Erro ao gerar relatório de palavras-chave:', error);
                 showAlert('Não foi possível gerar o relatório detalhado.', 'error');
@@ -2004,10 +1759,12 @@
 
         // --- INICIALIZAÇÃO E OUVINTES DE EVENTOS ---
         document.addEventListener('DOMContentLoaded', () => {
+            // Inicialização de todas as variáveis do DOM
             pageSections = document.querySelectorAll('.page-section');
             navLoggedIn = document.getElementById('nav-logged-in');
             navInicio = document.getElementById('nav-inicio');
             navRelatorio = document.getElementById('nav-relatorio');
+            navMapa = document.getElementById('nav-mapa');
             navPesquisa = document.getElementById('nav-pesquisa');
             navSuperAdmin = document.getElementById('nav-super-admin');
             navLogout = document.getElementById('nav-logout');
@@ -2015,6 +1772,7 @@
             globalAlert = document.getElementById('global-alert');
             loginPage = document.getElementById('login-page');
             dashboardPage = document.getElementById('dashboard-page');
+            mapPage = document.getElementById('map-page');
             searchPage = document.getElementById('search-page');
             superAdminPage = document.getElementById('super-admin-page');
             companyKeywordAdminPage = document.getElementById('company-keyword-admin-page');
@@ -2141,7 +1899,7 @@
             companyKeywordReportPage = document.getElementById('company-keyword-report-page');
             backToSuperAdminReportBtn = document.getElementById('back-to-super-admin-report');
             companyKeywordReportTitle = document.getElementById('company-keyword-report-title');
-            
+
             const states = {"AC": "Acre", "AL": "Alagoas", "AP": "Amapá", "AM": "Amazonas", "BA": "Bahia", "CE": "Ceará", "DF": "Distrito Federal", "ES": "Espírito Santo", "GO": "Goiás", "MA": "Maranhão", "MT": "Mato Grosso", "MS": "Mato Grosso do Sul", "MG": "Minas Gerais", "PA": "Pará", "PB": "Paraíba", "PR": "Paraná", "PE": "Pernambuco", "PI": "Piauí", "RJ": "Rio de Janeiro", "RN": "Rio Grande do Norte", "RS": "Rio Grande do Sul", "RO": "Rondônia", "RR": "Roraima", "SC": "Santa Catarina", "SP": "São Paulo", "SE": "Sergipe", "TO": "Tocantins"};
             for (const [uf, name] of Object.entries(states)) {
                 const option = document.createElement('option');
@@ -2158,10 +1916,6 @@
                         const savedUser = getStorage('clipping_currentUser', null);
                         if (savedUser) {
                             currentUser = savedUser;
-                            if (notificationListener) notificationListener(); 
-                            if (companiesListener) companiesListener(); 
-                            if (deletionRequestsListener) deletionRequestsListener(); 
-                            if (pendingAlertsListener) pendingAlertsListener(); 
                             updateView('dashboard'); 
                         } else {
                             currentUser = null;
@@ -2181,6 +1935,18 @@
                 }
             })();
 
+            if (navMapa) navMapa.addEventListener('click', (e) => { e.preventDefault(); updateView('map'); });
+
+            // Adiciona um listener para o evento personalizado disparado pelo callback do Maps
+            window.addEventListener('mapReady', (e) => {
+                mapInstance = e.detail;
+                // Se o usuário já estiver na página do mapa quando a API carregar, renderiza os marcadores
+                if (mapPage.classList.contains('active')) {
+                    renderMapPage();
+                }
+            });
+            
+            // ... (restante de todos os seus event listeners)
             if (logoLink) logoLink.addEventListener('click', (e) => { e.preventDefault(); if(currentUser) updateView('dashboard'); });
             if (loginForm) loginForm.addEventListener('submit', handleLogin);
             if (navInicio) navInicio.addEventListener('click', (e) => { e.preventDefault(); updateView('dashboard'); });
