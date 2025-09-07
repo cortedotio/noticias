@@ -11,13 +11,13 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
-    <!-- API do Google Maps com a sua chave -->
     <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDC4vQ3PiAAy0WYIrLUTKZGb6WejSVdLrE&callback=initMap"></script>
     
     <style>
         body { font-family: 'Inter', sans-serif; }
         header { position: fixed; top: 0; left: 0; width: 100%; z-index: 1000; }
-        main { padding-top: 80px; } 
+        /* CORREÇÃO: Aumentado o padding-top para evitar sobreposição do menu */
+        main { padding-top: 100px; } 
         .page-section { display: none; }
         .page-section.active { display: block; }
         .fade-in { animation: fadeIn 0.5s ease-in-out; }
@@ -177,7 +177,7 @@
                 </div>
             </div>
         </section>
-
+        
         <section id="map-page" class="page-section fade-in">
             <div class="bg-white p-4 sm:p-6 md:p-8 rounded-lg shadow-lg">
                 <h2 class="text-xl sm:text-2xl md:text-3xl font-bold mb-6">Mapa de Notícias</h2>
@@ -360,7 +360,8 @@
             <h2 id="company-settings-admin-title" class="text-2xl sm:text-3xl font-bold mb-6">Opções da Empresa</h2>
             <div class="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
                 <div class="space-y-6">
-                    <div class="flex items-center"><input type="checkbox" id="report-access-toggle" class="h-4 w-4 text-indigo-600 border-gray-300 rounded"><label for="report-access-toggle" class="ml-2 block text-sm text-gray-900">Permitir o acesso ao relatório de alertas na página inicial.</label></div>
+                    <div class="flex items-center"><input type="checkbox" id="report-access-toggle" class="h-4 w-4 text-indigo-600 border-gray-300 rounded"><label for="report-access-toggle" class="ml-2 block text-sm text-gray-900">Permitir o acesso ao relatório.</label></div>
+                    <div class="flex items-center"><input type="checkbox" id="map-access-toggle" class="h-4 w-4 text-indigo-600 border-gray-300 rounded"><label for="map-access-toggle" class="ml-2 block text-sm text-gray-900">Permitir o acesso ao Mapa de Notícias.</label></div>
                     <div class="flex items-center"><input type="checkbox" id="fetch-only-new-toggle" class="h-4 w-4 text-indigo-600 border-gray-300 rounded"><label for="fetch-only-new-toggle" class="ml-2 block text-sm text-gray-900">Capturar apenas notícias novas (evita duplicados).</label></div>
                     <div class="flex items-center"><input type="checkbox" id="deletion-access-toggle" class="h-4 w-4 text-indigo-600 border-gray-300 rounded"><label for="deletion-access-toggle" class="ml-2 block text-sm text-gray-900">Permitir que os usuários solicitem a exclusão de alertas.</label></div>
                     <div><h4 class="text-lg font-semibold mb-2">Logótipo da Empresa</h4><input type="file" id="logo-upload" accept="image/*" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"></div>
@@ -649,7 +650,7 @@
     </div>
 
     <script type="module">
-        // --- Importação de Módulos do Firebase ---
+        // Importação de Módulos do Firebase
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, collection, getDocs, doc, getDoc, setDoc, addDoc, deleteDoc, updateDoc, query, where, orderBy, limit, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -682,7 +683,7 @@
         let mapMarkers = [];
 
         // --- ELEMENTOS DO DOM ---
-        let pageSections, navLoggedIn, navInicio, navRelatorio, navMapa, navPesquisa, navSuperAdmin, navLogout, navConfiguracoesAdmin, globalAlert, loginPage, dashboardPage, mapPage, searchPage, superAdminPage, companyKeywordAdminPage, companySettingsAdminPage, reportPage, companyUserAdminPage, configuracoesAdminPage, loginForm, dashboardTitle, currentDateTimeEl, dashboardKeywordList, newsAlertsContainer, newsAlerts, alertDateFilter, reportAccessToggle, logoUploadInput, headerLogoContainer, loginLogoContainer, filterContainer, searchInput, searchResults, companyForm, companyList, backToSuperAdminKwBtn, backToSuperAdminSettingsBtn, backToSuperAdminUsersBtn, companyKeywordAdminTitle, companySettingsAdminTitle, companyUserAdminTitle, keywordForm, keywordInput, keywordIdInput, adminKeywordList, userForm, userInput, userPasswordInput, userIdInput, adminUserList, notificationBell, notificationBadge, manualTriggerBtn, deleteModal, confirmDeleteBtn, cancelDeleteBtn, companyNameToDeleteEl, newsScopeContainer, startDateInput, endDateInput, linkModal, accessLinkInput, copyLinkBtn, closeLinkModalBtn, reportKeywordFilterContainer, stateSelectContainer, stateSelect, changePasswordForm, apiKeyNewsApiInput, apiKeyFirebaseNewsInput, apiKeyGNewsInput1, apiKeyGNewsInput2, apiKeyGNewsInput3, apiKeyGNewsInput4, apiKeyYoutubeInput, apiKeyBloggerInput, apiKeyVisionInput, apiKeyVideoIntelligenceInput, showAllAlertsBtn, deletionAccessToggle, justificationModal, justificationText, submitJustificationBtn, cancelJustificationBtn, btnManualAlert, btnDeletionRequests, btnSuperAdminReport, manualAlertPage, deletionRequestsPage, superAdminReportPage, backToDashboard1, backToDashboard2, backToDashboard3, manualAlertForm, deletionRequestsList, superAdminReportBody, deletionRequestsBadge, pendingAlertsPage, pendingAlertsList, btnPendingAlerts, backToDashboard4, confirmDeleteKeywordBtn, cancelDeleteKeywordBtn, confirmDeleteKeywordModal, keywordToDeleteNameEl, bloggerIdInput, rssUrlInput, fetchOnlyNewToggle, changePasswordPage, globalKeysPage, globalSourcesPage, btnChangePassword, btnGlobalKeys, btnNewsSources, backToAdminConfig1, backToAdminConfig2, backToAdminConfig3, globalLogoPage, btnGlobalLogo, backToAdminConfig4, globalLogoUpload, globalLogoArea, logoLink, btnRadioSources, globalRadioSourcesPage, backToAdminConfig5, radioSourcesInput, articleDetailPage, backFromDetail, detailTitle, detailMeta, detailContent, shareWhatsappBtn, shareEmailBtn, companyKeywordReportPage, backToSuperAdminReportBtn, companyKeywordReportTitle, detailAiInsights;
+        let pageSections, navLoggedIn, navInicio, navRelatorio, navMapa, navPesquisa, navSuperAdmin, navLogout, navConfiguracoesAdmin, globalAlert, loginPage, dashboardPage, mapPage, searchPage, superAdminPage, companyKeywordAdminPage, companySettingsAdminPage, reportPage, companyUserAdminPage, configuracoesAdminPage, loginForm, dashboardTitle, currentDateTimeEl, dashboardKeywordList, newsAlertsContainer, newsAlerts, alertDateFilter, reportAccessToggle, mapAccessToggle, logoUploadInput, headerLogoContainer, loginLogoContainer, filterContainer, searchInput, searchResults, companyForm, companyList, backToSuperAdminKwBtn, backToSuperAdminSettingsBtn, backToSuperAdminUsersBtn, companyKeywordAdminTitle, companySettingsAdminTitle, companyUserAdminTitle, keywordForm, keywordInput, keywordIdInput, adminKeywordList, userForm, userInput, userPasswordInput, userIdInput, adminUserList, notificationBell, notificationBadge, manualTriggerBtn, deleteModal, confirmDeleteBtn, cancelDeleteBtn, companyNameToDeleteEl, newsScopeContainer, startDateInput, endDateInput, linkModal, accessLinkInput, copyLinkBtn, closeLinkModalBtn, reportKeywordFilterContainer, stateSelectContainer, stateSelect, changePasswordForm, apiKeyNewsApiInput, apiKeyFirebaseNewsInput, apiKeyGNewsInput1, apiKeyGNewsInput2, apiKeyGNewsInput3, apiKeyGNewsInput4, apiKeyYoutubeInput, apiKeyBloggerInput, apiKeyVisionInput, apiKeyVideoIntelligenceInput, showAllAlertsBtn, deletionAccessToggle, justificationModal, justificationText, submitJustificationBtn, cancelJustificationBtn, btnManualAlert, btnDeletionRequests, btnSuperAdminReport, manualAlertPage, deletionRequestsPage, superAdminReportPage, backToDashboard1, backToDashboard2, backToDashboard3, manualAlertForm, deletionRequestsList, superAdminReportBody, deletionRequestsBadge, pendingAlertsPage, pendingAlertsList, btnPendingAlerts, backToDashboard4, confirmDeleteKeywordBtn, cancelDeleteKeywordBtn, confirmDeleteKeywordModal, keywordToDeleteNameEl, bloggerIdInput, rssUrlInput, fetchOnlyNewToggle, changePasswordPage, globalKeysPage, globalSourcesPage, btnChangePassword, btnGlobalKeys, btnNewsSources, backToAdminConfig1, backToAdminConfig2, backToAdminConfig3, globalLogoPage, btnGlobalLogo, backToAdminConfig4, globalLogoUpload, globalLogoArea, logoLink, btnRadioSources, globalRadioSourcesPage, backToAdminConfig5, radioSourcesInput, articleDetailPage, backFromDetail, detailTitle, detailMeta, detailContent, shareWhatsappBtn, shareEmailBtn, companyKeywordReportPage, backToSuperAdminReportBtn, companyKeywordReportTitle, detailAiInsights;
 
         // --- FUNÇÕES DE UTILIDADE ---
         function showAlert(message, type = 'success') { const c = type === 'success' ? 'bg-green-100 border-green-500 text-green-700' : 'bg-red-100 border-red-500 text-red-700'; globalAlert.innerHTML = `<div class="${c} border-l-4 p-4 rounded-md fade-in" role="alert"><p>${message}</p></div>`; setTimeout(() => { globalAlert.innerHTML = ''; }, 4000); }
@@ -698,8 +699,8 @@
             pageSections.forEach(s => s.classList.remove('active')); 
             const i = !!currentUser; 
             if (navLoggedIn) navLoggedIn.style.display = i ? 'flex' : 'none'; 
-            if (navRelatorio) navRelatorio.classList.toggle('hidden', !currentUser || currentUser.isSuperAdmin);
-            if (navMapa) navMapa.classList.toggle('hidden', !currentUser || currentUser.isSuperAdmin);
+            if (navRelatorio) navRelatorio.classList.toggle('hidden', !currentUser || currentUser.isSuperAdmin || !currentUser.canAccessReport);
+            if (navMapa) navMapa.classList.toggle('hidden', !currentUser || currentUser.isSuperAdmin || !currentUser.canAccessMap);
             if (navSuperAdmin) navSuperAdmin.classList.toggle('hidden', !currentUser || !currentUser.isSuperAdmin); 
             if (navConfiguracoesAdmin) navConfiguracoesAdmin.classList.toggle('hidden', !currentUser || !currentUser.isSuperAdmin); 
             if (clockInterval) clearInterval(clockInterval); 
@@ -870,7 +871,9 @@
                 if(!usersSnapshot.empty) { 
                     const settingsDoc = await getDoc(doc(db, "artifacts", appId, "public/data/settings", company.id)); 
                     const canRequestDeletion = settingsDoc.exists() ? settingsDoc.data().canRequestDeletion : false; 
-                    currentUser = { username: user, companyId: company.id, companyName: company.name, isSuperAdmin: false, canRequestDeletion }; 
+                    const canAccessReport = settingsDoc.exists() ? settingsDoc.data().reportAccess !== false : true;
+                    const canAccessMap = settingsDoc.exists() ? settingsDoc.data().mapAccess !== false : true;
+                    currentUser = { username: user, companyId: company.id, companyName: company.name, isSuperAdmin: false, canRequestDeletion, canAccessReport, canAccessMap }; 
                     setStorage('clipping_currentUser', currentUser); 
                     updateView('dashboard'); 
                 } else { 
@@ -1034,8 +1037,8 @@
         }
         
         // --- LÓGICA DE GESTÃO DE CONFIGURAÇÕES ---
-        async function renderCompanySettingsAdminPage() { if (!selectedCompanyForManagement || !companySettingsAdminTitle) return; companySettingsAdminTitle.textContent = `Opções para: ${selectedCompanyForManagement.name}`; try { const settingsRef = doc(db, "artifacts", appId, "public/data/settings", selectedCompanyForManagement.id); const docSnap = await getDoc(settingsRef); if (docSnap.exists()) { const settings = docSnap.data(); if(reportAccessToggle) reportAccessToggle.checked = settings.reportAccess !== false; if(fetchOnlyNewToggle) fetchOnlyNewToggle.checked = settings.fetchOnlyNew === true; if(deletionAccessToggle) deletionAccessToggle.checked = settings.canRequestDeletion === true; if(document.querySelector(`input[name="news-scope"][value="${settings.searchScope || 'br'}"]`)) document.querySelector(`input[name="news-scope"][value="${settings.searchScope || 'br'}"]`).checked = true; if(stateSelect) stateSelect.value = settings.searchState || ''; } else { if(reportAccessToggle) reportAccessToggle.checked = true; if(fetchOnlyNewToggle) fetchOnlyNewToggle.checked = false; if(deletionAccessToggle) deletionAccessToggle.checked = false; if(document.querySelector('input[name="news-scope"][value="br"]')) document.querySelector('input[name="news-scope"][value="br"]').checked = true; if(stateSelect) stateSelect.value = ''; } handleScopeChange(); } catch (error) { console.error("Erro ao renderizar as configurações:", error); } }
-        async function handleSettingsChange(e) { if (!selectedCompanyForManagement) return; const settingsRef = doc(db, "artifacts", appId, "public/data/settings", selectedCompanyForManagement.id); let key, value; switch (e.target.id) { case 'report-access-toggle': key = 'reportAccess'; value = e.target.checked; break; case 'fetch-only-new-toggle': key = 'fetchOnlyNew'; value = e.target.checked; break; case 'deletion-access-toggle': key = 'canRequestDeletion'; value = e.target.checked; break; case 'state-select': key = 'searchState'; value = e.target.value; break; default: if (e.target.name === 'news-scope') { key = 'searchScope'; value = e.target.value; } else { return; } } try { await setDoc(settingsRef, { [key]: value }, { merge: true }); showAlert('Opção guardada!', 'success'); } catch (error) { console.error("Erro ao guardar a configuração:", error); } }
+        async function renderCompanySettingsAdminPage() { if (!selectedCompanyForManagement || !companySettingsAdminTitle) return; companySettingsAdminTitle.textContent = `Opções para: ${selectedCompanyForManagement.name}`; try { const settingsRef = doc(db, "artifacts", appId, "public/data/settings", selectedCompanyForManagement.id); const docSnap = await getDoc(settingsRef); if (docSnap.exists()) { const settings = docSnap.data(); if(reportAccessToggle) reportAccessToggle.checked = settings.reportAccess !== false; if(mapAccessToggle) mapAccessToggle.checked = settings.mapAccess !== false; if(fetchOnlyNewToggle) fetchOnlyNewToggle.checked = settings.fetchOnlyNew === true; if(deletionAccessToggle) deletionAccessToggle.checked = settings.canRequestDeletion === true; if(document.querySelector(`input[name="news-scope"][value="${settings.searchScope || 'br'}"]`)) document.querySelector(`input[name="news-scope"][value="${settings.searchScope || 'br'}"]`).checked = true; if(stateSelect) stateSelect.value = settings.searchState || ''; } else { if(reportAccessToggle) reportAccessToggle.checked = true; if(mapAccessToggle) mapAccessToggle.checked = true; if(fetchOnlyNewToggle) fetchOnlyNewToggle.checked = false; if(deletionAccessToggle) deletionAccessToggle.checked = false; if(document.querySelector('input[name="news-scope"][value="br"]')) document.querySelector('input[name="news-scope"][value="br"]').checked = true; if(stateSelect) stateSelect.value = ''; } handleScopeChange(); } catch (error) { console.error("Erro ao renderizar as configurações:", error); } }
+        async function handleSettingsChange(e) { if (!selectedCompanyForManagement) return; const settingsRef = doc(db, "artifacts", appId, "public/data/settings", selectedCompanyForManagement.id); let key, value; switch (e.target.id) { case 'report-access-toggle': key = 'reportAccess'; value = e.target.checked; break; case 'map-access-toggle': key = 'mapAccess'; value = e.target.checked; break; case 'fetch-only-new-toggle': key = 'fetchOnlyNew'; value = e.target.checked; break; case 'deletion-access-toggle': key = 'canRequestDeletion'; value = e.target.checked; break; case 'state-select': key = 'searchState'; value = e.target.value; break; default: if (e.target.name === 'news-scope') { key = 'searchScope'; value = e.target.value; } else { return; } } try { await setDoc(settingsRef, { [key]: value }, { merge: true }); showAlert('Opção guardada!', 'success'); } catch (error) { console.error("Erro ao guardar a configuração:", error); } }
         function handleScopeChange() { if(!stateSelectContainer || !document.querySelector('input[name="news-scope"]:checked')) return; const selectedScope = document.querySelector('input[name="news-scope"]:checked').value; stateSelectContainer.classList.toggle('hidden', selectedScope !== 'state'); }
         async function renderGlobalKeysPage() { try { const settingsRef = doc(db, "artifacts", appId, "public/data/settings", "global"); const docSnap = await getDoc(settingsRef); if (docSnap.exists()) { const settings = docSnap.data(); if(apiKeyNewsApiInput) apiKeyNewsApiInput.value = settings.apiKeyNewsApi || ''; if(apiKeyFirebaseNewsInput) apiKeyFirebaseNewsInput.value = settings.apiKeyFirebaseNews || ''; if(apiKeyGNewsInput1) apiKeyGNewsInput1.value = settings.apiKeyGNews1 || ''; if(apiKeyGNewsInput2) apiKeyGNewsInput2.value = settings.apiKeyGNews2 || ''; if(apiKeyGNewsInput3) apiKeyGNewsInput3.value = settings.apiKeyGNews3 || ''; if(apiKeyGNewsInput4) apiKeyGNewsInput4.value = settings.apiKeyGNews4 || ''; if(apiKeyYoutubeInput) apiKeyYoutubeInput.value = settings.apiKeyYoutube || ''; if(apiKeyBloggerInput) apiKeyBloggerInput.value = settings.apiKeyBlogger || ''; if(apiKeyVisionInput) apiKeyVisionInput.value = settings.apiKeyVision || ''; if(apiKeyVideoIntelligenceInput) apiKeyVideoIntelligenceInput.value = settings.apiKeyVideoIntelligence || ''; } } catch (error) { console.error("Erro ao carregar as chaves de API globais:", error); } }
         async function handleGlobalKeyChange(e) { const settingsRef = doc(db, "artifacts", appId, "public/data/settings", "global"); const key = e.target.id; const value = e.target.value; try { await setDoc(settingsRef, { [key]: value }, { merge: true }); showAlert('Chave de API guardada!', 'success'); } catch (error) { console.error("Erro ao guardar a chave de API global:", error); } }
@@ -1049,7 +1052,7 @@
                 .filter(line => line.length > 0);
             const uniqueLines = [...new Set(lines)];
             const cleanedValue = uniqueLines.join('\n');
-            textarea.value = cleanedValue; // Update UI
+            textarea.value = cleanedValue;
             return cleanedValue;
         }
 
@@ -1098,7 +1101,7 @@
                 return;
             }
 
-            if(newsAlerts) newsAlerts.innerHTML = '<p class="text-gray-500">A carregar novos alertas...</p>';
+            if(newsAlerts) newsAlerts.innerHTML = '<p class="text-gray-500">A carregar alertas...</p>';
             try {
                 const q = query(collection(db, "artifacts", appId, "users", currentUser.companyId, "articles"), orderBy("publishedAt", "desc"), limit(count));
                 const articlesSnapshot = await getDocs(q);
@@ -1795,6 +1798,7 @@
             newsAlerts = document.getElementById('news-alerts');
             alertDateFilter = document.getElementById('alert-date-filter');
             reportAccessToggle = document.getElementById('report-access-toggle');
+            mapAccessToggle = document.getElementById('map-access-toggle');
             logoUploadInput = document.getElementById('logo-upload');
             headerLogoContainer = document.getElementById('header-logo-container');
             loginLogoContainer = document.getElementById('login-logo-container');
@@ -1980,6 +1984,7 @@
             if (rssUrlInput) rssUrlInput.addEventListener('change', handleGlobalSourceChange);
             if (radioSourcesInput) radioSourcesInput.addEventListener('change', handleGlobalSourceChange);
             if (reportAccessToggle) reportAccessToggle.addEventListener('change', handleSettingsChange);
+            if (mapAccessToggle) mapAccessToggle.addEventListener('change', handleSettingsChange);
             if (fetchOnlyNewToggle) fetchOnlyNewToggle.addEventListener('change', handleSettingsChange);
             if (deletionAccessToggle) deletionAccessToggle.addEventListener('change', handleSettingsChange);
             if (stateSelect) stateSelect.addEventListener('change', handleSettingsChange);
@@ -2060,7 +2065,22 @@
             }
         });
     </script>
+    <script>
+        // Função de callback global para a API do Google Maps
+        function initMap() {
+            const matoGrosso = { lat: -12.6963, lng: -55.9229 };
+            const mapElement = document.getElementById('map');
+            if (mapElement) {
+                const mapReadyEvent = new CustomEvent('mapReady', { 
+                    detail: new google.maps.Map(mapElement, {
+                        zoom: 5,
+                        center: matoGrosso,
+                    }) 
+                });
+                window.dispatchEvent(mapReadyEvent);
+            }
+        }
+    </script>
 </body>
 </html>
 
-    
