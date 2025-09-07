@@ -177,6 +177,14 @@
                 </div>
             </div>
         </section>
+
+        <section id="map-page" class="page-section fade-in">
+            <div class="bg-white p-4 sm:p-6 md:p-8 rounded-lg shadow-lg">
+                <h2 class="text-xl sm:text-2xl md:text-3xl font-bold mb-6">Mapa de Notícias</h2>
+                <p class="text-gray-600 mb-4">Veja onde as notícias estão acontecendo. Passe o mouse sobre um pino para ver o título e clique para ver os detalhes.</p>
+                <div id="map"></div>
+            </div>
+        </section>
         
         <section id="super-admin-page" class="page-section fade-in">
             <h2 class="text-2xl sm:text-3xl font-bold mb-6 text-red-600">Painel de Super-Administrador</h2>
@@ -1759,7 +1767,6 @@
 
         // --- INICIALIZAÇÃO E OUVINTES DE EVENTOS ---
         document.addEventListener('DOMContentLoaded', () => {
-            // Inicialização de todas as variáveis do DOM
             pageSections = document.querySelectorAll('.page-section');
             navLoggedIn = document.getElementById('nav-logged-in');
             navInicio = document.getElementById('nav-inicio');
@@ -1935,22 +1942,11 @@
                 }
             })();
 
-            if (navMapa) navMapa.addEventListener('click', (e) => { e.preventDefault(); updateView('map'); });
-
-            // Adiciona um listener para o evento personalizado disparado pelo callback do Maps
-            window.addEventListener('mapReady', (e) => {
-                mapInstance = e.detail;
-                // Se o usuário já estiver na página do mapa quando a API carregar, renderiza os marcadores
-                if (mapPage.classList.contains('active')) {
-                    renderMapPage();
-                }
-            });
-            
-            // ... (restante de todos os seus event listeners)
             if (logoLink) logoLink.addEventListener('click', (e) => { e.preventDefault(); if(currentUser) updateView('dashboard'); });
             if (loginForm) loginForm.addEventListener('submit', handleLogin);
             if (navInicio) navInicio.addEventListener('click', (e) => { e.preventDefault(); updateView('dashboard'); });
             if (navRelatorio) navRelatorio.addEventListener('click', (e) => { e.preventDefault(); updateView('report'); });
+            if (navMapa) navMapa.addEventListener('click', (e) => { e.preventDefault(); updateView('map'); });
             if (navPesquisa) navPesquisa.addEventListener('click', (e) => { e.preventDefault(); updateView('search'); });
             if (navSuperAdmin) navSuperAdmin.addEventListener('click', (e) => { e.preventDefault(); updateView('super-admin'); });
             if (navConfiguracoesAdmin) navConfiguracoesAdmin.addEventListener('click', (e) => { e.preventDefault(); updateView('configuracoes-admin'); });
@@ -2066,3 +2062,5 @@
     </script>
 </body>
 </html>
+
+    

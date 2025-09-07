@@ -1,8 +1,8 @@
 /**
  * IMPORTANTE: Este é o código COMPLETO e ATUALIZADO para o servidor (Firebase Cloud Functions).
  * ...
- * * * * NOVA FUNCIONALIDADE (SET/2025): Integração com a Google Maps Platform (Geocoding API)
- * * para obter e salvar as coordenadas geográficas das notícias. Inclui cache de geolocalização.
+ * * * * NOVA FUNCIONALIDADE (SET/2025): Integração com Vision AI e Video Intelligence AI
+ * * para análise de logotipos, OCR em imagens e transcrição de áudio de vídeos.
  */
 
 const functions = require("firebase-functions");
@@ -10,18 +10,22 @@ const admin = require("firebase-admin");
 const axios = require("axios");
 const Parser = require('rss-parser');
 
+// ADICIONADO: Importa as novas bibliotecas do Google Cloud
 const { LanguageServiceClient } = require('@google-cloud/language');
 const { TranslationServiceClient } = require('@google-cloud/translate');
-// ADICIONADO: Importa a biblioteca do Google Maps
+const { ImageAnnotatorClient } = require('@google-cloud/vision');
+const { VideoIntelligenceServiceClient } = require('@google-cloud/video-intelligence');
 const { Client } = require("@googlemaps/google-maps-services-js");
 
 admin.initializeApp();
 const db = admin.firestore();
 const parser = new Parser();
 
+// ADICIONADO: Inicializa os clientes das novas APIs
 const languageClient = new LanguageServiceClient();
 const translationClient = new TranslationServiceClient();
-// ADICIONADO: Inicializa o cliente do Google Maps
+const visionClient = new ImageAnnotatorClient();
+const videoClient = new VideoIntelligenceServiceClient();
 const mapsClient = new Client({});
 
 const GNEWS_URL = "https://gnews.io/api/v4/search";
@@ -31,9 +35,10 @@ const YOUTUBE_URL = "https://www.googleapis.com/youtube/v3/search";
 const APP_ID = "noticias-6e952";
 const GOOGLE_PROJECT_ID = "noticias-6e952";
 
+// Aumentado para 9 minutos para dar tempo para a análise de IA, especialmente vídeo
 const runtimeOpts = {
-  timeoutSeconds: 540,
-  memory: '1GB'
+  timeoutSeconds: 540, 
+  memory: '2GB' // Aumenta a memória para processamento de vídeo
 };
 const regionalFunctions = functions.region("southamerica-east1").runWith(runtimeOpts);
 
@@ -42,29 +47,31 @@ const regionalFunctions = functions.region("southamerica-east1").runWith(runtime
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 const findMatchingKeywords = (article, keywords) => {
-    const title = (article.title || "").toLowerCase();
-    const bodyText = (article.contentSnippet || article.description || article.content || "").toLowerCase();
+    let contentToSearch = (article.title || "").toLowerCase();
+    contentToSearch += " " + (article.contentSnippet || article.description || article.content || "").toLowerCase();
+    // Adiciona a transcrição do vídeo e o texto da imagem (OCR) à busca de palavras-chave
+    if (article.ai?.videoTranscription) {
+        contentToSearch += " " + article.ai.videoTranscription.toLowerCase();
+    }
+    if (article.ai?.ocrText) {
+        contentToSearch += " " + article.ai.ocrText.toLowerCase();
+    }
     const matchedKeywords = keywords.filter(kw => {
         const lowerCaseKw = kw.toLowerCase();
-        return title.includes(lowerCaseKw) || bodyText.includes(lowerCaseKw);
+        return contentToSearch.includes(lowerCaseKw);
     });
     return matchedKeywords;
 };
 
-// NOVA FUNÇÃO: Obtém coordenadas de um local, com cache no Firestore
 async function geocodeLocation(locationName, apiKey) {
     if (!locationName || !apiKey) return null;
-    
     const locationKey = locationName.toLowerCase().replace(/[^a-z0-9]/g, '');
     const cacheRef = db.doc(`artifacts/${APP_ID}/public/data/geocache/${locationKey}`);
-
     try {
         const cacheDoc = await cacheRef.get();
         if (cacheDoc.exists) {
-            return cacheDoc.data(); // Retorna do cache
+            return cacheDoc.data();
         }
-
-        // Se não está no cache, busca na API
         const response = await mapsClient.geocode({
             params: {
                 address: `${locationName}, Brasil`,
@@ -73,20 +80,17 @@ async function geocodeLocation(locationName, apiKey) {
                 region: 'BR'
             }
         });
-
         if (response.data.results && response.data.results.length > 0) {
-            const location = response.data.results[0].geometry.location; // { lat, lng }
-            await cacheRef.set(location); // Salva no cache para a próxima vez
+            const location = response.data.results[0].geometry.location;
+            await cacheRef.set(location);
             return location;
         }
-
         return null;
     } catch (error) {
         functions.logger.error(`Erro de Geocoding para '${locationName}':`, error.message);
         return null;
     }
 }
-
 
 async function detectAndTranslate(text) {
     if (!text || text.length < 20) {
@@ -119,35 +123,7 @@ async function detectAndTranslate(text) {
     }
 }
 
-
-async function analyzeArticleWithAI(article) {
-    const text = `${article.title}. ${article.description}`;
-    if (!text || text.length < 50 || text.startsWith('http')) {
-        return { sentiment: { score: 0, magnitude: 0 }, entities: [], categories: [] };
-    }
-    try {
-        const document = { content: text, type: 'PLAIN_TEXT', language: 'pt' };
-        const [sentimentResult, entitiesResult, categoriesResult] = await Promise.all([
-            languageClient.analyzeSentiment({ document }),
-            languageClient.analyzeEntities({ document }),
-            languageClient.classifyText({ document })
-        ]);
-        const sentiment = sentimentResult[0].documentSentiment;
-        const entities = entitiesResult[0].entities
-            .filter(e => e.salience > 0.01 && e.type !== 'OTHER')
-            .map(e => ({ name: e.name, type: e.type, salience: e.salience }));
-        const categories = categoriesResult[0].categories
-            .map(c => ({ name: c.name, confidence: c.confidence }));
-        return { sentiment, entities, categories };
-    } catch (error) {
-        functions.logger.error("Erro na análise da Natural Language AI:", error.message);
-        return { sentiment: { score: 0, magnitude: 0 }, entities: [], categories: [] };
-    }
-}
-
-
 function normalizeArticle(article, sourceApi) {
-    // ... (Esta função permanece a mesma)
     try {
         switch (sourceApi) {
             case 'gnews':
@@ -178,10 +154,11 @@ function normalizeArticle(article, sourceApi) {
                 };
             case 'youtube':
                 return {
-                    title: article.snippet.title, description: article.snippet.description, url: `https://www.youtube.com/watch?v=${item.id.videoId}`,
+                    title: article.snippet.title, description: article.snippet.description, url: `https://www.youtube.com/watch?v=${article.id.videoId}`,
                     image: article.snippet.thumbnails.high.url || null,
                     publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.snippet.publishedAt)),
                     source: { name: 'YouTube', url: `https://www.youtube.com/channel/${article.snippet.channelId}` }, author: article.snippet.channelTitle || null,
+                    videoId: article.id.videoId
                 };
             default: return null;
         }
@@ -189,6 +166,46 @@ function normalizeArticle(article, sourceApi) {
         functions.logger.error(`Erro ao normalizar artigo da fonte ${sourceApi}:`, e, article);
         return null;
     }
+}
+
+async function analyzeArticleWithAI(article, settings) {
+    const textContent = `${article.title}. ${article.description}`;
+    let languageData = { sentiment: { score: 0, magnitude: 0 }, entities: [], categories: [] };
+    let visionData = { logos: [], ocrText: '' };
+    let videoData = { videoTranscription: '' };
+
+    if (textContent && textContent.length > 50 && !textContent.startsWith('http')) {
+        try {
+            const document = { content: textContent, type: 'PLAIN_TEXT', language: 'pt' };
+            const [sentimentResult, entitiesResult, categoriesResult] = await Promise.all([
+                languageClient.analyzeSentiment({ document }),
+                languageClient.analyzeEntities({ document }),
+                languageClient.classifyText({ document })
+            ]);
+            languageData.sentiment = sentimentResult[0].documentSentiment;
+            languageData.entities = entitiesResult[0].entities.filter(e => e.salience > 0.01 && e.type !== 'OTHER').map(e => ({ name: e.name, type: e.type, salience: e.salience }));
+            languageData.categories = categoriesResult[0].categories.map(c => ({ name: c.name, confidence: c.confidence }));
+        } catch (error) {
+            functions.logger.error("Erro na Natural Language AI:", error.message);
+        }
+    }
+    
+    if (article.image && settings.apiKeyVision) {
+        try {
+            const [logoResult] = await visionClient.logoDetection(article.image);
+            visionData.logos = logoResult.logoAnnotations.map(logo => ({ description: logo.description, score: logo.score }));
+            const [textResult] = await visionClient.textDetection(article.image);
+            visionData.ocrText = textResult.fullTextAnnotation ? textResult.fullTextAnnotation.text : '';
+        } catch (err) {
+            functions.logger.warn(`Vision AI error para imagem ${article.image}:`, err.message);
+        }
+    }
+
+    if (article.videoId && settings.apiKeyVideoIntelligence) {
+        functions.logger.warn(`A transcrição de vídeo para ${article.videoId} foi pulada. Requer upload para o Google Cloud Storage.`);
+    }
+
+    return { ...languageData, ...visionData, ...videoData };
 }
 
 async function fetchAllNews() {
@@ -201,7 +218,6 @@ async function fetchAllNews() {
         throw new Error("Configurações globais não encontradas.");
     }
     const settings = globalSettingsDoc.data();
-    // Chave de API do Firebase para o Geocoding
     const firebaseApiKey = settings.apiKeyFirebaseNews; 
 
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
@@ -216,13 +232,10 @@ async function fetchAllNews() {
     const allCompaniesData = []; 
 
     for (const companyDoc of companiesSnapshot.docs) {
-        //... (lógica para preparar dados da empresa, igual à anterior)
         const companyId = companyDoc.id;
         const companyName = companyDoc.data().name;
-
         const companySettingsDoc = await db.doc(`artifacts/${APP_ID}/public/data/settings/${companyId}`).get();
         const fetchOnlyNew = companySettingsDoc.exists && companySettingsDoc.data().fetchOnlyNew === true;
-
         const existingUrls = new Set();
         const articlesQuery = db.collection(`artifacts/${APP_ID}/users/${companyId}/articles`).select('url');
         const pendingQuery = db.collection(`artifacts/${APP_ID}/public/data/pendingAlerts`).where('companyId', '==', companyId).select('url');
@@ -230,7 +243,6 @@ async function fetchAllNews() {
         
         articlesSnapshot.forEach(doc => existingUrls.add(doc.data().url));
         pendingSnapshot.forEach(doc => existingUrls.add(doc.data().url));
-
         const keywordsSnapshot = await db.collection(`artifacts/${APP_ID}/users/${companyId}/keywords`).get();
         if (!keywordsSnapshot.empty) {
             const keywordsList = keywordsSnapshot.docs.map(doc => doc.data().word);
@@ -245,13 +257,16 @@ async function fetchAllNews() {
         
         const translatedTitle = await detectAndTranslate(normalizedArticle.title);
         const translatedDesc = await detectAndTranslate(normalizedArticle.description);
-
         normalizedArticle.title = translatedTitle.translatedText;
         normalizedArticle.description = translatedDesc.translatedText;
         
-        const aiData = await analyzeArticleWithAI(normalizedArticle);
+        const aiData = await analyzeArticleWithAI(normalizedArticle, settings);
+        const finalMatchedKeywords = findMatchingKeywords({ ...normalizedArticle, ai: aiData }, company.keywordsList);
 
-        // ATUALIZADO: Lógica de geocodificação
+        if (finalMatchedKeywords.length === 0) {
+            return;
+        }
+
         let geolocation = null;
         if (aiData.entities && aiData.entities.length > 0) {
             const firstLocation = aiData.entities.find(e => e.type === 'LOCATION');
@@ -262,7 +277,7 @@ async function fetchAllNews() {
 
         const articleData = {
             ...normalizedArticle,
-            keywords: matchedKeywords,
+            keywords: finalMatchedKeywords,
             companyId: company.companyId,
             companyName: company.companyName,
             status: "pending",
@@ -272,7 +287,7 @@ async function fetchAllNews() {
                 translated: translatedTitle.translated || translatedDesc.translated,
                 originalLanguage: translatedTitle.languageCode
             },
-            geolocation: geolocation // Salva as coordenadas
+            geolocation: geolocation
         };
 
         const pendingAlertRef = db.collection(`artifacts/${APP_ID}/public/data/pendingAlerts`).doc();
@@ -284,13 +299,10 @@ async function fetchAllNews() {
         articlesToSaveCount++;
     };
 
-    // O restante da função fetchAllNews para buscar nas APIs e RSS continua o mesmo
-    // ...
     for (const company of allCompaniesData) {
         functions.logger.info(`--- Processando empresa: ${company.companyName} ---`);
         const combinedQuery = company.keywordsList.map(kw => `"${kw}"`).join(" OR ");
         
-        // GNews
         if (settings.apiKeyGNews1) {
             await delay(1000);
             const currentHour = new Date().getHours();
@@ -315,7 +327,6 @@ async function fetchAllNews() {
             }
         }
         
-        // NewsAPI
         if (settings.apiKeyNewsApi) {
             await delay(1000);
             const queryUrl = `${NEWSAPI_URL}?q=${encodeURIComponent(combinedQuery)}&language=pt,en,es&apiKey=${settings.apiKeyNewsApi}`;
@@ -362,9 +373,6 @@ async function fetchAllNews() {
     return { success: true, totalSaved: articlesToSaveCount };
 }
 
-
-// --- Funções Principais e Restante do Arquivo ---
-// O restante do seu arquivo (manualFetch, scheduledFetch, approveAlert, rejectAlert, etc.) permanece o mesmo.
 exports.manualFetch = regionalFunctions.https.onCall(async (data, context) => {
     try {
         return await fetchAllNews();
@@ -566,3 +574,4 @@ exports.generateSuperAdminReport = regionalFunctions.https.onCall(async (data, c
     functions.logger.info("Relatório geral gerado com sucesso.");
     return reportData;
 });
+
