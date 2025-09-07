@@ -1,8 +1,8 @@
 /**
  * IMPORTANTE: Este é o código COMPLETO e ATUALIZADO para o servidor (Firebase Cloud Functions).
  * ...
- * * * * CORREÇÃO (SET/2025): Removida a chamada de 'classifyText' da Natural Language AI,
- * * pois não suporta o idioma português ('pt'), o que causava um erro fatal.
+ * * * * NOVA FUNCIONALIDADE (SET/2025): Integração com Vision AI e Video Intelligence AI
+ * * para análise de logotipos, OCR em imagens e preparação para transcrição de vídeo.
  */
 
 const functions = require("firebase-functions");
@@ -35,9 +35,10 @@ const GOOGLE_PROJECT_ID = "noticias-6e952";
 
 const runtimeOpts = {
   timeoutSeconds: 540,
-  memory: '2GB'
+  memory: '2GB' // Memória aumentada para análise de mídia
 };
 const regionalFunctions = functions.region("southamerica-east1").runWith(runtimeOpts);
+
 
 // --- Funções Auxiliares ---
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -45,9 +46,7 @@ const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 const findMatchingKeywords = (article, keywords) => {
     let contentToSearch = (article.title || "").toLowerCase();
     contentToSearch += " " + (article.contentSnippet || article.description || article.content || "").toLowerCase();
-    if (article.ai?.videoTranscription) {
-        contentToSearch += " " + article.ai.videoTranscription.toLowerCase();
-    }
+    // Adiciona o texto extraído da imagem (OCR) à busca
     if (article.ai?.ocrText) {
         contentToSearch += " " + article.ai.ocrText.toLowerCase();
     }
@@ -143,14 +142,12 @@ async function analyzeArticleWithAI(article, settings) {
     if (textContent && textContent.length > 50 && !textContent.startsWith('http')) {
         try {
             const document = { content: textContent, type: 'PLAIN_TEXT', language: 'pt' };
-            // CORREÇÃO: Removida a chamada para classifyText
             const [sentimentResult, entitiesResult] = await Promise.all([
                 languageClient.analyzeSentiment({ document }),
                 languageClient.analyzeEntities({ document }),
             ]);
             languageData.sentiment = sentimentResult[0].documentSentiment;
             languageData.entities = entitiesResult[0].entities.filter(e => e.salience > 0.01 && e.type !== 'OTHER').map(e => ({ name: e.name, type: e.type, salience: e.salience }));
-            // A funcionalidade de categorias foi removida, então definimos como um array vazio.
             languageData.categories = []; 
         } catch (error) {
             functions.logger.error("Erro na Natural Language AI:", error.message);
@@ -162,7 +159,7 @@ async function analyzeArticleWithAI(article, settings) {
             const [logoResult] = await visionClient.logoDetection(article.image);
             visionData.logos = logoResult.logoAnnotations.map(logo => ({ description: logo.description, score: logo.score }));
             const [textResult] = await visionClient.textDetection(article.image);
-            visionData.ocrText = textResult.fullTextAnnotation ? textResult.fullTextAnnotation.text : '';
+            visionData.ocrText = textResult.fullTextAnnotation ? textResult.fullTextAnnotation.text.replace(/\n/g, ' ') : '';
         } catch (err) {
             functions.logger.warn(`Vision AI error para imagem ${article.image}:`, err.message);
         }
@@ -177,7 +174,7 @@ async function analyzeArticleWithAI(article, settings) {
 
 async function fetchAllNews() {
     functions.logger.info("=======================================");
-    functions.logger.info("INICIANDO BUSCA DE NOTÍCIAS COM TRADUÇÃO, IA E GEOCODIFICAÇÃO...");
+    functions.logger.info("INICIANDO BUSCA DE NOTÍCIAS COM TRADUÇÃO, IA, MÍDIA E GEOCODIFICAÇÃO...");
 
     const globalSettingsRef = db.doc(`artifacts/${APP_ID}/public/data/settings/global`);
     const globalSettingsDoc = await globalSettingsRef.get();
@@ -226,6 +223,8 @@ async function fetchAllNews() {
         normalizedArticle.description = translatedDesc.translatedText;
         
         const aiData = await analyzeArticleWithAI(normalizedArticle, settings);
+        
+        // A correspondência de palavras-chave agora inclui texto da imagem (OCR)
         const finalMatchedKeywords = findMatchingKeywords({ ...normalizedArticle, ai: aiData }, company.keywordsList);
 
         if (finalMatchedKeywords.length === 0) {
@@ -265,7 +264,6 @@ async function fetchAllNews() {
         functions.logger.info(`--- Processando empresa: ${company.companyName} ---`);
         const combinedQuery = company.keywordsList.map(kw => `"${kw}"`).join(" OR ");
         
-        // GNews
         if (settings.apiKeyGNews1) {
             const currentHour = new Date().getHours();
             let gnewsApiKey = settings.apiKeyGNews4;
@@ -338,9 +336,6 @@ async function fetchAllNews() {
     return { success: true, totalSaved: articlesToSaveCount };
 }
 
-// O restante do seu arquivo
-// ...
-
 exports.manualFetch = regionalFunctions.https.onCall(async (data, context) => {
     try {
         return await fetchAllNews();
@@ -361,6 +356,7 @@ exports.scheduledFetch = regionalFunctions.pubsub.schedule("every 30 minutes")
         return null;
     }
 });
+
 exports.approveAlert = regionalFunctions.https.onCall(async (data, context) => {
     const { appId, alertId } = data;
     if (!appId || !alertId) { throw new functions.https.HttpsError("invalid-argument", "O ID da aplicação e do alerta são necessários."); }
@@ -542,3 +538,4 @@ exports.generateSuperAdminReport = regionalFunctions.https.onCall(async (data, c
     functions.logger.info("Relatório geral gerado com sucesso.");
     return reportData;
 });
+
