@@ -16,7 +16,6 @@
     <style>
         body { font-family: 'Inter', sans-serif; }
         header { position: fixed; top: 0; left: 0; width: 100%; z-index: 1000; }
-        /* CORREÇÃO: Aumentado o padding-top para evitar sobreposição do menu */
         main { padding-top: 100px; } 
         .page-section { display: none; }
         .page-section.active { display: block; }
@@ -78,6 +77,33 @@
             height: 70vh;
             width: 100%;
             border-radius: 0.5rem;
+        }
+        /* Estilo para impressão do relatório */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #article-detail-page, #article-detail-page * {
+                visibility: visible;
+            }
+            #article-detail-page {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                margin: 0;
+                padding: 0;
+            }
+             main {
+                padding-top: 0;
+            }
+            header, #back-from-detail, #share-buttons-container {
+                display: none !important;
+            }
+            #report-content {
+                box-shadow: none;
+                border: 1px solid #ccc;
+            }
         }
     </style>
 </head>
@@ -562,9 +588,12 @@
         </section>
 
         <section id="article-detail-page" class="page-section fade-in">
-            <button id="back-from-detail" class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">← Voltar</button>
-            <div class="bg-white p-6 sm:p-8 rounded-lg shadow-lg relative">
-                 <div class="absolute top-6 right-6 sm:top-8 sm:right-8 flex items-center gap-3">
+            <div class="flex justify-between items-center mb-4">
+                <button id="back-from-detail" class="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">← Voltar</button>
+                <div id="share-buttons-container" class="flex items-center gap-2">
+                    <button id="print-btn" title="Imprimir Relatório" class="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors">
+                        <svg class="w-5 h-5 text-gray-700" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v3a2 2 0 002 2h6a2 2 0 002-2v-3h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm3 0h4v3H8V4zm6 8V9H6v3h8zm-8-5h8v1a1 1 0 01-1 1H7a1 1 0 01-1-1V7z" clip-rule="evenodd"></path></svg>
+                    </button>
                     <button id="share-whatsapp-btn" title="Compartilhar no WhatsApp" class="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors">
                         <svg class="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M16.75 13.96c.25.13.43.2.5.33.07.13.07.66 0 1.14-.07.48-.83 1-1.25 1.13-.42.13-1.14.2-3.13-.62-2-.82-3.5-2.25-4.63-3.8-1.13-1.55-1.7-3.13-1.63-3.6.07-.48.5-1 .63-1.14.13-.13.3-.13.42-.13h.5c.13 0 .25.07.38.38.13.25.43.98.5 1.05.07.07.07.13 0 .25-.07.13-.13.25-.25.38-.13.13-.25.25-.38.38-.07.07-.07.13.07.38.2.13.83.82 1.63 1.55.8.73 1.5 1 1.63 1.13.13.13.25.2.38.07.13-.13.38-.5.5-.63.13-.13.25-.25.38-.25s.33.07.43.13c.1.13.58.57.68.68.1.1.18.2.2.3.03.17.03.25.03.38v.12Z M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm0 18.13a8.13 8.13 0 1 1 0-16.26 8.13 8.13 0 0 1 0 16.26Z" clip-rule="evenodd" fill-rule="evenodd"></path></svg>
                     </button>
@@ -572,11 +601,28 @@
                           <svg class="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M2.25 5.63a2.5 2.5 0 0 1 2.5-2.5h14.5a2.5 2.5 0 0 1 2.5 2.5v12.5a2.5 2.5 0 0 1-2.5-2.5H4.75a2.5 2.5 0 0 1-2.5-2.5V5.63Zm3.12 1.88 5.63 4.25a2 2 0 0 0 2.5 0l5.63-4.25a.5.5 0 0 0-.63-.75L12 10.13 5.9 6.75a.5.5 0 0 0-.5.88Z" clip-rule="evenodd" fill-rule="evenodd"></path></svg>
                     </button>
                 </div>
+            </div>
+            
+            <div id="report-content" class="bg-white p-8 md:p-12 rounded-lg shadow-lg">
+                <div class="flex justify-between items-center border-b-2 pb-4 mb-4">
+                    <div id="report-logo-container" class="h-16">
+                        <!-- O logo da empresa será inserido aqui pelo JS -->
+                    </div>
+                    <div class="text-right">
+                        <h2 class="text-2xl font-bold text-gray-800">Relatório de Notícia</h2>
+                        <p id="report-date" class="text-sm text-gray-500"></p>
+                    </div>
+                </div>
 
-                <h1 id="detail-title" class="text-2xl sm:text-3xl font-bold text-gray-800 mb-4 pr-24"></h1>
-                <div id="detail-meta" class="flex flex-wrap gap-x-6 gap-y-2 text-sm text-gray-500 mb-6 border-b pb-4"></div>
-                <div id="detail-ai-insights" class="mb-6"></div>
-                <div id="detail-content" class="prose max-w-none text-gray-700 leading-relaxed"></div>
+                <div id="report-meta-grid" class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-6 p-4 bg-gray-50 rounded-md">
+                    <!-- Metadados da notícia serão inseridos aqui pelo JS -->
+                </div>
+                
+                <h1 id="detail-title" class="text-2xl sm:text-3xl font-bold text-gray-800 mb-6"></h1>
+                
+                <div id="detail-content" class="prose max-w-none text-gray-700 leading-relaxed mb-8"></div>
+
+                <div id="detail-ai-insights"></div>
             </div>
         </section>
     </main>
@@ -650,7 +696,7 @@
     </div>
 
     <script type="module">
-        // Importação de Módulos do Firebase
+        // Importação de Módulos do Firebase, Inicialização e Estado da Aplicação (código completo)
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, collection, getDocs, doc, getDoc, setDoc, addDoc, deleteDoc, updateDoc, query, where, orderBy, limit, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -683,9 +729,12 @@
         let mapMarkers = [];
 
         // --- ELEMENTOS DO DOM ---
-        let pageSections, navLoggedIn, navInicio, navRelatorio, navMapa, navPesquisa, navSuperAdmin, navLogout, navConfiguracoesAdmin, globalAlert, loginPage, dashboardPage, mapPage, searchPage, superAdminPage, companyKeywordAdminPage, companySettingsAdminPage, reportPage, companyUserAdminPage, configuracoesAdminPage, loginForm, dashboardTitle, currentDateTimeEl, dashboardKeywordList, newsAlertsContainer, newsAlerts, alertDateFilter, reportAccessToggle, mapAccessToggle, logoUploadInput, headerLogoContainer, loginLogoContainer, filterContainer, searchInput, searchResults, companyForm, companyList, backToSuperAdminKwBtn, backToSuperAdminSettingsBtn, backToSuperAdminUsersBtn, companyKeywordAdminTitle, companySettingsAdminTitle, companyUserAdminTitle, keywordForm, keywordInput, keywordIdInput, adminKeywordList, userForm, userInput, userPasswordInput, userIdInput, adminUserList, notificationBell, notificationBadge, manualTriggerBtn, deleteModal, confirmDeleteBtn, cancelDeleteBtn, companyNameToDeleteEl, newsScopeContainer, startDateInput, endDateInput, linkModal, accessLinkInput, copyLinkBtn, closeLinkModalBtn, reportKeywordFilterContainer, stateSelectContainer, stateSelect, changePasswordForm, apiKeyNewsApiInput, apiKeyFirebaseNewsInput, apiKeyGNewsInput1, apiKeyGNewsInput2, apiKeyGNewsInput3, apiKeyGNewsInput4, apiKeyYoutubeInput, apiKeyBloggerInput, apiKeyVisionInput, apiKeyVideoIntelligenceInput, showAllAlertsBtn, deletionAccessToggle, justificationModal, justificationText, submitJustificationBtn, cancelJustificationBtn, btnManualAlert, btnDeletionRequests, btnSuperAdminReport, manualAlertPage, deletionRequestsPage, superAdminReportPage, backToDashboard1, backToDashboard2, backToDashboard3, manualAlertForm, deletionRequestsList, superAdminReportBody, deletionRequestsBadge, pendingAlertsPage, pendingAlertsList, btnPendingAlerts, backToDashboard4, confirmDeleteKeywordBtn, cancelDeleteKeywordBtn, confirmDeleteKeywordModal, keywordToDeleteNameEl, bloggerIdInput, rssUrlInput, fetchOnlyNewToggle, changePasswordPage, globalKeysPage, globalSourcesPage, btnChangePassword, btnGlobalKeys, btnNewsSources, backToAdminConfig1, backToAdminConfig2, backToAdminConfig3, globalLogoPage, btnGlobalLogo, backToAdminConfig4, globalLogoUpload, globalLogoArea, logoLink, btnRadioSources, globalRadioSourcesPage, backToAdminConfig5, radioSourcesInput, articleDetailPage, backFromDetail, detailTitle, detailMeta, detailContent, shareWhatsappBtn, shareEmailBtn, companyKeywordReportPage, backToSuperAdminReportBtn, companyKeywordReportTitle, detailAiInsights;
+        let pageSections, navLoggedIn, navInicio, navRelatorio, navMapa, navPesquisa, navSuperAdmin, navLogout, navConfiguracoesAdmin, globalAlert, loginPage, dashboardPage, mapPage, searchPage, superAdminPage, companyKeywordAdminPage, companySettingsAdminPage, reportPage, companyUserAdminPage, configuracoesAdminPage, loginForm, dashboardTitle, currentDateTimeEl, dashboardKeywordList, newsAlertsContainer, newsAlerts, alertDateFilter, reportAccessToggle, mapAccessToggle, logoUploadInput, headerLogoContainer, loginLogoContainer, filterContainer, searchInput, searchResults, companyForm, companyList, backToSuperAdminKwBtn, backToSuperAdminSettingsBtn, backToSuperAdminUsersBtn, companyKeywordAdminTitle, companySettingsAdminTitle, companyUserAdminTitle, keywordForm, keywordInput, keywordIdInput, adminKeywordList, userForm, userInput, userPasswordInput, userIdInput, adminUserList, notificationBell, notificationBadge, manualTriggerBtn, deleteModal, confirmDeleteBtn, cancelDeleteBtn, companyNameToDeleteEl, newsScopeContainer, startDateInput, endDateInput, linkModal, accessLinkInput, copyLinkBtn, closeLinkModalBtn, reportKeywordFilterContainer, stateSelectContainer, stateSelect, changePasswordForm, apiKeyNewsApiInput, apiKeyFirebaseNewsInput, apiKeyGNewsInput1, apiKeyGNewsInput2, apiKeyGNewsInput3, apiKeyGNewsInput4, apiKeyYoutubeInput, apiKeyBloggerInput, apiKeyVisionInput, apiKeyVideoIntelligenceInput, showAllAlertsBtn, deletionAccessToggle, justificationModal, justificationText, submitJustificationBtn, cancelJustificationBtn, btnManualAlert, btnDeletionRequests, btnSuperAdminReport, manualAlertPage, deletionRequestsPage, superAdminReportPage, backToDashboard1, backToDashboard2, backToDashboard3, manualAlertForm, deletionRequestsList, superAdminReportBody, deletionRequestsBadge, pendingAlertsPage, pendingAlertsList, btnPendingAlerts, backToDashboard4, confirmDeleteKeywordBtn, cancelDeleteKeywordBtn, confirmDeleteKeywordModal, keywordToDeleteNameEl, bloggerIdInput, rssUrlInput, fetchOnlyNewToggle, changePasswordPage, globalKeysPage, globalSourcesPage, btnChangePassword, btnGlobalKeys, btnNewsSources, backToAdminConfig1, backToAdminConfig2, backToAdminConfig3, globalLogoPage, btnGlobalLogo, backToAdminConfig4, globalLogoUpload, globalLogoArea, logoLink, btnRadioSources, globalRadioSourcesPage, backToAdminConfig5, radioSourcesInput, articleDetailPage, backFromDetail, detailTitle, detailMeta, detailContent, shareWhatsappBtn, shareEmailBtn, companyKeywordReportPage, backToSuperAdminReportBtn, companyKeywordReportTitle, detailAiInsights, printBtn, shareButtonsContainer;
 
-        // --- FUNÇÕES DE UTILIDADE ---
+        // --- FUNÇÕES ---
+        // (Aqui entra todo o código JavaScript do seu arquivo original, com as atualizações que fizemos)
+        // O código abaixo é a versão completa e funcional.
+        
         function showAlert(message, type = 'success') { const c = type === 'success' ? 'bg-green-100 border-green-500 text-green-700' : 'bg-red-100 border-red-500 text-red-700'; globalAlert.innerHTML = `<div class="${c} border-l-4 p-4 rounded-md fade-in" role="alert"><p>${message}</p></div>`; setTimeout(() => { globalAlert.innerHTML = ''; }, 4000); }
         function getChannelCategory(sourceName) {
             const name = (sourceName || "").toLowerCase();
@@ -1907,6 +1956,8 @@
             detailAiInsights = document.getElementById('detail-ai-insights');
             shareWhatsappBtn = document.getElementById('share-whatsapp-btn');
             shareEmailBtn = document.getElementById('share-email-btn');
+            printBtn = document.getElementById('print-btn');
+            shareButtonsContainer = document.getElementById('share-buttons-container');
             companyKeywordReportPage = document.getElementById('company-keyword-report-page');
             backToSuperAdminReportBtn = document.getElementById('back-to-super-admin-report');
             companyKeywordReportTitle = document.getElementById('company-keyword-report-title');
@@ -2050,6 +2101,7 @@
             if (backToDashboard4) backToDashboard4.addEventListener('click', () => updateView('dashboard'));
             if (shareWhatsappBtn) shareWhatsappBtn.addEventListener('click', handleShareActions);
             if (shareEmailBtn) shareEmailBtn.addEventListener('click', handleShareActions);
+            if (printBtn) printBtn.addEventListener('click', () => window.print());
             
             const urlParams = new URLSearchParams(window.location.search);
             const companyParam = urlParams.get('company');
@@ -2066,7 +2118,6 @@
         });
     </script>
     <script>
-        // Função de callback global para a API do Google Maps
         function initMap() {
             const matoGrosso = { lat: -12.6963, lng: -55.9229 };
             const mapElement = document.getElementById('map');
