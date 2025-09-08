@@ -1,8 +1,8 @@
 /**
  * IMPORTANTE: Este é o código COMPLETO e ATUALIZADO para o servidor (Firebase Cloud Functions).
  * ...
- * * * * NOVA FUNCIONALIDADE (SET/2025): Integração com Vision AI e Video Intelligence AI
- * * para análise de logotipos, OCR em imagens e preparação para transcrição de vídeo.
+ * * * * CORREÇÃO FINAL (SET/2025): Removida a truncagem de texto para exibir o conteúdo completo.
+ * * Reintroduzida e corrigida a lógica de busca do YouTube para garantir a captura de vídeos.
  */
 
 const functions = require("firebase-functions");
@@ -35,10 +35,9 @@ const GOOGLE_PROJECT_ID = "noticias-6e952";
 
 const runtimeOpts = {
   timeoutSeconds: 540,
-  memory: '2GB' // Memória aumentada para análise de mídia
+  memory: '2GB'
 };
 const regionalFunctions = functions.region("southamerica-east1").runWith(runtimeOpts);
-
 
 // --- Funções Auxiliares ---
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -46,7 +45,9 @@ const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 const findMatchingKeywords = (article, keywords) => {
     let contentToSearch = (article.title || "").toLowerCase();
     contentToSearch += " " + (article.contentSnippet || article.description || article.content || "").toLowerCase();
-    // Adiciona o texto extraído da imagem (OCR) à busca
+    if (article.ai?.videoTranscription) {
+        contentToSearch += " " + article.ai.videoTranscription.toLowerCase();
+    }
     if (article.ai?.ocrText) {
         contentToSearch += " " + article.ai.ocrText.toLowerCase();
     }
@@ -122,8 +123,8 @@ function normalizeArticle(article, sourceApi) {
         switch (sourceApi) {
             case 'gnews': return { title: article.title, description: article.description, url: article.url, image: article.image || null, publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.publishedAt)), source: { name: article.source.name, url: article.source.url }, author: article.author || null, };
             case 'newsapi': return { title: article.title, description: article.description, url: article.url, image: article.urlToImage || null, publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.publishedAt)), source: { name: article.source.name, url: null }, author: article.author || null, };
-            case 'blogger': const blogName = article.blog ? article.blog.name : 'Blogger'; return { title: article.title, description: (article.content || "").substring(0, 500).replace(/<[^>]*>?/gm, '') + '...', url: article.url, image: null, publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.published)), source: { name: blogName, url: article.url }, author: article.author?.displayName || null, };
-            case 'rss': return { title: article.title, description: (article.contentSnippet || article.content || "").substring(0, 500), url: article.link, image: article.enclosure?.url || null, publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.isoDate)), source: { name: article.creator || 'RSS Feed', url: article.link }, author: article.creator || null, };
+            case 'blogger': const blogName = article.blog ? article.blog.name : 'Blogger'; return { title: article.title, description: (article.content || "").replace(/<[^>]*>?/gm, ''), url: article.url, image: null, publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.published)), source: { name: blogName, url: article.url }, author: article.author?.displayName || null, };
+            case 'rss': return { title: article.title, description: (article.contentSnippet || article.content || "").replace(/<[^>]*>?/gm, ''), url: article.link, image: article.enclosure?.url || null, publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.isoDate)), source: { name: article.creator || 'RSS Feed', url: article.link }, author: article.creator || null, };
             case 'youtube': return { title: article.snippet.title, description: article.snippet.description, url: `https://www.youtube.com/watch?v=${article.id.videoId}`, image: article.snippet.thumbnails.high.url || null, publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.snippet.publishedAt)), source: { name: 'YouTube', url: `https://www.youtube.com/channel/${article.snippet.channelId}` }, author: article.snippet.channelTitle || null, videoId: article.id.videoId };
             default: return null;
         }
@@ -223,8 +224,6 @@ async function fetchAllNews() {
         normalizedArticle.description = translatedDesc.translatedText;
         
         const aiData = await analyzeArticleWithAI(normalizedArticle, settings);
-        
-        // A correspondência de palavras-chave agora inclui texto da imagem (OCR)
         const finalMatchedKeywords = findMatchingKeywords({ ...normalizedArticle, ai: aiData }, company.keywordsList);
 
         if (finalMatchedKeywords.length === 0) {
@@ -306,6 +305,25 @@ async function fetchAllNews() {
                 }
             } catch (e) { functions.logger.error(`Erro NewsAPI para ${company.companyName}:`, e.message); }
         }
+
+        // CORREÇÃO: Lógica de busca do YouTube reintroduzida
+        if (settings.apiKeyYoutube) {
+            for (const keyword of company.keywordsList) {
+               await delay(500);
+               const queryUrl = `${YOUTUBE_URL}?part=snippet&q=${encodeURIComponent(`"${keyword}"`)}&type=video&key=${settings.apiKeyYoutube}`;
+               try {
+                    const response = await axios.get(queryUrl);
+                    if (response.data && response.data.items) {
+                        for (const item of response.data.items) {
+                            if (!company.fetchOnlyNew || new Date(item.snippet.publishedAt) >= twentyFourHoursAgo) {
+                                const normalized = normalizeArticle({ ...item, id: { videoId: item.id.videoId } }, 'youtube');
+                                await processAndSaveArticle(normalized, company, [keyword]);
+                            }
+                        }
+                    }
+               } catch (e) { functions.logger.error(`Erro YouTube (keyword: ${keyword}):`, e.message); }
+            }
+        }
     }
 
     const rssUrls = settings.rssUrl ? settings.rssUrl.split('\n').filter(url => url.trim() !== '') : [];
@@ -356,7 +374,6 @@ exports.scheduledFetch = regionalFunctions.pubsub.schedule("every 30 minutes")
         return null;
     }
 });
-
 exports.approveAlert = regionalFunctions.https.onCall(async (data, context) => {
     const { appId, alertId } = data;
     if (!appId || !alertId) { throw new functions.https.HttpsError("invalid-argument", "O ID da aplicação e do alerta são necessários."); }
