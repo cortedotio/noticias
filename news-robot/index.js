@@ -121,11 +121,11 @@ async function detectAndTranslate(text) {
 function normalizeArticle(article, sourceApi) {
     try {
         switch (sourceApi) {
-            case 'gnews': return { title: article.title, description: article.description, url: article.url, image: article.image || null, publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.publishedAt)), source: { name: article.source.name, url: article.source.url }, author: article.author || null, };
-            case 'newsapi': return { title: article.title, description: article.description, url: article.url, image: article.urlToImage || null, publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.publishedAt)), source: { name: article.source.name, url: null }, author: article.author || null, };
-            case 'blogger': const blogName = article.blog ? article.blog.name : 'Blogger'; return { title: article.title, description: (article.content || "").replace(/<[^>]*>?/gm, ''), url: article.url, image: null, publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.published)), source: { name: blogName, url: article.url }, author: article.author?.displayName || null, };
-            case 'rss': return { title: article.title, description: (article.contentSnippet || article.content || "").replace(/<[^>]*>?/gm, ''), url: article.link, image: article.enclosure?.url || null, publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.isoDate)), source: { name: article.creator || 'RSS Feed', url: article.link }, author: article.creator || null, };
-            case 'youtube': return { title: article.snippet.title, description: article.snippet.description, url: `https://www.youtube.com/watch?v=${article.id.videoId}`, image: article.snippet.thumbnails.high.url || null, publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.snippet.publishedAt)), source: { name: 'YouTube', url: `https://www.youtube.com/channel/${article.snippet.channelId}` }, author: article.snippet.channelTitle || null, videoId: article.id.videoId };
+            case 'gnews': return { title: article.title, description: article.description, content: article.content, url: article.url, image: article.image || null, publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.publishedAt)), source: { name: article.source.name, url: article.source.url }, author: article.author || null, };
+            case 'newsapi': return { title: article.title, description: article.description, content: article.content, url: article.url, image: article.urlToImage || null, publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.publishedAt)), source: { name: article.source.name, url: null }, author: article.author || null, };
+            case 'blogger': const blogName = article.blog ? article.blog.name : 'Blogger'; return { title: article.title, description: (article.content || "").replace(/<[^>]*>?/gm, ''), content: article.content, url: article.url, image: null, publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.published)), source: { name: blogName, url: article.url }, author: article.author?.displayName || null, };
+            case 'rss': return { title: article.title, description: (article.contentSnippet || article.content || "").replace(/<[^>]*>?/gm, ''), content: article.content, url: article.link, image: article.enclosure?.url || null, publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.isoDate)), source: { name: article.creator || 'RSS Feed', url: article.link }, author: article.creator || null, };
+            case 'youtube': return { title: article.snippet.title, description: article.snippet.description, content: article.snippet.description, url: `https://www.youtube.com/watch?v=${article.id.videoId}`, image: article.snippet.thumbnails.high.url || null, publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.snippet.publishedAt)), source: { name: 'YouTube', url: `https://www.youtube.com/channel/${article.snippet.channelId}` }, author: article.snippet.channelTitle || null, videoId: article.id.videoId };
             default: return null;
         }
     } catch (e) {
@@ -306,7 +306,6 @@ async function fetchAllNews() {
             } catch (e) { functions.logger.error(`Erro NewsAPI para ${company.companyName}:`, e.message); }
         }
 
-        // CORREÇÃO: Lógica de busca do YouTube reintroduzida
         if (settings.apiKeyYoutube) {
             for (const keyword of company.keywordsList) {
                await delay(500);
@@ -338,9 +337,9 @@ async function fetchAllNews() {
                         for (const company of allCompaniesData) {
                              const matchedKeywords = findMatchingKeywords(item, company.keywordsList);
                              if (matchedKeywords.length > 0 && (!company.fetchOnlyNew || new Date(item.isoDate) >= twentyFourHoursAgo)) {
-                                const normalized = normalizeArticle(item, 'rss');
-                                await processAndSaveArticle(normalized, company, matchedKeywords);
-                            }
+                                 const normalized = normalizeArticle(item, 'rss');
+                                 await processAndSaveArticle(normalized, company, matchedKeywords);
+                             }
                         }
                     }
                 }
@@ -374,6 +373,7 @@ exports.scheduledFetch = regionalFunctions.pubsub.schedule("every 30 minutes")
         return null;
     }
 });
+
 exports.approveAlert = regionalFunctions.https.onCall(async (data, context) => {
     const { appId, alertId } = data;
     if (!appId || !alertId) { throw new functions.https.HttpsError("invalid-argument", "O ID da aplicação e do alerta são necessários."); }
@@ -556,3 +556,66 @@ exports.generateSuperAdminReport = regionalFunctions.https.onCall(async (data, c
     return reportData;
 });
 
+exports.getCompanyKeywordReport = regionalFunctions.https.onCall(async (data, context) => {
+    const { appId, companyId } = data;
+    if (!appId || !companyId) {
+        throw new functions.https.HttpsError("invalid-argument", "O ID da aplicação e da empresa são necessários.");
+    }
+
+    const keywordsSnapshot = await db.collection(`artifacts/${appId}/users/${companyId}/keywords`).get();
+    const articlesSnapshot = await db.collection(`artifacts/${appId}/users/${companyId}/articles`).get();
+    
+    const articles = articlesSnapshot.docs.map(doc => doc.data());
+    const keywordReport = [];
+
+    for (const keywordDoc of keywordsSnapshot.docs) {
+        const keyword = keywordDoc.data().word;
+        const relevantArticles = articles.filter(a => (a.keywords || []).includes(keyword));
+        
+        const totalAlerts = relevantArticles.length;
+        if (totalAlerts === 0) {
+            keywordReport.push({
+                keyword,
+                totalAlerts: 0,
+                sentimentPercentage: { positive: 0, neutral: 0, negative: 0 },
+                predominantSentiment: 'N/A',
+                topChannel: 'N/A',
+                topVehicle: 'N/A'
+            });
+            continue;
+        }
+
+        let positiveCount = 0, neutralCount = 0, negativeCount = 0;
+        const channelCounts = {}, vehicleCounts = {};
+
+        relevantArticles.forEach(article => {
+            const score = article.sentiment?.score ?? 0;
+            if (score > 0.2) positiveCount++;
+            else if (score < -0.2) negativeCount++;
+            else neutralCount++;
+
+            const channel = article.source?.name ? getChannelCategory(article.source.name) : 'Outros';
+            channelCounts[channel] = (channelCounts[channel] || 0) + 1;
+            const vehicle = article.source?.name || 'Outros';
+            vehicleCounts[vehicle] = (vehicleCounts[vehicle] || 0) + 1;
+        });
+
+        const totalSentiments = positiveCount + neutralCount + negativeCount;
+        const sentimentPercentage = {
+            positive: totalSentiments > 0 ? parseFloat(((positiveCount / totalSentiments) * 100).toFixed(2)) : 0,
+            neutral: totalSentiments > 0 ? parseFloat(((neutralCount / totalSentiments) * 100).toFixed(2)) : 0,
+            negative: totalSentiments > 0 ? parseFloat(((negativeCount / totalSentiments) * 100).toFixed(2)) : 0,
+        };
+
+        keywordReport.push({
+            keyword,
+            totalAlerts,
+            sentimentPercentage,
+            predominantSentiment: getPredominantSentiment(sentimentPercentage),
+            topChannel: getTopCount(channelCounts),
+            topVehicle: getTopCount(vehicleCounts)
+        });
+    }
+
+    return keywordReport;
+});
