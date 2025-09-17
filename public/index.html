@@ -12,6 +12,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+    <!-- SUBSTITUA PELA SUA CHAVE DA API DO GOOGLE MAPS -->
     <script async defer
         src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBl-BDqvmkNp51jfLmdoqTxHQWL4Ex9ze8&callback=initMap"></script>
 
@@ -620,22 +621,20 @@
             </div>
 
             <div id="report-content" class="bg-white p-8 md:p-12 rounded-lg shadow-lg">
-                <div class="flex justify-between items-center border-b-2 pb-4 mb-4">
-                    <div class="flex-shrink-0">
-                        <div id="aurora-clipping-logo" class="flex items-center text-gray-500">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mr-2 text-blue-800" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-                            <span class="font-semibold text-lg">Aurora Clipping</span>
-                        </div>
+                 <div class="flex justify-between items-start border-b-2 pb-4 mb-4">
+                    <div id="aurora-clipping-logo" class="flex items-center text-gray-500">
+                         <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mr-2 text-blue-800" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                         <span class="font-semibold text-lg">Aurora Clipping</span>
                     </div>
-                    <div class="flex-grow">
-                        <div id="report-logo-container" class="h-16 flex justify-center items-center">
-                            </div>
+                    <div id="report-logo-container" class="h-16 flex-grow flex justify-center items-center">
+                        <!-- Logotipo da empresa do cliente será inserido aqui -->
                     </div>
-                    <div class="flex-shrink-0 text-right">
+                    <div class="text-right">
                         <h2 class="text-2xl font-bold text-gray-800">Relatório de Notícia</h2>
                         <p id="report-date" class="text-sm text-gray-500"></p>
                     </div>
                 </div>
+
                 <div id="report-meta-grid" class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-6 p-4 bg-gray-50 rounded-md"></div>
                 <h1 id="detail-title" class="text-2xl sm:text-3xl font-bold text-gray-800 mb-6"></h1>
                 <div id="detail-content" class="prose max-w-none text-gray-700 leading-relaxed mb-8"></div>
@@ -649,6 +648,7 @@
         </section>
     </main>
 
+    <!-- Modais -->
     <div id="justification-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
         <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
             <div class="mt-3">
@@ -1252,11 +1252,11 @@
             };
 
             const sentimentMenuHTML = ` 
-                <div class="sentiment-menu p-1 space-y-1"> 
-                    <button data-sentiment="0.5" class="sentiment-option w-full text-left text-xs px-2 py-1 rounded hover:bg-gray-100">😊 Positivo</button> 
-                    <button data-sentiment="0.0" class="sentiment-option w-full text-left text-xs px-2 py-1 rounded hover:bg-gray-100">😐 Neutro</button> 
-                    <button data-sentiment="-0.5" class="sentiment-option w-full text-left text-xs px-2 py-1 rounded hover:bg-gray-100">😠 Negativo</button> 
-                </div>`;
+                   <div class="sentiment-menu p-1 space-y-1"> 
+                       <button data-sentiment="0.5" class="sentiment-option w-full text-left text-xs px-2 py-1 rounded hover:bg-gray-100">😊 Positivo</button> 
+                       <button data-sentiment="0.0" class="sentiment-option w-full text-left text-xs px-2 py-1 rounded hover:bg-gray-100">😐 Neutro</button> 
+                       <button data-sentiment="-0.5" class="sentiment-option w-full text-left text-xs px-2 py-1 rounded hover:bg-gray-100">😠 Negativo</button> 
+                   </div>`;
 
             const deleteButtonHTML = currentUser && currentUser.canRequestDeletion ? `<button class="request-delete-btn text-red-500 hover:text-red-700 ml-4" title="Solicitar Exclusão">🗑️</button>` : '';
 
@@ -1279,24 +1279,24 @@
             }
 
             alertEl.innerHTML = ` 
-                    <div class="alert-body-clickable"> 
-                        <div class="flex justify-between items-start"> 
-                            <h4 class="text-lg font-bold text-gray-800 pr-2">${article.title}</h4> 
-                            <div class="flex items-center gap-2 flex-shrink-0"> 
-                                <div class="flex flex-col items-end gap-1">${keywordsHTML}</div> 
-                                <div class="sentiment-container relative">${getSentimentHTML(sentimentScore)}${sentimentMenuHTML}</div> 
-                            </div> 
-                        </div> 
-                        <p class="text-sm text-gray-600 mt-2 line-clamp-2">${article.description || 'Descrição não disponível.'}</p> 
-                    </div> 
-                    ${aiInsightsHTML} 
-                    <div class="text-xs text-gray-500 mt-3 flex justify-between items-center"> 
-                        <span>${translationHTML}Fonte: ${article.source.name} | Publicado: ${formattedDate}</span> 
-                        <div> 
-                            <a href="${article.url}" target="_blank" rel="noopener noreferrer" class="text-indigo-600 hover:underline font-semibold">Ler no site original →</a> 
-                            ${deleteButtonHTML} 
-                        </div> 
-                    </div>`;
+                   <div class="alert-body-clickable"> 
+                       <div class="flex justify-between items-start"> 
+                           <h4 class="text-lg font-bold text-gray-800 pr-2">${article.title}</h4> 
+                           <div class="flex items-center gap-2 flex-shrink-0"> 
+                               <div class="flex flex-col items-end gap-1">${keywordsHTML}</div> 
+                               <div class="sentiment-container relative">${getSentimentHTML(sentimentScore)}${sentimentMenuHTML}</div> 
+                           </div> 
+                       </div> 
+                       <p class="text-sm text-gray-600 mt-2 line-clamp-2">${article.description || 'Descrição não disponível.'}</p> 
+                   </div> 
+                   ${aiInsightsHTML} 
+                   <div class="text-xs text-gray-500 mt-3 flex justify-between items-center"> 
+                       <span>${translationHTML}Fonte: ${article.source.name} | Publicado: ${formattedDate}</span> 
+                       <div> 
+                           <a href="${article.url}" target="_blank" rel="noopener noreferrer" class="text-indigo-600 hover:underline font-semibold">Ler no site original →</a> 
+                           ${deleteButtonHTML} 
+                       </div> 
+                   </div>`;
             container.appendChild(alertEl);
         }
 
@@ -1390,28 +1390,22 @@
         }
 
         const chartColors = ['#4F46E5', '#06B6D4', '#F59E0B', '#10B981', '#EF4444', '#8B5CF6', '#EC4899'];
-        
-        // INÍCIO: FUNÇÃO ADICIONADA PARA CRIAR GRÁFICOS
         function createChart(canvasId, instanceVar, type, data, customOptions = {}) {
             const canvasEl = document.getElementById(canvasId);
             if (!canvasEl) return;
             if (instanceVar) instanceVar.destroy();
             const ctx = canvasEl.getContext('2d');
-            
-            // Opções padrão para todos os gráficos
             const defaultOptions = {
-                responsive: false, 
-                maintainAspectRatio: false, 
-                interaction: { mode: 'index', intersect: false },
+                responsive: false, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: {
+                        position: 'left', // Alterado para a esquerda
+                    }
+                }
             };
-            
-            // Combina as opções padrão com as personalizadas
             const options = { ...defaultOptions, ...customOptions };
-
             return new Chart(ctx, { type, data, options });
         }
-        // FIM: FUNÇÃO ADICIONADA
-
         function renderSourceChart(articles, selectedKeywords) {
             const datasets = [];
             if (selectedKeywords.length === 0) { if (sourceChartInstance) sourceChartInstance.destroy(); return; }
@@ -1459,34 +1453,7 @@
                 const dataInPercentage = totalSentiments > 0 ? [(sentimentCounts.positive / totalSentiments) * 100, (sentimentCounts.neutral / totalSentiments) * 100, (sentimentCounts.negative / totalSentiments) * 100] : [0, 0, 0];
                 datasets.push({ label: keyword, data: dataInPercentage, borderColor: chartColors[index % chartColors.length], borderWidth: 2, fill: false });
             });
-
-            // INÍCIO: ALTERAÇÃO DA LEGENDA DO GRÁFICO
-            const sentimentChartOptions = { 
-                scales: { 
-                    y: { 
-                        ticks: { callback: function (value) { return value + '%'; } }, 
-                        min: 0, 
-                        max: 100 
-                    } 
-                }, 
-                plugins: { 
-                    legend: {
-                        position: 'left' // Mover a legenda para a esquerda, conforme solicitado
-                    },
-                    tooltip: { 
-                        callbacks: { 
-                            label: function (context) { 
-                                let label = context.dataset.label || ''; 
-                                if (label) { label += ': '; } 
-                                if (context.parsed.y !== null) { label += context.parsed.y.toFixed(2) + '%'; } 
-                                return label; 
-                            } 
-                        } 
-                    } 
-                } 
-            };
-            // FIM: ALTERAÇÃO DA LEGENDA DO GRÁFICO
-            
+            const sentimentChartOptions = { scales: { y: { ticks: { callback: function (value) { return value + '%'; } }, min: 0, max: 100 } }, plugins: { tooltip: { callbacks: { label: function (context) { let label = context.dataset.label || ''; if (label) { label += ': '; } if (context.parsed.y !== null) { label += context.parsed.y.toFixed(2) + '%'; } return label; } } } } };
             sentimentChartInstance = createChart('sentiment-chart', sentimentChartInstance, 'line', { labels: allSentiments, datasets }, sentimentChartOptions);
         }
 
@@ -2234,37 +2201,37 @@
                     let tableHTML = '<p class="text-center p-4">Nenhuma palavra-chave encontrada para esta empresa.</p>';
                     if (keywordsData.length > 0) {
                         tableHTML = `
-                            <div class="p-4 bg-gray-50 rounded-lg">
-                                <h4 class="font-bold mb-2 text-lg text-gray-700">Detalhes por Palavra-Chave</h4>
-                                <table class="min-w-full divide-y divide-gray-300">
-                                    <thead class="bg-gray-100">
+                        <div class="p-4 bg-gray-50 rounded-lg">
+                            <h4 class="font-bold mb-2 text-lg text-gray-700">Detalhes por Palavra-Chave</h4>
+                            <table class="min-w-full divide-y divide-gray-300">
+                                <thead class="bg-gray-100">
+                                    <tr>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">Palavra-Chave</th>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">Total de Alertas</th>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">Sentimento (%)</th>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">Sent. Predominante</th>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">Canal Principal</th>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">Veículo Principal</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    ${keywordsData.map(kw => `
                                         <tr>
-                                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">Palavra-Chave</th>
-                                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">Total de Alertas</th>
-                                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">Sentimento (%)</th>
-                                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">Sent. Predominante</th>
-                                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">Canal Principal</th>
-                                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">Veículo Principal</th>
+                                            <td class="px-3 py-2 font-medium">${kw.keyword}</td>
+                                            <td class="px-3 py-2">${kw.totalAlerts}</td>
+                                            <td class="px-3 py-2 text-xs">
+                                                <span class="text-green-600">P: ${kw.sentimentPercentage.positive}%</span>, 
+                                                <span class="text-gray-600">N: ${kw.sentimentPercentage.neutral}%</span>, 
+                                                <span class="text-red-600">Ng: ${kw.sentimentPercentage.negative}%</span>
+                                            </td>
+                                            <td class="px-3 py-2">${kw.predominantSentiment}</td>
+                                            <td class="px-3 py-2">${kw.topChannel}</td>
+                                            <td class="px-3 py-2">${kw.topVehicle}</td>
                                         </tr>
-                                    </thead>
-                                    <tbody class="bg-white divide-y divide-gray-200">
-                                        ${keywordsData.map(kw => `
-                                            <tr>
-                                                <td class="px-3 py-2 font-medium">${kw.keyword}</td>
-                                                <td class="px-3 py-2">${kw.totalAlerts}</td>
-                                                <td class="px-3 py-2 text-xs">
-                                                    <span class="text-green-600">P: ${kw.sentimentPercentage.positive}%</span>, 
-                                                    <span class="text-gray-600">N: ${kw.sentimentPercentage.neutral}%</span>, 
-                                                    <span class="text-red-600">Ng: ${kw.sentimentPercentage.negative}%</span>
-                                                </td>
-                                                <td class="px-3 py-2">${kw.predominantSentiment}</td>
-                                                <td class="px-3 py-2">${kw.topChannel}</td>
-                                                <td class="px-3 py-2">${kw.topVehicle}</td>
-                                            </tr>
-                                        `).join('')}
-                                    </tbody>
-                                </table>
-                            </div>`;
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>`;
                     }
                     
                     detailsRow.querySelector('td').innerHTML = tableHTML;
