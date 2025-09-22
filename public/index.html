@@ -212,7 +212,16 @@
 
         <section id="map-page" class="page-section fade-in">
             <div class="bg-white p-4 sm:p-6 md:p-8 rounded-lg shadow-lg">
-                <h2 class="text-xl sm:text-2xl md:text-3xl font-bold mb-6">Mapa de Notícias</h2>
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                     <h2 class="text-xl sm:text-2xl md:text-3xl font-bold">Mapa de Notícias</h2>
+                     <div class="flex items-center gap-2">
+                        <label for="map-start-date" class="text-sm font-medium">De:</label>
+                        <input type="date" id="map-start-date" class="px-2 py-1 border border-gray-300 rounded-md text-sm">
+                        <label for="map-end-date" class="text-sm font-medium">Até:</label>
+                        <input type="date" id="map-end-date" class="px-2 py-1 border border-gray-300 rounded-md text-sm">
+                        <button id="map-filter-btn" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-sm">Filtrar</button>
+                     </div>
+                </div>
                 <p class="text-gray-600 mb-4">Veja onde as notícias estão acontecendo. Passe o mouse sobre um pino para ver o título e clique para ver os detalhes.</p>
                 <div id="map"></div>
             </div>
@@ -761,7 +770,7 @@
         let mapInstance = null;
         let mapMarkers = [];
 
-        let pageSections, navLoggedIn, navInicio, navRelatorio, navMapa, navPesquisa, navSuperAdmin, navLogout, navConfiguracoesAdmin, globalAlert, loginPage, dashboardPage, mapPage, searchPage, superAdminPage, companyKeywordAdminPage, companySettingsAdminPage, reportPage, companyUserAdminPage, configuracoesAdminPage, loginForm, dashboardTitle, currentDateTimeEl, dashboardKeywordList, newsAlertsContainer, newsAlerts, alertDateFilter, reportAccessToggle, mapAccessToggle, logoUploadInput, headerLogoContainer, loginLogoContainer, filterContainer, searchInput, searchResults, companyForm, companyList, backToSuperAdminKwBtn, backToSuperAdminSettingsBtn, backToSuperAdminUsersBtn, companyKeywordAdminTitle, companySettingsAdminTitle, companyUserAdminTitle, keywordForm, keywordInput, keywordIdInput, adminKeywordList, userForm, userInput, userPasswordInput, userIdInput, adminUserList, notificationBell, notificationBadge, manualTriggerBtn, deleteModal, confirmDeleteBtn, cancelDeleteBtn, companyNameToDeleteEl, newsScopeContainer, startDateInput, endDateInput, linkModal, accessLinkInput, copyLinkBtn, closeLinkModalBtn, reportKeywordFilterContainer, stateSelectContainer, stateSelect, changePasswordForm, apiKeyNewsApiInput, apiKeyFirebaseNewsInput, apiKeyGNewsInput1, apiKeyGNewsInput2, apiKeyGNewsInput3, apiKeyGNewsInput4, apiKeyYoutubeInput, apiKeyBloggerInput, apiKeyVisionInput, apiKeyVideoIntelligenceInput, showAllAlertsBtn, deletionAccessToggle, justificationModal, justificationText, submitJustificationBtn, cancelJustificationBtn, btnManualAlert, btnDeletionRequests, btnSuperAdminReport, manualAlertPage, deletionRequestsPage, superAdminReportPage, backToDashboard1, backToDashboard2, backToDashboard3, manualAlertForm, deletionRequestsList, superAdminReportBody, deletionRequestsBadge, pendingAlertsPage, pendingAlertsList, btnPendingAlerts, backToDashboard4, confirmDeleteKeywordBtn, cancelDeleteKeywordBtn, confirmDeleteKeywordModal, keywordToDeleteNameEl, bloggerIdInput, rssUrlInput, fetchOnlyNewToggle, changePasswordPage, globalKeysPage, globalSourcesPage, btnChangePassword, btnGlobalKeys, btnNewsSources, backToAdminConfig1, backToAdminConfig2, backToAdminConfig3, globalLogoPage, btnGlobalLogo, backToAdminConfig4, globalLogoUpload, globalLogoArea, logoLink, btnRadioSources, globalRadioSourcesPage, backToAdminConfig5, radioSourcesInput, articleDetailPage, backFromDetail, detailTitle, detailMeta, detailContent, shareWhatsappBtn, shareEmailBtn, companyKeywordReportPage, backToSuperAdminReportBtn, companyKeywordReportTitle, detailAiInsights, printBtn, shareButtonsContainer;
+        let pageSections, navLoggedIn, navInicio, navRelatorio, navMapa, navPesquisa, navSuperAdmin, navLogout, navConfiguracoesAdmin, globalAlert, loginPage, dashboardPage, mapPage, searchPage, superAdminPage, companyKeywordAdminPage, companySettingsAdminPage, reportPage, companyUserAdminPage, configuracoesAdminPage, loginForm, dashboardTitle, currentDateTimeEl, dashboardKeywordList, newsAlertsContainer, newsAlerts, alertDateFilter, reportAccessToggle, mapAccessToggle, logoUploadInput, headerLogoContainer, loginLogoContainer, filterContainer, searchInput, searchResults, companyForm, companyList, backToSuperAdminKwBtn, backToSuperAdminSettingsBtn, backToSuperAdminUsersBtn, companyKeywordAdminTitle, companySettingsAdminTitle, companyUserAdminTitle, keywordForm, keywordInput, keywordIdInput, adminKeywordList, userForm, userInput, userPasswordInput, userIdInput, adminUserList, notificationBell, notificationBadge, manualTriggerBtn, deleteModal, confirmDeleteBtn, cancelDeleteBtn, companyNameToDeleteEl, newsScopeContainer, startDateInput, endDateInput, linkModal, accessLinkInput, copyLinkBtn, closeLinkModalBtn, reportKeywordFilterContainer, stateSelectContainer, stateSelect, changePasswordForm, apiKeyNewsApiInput, apiKeyFirebaseNewsInput, apiKeyGNewsInput1, apiKeyGNewsInput2, apiKeyGNewsInput3, apiKeyGNewsInput4, apiKeyYoutubeInput, apiKeyBloggerInput, apiKeyVisionInput, apiKeyVideoIntelligenceInput, showAllAlertsBtn, deletionAccessToggle, justificationModal, justificationText, submitJustificationBtn, cancelJustificationBtn, btnManualAlert, btnDeletionRequests, btnSuperAdminReport, manualAlertPage, deletionRequestsPage, superAdminReportPage, backToDashboard1, backToDashboard2, backToDashboard3, manualAlertForm, deletionRequestsList, superAdminReportBody, deletionRequestsBadge, pendingAlertsPage, pendingAlertsList, btnPendingAlerts, backToDashboard4, confirmDeleteKeywordBtn, cancelDeleteKeywordBtn, confirmDeleteKeywordModal, keywordToDeleteNameEl, bloggerIdInput, rssUrlInput, fetchOnlyNewToggle, changePasswordPage, globalKeysPage, globalSourcesPage, btnChangePassword, btnGlobalKeys, btnNewsSources, backToAdminConfig1, backToAdminConfig2, backToAdminConfig3, globalLogoPage, btnGlobalLogo, backToAdminConfig4, globalLogoUpload, globalLogoArea, logoLink, btnRadioSources, globalRadioSourcesPage, backToAdminConfig5, radioSourcesInput, articleDetailPage, backFromDetail, detailTitle, detailMeta, detailContent, shareWhatsappBtn, shareEmailBtn, companyKeywordReportPage, backToSuperAdminReportBtn, companyKeywordReportTitle, detailAiInsights, printBtn, shareButtonsContainer, mapStartDateInput, mapEndDateInput, mapFilterBtn;
 
         function showAlert(message, type = 'success') { const c = type === 'success' ? 'bg-green-100 border-green-500 text-green-700' : 'bg-red-100 border-red-500 text-red-700'; globalAlert.innerHTML = `<div class="${c} border-l-4 p-4 rounded-md fade-in" role="alert"><p>${message}</p></div>`; setTimeout(() => { globalAlert.innerHTML = ''; }, 4000); }
         function getChannelCategory(sourceName) {
@@ -819,25 +828,43 @@
         async function renderMapPage() {
             if (!currentUser) return;
             if (!mapInstance) {
+                window.addEventListener('mapReady', () => renderMapPage(), { once: true });
                 return;
             }
 
             clearMarkers();
 
-            try {
-                const articlesWithGeoQuery = query(
-                    collection(db, "artifacts", appId, "users", currentUser.companyId, "articles"),
-                    where("geolocation", "!=", null),
-                    orderBy("geolocation"),
-                    orderBy("publishedAt", "desc"),
-                    limit(200)
-                );
+            const startDate = mapStartDateInput.value ? new Date(mapStartDateInput.value + 'T00:00:00') : null;
+            const endDate = mapEndDateInput.value ? new Date(mapEndDateInput.value + 'T23:59:59') : null;
 
-                const articlesSnapshot = await getDocs(articlesWithGeoQuery);
+            try {
+                const baseCollection = collection(db, "artifacts", appId, "users", currentUser.companyId, "articles");
+                
+                const queryConstraints = [
+                    where("geolocation", "!=", null)
+                ];
+
+                if (startDate) {
+                    queryConstraints.push(where("publishedAt", ">=", startDate));
+                }
+                if (endDate) {
+                    queryConstraints.push(where("publishedAt", "<=", endDate));
+                }
+
+                if (startDate || endDate) {
+                    queryConstraints.push(orderBy("publishedAt", "desc"));
+                } else {
+                    queryConstraints.push(orderBy("publishedAt", "desc"));
+                }
+                
+                queryConstraints.push(limit(200));
+
+                const articlesQuery = query(baseCollection, ...queryConstraints);
+                const articlesSnapshot = await getDocs(articlesQuery);
                 const infoWindow = new google.maps.InfoWindow();
 
                 if (articlesSnapshot.empty) {
-                    showAlert("Nenhuma notícia com geolocalização encontrada para exibir no mapa.", "success");
+                    showAlert("Nenhuma notícia com geolocalização encontrada para o período selecionado.", "success");
                     return;
                 }
 
@@ -873,7 +900,7 @@
 
             } catch (error) {
                 console.error("Erro ao carregar notícias para o mapa:", error);
-                showAlert("Não foi possível carregar as notícias no mapa.", "error");
+                showAlert("Não foi possível carregar as notícias no mapa. Pode ser necessário criar um índice no Firestore.", "error");
             }
         }
 
@@ -2056,6 +2083,9 @@
             companyKeywordReportPage = document.getElementById('company-keyword-report-page');
             backToSuperAdminReportBtn = document.getElementById('back-to-super-admin-report');
             companyKeywordReportTitle = document.getElementById('company-keyword-report-title');
+            mapStartDateInput = document.getElementById('map-start-date');
+            mapEndDateInput = document.getElementById('map-end-date');
+            mapFilterBtn = document.getElementById('map-filter-btn');
 
             const states = { "AC": "Acre", "AL": "Alagoas", "AP": "Amapá", "AM": "Amazonas", "BA": "Bahia", "CE": "Ceará", "DF": "Distrito Federal", "ES": "Espírito Santo", "GO": "Goiás", "MA": "Maranhão", "MT": "Mato Grosso", "MS": "Mato Grosso do Sul", "MG": "Minas Gerais", "PA": "Pará", "PB": "Paraíba", "PR": "Paraná", "PE": "Pernambuco", "PI": "Piauí", "RJ": "Rio de Janeiro", "RN": "Rio Grande do Norte", "RS": "Rio Grande do Sul", "RO": "Rondônia", "RR": "Roraima", "SC": "Santa Catarina", "SP": "São Paulo", "SE": "Sergipe", "TO": "Tocantins" };
             for (const [uf, name] of Object.entries(states)) {
@@ -2193,6 +2223,7 @@
             if (shareWhatsappBtn) shareWhatsappBtn.addEventListener('click', handleShareActions);
             if (shareEmailBtn) shareEmailBtn.addEventListener('click', handleShareActions);
             if (printBtn) printBtn.addEventListener('click', () => window.print());
+            if (mapFilterBtn) mapFilterBtn.addEventListener('click', renderMapPage);
 
             if (superAdminReportBody) superAdminReportBody.addEventListener('click', async (e) => {
                 const row = e.target.closest('.company-report-row');
@@ -2288,3 +2319,4 @@
 </body>
 
 </html>
+
