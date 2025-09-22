@@ -12,6 +12,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+    <!-- CHAVE DA API DO GOOGLE MAPS ATUALIZADA -->
     <script async defer
         src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBlgBbnbhALORtuoTwy6xjjUqtoMI4wlL8&callback=initMap"></script>
 
@@ -433,6 +434,7 @@
                         </div>
                     </div>
                 </div>
+                <!-- GRÁFICOS COM LAYOUT CORRIGIDO -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     <div class="p-4 border rounded-lg flex">
                         <div>
@@ -622,11 +624,13 @@
             <div id="report-content" class="bg-white p-8 md:p-12 rounded-lg shadow-lg">
                  <div class="flex justify-between items-start border-b-2 pb-4 mb-4">
                     <div id="aurora-clipping-logo" class="flex items-center text-gray-500">
+                         <!-- Conteúdo será substituído dinamicamente -->
                          <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mr-2 text-blue-800" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
                          <span class="font-semibold text-lg">Aurora Clipping</span>
                     </div>
                     <div id="report-logo-container" class="h-16 flex-grow flex justify-center items-center">
-                        </div>
+                        <!-- Logotipo da empresa do cliente será inserido aqui -->
+                    </div>
                     <div class="text-right">
                         <h2 class="text-2xl font-bold text-gray-800">Relatório de Notícia</h2>
                         <p id="report-date" class="text-sm text-gray-500"></p>
@@ -646,6 +650,7 @@
         </section>
     </main>
 
+    <!-- Modais -->
     <div id="justification-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
         <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
             <div class="mt-3">
@@ -718,6 +723,22 @@
         </div>
     </div>
     
+    <script>
+        // Função de callback global para a API do Google Maps
+        function initMap() {
+            try {
+                const map = new google.maps.Map(document.getElementById("map"), {
+                    zoom: 4,
+                    center: { lat: -14.235, lng: -51.925 }, // Centro do Brasil
+                });
+                // Despacha um evento personalizado para que o script do módulo saiba que o mapa está pronto
+                const mapReadyEvent = new CustomEvent('mapReady', { detail: map });
+                window.dispatchEvent(mapReadyEvent);
+            } catch (e) {
+                console.error("Erro ao inicializar o mapa do Google:", e);
+            }
+        }
+    </script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
@@ -1396,7 +1417,7 @@
                 responsive: false, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
                 plugins: {
                     legend: {
-                        position: 'left', // Alterado para a esquerda
+                        position: 'left',
                     }
                 }
             };
@@ -1573,6 +1594,7 @@
         function renderArticleDetailPage(article) {
             if (!detailTitle || !detailContent || !detailAiInsights) return;
 
+            // ALTERAÇÃO 3: Substituir o nome pelo logotipo
             const auroraLogoEl = document.getElementById('aurora-clipping-logo');
             const globalLogoArea = document.getElementById('global-logo-area');
             if (auroraLogoEl && globalLogoArea) {
