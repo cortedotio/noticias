@@ -12,6 +12,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+    <!-- CHAVE DA API DO GOOGLE MAPS ATUALIZADA -->
     <script async defer
         src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBlgBbnbhALORtuoTwy6xjjUqtoMI4wlL8&callback=initMap"></script>
 
@@ -19,12 +20,9 @@
         body {
             font-family: 'Inter', sans-serif;
         }
-
         body {
-            padding-top: 80px;
-            /* Altura do header */
+            padding-top: 80px; /* Altura do header */
         }
-
         header {
             position: fixed;
             top: 0;
@@ -32,65 +30,32 @@
             width: 100%;
             z-index: 1000;
         }
-
-        .page-section {
-            display: none;
-        }
-
-        .page-section.active {
-            display: block;
-        }
-
-        .fade-in {
-            animation: fadeIn 0.5s ease-in-out;
-        }
-
+        .page-section { display: none; }
+        .page-section.active { display: block; }
+        .fade-in { animation: fadeIn 0.5s ease-in-out; }
         @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-
         @keyframes blinking-bell {
-            0% {
-                background-color: transparent;
-                color: #4B5563;
-            }
-
-            50% {
-                background-color: #10B981;
-                color: white;
-            }
-
-            100% {
-                background-color: transparent;
-                color: #4B5563;
-            }
+            0% { background-color: transparent; color: #4B5563; }
+            50% { background-color: #10B981; color: white; }
+            100% { background-color: transparent; color: #4B5563; }
         }
-
         .animate-blinking-bell {
             animation: blinking-bell 1.5s infinite;
             border-radius: 9999px;
         }
-
         .keyword-filter.active {
             background-color: #4F46E5 !important;
             color: white !important;
         }
-
         #notification-badge {
             min-width: 1.25rem;
             height: 1.25rem;
             padding: 0 0.25rem;
             line-height: 1.25rem;
         }
-
         .sentiment-menu {
             display: none;
             position: absolute;
@@ -101,24 +66,13 @@
             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
             border: 1px solid #e5e7eb;
         }
-
-        .sentiment-container:hover .sentiment-menu {
-            display: block;
-        }
-
+        .sentiment-container:hover .sentiment-menu { display: block; }
         #report-keyword-filter-container,
         #manual-alert-keyword {
             height: 100px;
         }
-
-        .alert-body-clickable {
-            cursor: pointer;
-        }
-
-        .company-report-row {
-            cursor: pointer;
-        }
-
+        .alert-body-clickable { cursor: pointer; }
+        .company-report-row { cursor: pointer; }
         .ai-tag {
             display: inline-block;
             padding: 2px 8px;
@@ -128,27 +82,16 @@
             line-height: 1.2;
             margin: 2px;
         }
-
         #map {
             height: 70vh;
             width: 100%;
             border-radius: 0.5rem;
         }
-
         @media print {
-            body {
-                padding-top: 0;
-            }
-
-            body * {
-                visibility: hidden;
-            }
-
+            body { padding-top: 0; }
+            body * { visibility: hidden; }
             #article-detail-page,
-            #article-detail-page * {
-                visibility: visible;
-            }
-
+            #article-detail-page * { visibility: visible; }
             #article-detail-page {
                 position: absolute;
                 left: 0;
@@ -157,17 +100,10 @@
                 margin: 0;
                 padding: 0;
             }
-
-            main {
-                padding-top: 0;
-            }
-
+            main { padding-top: 0; }
             header,
             #back-from-detail,
-            #share-buttons-container {
-                display: none !important;
-            }
-
+            #share-buttons-container { display: none !important; }
             #report-content {
                 box-shadow: none;
                 border: 1px solid #ccc;
@@ -181,37 +117,23 @@
     <header class="bg-white shadow-md">
         <nav class="container mx-auto px-4 sm:px-6 py-3 flex justify-between items-center">
             <a href="#" id="logo-link" class="cursor-pointer">
-                <div id="global-logo-area" class="text-xl sm:text-2xl font-bold text-indigo-600 flex items-center">
-                </div>
+                <div id="global-logo-area" class="text-xl sm:text-2xl font-bold text-indigo-600 flex items-center"></div>
             </a>
             <div class="flex items-center">
                 <div id="nav-logged-in" class="hidden items-center flex-wrap justify-end">
-                    <a href="#" id="nav-inicio"
-                        class="text-gray-600 hover:text-indigo-600 px-2 py-1 sm:px-3 sm:py-2 rounded-md text-sm font-medium">Início</a>
-                    <a href="#" id="nav-relatorio"
-                        class="hidden text-gray-600 hover:text-indigo-600 px-2 py-1 sm:px-3 sm:py-2 rounded-md text-sm font-medium">Relatório</a>
-                    <a href="#" id="nav-mapa"
-                        class="hidden text-gray-600 hover:text-indigo-600 px-2 py-1 sm:px-3 sm:py-2 rounded-md text-sm font-medium">Mapa
-                        de Notícias</a>
-                    <a href="#" id="nav-pesquisa"
-                        class="text-gray-600 hover:text-indigo-600 px-2 py-1 sm:px-3 sm:py-2 rounded-md text-sm font-medium">Pesquisa</a>
-                    <a href="#" id="nav-super-admin"
-                        class="hidden text-red-600 hover:text-red-800 px-2 py-1 sm:px-3 sm:py-2 rounded-md text-sm font-bold">Super
-                        Admin</a>
-                    <a href="#" id="nav-configuracoes-admin"
-                        class="hidden text-gray-600 hover:text-indigo-600 px-2 py-1 sm:px-3 sm:py-2 rounded-md text-sm font-medium">Configurações</a>
+                    <a href="#" id="nav-inicio" class="text-gray-600 hover:text-indigo-600 px-2 py-1 sm:px-3 sm:py-2 rounded-md text-sm font-medium">Início</a>
+                    <a href="#" id="nav-relatorio" class="hidden text-gray-600 hover:text-indigo-600 px-2 py-1 sm:px-3 sm:py-2 rounded-md text-sm font-medium">Relatório</a>
+                    <a href="#" id="nav-mapa" class="hidden text-gray-600 hover:text-indigo-600 px-2 py-1 sm:px-3 sm:py-2 rounded-md text-sm font-medium">Mapa de Notícias</a>
+                    <a href="#" id="nav-pesquisa" class="text-gray-600 hover:text-indigo-600 px-2 py-1 sm:px-3 sm:py-2 rounded-md text-sm font-medium">Pesquisa</a>
+                    <a href="#" id="nav-super-admin" class="hidden text-red-600 hover:text-red-800 px-2 py-1 sm:px-3 sm:py-2 rounded-md text-sm font-bold">Super Admin</a>
+                    <a href="#" id="nav-configuracoes-admin" class="hidden text-gray-600 hover:text-indigo-600 px-2 py-1 sm:px-3 sm:py-2 rounded-md text-sm font-medium">Configurações</a>
                     <div id="notification-bell-container" class="relative cursor-pointer ml-2 sm:ml-4 p-1">
-                        <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                            xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9">
-                            </path>
+                        <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
                         </svg>
-                        <span id="notification-badge"
-                            class="hidden absolute -top-1 -right-1 text-white text-xs font-bold text-center rounded-full bg-red-500"></span>
+                        <span id="notification-badge" class="hidden absolute -top-1 -right-1 text-white text-xs font-bold text-center rounded-full bg-red-500"></span>
                     </div>
-                    <a href="#" id="nav-logout"
-                        class="ml-2 sm:ml-4 bg-indigo-600 text-white hover:bg-indigo-700 px-3 py-2 rounded-md text-sm font-medium">Sair</a>
+                    <a href="#" id="nav-logout" class="ml-2 sm:ml-4 bg-indigo-600 text-white hover:bg-indigo-700 px-3 py-2 rounded-md text-sm font-medium">Sair</a>
                 </div>
                 <div id="header-logo-container" class="ml-4 h-10 w-auto"></div>
             </div>
@@ -227,26 +149,17 @@
                 <h1 class="text-2xl sm:text-3xl font-bold text-center text-gray-800">Bem-Vindo</h1>
                 <p class="text-center text-gray-500 mt-2 mb-6">Informe os seus dados de acesso</p>
                 <form id="login-form">
-                    <div id="login-company-wrapper" class="mb-4"><label for="login-company"
-                            class="block text-sm font-medium text-gray-700 mb-1">Empresa</label><input type="text"
-                            id="login-company" class="w-full px-3 py-2 border border-gray-300 rounded-md"></div>
-                    <div class="mb-4"><label for="login-user"
-                            class="block text-sm font-medium text-gray-700 mb-1">Usuário</label><input type="text"
-                            id="login-user" class="w-full px-3 py-2 border border-gray-300 rounded-md" required></div>
-                    <div class="mb-6"><label for="login-password"
-                            class="block text-sm font-medium text-gray-700 mb-1">Palavra-passe</label><input
-                            type="password" id="login-password"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md" required></div>
-                    <button type="submit"
-                        class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700">Entrar</button>
+                    <div id="login-company-wrapper" class="mb-4"><label for="login-company" class="block text-sm font-medium text-gray-700 mb-1">Empresa</label><input type="text" id="login-company" class="w-full px-3 py-2 border border-gray-300 rounded-md"></div>
+                    <div class="mb-4"><label for="login-user" class="block text-sm font-medium text-gray-700 mb-1">Usuário</label><input type="text" id="login-user" class="w-full px-3 py-2 border border-gray-300 rounded-md" required></div>
+                    <div class="mb-6"><label for="login-password" class="block text-sm font-medium text-gray-700 mb-1">Palavra-passe</label><input type="password" id="login-password" class="w-full px-3 py-2 border border-gray-300 rounded-md" required></div>
+                    <button type="submit" class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700">Entrar</button>
                 </form>
             </div>
         </section>
 
         <section id="dashboard-page" class="page-section fade-in">
             <div class="flex flex-col md:flex-row justify-between md:items-center mb-6 bg-white p-4 rounded-lg shadow-md">
-                <h2 id="dashboard-title" class="text-xl sm:text-2xl font-bold text-gray-800 mb-2 md:mb-0">Notícias do Dia
-                </h2>
+                <h2 id="dashboard-title" class="text-xl sm:text-2xl font-bold text-gray-800 mb-2 md:mb-0">Notícias do Dia</h2>
                 <p id="current-datetime" class="text-base sm:text-lg text-indigo-600 font-medium"></p>
             </div>
             <div id="dashboard-grid" class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -259,14 +172,10 @@
                         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
                             <h3 class="text-lg sm:text-xl font-semibold text-gray-700">Relatório de Alertas</h3>
                             <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full sm:w-auto">
-                                <button id="show-all-alerts-btn"
-                                    class="hidden bg-gray-200 text-gray-700 px-3 py-1 rounded-md text-sm hover:bg-gray-300">Mostrar
-                                    Todos</button>
+                                <button id="show-all-alerts-btn" class="hidden bg-gray-200 text-gray-700 px-3 py-1 rounded-md text-sm hover:bg-gray-300">Mostrar Todos</button>
                                 <div class="flex items-center gap-2">
-                                    <label for="alert-date-filter" class="text-sm font-medium">Filtrar por
-                                        data:</label>
-                                    <input type="date" id="alert-date-filter"
-                                        class="px-2 py-1 border border-gray-300 rounded-md text-sm">
+                                    <label for="alert-date-filter" class="text-sm font-medium">Filtrar por data:</label>
+                                    <input type="date" id="alert-date-filter" class="px-2 py-1 border border-gray-300 rounded-md text-sm">
                                 </div>
                             </div>
                         </div>
@@ -278,34 +187,25 @@
                 <h3 class="text-xl sm:text-2xl font-bold">Bem-vindo, Super Admin!</h3>
                 <p class="mt-4 text-gray-600">Use o menu "Super Admin" no topo da página para gerir as opções.</p>
                 <div class="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <button id="btn-manual-alert"
-                        class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow">
+                    <button id="btn-manual-alert" class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow">
                         <h3 class="text-lg sm:text-xl font-semibold text-gray-700">Inserir Alerta Manual</h3>
                     </button>
-                    <button id="btn-pending-alerts"
-                        class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow relative">
+                    <button id="btn-pending-alerts" class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow relative">
                         <h3 class="text-lg sm:text-xl font-semibold text-gray-700">Fila de Aprovação</h3>
-                        <span id="pending-alerts-badge"
-                            class="hidden absolute top-2 right-2 text-white text-xs font-bold w-5 h-5 text-center rounded-full bg-red-500"></span>
+                        <span id="pending-alerts-badge" class="hidden absolute top-2 right-2 text-white text-xs font-bold w-5 h-5 text-center rounded-full bg-red-500"></span>
                     </button>
-                    <button id="btn-deletion-requests"
-                        class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow relative">
+                    <button id="btn-deletion-requests" class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow relative">
                         <h3 class="text-lg sm:text-xl font-semibold text-gray-700">Pedidos de Exclusão</h3>
-                        <span id="deletion-requests-badge"
-                            class="hidden absolute top-2 right-2 text-white text-xs font-bold w-5 h-5 text-center rounded-full bg-red-500"></span>
+                        <span id="deletion-requests-badge" class="hidden absolute top-2 right-2 text-white text-xs font-bold w-5 h-5 text-center rounded-full bg-red-500"></span>
                     </button>
-                    <button id="btn-super-admin-report"
-                        class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow">
+                    <button id="btn-super-admin-report" class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow">
                         <h3 class="text-lg sm:text-xl font-semibold text-gray-700">Relatório Geral</h3>
                     </button>
                 </div>
                 <div class="mt-6 p-4 bg-blue-100 border-l-4 border-blue-500 text-blue-800 rounded-md text-left">
                     <p class="font-bold">Execução Manual do Robô</p>
-                    <p class="mt-2 text-sm">A busca automática já está configurada para ser executada a cada 30 minutos.
-                        Utilize o botão abaixo apenas se necessitar de uma atualização imediata.</p>
-                    <button id="manual-trigger-btn"
-                        class="mt-4 w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:bg-blue-300">Executar
-                        Robô Manualmente</button>
+                    <p class="mt-2 text-sm">A busca automática já está configurada para ser executada a cada 30 minutos. Utilize o botão abaixo apenas se necessitar de uma atualização imediata.</p>
+                    <button id="manual-trigger-btn" class="mt-4 w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:bg-blue-300">Executar Robô Manualmente</button>
                 </div>
             </div>
         </section>
@@ -313,20 +213,16 @@
         <section id="map-page" class="page-section fade-in">
             <div class="bg-white p-4 sm:p-6 md:p-8 rounded-lg shadow-lg">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-                    <h2 class="text-xl sm:text-2xl md:text-3xl font-bold">Mapa de Notícias</h2>
-                    <div class="flex items-center gap-2">
+                     <h2 class="text-xl sm:text-2xl md:text-3xl font-bold">Mapa de Notícias</h2>
+                     <div class="flex items-center gap-2">
                         <label for="map-start-date" class="text-sm font-medium">De:</label>
-                        <input type="date" id="map-start-date"
-                            class="px-2 py-1 border border-gray-300 rounded-md text-sm">
+                        <input type="date" id="map-start-date" class="px-2 py-1 border border-gray-300 rounded-md text-sm">
                         <label for="map-end-date" class="text-sm font-medium">Até:</label>
-                        <input type="date" id="map-end-date"
-                            class="px-2 py-1 border border-gray-300 rounded-md text-sm">
-                        <button id="map-filter-btn"
-                            class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-sm">Filtrar</button>
-                    </div>
+                        <input type="date" id="map-end-date" class="px-2 py-1 border border-gray-300 rounded-md text-sm">
+                        <button id="map-filter-btn" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-sm">Filtrar</button>
+                     </div>
                 </div>
-                <p class="text-gray-600 mb-4">Veja onde as notícias estão acontecendo. Passe o mouse sobre um pino para
-                    ver o título e clique para ver os detalhes.</p>
+                <p class="text-gray-600 mb-4">Veja onde as notícias estão acontecendo. Passe o mouse sobre um pino para ver o título e clique para ver os detalhes.</p>
                 <div id="map"></div>
             </div>
         </section>
@@ -337,12 +233,8 @@
                 <div class="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
                     <h3 class="text-xl font-semibold mb-4">Adicionar Nova Empresa</h3>
                     <form id="company-form" class="space-y-4">
-                        <div><label for="company-name-input">Nome da Empresa</label><input type="text"
-                                id="company-name-input" class="w-full px-3 py-2 border border-gray-300 rounded-md"
-                                required></div>
-                        <button type="submit"
-                            class="w-full bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700">Adicionar
-                            Empresa</button>
+                        <div><label for="company-name-input">Nome da Empresa</label><input type="text" id="company-name-input" class="w-full px-3 py-2 border border-gray-300 rounded-md" required></div>
+                        <button type="submit" class="w-full bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700">Adicionar Empresa</button>
                     </form>
                 </div>
                 <div class="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
@@ -355,259 +247,176 @@
         <section id="configuracoes-admin-page" class="page-section fade-in">
             <h2 class="text-2xl sm:text-3xl font-bold mb-6">Configurações do Super Admin</h2>
             <div class="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
-                <button id="btn-change-password"
-                    class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow">
+                <button id="btn-change-password" class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow">
                     <h3 class="text-lg sm:text-xl font-semibold">Alterar Palavra-passe</h3>
                 </button>
-                <button id="btn-global-keys"
-                    class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow">
+                <button id="btn-global-keys" class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow">
                     <h3 class="text-lg sm:text-xl font-semibold">Chaves de API</h3>
                 </button>
-                <button id="btn-news-sources"
-                    class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow">
+                <button id="btn-news-sources" class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow">
                     <h3 class="text-lg sm:text-xl font-semibold">Fontes de Notícias</h3>
                 </button>
-                <button id="btn-radio-sources"
-                    class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow">
+                <button id="btn-radio-sources" class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow">
                     <h3 class="text-lg sm:text-xl font-semibold">Fontes de Rádio</h3>
                 </button>
-                <button id="btn-global-logo"
-                    class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow">
+                <button id="btn-global-logo" class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow">
                     <h3 class="text-lg sm:text-xl font-semibold">Logótipo Global</h3>
                 </button>
             </div>
         </section>
 
         <section id="change-password-page" class="page-section fade-in">
-            <button id="back-to-admin-config-1"
-                class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar</button>
+            <button id="back-to-admin-config-1" class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar</button>
             <h2 class="text-2xl sm:text-3xl font-bold mb-6">Alterar Palavra-passe de Acesso</h2>
             <div class="max-w-lg mx-auto bg-white p-4 sm:p-6 rounded-lg shadow-lg">
                 <form id="change-password-form" class="space-y-4">
-                    <div><label for="current-password" class="block text-sm font-medium text-gray-700">Palavra-passe
-                            Atual</label><input type="password" id="current-password"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md" required></div>
-                    <div><label for="new-password" class="block text-sm font-medium text-gray-700">Nova
-                            Palavra-passe</label><input type="password" id="new-password"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md" required></div>
-                    <button type="submit"
-                        class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700">Alterar
-                        Palavra-passe</button>
+                    <div><label for="current-password" class="block text-sm font-medium text-gray-700">Palavra-passe Atual</label><input type="password" id="current-password" class="w-full px-3 py-2 border border-gray-300 rounded-md" required></div>
+                    <div><label for="new-password" class="block text-sm font-medium text-gray-700">Nova Palavra-passe</label><input type="password" id="new-password" class="w-full px-3 py-2 border border-gray-300 rounded-md" required></div>
+                    <button type="submit" class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700">Alterar Palavra-passe</button>
                 </form>
             </div>
         </section>
 
         <section id="global-keys-page" class="page-section fade-in">
-            <button id="back-to-admin-config-2"
-                class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar</button>
+            <button id="back-to-admin-config-2" class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar</button>
             <h2 class="text-2xl sm:text-3xl font-bold mb-6">Chaves de API Globais</h2>
             <div class="max-w-lg mx-auto bg-white p-4 sm:p-6 rounded-lg shadow-lg">
                 <div class="space-y-4">
                     <div class="bg-gray-100 p-3 rounded-md">
-                        <label for="apiKeyNewsApi" class="block text-sm font-medium text-gray-700 mb-1">Chave da API
-                            (NewsAPI.org)</label>
-                        <input type="text" id="apiKeyNewsApi"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                        <label for="apiKeyNewsApi" class="block text-sm font-medium text-gray-700 mb-1">Chave da API (NewsAPI.org)</label>
+                        <input type="text" id="apiKeyNewsApi" class="w-full px-3 py-2 border border-gray-300 rounded-md">
                     </div>
                     <div class="bg-gray-100 p-3 rounded-md">
-                        <label for="apiKeyFirebaseNews" class="block text-sm font-medium text-gray-700 mb-1">Chave da
-                            API (Geocoding - Google Maps)</label>
-                        <input type="text" id="apiKeyFirebaseNews"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                        <label for="apiKeyFirebaseNews" class="block text-sm font-medium text-gray-700 mb-1">Chave da API (Geocoding - Google Maps)</label>
+                        <input type="text" id="apiKeyFirebaseNews" class="w-full px-3 py-2 border border-gray-300 rounded-md">
                     </div>
                     <div class="bg-gray-100 p-3 rounded-md">
-                        <label for="apiKeyGNews1" class="block text-sm font-medium text-gray-700 mb-1">Chave GNews
-                            (00:00 - 05:59)</label>
-                        <input type="text" id="apiKeyGNews1"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                        <label for="apiKeyGNews1" class="block text-sm font-medium text-gray-700 mb-1">Chave GNews (00:00 - 05:59)</label>
+                        <input type="text" id="apiKeyGNews1" class="w-full px-3 py-2 border border-gray-300 rounded-md">
                     </div>
                     <div class="bg-gray-100 p-3 rounded-md">
-                        <label for="apiKeyGNews2" class="block text-sm font-medium text-gray-700 mb-1">Chave GNews
-                            (06:00 - 11:59)</label>
-                        <input type="text" id="apiKeyGNews2"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                        <label for="apiKeyGNews2" class="block text-sm font-medium text-gray-700 mb-1">Chave GNews (06:00 - 11:59)</label>
+                        <input type="text" id="apiKeyGNews2" class="w-full px-3 py-2 border border-gray-300 rounded-md">
                     </div>
                     <div class="bg-gray-100 p-3 rounded-md">
-                        <label for="apiKeyGNews3" class="block text-sm font-medium text-gray-700 mb-1">Chave GNews
-                            (12:00 - 17:59)</label>
-                        <input type="text" id="apiKeyGNews3"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                        <label for="apiKeyGNews3" class="block text-sm font-medium text-gray-700 mb-1">Chave GNews (12:00 - 17:59)</label>
+                        <input type="text" id="apiKeyGNews3" class="w-full px-3 py-2 border border-gray-300 rounded-md">
                     </div>
                     <div class="bg-gray-100 p-3 rounded-md">
-                        <label for="apiKeyGNews4" class="block text-sm font-medium text-gray-700 mb-1">Chave GNews
-                            (18:00 - 23:59)</label>
-                        <input type="text" id="apiKeyGNews4"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                        <label for="apiKeyGNews4" class="block text-sm font-medium text-gray-700 mb-1">Chave GNews (18:00 - 23:59)</label>
+                        <input type="text" id="apiKeyGNews4" class="w-full px-3 py-2 border border-gray-300 rounded-md">
                     </div>
                     <div class="bg-gray-100 p-3 rounded-md">
-                        <label for="apiKeyYoutube" class="block text-sm font-medium text-gray-700 mb-1">Chave da API
-                            (YouTube Data API v3)</label>
-                        <input type="text" id="apiKeyYoutube"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                        <label for="apiKeyYoutube" class="block text-sm font-medium text-gray-700 mb-1">Chave da API (YouTube Data API v3)</label>
+                        <input type="text" id="apiKeyYoutube" class="w-full px-3 py-2 border border-gray-300 rounded-md">
                     </div>
                     <div class="bg-gray-100 p-3 rounded-md">
-                        <label for="apiKeyBlogger" class="block text-sm font-medium text-gray-700 mb-1">Chave da API
-                            (Blogger API)</label>
-                        <input type="text" id="apiKeyBlogger"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                        <label for="apiKeyBlogger" class="block text-sm font-medium text-gray-700 mb-1">Chave da API (Blogger API)</label>
+                        <input type="text" id="apiKeyBlogger" class="w-full px-3 py-2 border border-gray-300 rounded-md">
                     </div>
                     <div class="bg-gray-100 p-3 rounded-md">
-                        <label for="apiKeyVision" class="block text-sm font-medium text-gray-700 mb-1">Chave da API
-                            (Cloud Vision)</label>
-                        <input type="text" id="apiKeyVision"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                        <label for="apiKeyVision" class="block text-sm font-medium text-gray-700 mb-1">Chave da API (Cloud Vision)</label>
+                        <input type="text" id="apiKeyVision" class="w-full px-3 py-2 border border-gray-300 rounded-md">
                     </div>
                     <div class="bg-gray-100 p-3 rounded-md">
-                        <label for="apiKeyVideoIntelligence" class="block text-sm font-medium text-gray-700 mb-1">Chave
-                            da API (Video Intelligence)</label>
-                        <input type="text" id="apiKeyVideoIntelligence"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                        <label for="apiKeyVideoIntelligence" class="block text-sm font-medium text-gray-700 mb-1">Chave da API (Video Intelligence)</label>
+                        <input type="text" id="apiKeyVideoIntelligence" class="w-full px-3 py-2 border border-gray-300 rounded-md">
                     </div>
                 </div>
             </div>
         </section>
 
         <section id="global-sources-page" class="page-section fade-in">
-            <button id="back-to-admin-config-3"
-                class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar</button>
+            <button id="back-to-admin-config-3" class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar</button>
             <h2 class="text-2xl sm:text-3xl font-bold mb-6">Fontes de Notícias Globais</h2>
             <div class="max-w-lg mx-auto bg-white p-4 sm:p-6 rounded-lg shadow-lg">
                 <div class="space-y-4">
                     <div class="bg-gray-100 p-3 rounded-md">
-                        <label for="bloggerId" class="block text-sm font-medium text-gray-700 mb-1">IDs de Blogs
-                            (Blogger) - um por linha</label>
-                        <textarea id="bloggerId" rows="3"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md"></textarea>
+                        <label for="bloggerId" class="block text-sm font-medium text-gray-700 mb-1">IDs de Blogs (Blogger) - um por linha</label>
+                        <textarea id="bloggerId" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md"></textarea>
                     </div>
                     <div class="bg-gray-100 p-3 rounded-md">
-                        <label for="rssUrl" class="block text-sm font-medium text-gray-700 mb-1">Monitorizar Sites por
-                            RSS - um por linha</label>
-                        <textarea id="rssUrl" rows="3"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md"
-                            placeholder="https://site.com/feed"></textarea>
+                        <label for="rssUrl" class="block text-sm font-medium text-gray-700 mb-1">Monitorizar Sites por RSS - um por linha</label>
+                        <textarea id="rssUrl" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="https://site.com/feed"></textarea>
                     </div>
                 </div>
             </div>
         </section>
 
         <section id="global-radio-sources-page" class="page-section fade-in">
-            <button id="back-to-admin-config-5"
-                class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar</button>
+            <button id="back-to-admin-config-5" class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar</button>
             <h2 class="text-2xl sm:text-3xl font-bold mb-6">Fontes de Rádio Globais</h2>
             <div class="max-w-lg mx-auto bg-white p-4 sm:p-6 rounded-lg shadow-lg">
                 <div class="space-y-4">
                     <div class="bg-gray-100 p-3 rounded-md">
-                        <label for="radioSources" class="block text-sm font-medium text-gray-700 mb-1">Fontes de Rádio -
-                            uma por linha</label>
-                        <textarea id="radioSources" rows="5"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md"
-                            placeholder="Ex: Rádio Jovem Pan | http://.../stream.mp3"></textarea>
-                        <p class="mt-2 text-xs text-gray-500">Insira o nome da rádio e o link da transmissão (stream)
-                            de áudio. O monitoramento de rádio é um recurso avançado e precisa de configuração adicional
-                            no servidor.</p>
+                        <label for="radioSources" class="block text-sm font-medium text-gray-700 mb-1">Fontes de Rádio - uma por linha</label>
+                        <textarea id="radioSources" rows="5" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="Ex: Rádio Jovem Pan | http://.../stream.mp3"></textarea>
+                        <p class="mt-2 text-xs text-gray-500">Insira o nome da rádio e o link da transmissão (stream) de áudio. O monitoramento de rádio é um recurso avançado e precisa de configuração adicional no servidor.</p>
                     </div>
                 </div>
             </div>
         </section>
 
         <section id="global-logo-page" class="page-section fade-in">
-            <button id="back-to-admin-config-4"
-                class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar</button>
+            <button id="back-to-admin-config-4" class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar</button>
             <h2 class="text-2xl sm:text-3xl font-bold mb-6">Logótipo Global da Aplicação</h2>
             <div class="max-w-lg mx-auto bg-white p-4 sm:p-6 rounded-lg shadow-lg">
-                <p class="text-gray-600 mb-4">Faça o upload do logótipo que aparecerá no cabeçalho de todas as páginas,
-                    substituindo o nome "Aurora clipping".</p>
+                <p class="text-gray-600 mb-4">Faça o upload do logótipo que aparecerá no cabeçalho de todas as páginas, substituindo o nome "Aurora clipping".</p>
                 <div>
                     <h4 class="text-lg font-semibold mb-2">Logótipo da Aplicação</h4>
-                    <input type="file" id="global-logo-upload" accept="image/*"
-                        class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                    <input type="file" id="global-logo-upload" accept="image/*" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
                 </div>
             </div>
         </section>
 
         <section id="company-user-admin-page" class="page-section fade-in">
-            <button id="back-to-super-admin-users"
-                class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar para Super
-                Admin</button>
+            <button id="back-to-super-admin-users" class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar para Super Admin</button>
             <h2 id="company-user-admin-title" class="text-2xl sm:text-3xl font-bold mb-6">Gerir Usuários</h2>
             <div class="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
                 <form id="user-form" class="flex flex-col sm:flex-row gap-2 mb-4">
-                    <input type="text" id="user-input" placeholder="Nome do usuário"
-                        class="flex-grow px-3 py-2 border border-gray-300 rounded-md">
-                    <input type="text" id="user-password-input" placeholder="Palavra-passe"
-                        class="flex-grow px-3 py-2 border border-gray-300 rounded-md">
+                    <input type="text" id="user-input" placeholder="Nome do usuário" class="flex-grow px-3 py-2 border border-gray-300 rounded-md">
+                    <input type="text" id="user-password-input" placeholder="Palavra-passe" class="flex-grow px-3 py-2 border border-gray-300 rounded-md">
                     <input type="hidden" id="user-id">
-                    <button type="submit"
-                        class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Guardar</button>
+                    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Guardar</button>
                 </form>
                 <ul id="admin-user-list" class="space-y-2 max-h-96 overflow-y-auto"></ul>
             </div>
         </section>
 
         <section id="company-keyword-admin-page" class="page-section fade-in">
-            <button id="back-to-super-admin-kw"
-                class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar para Super
-                Admin</button>
+            <button id="back-to-super-admin-kw" class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar para Super Admin</button>
             <h2 id="company-keyword-admin-title" class="text-2xl sm:text-3xl font-bold mb-6">Gerir Palavras-Chave</h2>
             <div class="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
                 <form id="keyword-form" class="flex gap-2 mb-4">
-                    <input type="text" id="keyword-input" placeholder="Adicionar ou editar palavra"
-                        class="flex-grow px-3 py-2 border border-gray-300 rounded-md">
+                    <input type="text" id="keyword-input" placeholder="Adicionar ou editar palavra" class="flex-grow px-3 py-2 border border-gray-300 rounded-md">
                     <input type="hidden" id="keyword-id">
-                    <button type="submit"
-                        class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700">Guardar</button>
+                    <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700">Guardar</button>
                 </form>
                 <ul id="admin-keyword-list" class="space-y-2 max-h-96 overflow-y-auto"></ul>
             </div>
         </section>
 
         <section id="company-settings-admin-page" class="page-section fade-in">
-            <button id="back-to-super-admin-settings"
-                class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar para Super
-                Admin</button>
+            <button id="back-to-super-admin-settings" class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar para Super Admin</button>
             <h2 id="company-settings-admin-title" class="text-2xl sm:text-3xl font-bold mb-6">Opções da Empresa</h2>
             <div class="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
                 <div class="space-y-6">
-                    <div class="flex items-center"><input type="checkbox" id="report-access-toggle"
-                            class="h-4 w-4 text-indigo-600 border-gray-300 rounded"><label for="report-access-toggle"
-                            class="ml-2 block text-sm text-gray-900">Permitir o acesso ao relatório.</label></div>
-                    <div class="flex items-center"><input type="checkbox" id="map-access-toggle"
-                            class="h-4 w-4 text-indigo-600 border-gray-300 rounded"><label for="map-access-toggle"
-                            class="ml-2 block text-sm text-gray-900">Permitir o acesso ao Mapa de Notícias.</label>
-                    </div>
-                    <div class="flex items-center"><input type="checkbox" id="fetch-only-new-toggle"
-                            class="h-4 w-4 text-indigo-600 border-gray-300 rounded"><label for="fetch-only-new-toggle"
-                            class="ml-2 block text-sm text-gray-900">Capturar apenas notícias novas (evita
-                            duplicados).</label></div>
-                    <div class="flex items-center"><input type="checkbox" id="deletion-access-toggle"
-                            class="h-4 w-4 text-indigo-600 border-gray-300 rounded"><label
-                            for="deletion-access-toggle" class="ml-2 block text-sm text-gray-900">Permitir que os
-                            usuários solicitem a exclusão de alertas.</label></div>
+                    <div class="flex items-center"><input type="checkbox" id="report-access-toggle" class="h-4 w-4 text-indigo-600 border-gray-300 rounded"><label for="report-access-toggle" class="ml-2 block text-sm text-gray-900">Permitir o acesso ao relatório.</label></div>
+                    <div class="flex items-center"><input type="checkbox" id="map-access-toggle" class="h-4 w-4 text-indigo-600 border-gray-300 rounded"><label for="map-access-toggle" class="ml-2 block text-sm text-gray-900">Permitir o acesso ao Mapa de Notícias.</label></div>
+                    <div class="flex items-center"><input type="checkbox" id="fetch-only-new-toggle" class="h-4 w-4 text-indigo-600 border-gray-300 rounded"><label for="fetch-only-new-toggle" class="ml-2 block text-sm text-gray-900">Capturar apenas notícias novas (evita duplicados).</label></div>
+                    <div class="flex items-center"><input type="checkbox" id="deletion-access-toggle" class="h-4 w-4 text-indigo-600 border-gray-300 rounded"><label for="deletion-access-toggle" class="ml-2 block text-sm text-gray-900">Permitir que os usuários solicitem a exclusão de alertas.</label></div>
                     <div>
-                        <h4 class="text-lg font-semibold mb-2">Logótipo da Empresa</h4><input type="file"
-                            id="logo-upload" accept="image/*"
-                            class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                        <h4 class="text-lg font-semibold mb-2">Logótipo da Empresa</h4><input type="file" id="logo-upload" accept="image/*" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
                     </div>
                     <div>
                         <h4 class="text-lg font-semibold mb-2">Âmbito das Notícias</h4>
                         <div id="news-scope-container" class="space-y-2">
-                            <div class="flex items-center"><input type="radio" id="scope-nacional" name="news-scope"
-                                    value="br" class="h-4 w-4 text-indigo-600 border-gray-300"><label
-                                    for="scope-nacional" class="ml-2 block text-sm text-gray-900">Nacionais
-                                    (Brasil)</label></div>
-                            <div class="flex items-center"><input type="radio" id="scope-internacional"
-                                    name="news-scope" value="international"
-                                    class="h-4 w-4 text-indigo-600 border-gray-300"><label
-                                    for="scope-internacional"
-                                    class="ml-2 block text-sm text-gray-900">Internacionais</label></div>
-                            <div class="flex items-center"><input type="radio" id="scope-estadual" name="news-scope"
-                                    value="state" class="h-4 w-4 text-indigo-600 border-gray-300"><label
-                                    for="scope-estadual"
-                                    class="ml-2 block text-sm text-gray-900">Estaduais</label></div>
+                            <div class="flex items-center"><input type="radio" id="scope-nacional" name="news-scope" value="br" class="h-4 w-4 text-indigo-600 border-gray-300"><label for="scope-nacional" class="ml-2 block text-sm text-gray-900">Nacionais (Brasil)</label></div>
+                            <div class="flex items-center"><input type="radio" id="scope-internacional" name="news-scope" value="international" class="h-4 w-4 text-indigo-600 border-gray-300"><label for="scope-internacional" class="ml-2 block text-sm text-gray-900">Internacionais</label></div>
+                            <div class="flex items-center"><input type="radio" id="scope-estadual" name="news-scope" value="state" class="h-4 w-4 text-indigo-600 border-gray-300"><label for="scope-estadual" class="ml-2 block text-sm text-gray-900">Estaduais</label></div>
                         </div>
                         <div id="state-select-container" class="hidden mt-2">
-                            <label for="state-select" class="block text-sm font-medium text-gray-700 mb-1">Selecione o
-                                Estado:</label>
+                            <label for="state-select" class="block text-sm font-medium text-gray-700 mb-1">Selecione o Estado:</label>
                             <select id="state-select" class="w-full p-2 border border-gray-300 rounded-md"></select>
                         </div>
                     </div>
@@ -622,9 +431,7 @@
                     <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full sm:w-auto">
                         <div class="w-full sm:w-auto">
                             <label class="text-sm font-medium">Filtrar por Palavra-Chave:</label>
-                            <div id="report-keyword-filter-container"
-                                class="w-full p-2 border border-gray-300 rounded-md text-sm bg-white overflow-y-auto space-y-1">
-                            </div>
+                            <div id="report-keyword-filter-container" class="w-full p-2 border border-gray-300 rounded-md text-sm bg-white overflow-y-auto space-y-1"></div>
                         </div>
                         <div class="w-full sm:w-auto">
                             <label class="text-sm font-medium">Filtrar por Período:</label>
@@ -636,6 +443,7 @@
                         </div>
                     </div>
                 </div>
+                <!-- GRÁFICOS COM LAYOUT CORRIGIDO -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     <div class="p-4 border rounded-lg flex">
                         <div>
@@ -671,18 +479,14 @@
                 <div id="filter-container" class="mb-8 p-4 border border-gray-200 rounded-lg bg-gray-50">
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                         <div>
-                            <label for="search-source-filter" class="block text-sm font-medium text-gray-700">Notícias
-                                por Veículo</label>
-                            <select id="search-source-filter"
-                                class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                            <label for="search-source-filter" class="block text-sm font-medium text-gray-700">Notícias por Veículo</label>
+                            <select id="search-source-filter" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
                                 <option value="">Todos</option>
                             </select>
                         </div>
                         <div>
-                            <label for="search-channel-filter" class="block text-sm font-medium text-gray-700">Notícias
-                                por Canal</label>
-                            <select id="search-channel-filter"
-                                class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                            <label for="search-channel-filter" class="block text-sm font-medium text-gray-700">Notícias por Canal</label>
+                            <select id="search-channel-filter" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
                                 <option value="">Todos</option>
                                 <option value="YouTube">YouTube</option>
                                 <option value="Sites">Sites</option>
@@ -693,18 +497,14 @@
                         <div>
                             <label class="block text-sm font-medium text-gray-700">Notícias por Período</label>
                             <div class="flex items-center gap-2 mt-1">
-                                <input type="date" id="search-start-date"
-                                    class="w-full px-2 py-1 border rounded-md text-sm">
+                                <input type="date" id="search-start-date" class="w-full px-2 py-1 border rounded-md text-sm">
                                 <span class="text-gray-500 text-sm">até</span>
-                                <input type="date" id="search-end-date"
-                                    class="w-full px-2 py-1 border rounded-md text-sm">
+                                <input type="date" id="search-end-date" class="w-full px-2 py-1 border rounded-md text-sm">
                             </div>
                         </div>
                         <div>
-                            <label for="search-sentiment-filter"
-                                class="block text-sm font-medium text-gray-700">Análise de Sentimento</label>
-                            <select id="search-sentiment-filter"
-                                class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                            <label for="search-sentiment-filter" class="block text-sm font-medium text-gray-700">Análise de Sentimento</label>
+                            <select id="search-sentiment-filter" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
                                 <option value="">Todos</option>
                                 <option value="positive">Positivo</option>
                                 <option value="neutral">Neutro</option>
@@ -714,8 +514,7 @@
                     </div>
                     <div id="keyword-filter-buttons"></div>
                 </div>
-                <input type="text" id="search-input" placeholder="Digite para pesquisar em títulos ou descrições..."
-                    class="w-full p-3 border border-gray-300 rounded-md mb-6">
+                <input type="text" id="search-input" placeholder="Digite para pesquisar em títulos ou descrições..." class="w-full p-3 border border-gray-300 rounded-md mb-6">
                 <div id="search-results" class="space-y-4 max-h-[60vh] overflow-y-auto">
                     <p class="text-gray-500">Digite algo para começar a pesquisar ou use os filtros.</p>
                 </div>
@@ -723,49 +522,31 @@
         </section>
 
         <section id="manual-alert-page" class="page-section fade-in">
-            <button id="back-to-dashboard-1"
-                class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar</button>
+            <button id="back-to-dashboard-1" class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar</button>
             <h2 class="text-2xl sm:text-3xl font-bold mb-6">Inserir Alerta Manualmente</h2>
             <div class="max-w-2xl mx-auto bg-white p-4 sm:p-6 rounded-lg shadow-lg">
                 <form id="manual-alert-form" class="space-y-4">
                     <div>
-                        <label for="manual-alert-company"
-                            class="block text-sm font-medium text-gray-700">Empresa</label>
-                        <select id="manual-alert-company" class="w-full px-3 py-2 border border-gray-300 rounded-md"
-                            required></select>
+                        <label for="manual-alert-company" class="block text-sm font-medium text-gray-700">Empresa</label>
+                        <select id="manual-alert-company" class="w-full px-3 py-2 border border-gray-300 rounded-md" required></select>
                     </div>
-                    <div><label for="manual-alert-title"
-                            class="block text-sm font-medium text-gray-700">Título</label><input type="text"
-                            id="manual-alert-title" class="w-full px-3 py-2 border border-gray-300 rounded-md" required>
-                    </div>
-                    <div><label for="manual-alert-desc"
-                            class="block text-sm font-medium text-gray-700">Descrição</label><textarea
-                            id="manual-alert-desc" rows="3"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md"></textarea></div>
-                    <div><label for="manual-alert-url"
-                            class="block text-sm font-medium text-gray-700">URL</label><input type="url"
-                            id="manual-alert-url" class="w-full px-3 py-2 border border-gray-300 rounded-md" required>
-                    </div>
-                    <div><label for="manual-alert-source" class="block text-sm font-medium text-gray-700">Fonte
-                            (Veículo)</label><input type="text" id="manual-alert-source"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md" required></div>
+                    <div><label for="manual-alert-title" class="block text-sm font-medium text-gray-700">Título</label><input type="text" id="manual-alert-title" class="w-full px-3 py-2 border border-gray-300 rounded-md" required></div>
+                    <div><label for="manual-alert-desc" class="block text-sm font-medium text-gray-700">Descrição</label><textarea id="manual-alert-desc" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md"></textarea></div>
+                    <div><label for="manual-alert-url" class="block text-sm font-medium text-gray-700">URL</label><input type="url" id="manual-alert-url" class="w-full px-3 py-2 border border-gray-300 rounded-md" required></div>
+                    <div><label for="manual-alert-source" class="block text-sm font-medium text-gray-700">Fonte (Veículo)</label><input type="text" id="manual-alert-source" class="w-full px-3 py-2 border border-gray-300 rounded-md" required></div>
                     <div>
                         <label for="manual-alert-keyword" class="block text-sm font-medium text-gray-700">Palavras-Chave</label>
-                        <select id="manual-alert-keyword" class="w-full px-3 py-2 border border-gray-300 rounded-md"
-                            multiple required>
+                        <select id="manual-alert-keyword" class="w-full px-3 py-2 border border-gray-300 rounded-md" multiple required>
                             <option disabled>Selecione uma empresa primeiro</option>
                         </select>
                     </div>
-                    <button type="submit"
-                        class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700">Adicionar
-                        Alerta</button>
+                    <button type="submit" class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700">Adicionar Alerta</button>
                 </form>
             </div>
         </section>
 
         <section id="deletion-requests-page" class="page-section fade-in">
-            <button id="back-to-dashboard-2"
-                class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar</button>
+            <button id="back-to-dashboard-2" class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar</button>
             <h2 class="text-2xl sm:text-3xl font-bold mb-6">Pedidos de Exclusão de Alertas</h2>
             <div id="deletion-requests-list" class="space-y-4">
                 <p class="text-gray-500">A carregar pedidos...</p>
@@ -773,8 +554,7 @@
         </section>
 
         <section id="super-admin-queue-page" class="page-section fade-in">
-            <button id="back-to-dashboard-4"
-                class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar</button>
+            <button id="back-to-dashboard-4" class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar</button>
             <h2 class="text-2xl sm:text-3xl font-bold mb-6">Fila de Aprovação de Alertas</h2>
             <div id="super-admin-pending-alerts-list" class="space-y-4">
                 <p class="text-gray-500">A carregar alertas pendentes...</p>
@@ -782,17 +562,8 @@
         </section>
 
         <section id="super-admin-report-page" class="page-section fade-in">
-            <button id="back-to-dashboard-3"
-                class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar</button>
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-                <h2 class="text-2xl sm:text-3xl font-bold">Relatório Geral de Empresas</h2>
-                <div class="flex items-center gap-2">
-                    <label for="report-start-date" class="text-sm font-medium">De:</label>
-                    <input type="date" id="report-start-date" class="px-2 py-1 border border-gray-300 rounded-md text-sm">
-                    <label for="report-end-date" class="text-sm font-medium">Até:</label>
-                    <input type="date" id="report-end-date" class="px-2 py-1 border border-gray-300 rounded-md text-sm">
-                </div>
-            </div>
+            <button id="back-to-dashboard-3" class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar</button>
+            <h2 class="text-2xl sm:text-3xl font-bold mb-6">Relatório Geral de Empresas</h2>
             <div class="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
                 <div class="mb-8">
                     <h3 class="text-xl font-semibold text-center mb-4">Total de Alertas por Empresa</h3>
@@ -804,18 +575,12 @@
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Empresa</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Total de Alertas</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Sentimento (%)</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Sentimento Predominante</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Canal Principal</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Veículo Principal</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Empresa</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total de Alertas</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sentimento (%)</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sentimento Predominante</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Canal Principal</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Veículo Principal</th>
                             </tr>
                         </thead>
                         <tbody id="super-admin-report-body" class="bg-white divide-y divide-gray-200">
@@ -829,11 +594,8 @@
         </section>
 
         <section id="company-keyword-report-page" class="page-section fade-in">
-            <button id="back-to-super-admin-report"
-                class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">← Voltar para Relatório
-                Geral</button>
-            <h2 id="company-keyword-report-title" class="text-2xl sm:text-3xl font-bold mb-6">Análise por Palavra-Chave
-            </h2>
+            <button id="back-to-super-admin-report" class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">← Voltar para Relatório Geral</button>
+            <h2 id="company-keyword-report-title" class="text-2xl sm:text-3xl font-bold mb-6">Análise por Palavra-Chave</h2>
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <div class="p-4 bg-white rounded-lg shadow-lg min-h-[300px] sm:min-h-[400px]">
                     <h3 class="text-xl font-semibold mb-4 text-center">Total de Alertas por Palavra-Chave</h3>
@@ -848,54 +610,36 @@
 
         <section id="article-detail-page" class="page-section fade-in">
             <div class="flex justify-between items-center mb-4">
-                <button id="back-from-detail"
-                    class="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">← Voltar</button>
+                <button id="back-from-detail" class="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">← Voltar</button>
                 <div id="share-buttons-container" class="flex items-center gap-2">
-                    <button id="print-btn" title="Imprimir Relatório"
-                        class="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors">
-                        <svg class="w-5 h-5 text-gray-700" fill="currentColor" viewBox="0 0 20 20"
-                            xmlns="http://www.w3.org/2000/svg">
-                            <path fill-rule="evenodd"
-                                d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v3a2 2 0 002 2h6a2 2 0 002-2v-3h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm3 0h4v3H8V4zm6 8V9H6v3h8zm-8-5h8v1a1 1 0 01-1 1H7a1 1 0 01-1-1V7z"
-                                clip-rule="evenodd"></path>
+                    <button id="print-btn" title="Imprimir Relatório" class="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors">
+                        <svg class="w-5 h-5 text-gray-700" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                            <path fill-rule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v3a2 2 0 002 2h6a2 2 0 002-2v-3h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm3 0h4v3H8V4zm6 8V9H6v3h8zm-8-5h8v1a1 1 0 01-1 1H7a1 1 0 01-1-1V7z" clip-rule="evenodd"></path>
                         </svg>
                     </button>
-                    <button id="share-whatsapp-btn" title="Compartilhar no WhatsApp"
-                        class="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors">
-                        <svg class="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 24 24"
-                            xmlns="http://www.w3.org/2000/svg">
-                            <path
-                                d="M16.75 13.96c.25.13.43.2.5.33.07.13.07.66 0 1.14-.07.48-.83 1-1.25 1.13-.42.13-1.14.2-3.13-.62-2-.82-3.5-2.25-4.63-3.8-1.13-1.55-1.7-3.13-1.63-3.6.07-.48.5-1 .63-1.14.13-.13.3-.13.42-.13h.5c.13 0 .25.07.38.38.13.25.43.98.5 1.05.07.07.07.13 0 .25-.07.13-.13.25-.25.38-.13.13-.25.25-.38.38-.07.07-.07.13.07.38.2.13.83.82 1.63 1.55.8.73 1.5 1 1.63 1.13.13.13.25.2.38.07.13-.13.38-.5.5-.63.13-.13.25-.25.38-.25s.33.07.43.13c.1.13.58.57.68.68.1.1.18.2.2.3.03.17.03.25.03.38v.12Z M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm0 18.13a8.13 8.13 0 1 1 0-16.26 8.13 8.13 0 0 1 0 16.26Z"
-                                clip-rule="evenodd" fill-rule="evenodd"></path>
+                    <button id="share-whatsapp-btn" title="Compartilhar no WhatsApp" class="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors">
+                        <svg class="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M16.75 13.96c.25.13.43.2.5.33.07.13.07.66 0 1.14-.07.48-.83 1-1.25 1.13-.42.13-1.14.2-3.13-.62-2-.82-3.5-2.25-4.63-3.8-1.13-1.55-1.7-3.13-1.63-3.6.07-.48.5-1 .63-1.14.13-.13.3-.13.42-.13h.5c.13 0 .25.07.38.38.13.25.43.98.5 1.05.07.07.07.13 0 .25-.07.13-.13.25-.25.38-.13.13-.25.25-.38.38-.07.07-.07.13.07.38.2.13.83.82 1.63 1.55.8.73 1.5 1 1.63 1.13.13.13.25.2.38.07.13-.13.38-.5.5-.63.13-.13.25-.25.38-.25s.33.07.43.13c.1.13.58.57.68.68.1.1.18.2.2.3.03.17.03.25.03.38v.12Z M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm0 18.13a8.13 8.13 0 1 1 0-16.26 8.13 8.13 0 0 1 0 16.26Z" clip-rule="evenodd" fill-rule="evenodd"></path>
                         </svg>
                     </button>
-                    <button id="share-email-btn" title="Compartilhar por E-mail"
-                        class="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors">
-                        <svg class="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 24 24"
-                            xmlns="http://www.w3.org/2000/svg">
-                            <path
-                                d="M2.25 5.63a2.5 2.5 0 0 1 2.5-2.5h14.5a2.5 2.5 0 0 1 2.5 2.5v12.5a2.5 2.5 0 0 1-2.5-2.5H4.75a2.5 2.5 0 0 1-2.5-2.5V5.63Zm3.12 1.88 5.63 4.25a2 2 0 0 0 2.5 0l5.63-4.25a.5.5 0 0 0-.63-.75L12 10.13 5.9 6.75a.5.5 0 0 0-.5.88Z"
-                                clip-rule="evenodd" fill-rule="evenodd"></path>
+                    <button id="share-email-btn" title="Compartilhar por E-mail" class="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors">
+                        <svg class="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M2.25 5.63a2.5 2.5 0 0 1 2.5-2.5h14.5a2.5 2.5 0 0 1 2.5 2.5v12.5a2.5 2.5 0 0 1-2.5-2.5H4.75a2.5 2.5 0 0 1-2.5-2.5V5.63Zm3.12 1.88 5.63 4.25a2 2 0 0 0 2.5 0l5.63-4.25a.5.5 0 0 0-.63-.75L12 10.13 5.9 6.75a.5.5 0 0 0-.5.88Z" clip-rule="evenodd" fill-rule="evenodd"></path>
                         </svg>
                     </button>
                 </div>
             </div>
 
             <div id="report-content" class="bg-white p-8 md:p-12 rounded-lg shadow-lg">
-                <div class="flex justify-between items-start border-b-2 pb-4 mb-4">
+                 <div class="flex justify-between items-start border-b-2 pb-4 mb-4">
                     <div id="aurora-clipping-logo" class="flex items-center text-gray-500">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mr-2 text-blue-800" viewBox="0 0 24 24"
-                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                            stroke-linejoin="round">
-                            <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" />
-                            <path d="M2 12h20" />
-                            <path
-                                d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-                        </svg>
-                        <span class="font-semibold text-lg">Aurora Clipping</span>
+                         <!-- Conteúdo será substituído dinamicamente -->
+                         <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mr-2 text-blue-800" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                         <span class="font-semibold text-lg">Aurora Clipping</span>
                     </div>
                     <div id="report-logo-container" class="h-16 flex-grow flex justify-center items-center">
-                        </div>
+                        <!-- Logotipo da empresa do cliente será inserido aqui -->
+                    </div>
                     <div class="text-right">
                         <h2 class="text-2xl font-bold text-gray-800">Relatório de Notícia</h2>
                         <p id="report-date" class="text-sm text-gray-500"></p>
@@ -906,117 +650,88 @@
                 <h1 id="detail-title" class="text-2xl sm:text-3xl font-bold text-gray-800 mb-6"></h1>
                 <div id="detail-content" class="prose max-w-none text-gray-700 leading-relaxed mb-8"></div>
                 <div id="detail-ai-insights"></div>
-
+                
                 <div class="border-t-2 pt-4 mt-8 text-center">
                     <p class="text-sm text-gray-500">Para ler a matéria completa, acesse o link original:</p>
-                    <a id="detail-original-link" href="#" target="_blank" rel="noopener noreferrer"
-                        class="text-indigo-600 hover:underline font-semibold break-all"></a>
+                    <a id="detail-original-link" href="#" target="_blank" rel="noopener noreferrer" class="text-indigo-600 hover:underline font-semibold break-all"></a>
                 </div>
             </div>
         </section>
     </main>
 
-    <div id="justification-modal"
-        class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <!-- Modais -->
+    <div id="justification-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
         <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
             <div class="mt-3">
                 <h3 class="text-lg leading-6 font-medium text-gray-900">Justificar Exclusão</h3>
                 <div class="mt-2 py-3">
-                    <p class="text-sm text-gray-500 mb-2">Por favor, informe o motivo pelo qual deseja excluir este
-                        alerta. O seu pedido será enviado para aprovação.</p>
-                    <textarea id="justification-text" rows="4"
-                        class="w-full p-2 border border-gray-300 rounded-md" required></textarea>
+                    <p class="text-sm text-gray-500 mb-2">Por favor, informe o motivo pelo qual deseja excluir este alerta. O seu pedido será enviado para aprovação.</p>
+                    <textarea id="justification-text" rows="4" class="w-full p-2 border border-gray-300 rounded-md" required></textarea>
                 </div>
                 <div class="items-center px-4 py-3 flex gap-2">
-                    <button id="submit-justification-btn"
-                        class="px-4 py-2 bg-red-600 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-red-700 disabled:bg-red-300"
-                        disabled>Enviar Pedido</button>
-                    <button id="cancel-justification-btn"
-                        class="px-4 py-2 bg-gray-200 text-gray-900 text-base font-medium rounded-md w-full shadow-sm hover:bg-gray-300">Cancelar</button>
+                    <button id="submit-justification-btn" class="px-4 py-2 bg-red-600 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-red-700 disabled:bg-red-300" disabled>Enviar Pedido</button>
+                    <button id="cancel-justification-btn" class="px-4 py-2 bg-gray-200 text-gray-900 text-base font-medium rounded-md w-full shadow-sm hover:bg-gray-300">Cancelar</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="delete-modal"
-        class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div id="delete-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
         <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
             <div class="mt-3 text-center">
                 <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
-                    <svg class="h-6 w-6 text-red-600" stroke="currentColor" fill="none" viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    <svg class="h-6 w-6 text-red-600" stroke="currentColor" fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                     </svg>
                 </div>
                 <h3 class="text-lg leading-6 font-medium text-gray-900 mt-2">Excluir Empresa</h3>
                 <div class="mt-2 px-7 py-3">
-                    <p class="text-sm text-gray-500">Tem a certeza que deseja excluir a empresa <strong
-                            id="company-name-to-delete"></strong>?<br><br><span
-                            class="font-bold text-red-600">Esta ação é permanente e irá remover todos os dados
-                            associados.</span></p>
+                    <p class="text-sm text-gray-500">Tem a certeza que deseja excluir a empresa <strong id="company-name-to-delete"></strong>?<br><br><span class="font-bold text-red-600">Esta ação é permanente e irá remover todos os dados associados.</span></p>
                 </div>
                 <div class="items-center px-4 py-3">
-                    <button id="confirm-delete-btn"
-                        class="px-4 py-2 bg-red-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-red-700">Sim,
-                        excluir</button>
-                    <button id="cancel-delete-btn"
-                        class="mt-3 px-4 py-2 bg-gray-200 text-gray-900 text-base font-medium rounded-md w-full shadow-sm hover:bg-gray-300">Cancelar</button>
+                    <button id="confirm-delete-btn" class="px-4 py-2 bg-red-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-red-700">Sim, excluir</button>
+                    <button id="cancel-delete-btn" class="mt-3 px-4 py-2 bg-gray-200 text-gray-900 text-base font-medium rounded-md w-full shadow-sm hover:bg-gray-300">Cancelar</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="link-modal"
-        class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div id="link-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
         <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
             <div class="mt-3">
                 <h3 class="text-lg leading-6 font-medium text-gray-900 text-center">Link de Acesso Exclusivo</h3>
                 <div class="mt-4 px-7 py-3">
-                    <p class="text-sm text-gray-500 mb-2">Utilize este link para dar acesso direto à página de login
-                        desta empresa:</p>
-                    <input type="text" id="access-link-input" readonly
-                        class="w-full bg-gray-100 p-2 border rounded-md text-sm">
+                    <p class="text-sm text-gray-500 mb-2">Utilize este link para dar acesso direto à página de login desta empresa:</p>
+                    <input type="text" id="access-link-input" readonly class="w-full bg-gray-100 p-2 border rounded-md text-sm">
                 </div>
                 <div class="items-center px-4 py-3 flex gap-2">
-                    <button id="copy-link-btn"
-                        class="px-4 py-2 bg-indigo-600 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-indigo-700">Copiar</button>
-                    <button id="close-link-modal-btn"
-                        class="px-4 py-2 bg-gray-200 text-gray-900 text-base font-medium rounded-md w-full shadow-sm hover:bg-gray-300">Fechar</button>
+                    <button id="copy-link-btn" class="px-4 py-2 bg-indigo-600 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-indigo-700">Copiar</button>
+                    <button id="close-link-modal-btn" class="px-4 py-2 bg-gray-200 text-gray-900 text-base font-medium rounded-md w-full shadow-sm hover:bg-gray-300">Fechar</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="confirm-delete-keyword-modal"
-        class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div id="confirm-delete-keyword-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
         <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
             <div class="mt-3 text-center">
                 <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
-                    <svg class="h-6 w-6 text-red-600" stroke="currentColor" fill="none" viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    <svg class="h-6 w-6 text-red-600" stroke="currentColor" fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                     </svg>
                 </div>
                 <h3 class="text-lg leading-6 font-medium text-gray-900 mt-2">Excluir Palavra-Chave</h3>
                 <div class="mt-2 px-7 py-3">
-                    <p class="text-sm text-gray-500">Tem a certeza que deseja excluir a palavra-chave "<strong
-                            id="keyword-to-delete-name"></strong>"?<br><br><span
-                            class="font-bold text-red-600">Esta ação também irá remover todos os alertas associados a
-                            ela.</span></p>
+                    <p class="text-sm text-gray-500">Tem a certeza que deseja excluir a palavra-chave "<strong id="keyword-to-delete-name"></strong>"?<br><br><span class="font-bold text-red-600">Esta ação também irá remover todos os alertas associados a ela.</span></p>
                 </div>
                 <div class="items-center px-4 py-3">
-                    <button id="confirm-delete-keyword-btn"
-                        class="px-4 py-2 bg-red-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-red-700">Sim,
-                        excluir</button>
-                    <button id="cancel-delete-keyword-btn"
-                        class="mt-3 px-4 py-2 bg-gray-200 text-gray-900 text-base font-medium rounded-md w-full shadow-sm hover:bg-gray-300">Cancelar</button>
+                    <button id="confirm-delete-keyword-btn" class="px-4 py-2 bg-red-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-red-700">Sim, excluir</button>
+                    <button id="cancel-delete-keyword-btn" class="mt-3 px-4 py-2 bg-gray-200 text-gray-900 text-base font-medium rounded-md w-full shadow-sm hover:bg-gray-300">Cancelar</button>
                 </div>
             </div>
         </div>
     </div>
-
+    
     <script>
         // Função de callback global para a API do Google Maps
         function initMap() {
@@ -1055,7 +770,7 @@
         let mapInstance = null;
         let mapMarkers = [];
 
-        let pageSections, navLoggedIn, navInicio, navRelatorio, navMapa, navPesquisa, navSuperAdmin, navLogout, navConfiguracoesAdmin, globalAlert, loginPage, dashboardPage, mapPage, searchPage, superAdminPage, companyKeywordAdminPage, companySettingsAdminPage, reportPage, companyUserAdminPage, configuracoesAdminPage, loginForm, dashboardTitle, currentDateTimeEl, dashboardKeywordList, newsAlertsContainer, newsAlerts, alertDateFilter, reportAccessToggle, mapAccessToggle, logoUploadInput, headerLogoContainer, loginLogoContainer, filterContainer, searchInput, searchResults, companyForm, companyList, backToSuperAdminKwBtn, backToSuperAdminSettingsBtn, backToSuperAdminUsersBtn, companyKeywordAdminTitle, companySettingsAdminTitle, companyUserAdminTitle, keywordForm, keywordInput, keywordIdInput, adminKeywordList, userForm, userInput, userPasswordInput, userIdInput, adminUserList, notificationBell, notificationBadge, manualTriggerBtn, deleteModal, confirmDeleteBtn, cancelDeleteBtn, companyNameToDeleteEl, newsScopeContainer, startDateInput, endDateInput, linkModal, accessLinkInput, copyLinkBtn, closeLinkModalBtn, reportKeywordFilterContainer, stateSelectContainer, stateSelect, changePasswordForm, apiKeyNewsApiInput, apiKeyFirebaseNewsInput, apiKeyGNewsInput1, apiKeyGNewsInput2, apiKeyGNewsInput3, apiKeyGNewsInput4, apiKeyYoutubeInput, apiKeyBloggerInput, apiKeyVisionInput, apiKeyVideoIntelligenceInput, showAllAlertsBtn, deletionAccessToggle, justificationModal, justificationText, submitJustificationBtn, cancelJustificationBtn, btnManualAlert, btnDeletionRequests, btnSuperAdminReport, manualAlertPage, deletionRequestsPage, superAdminReportPage, backToDashboard1, backToDashboard2, backToDashboard3, manualAlertForm, deletionRequestsList, superAdminReportBody, deletionRequestsBadge, pendingAlertsPage, pendingAlertsList, btnPendingAlerts, backToDashboard4, confirmDeleteKeywordBtn, cancelDeleteKeywordBtn, confirmDeleteKeywordModal, keywordToDeleteNameEl, bloggerIdInput, rssUrlInput, fetchOnlyNewToggle, changePasswordPage, globalKeysPage, globalSourcesPage, btnChangePassword, btnGlobalKeys, btnNewsSources, backToAdminConfig1, backToAdminConfig2, backToAdminConfig3, globalLogoPage, btnGlobalLogo, backToAdminConfig4, globalLogoUpload, globalLogoArea, logoLink, btnRadioSources, globalRadioSourcesPage, backToAdminConfig5, radioSourcesInput, articleDetailPage, backFromDetail, detailTitle, detailMeta, detailContent, shareWhatsappBtn, shareEmailBtn, companyKeywordReportPage, backToSuperAdminReportBtn, companyKeywordReportTitle, detailAiInsights, printBtn, shareButtonsContainer, mapStartDateInput, mapEndDateInput, mapFilterBtn, reportStartDateInput, reportEndDateInput;
+        let pageSections, navLoggedIn, navInicio, navRelatorio, navMapa, navPesquisa, navSuperAdmin, navLogout, navConfiguracoesAdmin, globalAlert, loginPage, dashboardPage, mapPage, searchPage, superAdminPage, companyKeywordAdminPage, companySettingsAdminPage, reportPage, companyUserAdminPage, configuracoesAdminPage, loginForm, dashboardTitle, currentDateTimeEl, dashboardKeywordList, newsAlertsContainer, newsAlerts, alertDateFilter, reportAccessToggle, mapAccessToggle, logoUploadInput, headerLogoContainer, loginLogoContainer, filterContainer, searchInput, searchResults, companyForm, companyList, backToSuperAdminKwBtn, backToSuperAdminSettingsBtn, backToSuperAdminUsersBtn, companyKeywordAdminTitle, companySettingsAdminTitle, companyUserAdminTitle, keywordForm, keywordInput, keywordIdInput, adminKeywordList, userForm, userInput, userPasswordInput, userIdInput, adminUserList, notificationBell, notificationBadge, manualTriggerBtn, deleteModal, confirmDeleteBtn, cancelDeleteBtn, companyNameToDeleteEl, newsScopeContainer, startDateInput, endDateInput, linkModal, accessLinkInput, copyLinkBtn, closeLinkModalBtn, reportKeywordFilterContainer, stateSelectContainer, stateSelect, changePasswordForm, apiKeyNewsApiInput, apiKeyFirebaseNewsInput, apiKeyGNewsInput1, apiKeyGNewsInput2, apiKeyGNewsInput3, apiKeyGNewsInput4, apiKeyYoutubeInput, apiKeyBloggerInput, apiKeyVisionInput, apiKeyVideoIntelligenceInput, showAllAlertsBtn, deletionAccessToggle, justificationModal, justificationText, submitJustificationBtn, cancelJustificationBtn, btnManualAlert, btnDeletionRequests, btnSuperAdminReport, manualAlertPage, deletionRequestsPage, superAdminReportPage, backToDashboard1, backToDashboard2, backToDashboard3, manualAlertForm, deletionRequestsList, superAdminReportBody, deletionRequestsBadge, pendingAlertsPage, pendingAlertsList, btnPendingAlerts, backToDashboard4, confirmDeleteKeywordBtn, cancelDeleteKeywordBtn, confirmDeleteKeywordModal, keywordToDeleteNameEl, bloggerIdInput, rssUrlInput, fetchOnlyNewToggle, changePasswordPage, globalKeysPage, globalSourcesPage, btnChangePassword, btnGlobalKeys, btnNewsSources, backToAdminConfig1, backToAdminConfig2, backToAdminConfig3, globalLogoPage, btnGlobalLogo, backToAdminConfig4, globalLogoUpload, globalLogoArea, logoLink, btnRadioSources, globalRadioSourcesPage, backToAdminConfig5, radioSourcesInput, articleDetailPage, backFromDetail, detailTitle, detailMeta, detailContent, shareWhatsappBtn, shareEmailBtn, companyKeywordReportPage, backToSuperAdminReportBtn, companyKeywordReportTitle, detailAiInsights, printBtn, shareButtonsContainer, mapStartDateInput, mapEndDateInput, mapFilterBtn;
 
         function showAlert(message, type = 'success') { const c = type === 'success' ? 'bg-green-100 border-green-500 text-green-700' : 'bg-red-100 border-red-500 text-red-700'; globalAlert.innerHTML = `<div class="${c} border-l-4 p-4 rounded-md fade-in" role="alert"><p>${message}</p></div>`; setTimeout(() => { globalAlert.innerHTML = ''; }, 4000); }
         function getChannelCategory(sourceName) {
@@ -1124,7 +839,7 @@
 
             try {
                 const baseCollection = collection(db, "artifacts", appId, "users", currentUser.companyId, "articles");
-
+                
                 const queryConstraints = [
                     where("geolocation", "!=", null)
                 ];
@@ -1141,7 +856,7 @@
                 } else {
                     queryConstraints.push(orderBy("publishedAt", "desc"));
                 }
-
+                
                 queryConstraints.push(limit(200));
 
                 const articlesQuery = query(baseCollection, ...queryConstraints);
@@ -1164,7 +879,12 @@
                     mapMarkers.push(marker);
 
                     marker.addListener('mouseover', () => {
-                        infoWindow.setContent(`                        <div class="font-sans p-1">                            <p class="font-bold text-sm">${article.title}</p>                            <p class="text-xs text-gray-500">${article.source.name}</p>                        </div>                        `);
+                        infoWindow.setContent(` 
+                            <div class="font-sans p-1"> 
+                                <p class="font-bold text-sm">${article.title}</p> 
+                                <p class="text-xs text-gray-500">${article.source.name}</p> 
+                            </div> 
+                            `);
                         infoWindow.open({
                             anchor: marker,
                             map: mapInstance,
@@ -1324,7 +1044,27 @@
                         actionButtons = `<button data-id="${c.id}" class="deactivate-company-btn bg-gray-500 text-white px-3 py-1 rounded-md text-sm hover:bg-gray-600">Inativar</button>`;
                     }
 
-                    li.innerHTML = `                        <div class="flex-grow">                            <div data-company-id="${c.id}" class="company-name-view">                                <span class="font-bold">${c.name}</span>                                 <span class="text-sm ${statusClass}">(${statusText})</span>                                <button data-id="${c.id}" data-name="${c.name}" class="edit-company-name-btn text-blue-500 hover:text-blue-700 ml-2 text-sm">(Editar Nome)</button>                            </div>                            <div data-company-id="${c.id}" class="company-name-edit hidden">                                <input type="text" value="${c.name}" class="px-2 py-1 border border-gray-300 rounded-md">                                <button data-id="${c.id}" class="save-company-name-btn bg-green-500 text-white px-3 py-1 rounded-md text-sm hover:bg-green-600 ml-2">Salvar</button>                                <button data-id="${c.id}" class="cancel-edit-company-name-btn bg-gray-400 text-white px-3 py-1 rounded-md text-sm hover:bg-gray-500 ml-1">Cancelar</button>                            </div>                        </div>                        <div class="mt-2 sm:mt-0 flex flex-wrap gap-2">                            <button data-company-name="${c.name}" class="view-access-link-btn bg-teal-500 text-white px-3 py-1 rounded-md text-sm hover:bg-teal-600">Link</button>                            <button data-company-id="${c.id}" data-company-name="${c.name}" class="manage-company-users-btn bg-purple-500 text-white px-3 py-1 rounded-md text-sm hover:bg-purple-600">Usuários</button>                            <button data-company-id="${c.id}" data-company-name="${c.name}" class="manage-company-keywords-btn bg-blue-500 text-white px-3 py-1 rounded-md text-sm hover:bg-blue-600">Palavras-Chave</button>                            <button data-company-id="${c.id}" data-company-name="${c.name}" class="manage-company-settings-btn bg-green-500 text-white px-3 py-1 rounded-md text-sm hover:bg-green-600">Opções</button>                            ${actionButtons}                            <button data-company-id="${c.id}" data-company-name="${c.name}" class="delete-company-btn bg-red-600 text-white px-3 py-1 rounded-md text-sm hover:bg-red-800">Excluir</button>                        </div>`;
+                    li.innerHTML = `
+                        <div class="flex-grow">
+                            <div data-company-id="${c.id}" class="company-name-view">
+                                <span class="font-bold">${c.name}</span> 
+                                <span class="text-sm ${statusClass}">(${statusText})</span>
+                                <button data-id="${c.id}" data-name="${c.name}" class="edit-company-name-btn text-blue-500 hover:text-blue-700 ml-2 text-sm">(Editar Nome)</button>
+                            </div>
+                            <div data-company-id="${c.id}" class="company-name-edit hidden">
+                                <input type="text" value="${c.name}" class="px-2 py-1 border border-gray-300 rounded-md">
+                                <button data-id="${c.id}" class="save-company-name-btn bg-green-500 text-white px-3 py-1 rounded-md text-sm hover:bg-green-600 ml-2">Salvar</button>
+                                <button data-id="${c.id}" class="cancel-edit-company-name-btn bg-gray-400 text-white px-3 py-1 rounded-md text-sm hover:bg-gray-500 ml-1">Cancelar</button>
+                            </div>
+                        </div>
+                        <div class="mt-2 sm:mt-0 flex flex-wrap gap-2">
+                            <button data-company-name="${c.name}" class="view-access-link-btn bg-teal-500 text-white px-3 py-1 rounded-md text-sm hover:bg-teal-600">Link</button>
+                            <button data-company-id="${c.id}" data-company-name="${c.name}" class="manage-company-users-btn bg-purple-500 text-white px-3 py-1 rounded-md text-sm hover:bg-purple-600">Usuários</button>
+                            <button data-company-id="${c.id}" data-company-name="${c.name}" class="manage-company-keywords-btn bg-blue-500 text-white px-3 py-1 rounded-md text-sm hover:bg-blue-600">Palavras-Chave</button>
+                            <button data-company-id="${c.id}" data-company-name="${c.name}" class="manage-company-settings-btn bg-green-500 text-white px-3 py-1 rounded-md text-sm hover:bg-green-600">Opções</button>
+                            ${actionButtons}
+                            <button data-company-id="${c.id}" data-company-name="${c.name}" class="delete-company-btn bg-red-600 text-white px-3 py-1 rounded-md text-sm hover:bg-red-800">Excluir</button>
+                        </div>`;
                     companyList.appendChild(li);
                 });
             }, (error) => {
@@ -1333,7 +1073,7 @@
             });
         }
         async function handleCompanySubmit(e) { e.preventDefault(); const name = document.getElementById('company-name-input').value.trim(); if (!name) { showAlert('O nome da empresa é obrigatório.', 'error'); return; } try { const q = query(collection(db, "artifacts", appId, "public/data/companies"), where("name", "==", name.toUpperCase())); const querySnapshot = await getDocs(q); if (!querySnapshot.empty) { showAlert('Este nome de empresa já existe.', 'error'); return; } await addDoc(collection(db, "artifacts", appId, "public/data/companies"), { name: name.toUpperCase(), status: 'active' }); showAlert('Empresa adicionada com sucesso!'); if (companyForm) companyForm.reset(); } catch (error) { console.error("Erro ao adicionar empresa:", error); showAlert("Erro ao adicionar empresa.", "error"); } }
-        async function handleCompanyActions(e) {
+        async function handleCompanyActions(e) { 
             const target = e.target;
             const companyId = target.dataset.id || target.dataset.companyId;
 
@@ -1366,7 +1106,7 @@
                 return;
             }
 
-            if (target.classList.contains('view-access-link-btn')) { const companyName = target.dataset.companyName; const baseUrl = window.location.origin + window.location.pathname; const accessUrl = `${baseUrl}?company=${encodeURIComponent(companyName)}`; if (accessLinkInput) accessLinkInput.value = accessUrl; if (linkModal) linkModal.classList.remove('hidden'); return; } if (!companyId) return; const companyRef = doc(db, "artifacts", appId, "public/data/companies", companyId); try { if (target.classList.contains('deactivate-company-btn')) { await updateDoc(companyRef, { status: 'inactive', deactivationDate: new Date().toISOString() }); } else if (target.classList.contains('reactivate-company-btn')) { await updateDoc(companyRef, { status: 'active', deactivationDate: null }); } else if (target.classList.contains('delete-company-btn')) { companyIdToDelete = companyId; if (companyNameToDeleteEl) companyNameToDeleteEl.textContent = target.dataset.companyName; if (deleteModal) deleteModal.classList.remove('hidden'); } else if (target.classList.contains('manage-company-keywords-btn')) { selectedCompanyForManagement = { id: target.dataset.companyId, name: target.dataset.companyName }; updateView('company-keyword-admin'); } else if (target.classList.contains('manage-company-settings-btn')) { selectedCompanyForManagement = { id: target.dataset.companyId, name: target.dataset.companyName }; updateView('company-settings-admin'); } else if (target.classList.contains('manage-company-users-btn')) { selectedCompanyForManagement = { id: target.dataset.companyId, name: target.dataset.companyName }; updateView('company-user-admin'); } } catch (error) { console.error("Erro ao lidar com a ação da empresa:", error); showAlert("Ocorreu um erro.", "error"); }
+            if (target.classList.contains('view-access-link-btn')) { const companyName = target.dataset.companyName; const baseUrl = window.location.origin + window.location.pathname; const accessUrl = `${baseUrl}?company=${encodeURIComponent(companyName)}`; if (accessLinkInput) accessLinkInput.value = accessUrl; if (linkModal) linkModal.classList.remove('hidden'); return; } if (!companyId) return; const companyRef = doc(db, "artifacts", appId, "public/data/companies", companyId); try { if (target.classList.contains('deactivate-company-btn')) { await updateDoc(companyRef, { status: 'inactive', deactivationDate: new Date().toISOString() }); } else if (target.classList.contains('reactivate-company-btn')) { await updateDoc(companyRef, { status: 'active', deactivationDate: null }); } else if (target.classList.contains('delete-company-btn')) { companyIdToDelete = companyId; if (companyNameToDeleteEl) companyNameToDeleteEl.textContent = target.dataset.companyName; if (deleteModal) deleteModal.classList.remove('hidden'); } else if (target.classList.contains('manage-company-keywords-btn')) { selectedCompanyForManagement = { id: target.dataset.companyId, name: target.dataset.companyName }; updateView('company-keyword-admin'); } else if (target.classList.contains('manage-company-settings-btn')) { selectedCompanyForManagement = { id: target.dataset.companyId, name: target.dataset.companyName }; updateView('company-settings-admin'); } else if (target.classList.contains('manage-company-users-btn')) { selectedCompanyForManagement = { id: target.dataset.companyId, name: target.dataset.companyName }; updateView('company-user-admin'); } } catch (error) { console.error("Erro ao lidar com a ação da empresa:", error); showAlert("Ocorreu um erro.", "error"); } 
         }
 
         async function handleConfirmDelete() {
@@ -1556,7 +1296,12 @@
                 return `<button class="sentiment-btn text-xs font-semibold text-${color}-600 bg-${color}-100 px-2 py-1 rounded-full">${emoji} ${text}</button>`;
             };
 
-            const sentimentMenuHTML = `                <div class="sentiment-menu p-1 space-y-1">                    <button data-sentiment="0.5" class="sentiment-option w-full text-left text-xs px-2 py-1 rounded hover:bg-gray-100">😊 Positivo</button>                    <button data-sentiment="0.0" class="sentiment-option w-full text-left text-xs px-2 py-1 rounded hover:bg-gray-100">😐 Neutro</button>                    <button data-sentiment="-0.5" class="sentiment-option w-full text-left text-xs px-2 py-1 rounded hover:bg-gray-100">😠 Negativo</button>                </div>`;
+            const sentimentMenuHTML = ` 
+                    <div class="sentiment-menu p-1 space-y-1"> 
+                        <button data-sentiment="0.5" class="sentiment-option w-full text-left text-xs px-2 py-1 rounded hover:bg-gray-100">😊 Positivo</button> 
+                        <button data-sentiment="0.0" class="sentiment-option w-full text-left text-xs px-2 py-1 rounded hover:bg-gray-100">😐 Neutro</button> 
+                        <button data-sentiment="-0.5" class="sentiment-option w-full text-left text-xs px-2 py-1 rounded hover:bg-gray-100">😠 Negativo</button> 
+                    </div>`;
 
             const deleteButtonHTML = currentUser && currentUser.canRequestDeletion ? `<button class="request-delete-btn text-red-500 hover:text-red-700 ml-4" title="Solicitar Exclusão">🗑️</button>` : '';
 
@@ -1578,7 +1323,25 @@
                 translationHTML = `<span title="Traduzido do ${article.translationInfo.originalLanguage.toUpperCase()}" class="mr-2">🌐</span>`;
             }
 
-            alertEl.innerHTML = `                <div class="alert-body-clickable">                    <div class="flex justify-between items-start">                        <h4 class="text-lg font-bold text-gray-800 pr-2">${article.title}</h4>                        <div class="flex items-center gap-2 flex-shrink-0">                            <div class="flex flex-col items-end gap-1">${keywordsHTML}</div>                            <div class="sentiment-container relative">${getSentimentHTML(sentimentScore)}${sentimentMenuHTML}</div>                        </div>                    </div>                    <p class="text-sm text-gray-600 mt-2 line-clamp-2">${article.description || 'Descrição não disponível.'}</p>                </div>                ${aiInsightsHTML}                <div class="text-xs text-gray-500 mt-3 flex justify-between items-center">                    <span>${translationHTML}Fonte: ${article.source.name} | Publicado: ${formattedDate}</span>                    <div>                        <a href="${article.url}" target="_blank" rel="noopener noreferrer" class="text-indigo-600 hover:underline font-semibold">Ler no site original →</a>                        ${deleteButtonHTML}                    </div>                </div>`;
+            alertEl.innerHTML = ` 
+                    <div class="alert-body-clickable"> 
+                        <div class="flex justify-between items-start"> 
+                            <h4 class="text-lg font-bold text-gray-800 pr-2">${article.title}</h4> 
+                            <div class="flex items-center gap-2 flex-shrink-0"> 
+                                <div class="flex flex-col items-end gap-1">${keywordsHTML}</div> 
+                                <div class="sentiment-container relative">${getSentimentHTML(sentimentScore)}${sentimentMenuHTML}</div> 
+                            </div> 
+                        </div> 
+                        <p class="text-sm text-gray-600 mt-2 line-clamp-2">${article.description || 'Descrição não disponível.'}</p> 
+                    </div> 
+                    ${aiInsightsHTML} 
+                    <div class="text-xs text-gray-500 mt-3 flex justify-between items-center"> 
+                        <span>${translationHTML}Fonte: ${article.source.name} | Publicado: ${formattedDate}</span> 
+                        <div> 
+                            <a href="${article.url}" target="_blank" rel="noopener noreferrer" class="text-indigo-600 hover:underline font-semibold">Ler no site original →</a> 
+                            ${deleteButtonHTML} 
+                        </div> 
+                    </div>`;
             container.appendChild(alertEl);
         }
 
@@ -1810,9 +1573,7 @@
             const isAlreadyActive = target.classList.contains('active');
             const keywordToFilter = target.dataset.keyword;
             document.querySelectorAll('.keyword-filter').forEach(el => el.classList.remove('active'));
-            if (isAlreadyActive && keywordToFilter !== 'all') {
-                document.querySelector('.keyword-filter[data-keyword="all"]').classList.add('active');
-            } else { target.classList.add('active'); }
+            if (isAlreadyActive && keywordToFilter !== 'all') { document.querySelector('.keyword-filter[data-keyword="all"]').classList.add('active'); } else { target.classList.add('active'); }
             filterDashboardAlerts();
         }
         function filterDashboardAlerts() {
@@ -1849,7 +1610,7 @@
                     const articleRef = doc(db, "artifacts", appId, "users", currentUser.companyId, "articles", articleId);
                     const docSnap = await getDoc(articleRef);
                     if (docSnap.exists()) {
-                        currentDetailArticle = { id: docSnap.id, ...docSnap.data() };
+                        currentDetailArticle = {id: docSnap.id, ...docSnap.data()};
                         renderArticleDetailPage(currentDetailArticle);
                         updateView('article-detail');
                     } else { showAlert('Não foi possível encontrar os detalhes deste alerta.', 'error'); }
@@ -1860,6 +1621,7 @@
         function renderArticleDetailPage(article) {
             if (!detailTitle || !detailContent || !detailAiInsights) return;
 
+            // ALTERAÇÃO 3: Substituir o nome pelo logotipo
             const auroraLogoEl = document.getElementById('aurora-clipping-logo');
             const globalLogoArea = document.getElementById('global-logo-area');
             if (auroraLogoEl && globalLogoArea) {
@@ -1876,15 +1638,13 @@
 
             reportMetaGrid.innerHTML = '';
             detailAiInsightsEl.innerHTML = '';
-
+            
             const pubDate = new Date(article.publishedAt.seconds ? article.publishedAt.toDate() : article.publishedAt);
             reportDateEl.textContent = `Gerado em: ${new Date().toLocaleDateString('pt-BR')}`;
             detailTitleEl.textContent = article.title;
-
-            // Exibir a matéria completa
+            
             const fullContent = article.content || article.description || 'Conteúdo completo não disponível.';
             detailContentEl.innerHTML = fullContent.replace(/\n/g, '<br>');
-
 
             const companyLogo = document.querySelector('#header-logo-container img');
             if (companyLogo) {
@@ -1892,17 +1652,17 @@
             } else {
                 reportLogoContainer.innerHTML = `<h3 class="text-lg font-bold">${currentUser.companyName}</h3>`;
             }
-
-            if (originalLinkEl) {
+            
+            if(originalLinkEl) {
                 originalLinkEl.href = article.url;
                 originalLinkEl.textContent = article.url;
             }
 
             const createMetaItem = (label, value) => `<div class="flex flex-col"><span class="font-semibold text-gray-800">${label}</span><span class="text-gray-600">${value || 'N/A'}</span></div>`;
-
+            
             reportMetaGrid.innerHTML += createMetaItem('Veículo', article.source.name);
             reportMetaGrid.innerHTML += createMetaItem('Data da Publicação', pubDate.toLocaleDateString('pt-BR'));
-
+            
             if (article.author) {
                 reportMetaGrid.innerHTML += createMetaItem('Autor', article.author);
             }
@@ -2147,11 +1907,7 @@
             }
             try {
                 const generateReport = httpsCallable(functions, 'generateSuperAdminReport');
-                const result = await generateReport({ 
-                    appId, 
-                    startDate: reportStartDateInput.value || null,
-                    endDate: reportEndDateInput.value || null 
-                });
+                const result = await generateReport({ appId });
                 const reportData = result.data;
                 superAdminReportBody.innerHTML = '';
                 if (reportData.length === 0) {
@@ -2330,8 +2086,6 @@
             mapStartDateInput = document.getElementById('map-start-date');
             mapEndDateInput = document.getElementById('map-end-date');
             mapFilterBtn = document.getElementById('map-filter-btn');
-            reportStartDateInput = document.getElementById('report-start-date');
-            reportEndDateInput = document.getElementById('report-end-date');
 
             const states = { "AC": "Acre", "AL": "Alagoas", "AP": "Amapá", "AM": "Amazonas", "BA": "Bahia", "CE": "Ceará", "DF": "Distrito Federal", "ES": "Espírito Santo", "GO": "Goiás", "MA": "Maranhão", "MT": "Mato Grosso", "MS": "Mato Grosso do Sul", "MG": "Minas Gerais", "PA": "Pará", "PB": "Paraíba", "PR": "Paraná", "PE": "Pernambuco", "PI": "Piauí", "RJ": "Rio de Janeiro", "RN": "Rio Grande do Norte", "RS": "Rio Grande do Sul", "RO": "Rondônia", "RR": "Roraima", "SC": "Santa Catarina", "SP": "São Paulo", "SE": "Sergipe", "TO": "Tocantins" };
             for (const [uf, name] of Object.entries(states)) {
@@ -2451,9 +2205,9 @@
             if (backToDashboard1) backToDashboard1.addEventListener('click', () => updateView('dashboard'));
             if (backToDashboard2) backToDashboard2.addEventListener('click', () => updateView('dashboard'));
             if (backToDashboard3) backToDashboard3.addEventListener('click', () => updateView('dashboard'));
-            if (backFromDetail) backFromDetail.addEventListener('click', () => {
+            if (backFromDetail) backFromDetail.addEventListener('click', () => { 
                 const lastView = 'dashboard';
-                updateView(lastView);
+                updateView(lastView); 
             });
             if (backToSuperAdminReportBtn) backToSuperAdminReportBtn.addEventListener('click', () => updateView('super-admin-report'));
             if (manualAlertForm) manualAlertForm.addEventListener('submit', handleManualAlertSubmit);
@@ -2470,9 +2224,6 @@
             if (shareEmailBtn) shareEmailBtn.addEventListener('click', handleShareActions);
             if (printBtn) printBtn.addEventListener('click', () => window.print());
             if (mapFilterBtn) mapFilterBtn.addEventListener('click', renderMapPage);
-            if (reportStartDateInput) reportStartDateInput.addEventListener('change', renderSuperAdminReport);
-            if (reportEndDateInput) reportEndDateInput.addEventListener('change', renderSuperAdminReport);
-
 
             if (superAdminReportBody) superAdminReportBody.addEventListener('click', async (e) => {
                 const row = e.target.closest('.company-report-row');
@@ -2502,13 +2253,43 @@
                     const getKeywordReport = httpsCallable(functions, 'getCompanyKeywordReport');
                     const result = await getKeywordReport({ appId, companyId });
                     const keywordsData = result.data;
-
-
+                    
                     let tableHTML = '<p class="text-center p-4">Nenhuma palavra-chave encontrada para esta empresa.</p>';
                     if (keywordsData.length > 0) {
-                        tableHTML = `                        <div class="p-4 bg-gray-50 rounded-lg">                            <h4 class="font-bold mb-2 text-lg text-gray-700">Detalhes por Palavra-Chave</h4>                            <table class="min-w-full divide-y divide-gray-300">                                <thead class="bg-gray-100">                                    <tr>                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">Palavra-Chave</th>                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">Total de Alertas</th>                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">Sentimento (%)</th>                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">Sent. Predominante</th>                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">Canal Principal</th>                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">Veículo Principal</th>                                    </tr>                                </thead>                                <tbody class="bg-white divide-y divide-gray-200">                                    ${keywordsData.map(kw => `                                    <tr>                                        <td class="px-3 py-2 font-medium">${kw.keyword}</td>                                        <td class="px-3 py-2">${kw.totalAlerts}</td>                                        <td class="px-3 py-2 text-xs">                                            <span class="text-green-600">P: ${kw.sentimentPercentage.positive}%</span>,                                             <span class="text-gray-600">N: ${kw.sentimentPercentage.neutral}%</span>,                                             <span class="text-red-600">Ng: ${kw.sentimentPercentage.negative}%</span>                                        </td>                                        <td class="px-3 py-2">${kw.predominantSentiment}</td>                                        <td class="px-3 py-2">${kw.topChannel}</td>                                        <td class="px-3 py-2">${kw.topVehicle}</td>                                    </tr>                                `).join('')}                                </tbody>                            </table>                        </div>`;
+                        tableHTML = `
+                        <div class="p-4 bg-gray-50 rounded-lg">
+                            <h4 class="font-bold mb-2 text-lg text-gray-700">Detalhes por Palavra-Chave</h4>
+                            <table class="min-w-full divide-y divide-gray-300">
+                                <thead class="bg-gray-100">
+                                    <tr>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">Palavra-Chave</th>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">Total de Alertas</th>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">Sentimento (%)</th>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">Sent. Predominante</th>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">Canal Principal</th>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">Veículo Principal</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    ${keywordsData.map(kw => `
+                                        <tr>
+                                            <td class="px-3 py-2 font-medium">${kw.keyword}</td>
+                                            <td class="px-3 py-2">${kw.totalAlerts}</td>
+                                            <td class="px-3 py-2 text-xs">
+                                                <span class="text-green-600">P: ${kw.sentimentPercentage.positive}%</span>, 
+                                                <span class="text-gray-600">N: ${kw.sentimentPercentage.neutral}%</span>, 
+                                                <span class="text-red-600">Ng: ${kw.sentimentPercentage.negative}%</span>
+                                            </td>
+                                            <td class="px-3 py-2">${kw.predominantSentiment}</td>
+                                            <td class="px-3 py-2">${kw.topChannel}</td>
+                                            <td class="px-3 py-2">${kw.topVehicle}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>`;
                     }
-
+                    
                     detailsRow.querySelector('td').innerHTML = tableHTML;
 
                 } catch (error) {
@@ -2531,10 +2312,11 @@
             }
 
             window.addEventListener('mapReady', (e) => {
-                mapInstance = e.detail;
+                 mapInstance = e.detail;
             });
         });
     </script>
 </body>
 
 </html>
+
