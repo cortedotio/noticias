@@ -135,7 +135,7 @@ function normalizeArticle(article, sourceApi) {
 }
 
 async function analyzeArticleWithAI(article, settings) {
-    const textContent = `${article.title}. ${article.description}`;
+    const textContent = `${article.title}. ${article.content || article.description || ''}`; // Ensure full content for AI analysis
     let languageData = { sentiment: { score: 0, magnitude: 0 }, entities: [], categories: [] };
     let visionData = { logos: [], ocrText: '' };
     let videoData = { videoTranscription: '' };
@@ -311,15 +311,15 @@ async function fetchAllNews() {
                await delay(500);
                const queryUrl = `${YOUTUBE_URL}?part=snippet&q=${encodeURIComponent(`"${keyword}"`)}&type=video&key=${settings.apiKeyYoutube}`;
                try {
-                    const response = await axios.get(queryUrl);
-                    if (response.data && response.data.items) {
-                        for (const item of response.data.items) {
-                            if (!company.fetchOnlyNew || new Date(item.snippet.publishedAt) >= twentyFourHoursAgo) {
-                                const normalized = normalizeArticle({ ...item, id: { videoId: item.id.videoId } }, 'youtube');
-                                await processAndSaveArticle(normalized, company, [keyword]);
-                            }
-                        }
-                    }
+                   const response = await axios.get(queryUrl);
+                   if (response.data && response.data.items) {
+                       for (const item of response.data.items) {
+                           if (!company.fetchOnlyNew || new Date(item.snippet.publishedAt) >= twentyFourHoursAgo) {
+                               const normalized = normalizeArticle({ ...item, id: { videoId: item.id.videoId } }, 'youtube');
+                               await processAndSaveArticle(normalized, company, [keyword]);
+                           }
+                       }
+                   }
                } catch (e) { functions.logger.error(`Erro YouTube (keyword: ${keyword}):`, e.message); }
             }
         }
@@ -508,24 +508,53 @@ function getTopCount(counts) {
 }
 
 exports.generateSuperAdminReport = regionalFunctions.https.onCall(async (data, context) => {
-    const { appId } = data;
+    const { appId, startDate: rawStartDate, endDate: rawEndDate } = data; // Destructure dates here
     if (!appId) {
         throw new functions.https.HttpsError("invalid-argument", "O ID da aplicação é necessário.");
     }
     functions.logger.info("Iniciando geração do relatório geral de empresas...");
+
+    const startDate = rawStartDate ? new Date(rawStartDate) : null;
+    const endDate = rawEndDate ? new Date(rawEndDate) : null;
+
+    if (startDate) startDate.setHours(0, 0, 0, 0); // Start of day
+    if (endDate) endDate.setHours(23, 59, 59, 999); // End of day
+
     const companiesSnapshot = await db.collection(`artifacts/${appId}/public/data/companies`).get();
     const reportData = [];
+
     for (const companyDoc of companiesSnapshot.docs) {
         const companyId = companyDoc.id;
         const companyName = companyDoc.data().name;
         functions.logger.info(`Processando relatório para: ${companyName} (ID: ${companyId})`);
-        
-        const articlesSnapshot = await db.collection(`artifacts/${appId}/users/${companyId}/articles`).get();
+
+        let articlesQueryRef = db.collection(`artifacts/${appId}/users/${companyId}/articles`);
+
+        // Apply date filters if present. Firestore requires orderBy on the same field if range filters are used.
+        if (startDate && endDate) {
+            articlesQueryRef = articlesQueryRef
+                .where("publishedAt", ">=", startDate)
+                .where("publishedAt", "<=", endDate)
+                .orderBy("publishedAt", "desc");
+        } else if (startDate) {
+            articlesQueryRef = articlesQueryRef
+                .where("publishedAt", ">=", startDate)
+                .orderBy("publishedAt", "desc");
+        } else if (endDate) {
+            articlesQueryRef = articlesQueryRef
+                .where("publishedAt", "<=", endDate)
+                .orderBy("publishedAt", "desc");
+        } else {
+            // Default ordering if no date filters
+            articlesQueryRef = articlesQueryRef.orderBy("publishedAt", "desc");
+        }
+
+        const articlesSnapshot = await articlesQueryRef.get();
         const totalAlerts = articlesSnapshot.size;
-        
+
         let positiveCount = 0, neutralCount = 0, negativeCount = 0;
         const channelCounts = {}, vehicleCounts = {};
-        
+
         if (articlesSnapshot.size > 0) {
             articlesSnapshot.docs.forEach(doc => {
                 const article = doc.data();
@@ -546,7 +575,7 @@ exports.generateSuperAdminReport = regionalFunctions.https.onCall(async (data, c
             neutral: totalSentiments > 0 ? parseFloat(((neutralCount / totalSentiments) * 100).toFixed(2)) : 0,
             negative: totalSentiments > 0 ? parseFloat(((negativeCount / totalSentiments) * 100).toFixed(2)) : 0,
         };
-        
+
         const predominantSentiment = getPredominantSentiment(sentimentPercentage);
         const topChannel = getTopCount(channelCounts);
         const topVehicle = getTopCount(vehicleCounts);
