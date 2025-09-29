@@ -12,7 +12,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <!-- CHAVE DA API DO GOOGLE MAPS ATUALIZADA -->
     <script async defer
         src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBlgBbnbhALORtuoTwy6xjjUqtoMI4wlL8&callback=initMap"></script>
 
@@ -182,7 +181,8 @@
     <header class="bg-white shadow-md">
         <nav class="container mx-auto px-4 sm:px-6 py-3 flex justify-between items-center">
             <a href="#" id="logo-link" class="cursor-pointer">
-                <div id="global-logo-area" class="text-xl sm:text-2xl font-bold text-indigo-600 flex items-center"></div>
+                <div id="global-logo-area" class="text-xl sm:text-2xl font-bold text-indigo-600 flex items-center">
+                </div>
             </a>
             <div class="flex items-center">
                 <div id="nav-logged-in" class="hidden items-center flex-wrap justify-end">
@@ -263,7 +263,8 @@
                                     class="hidden bg-gray-200 text-gray-700 px-3 py-1 rounded-md text-sm hover:bg-gray-300">Mostrar
                                     Todos</button>
                                 <div class="flex items-center gap-2">
-                                    <label for="alert-date-filter" class="text-sm font-medium">Filtrar por data:</label>
+                                    <label for="alert-date-filter" class="text-sm font-medium">Filtrar por
+                                        data:</label>
                                     <input type="date" id="alert-date-filter"
                                         class="px-2 py-1 border border-gray-300 rounded-md text-sm">
                                 </div>
@@ -409,8 +410,8 @@
                             class="w-full px-3 py-2 border border-gray-300 rounded-md">
                     </div>
                     <div class="bg-gray-100 p-3 rounded-md">
-                        <label for="apiKeyFirebaseNews" class="block text-sm font-medium text-gray-700 mb-1">Chave da API
-                            (Geocoding - Google Maps)</label>
+                        <label for="apiKeyFirebaseNews" class="block text-sm font-medium text-gray-700 mb-1">Chave da
+                            API (Geocoding - Google Maps)</label>
                         <input type="text" id="apiKeyFirebaseNews"
                             class="w-full px-3 py-2 border border-gray-300 rounded-md">
                     </div>
@@ -568,17 +569,16 @@
             <div class="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
                 <div class="space-y-6">
                     <div class="flex items-center"><input type="checkbox" id="report-access-toggle"
-                            class="h-4 w-4 text-indigo-600 border-gray-300 rounded"><label
-                            for="report-access-toggle" class="ml-2 block text-sm text-gray-900">Permitir o acesso ao
-                            relatório.</label></div>
+                            class="h-4 w-4 text-indigo-600 border-gray-300 rounded"><label for="report-access-toggle"
+                            class="ml-2 block text-sm text-gray-900">Permitir o acesso ao relatório.</label></div>
                     <div class="flex items-center"><input type="checkbox" id="map-access-toggle"
                             class="h-4 w-4 text-indigo-600 border-gray-300 rounded"><label for="map-access-toggle"
                             class="ml-2 block text-sm text-gray-900">Permitir o acesso ao Mapa de Notícias.</label>
                     </div>
                     <div class="flex items-center"><input type="checkbox" id="fetch-only-new-toggle"
-                            class="h-4 w-4 text-indigo-600 border-gray-300 rounded"><label
-                            for="fetch-only-new-toggle" class="ml-2 block text-sm text-gray-900">Capturar apenas
-                            notícias novas (evita duplicados).</label></div>
+                            class="h-4 w-4 text-indigo-600 border-gray-300 rounded"><label for="fetch-only-new-toggle"
+                            class="ml-2 block text-sm text-gray-900">Capturar apenas notícias novas (evita
+                            duplicados).</label></div>
                     <div class="flex items-center"><input type="checkbox" id="deletion-access-toggle"
                             class="h-4 w-4 text-indigo-600 border-gray-300 rounded"><label
                             for="deletion-access-toggle" class="ml-2 block text-sm text-gray-900">Permitir que os
@@ -636,7 +636,6 @@
                         </div>
                     </div>
                 </div>
-                <!-- GRÁFICOS COM LAYOUT CORRIGIDO -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     <div class="p-4 border rounded-lg flex">
                         <div>
@@ -715,8 +714,7 @@
                     </div>
                     <div id="keyword-filter-buttons"></div>
                 </div>
-                <input type="text" id="search-input"
-                    placeholder="Digite para pesquisar em títulos ou descrições..."
+                <input type="text" id="search-input" placeholder="Digite para pesquisar em títulos ou descrições..."
                     class="w-full p-3 border border-gray-300 rounded-md mb-6">
                 <div id="search-results" class="space-y-4 max-h-[60vh] overflow-y-auto">
                     <p class="text-gray-500">Digite algo para começar a pesquisar ou use os filtros.</p>
@@ -733,8 +731,8 @@
                     <div>
                         <label for="manual-alert-company"
                             class="block text-sm font-medium text-gray-700">Empresa</label>
-                        <select id="manual-alert-company"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md" required></select>
+                        <select id="manual-alert-company" class="w-full px-3 py-2 border border-gray-300 rounded-md"
+                            required></select>
                     </div>
                     <div><label for="manual-alert-title"
                             class="block text-sm font-medium text-gray-700">Título</label><input type="text"
@@ -744,17 +742,17 @@
                             class="block text-sm font-medium text-gray-700">Descrição</label><textarea
                             id="manual-alert-desc" rows="3"
                             class="w-full px-3 py-2 border border-gray-300 rounded-md"></textarea></div>
-                    <div><label for="manual-alert-url" class="block text-sm font-medium text-gray-700">URL</label><input
-                            type="url" id="manual-alert-url" class="w-full px-3 py-2 border border-gray-300 rounded-md"
-                            required></div>
+                    <div><label for="manual-alert-url"
+                            class="block text-sm font-medium text-gray-700">URL</label><input type="url"
+                            id="manual-alert-url" class="w-full px-3 py-2 border border-gray-300 rounded-md" required>
+                    </div>
                     <div><label for="manual-alert-source" class="block text-sm font-medium text-gray-700">Fonte
                             (Veículo)</label><input type="text" id="manual-alert-source"
                             class="w-full px-3 py-2 border border-gray-300 rounded-md" required></div>
                     <div>
-                        <label for="manual-alert-keyword"
-                            class="block text-sm font-medium text-gray-700">Palavras-Chave</label>
-                        <select id="manual-alert-keyword"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md" multiple required>
+                        <label for="manual-alert-keyword" class="block text-sm font-medium text-gray-700">Palavras-Chave</label>
+                        <select id="manual-alert-keyword" class="w-full px-3 py-2 border border-gray-300 rounded-md"
+                            multiple required>
                             <option disabled>Selecione uma empresa primeiro</option>
                         </select>
                     </div>
@@ -786,16 +784,16 @@
         <section id="super-admin-report-page" class="page-section fade-in">
             <button id="back-to-dashboard-3"
                 class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar</button>
-            <h2 class="text-2xl sm:text-3xl font-bold mb-6">Relatório Geral de Empresas</h2>
-            <div class="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
-                <div class="flex flex-col sm:flex-row justify-end items-center gap-4 mb-6 p-4 bg-gray-50 rounded-lg border">
-                    <label class="text-sm font-medium whitespace-nowrap">Filtrar por Período:</label>
-                    <div class="flex items-center gap-2 w-full sm:w-auto">
-                        <input type="date" id="report-start-date" class="w-full px-2 py-1 border rounded-md text-sm">
-                        <span class="text-gray-500">até</span>
-                        <input type="date" id="report-end-date" class="w-full px-2 py-1 border rounded-md text-sm">
-                    </div>
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                <h2 class="text-2xl sm:text-3xl font-bold">Relatório Geral de Empresas</h2>
+                <div class="flex items-center gap-2">
+                    <label for="report-start-date" class="text-sm font-medium">De:</label>
+                    <input type="date" id="report-start-date" class="px-2 py-1 border border-gray-300 rounded-md text-sm">
+                    <label for="report-end-date" class="text-sm font-medium">Até:</label>
+                    <input type="date" id="report-end-date" class="px-2 py-1 border border-gray-300 rounded-md text-sm">
                 </div>
+            </div>
+            <div class="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
                 <div class="mb-8">
                     <h3 class="text-xl font-semibold text-center mb-4">Total de Alertas por Empresa</h3>
                     <div class="relative h-96">
@@ -806,23 +804,17 @@
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
-                                <th
-                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Empresa</th>
-                                <th
-                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Total de Alertas</th>
-                                <th
-                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Sentimento (%)</th>
-                                <th
-                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Sentimento Predominante</th>
-                                <th
-                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Canal Principal</th>
-                                <th
-                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Veículo Principal</th>
                             </tr>
                         </thead>
@@ -892,19 +884,18 @@
             <div id="report-content" class="bg-white p-8 md:p-12 rounded-lg shadow-lg">
                 <div class="flex justify-between items-start border-b-2 pb-4 mb-4">
                     <div id="aurora-clipping-logo" class="flex items-center text-gray-500">
-                        <!-- Conteúdo será substituído dinamicamente -->
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mr-2 text-blue-800"
-                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                            stroke-linecap="round" stroke-linejoin="round">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mr-2 text-blue-800" viewBox="0 0 24 24"
+                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round">
                             <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" />
                             <path d="M2 12h20" />
-                            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                            <path
+                                d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
                         </svg>
                         <span class="font-semibold text-lg">Aurora Clipping</span>
                     </div>
                     <div id="report-logo-container" class="h-16 flex-grow flex justify-center items-center">
-                        <!-- Logotipo da empresa do cliente será inserido aqui -->
-                    </div>
+                        </div>
                     <div class="text-right">
                         <h2 class="text-2xl font-bold text-gray-800">Relatório de Notícia</h2>
                         <p id="report-date" class="text-sm text-gray-500"></p>
@@ -925,7 +916,6 @@
         </section>
     </main>
 
-    <!-- Modais -->
     <div id="justification-modal"
         class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
         <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
@@ -1174,12 +1164,7 @@
                     mapMarkers.push(marker);
 
                     marker.addListener('mouseover', () => {
-                        infoWindow.setContent(`
-                            <div class="font-sans p-1">
-                                <p class="font-bold text-sm">${article.title}</p>
-                                <p class="text-xs text-gray-500">${article.source.name}</p>
-                            </div>
-                            `);
+                        infoWindow.setContent(`                        <div class="font-sans p-1">                            <p class="font-bold text-sm">${article.title}</p>                            <p class="text-xs text-gray-500">${article.source.name}</p>                        </div>                        `);
                         infoWindow.open({
                             anchor: marker,
                             map: mapInstance,
@@ -1339,27 +1324,7 @@
                         actionButtons = `<button data-id="${c.id}" class="deactivate-company-btn bg-gray-500 text-white px-3 py-1 rounded-md text-sm hover:bg-gray-600">Inativar</button>`;
                     }
 
-                    li.innerHTML = `
-                        <div class="flex-grow">
-                            <div data-company-id="${c.id}" class="company-name-view">
-                                <span class="font-bold">${c.name}</span>
-                                <span class="text-sm ${statusClass}">(${statusText})</span>
-                                <button data-id="${c.id}" data-name="${c.name}" class="edit-company-name-btn text-blue-500 hover:text-blue-700 ml-2 text-sm">(Editar Nome)</button>
-                            </div>
-                            <div data-company-id="${c.id}" class="company-name-edit hidden">
-                                <input type="text" value="${c.name}" class="px-2 py-1 border border-gray-300 rounded-md">
-                                <button data-id="${c.id}" class="save-company-name-btn bg-green-500 text-white px-3 py-1 rounded-md text-sm hover:bg-green-600 ml-2">Salvar</button>
-                                <button data-id="${c.id}" class="cancel-edit-company-name-btn bg-gray-400 text-white px-3 py-1 rounded-md text-sm hover:bg-gray-500 ml-1">Cancelar</button>
-                            </div>
-                        </div>
-                        <div class="mt-2 sm:mt-0 flex flex-wrap gap-2">
-                            <button data-company-name="${c.name}" class="view-access-link-btn bg-teal-500 text-white px-3 py-1 rounded-md text-sm hover:bg-teal-600">Link</button>
-                            <button data-company-id="${c.id}" data-company-name="${c.name}" class="manage-company-users-btn bg-purple-500 text-white px-3 py-1 rounded-md text-sm hover:bg-purple-600">Usuários</button>
-                            <button data-company-id="${c.id}" data-company-name="${c.name}" class="manage-company-keywords-btn bg-blue-500 text-white px-3 py-1 rounded-md text-sm hover:bg-blue-600">Palavras-Chave</button>
-                            <button data-company-id="${c.id}" data-company-name="${c.name}" class="manage-company-settings-btn bg-green-500 text-white px-3 py-1 rounded-md text-sm hover:bg-green-600">Opções</button>
-                            ${actionButtons}
-                            <button data-company-id="${c.id}" data-company-name="${c.name}" class="delete-company-btn bg-red-600 text-white px-3 py-1 rounded-md text-sm hover:bg-red-800">Excluir</button>
-                        </div>`;
+                    li.innerHTML = `                        <div class="flex-grow">                            <div data-company-id="${c.id}" class="company-name-view">                                <span class="font-bold">${c.name}</span>                                 <span class="text-sm ${statusClass}">(${statusText})</span>                                <button data-id="${c.id}" data-name="${c.name}" class="edit-company-name-btn text-blue-500 hover:text-blue-700 ml-2 text-sm">(Editar Nome)</button>                            </div>                            <div data-company-id="${c.id}" class="company-name-edit hidden">                                <input type="text" value="${c.name}" class="px-2 py-1 border border-gray-300 rounded-md">                                <button data-id="${c.id}" class="save-company-name-btn bg-green-500 text-white px-3 py-1 rounded-md text-sm hover:bg-green-600 ml-2">Salvar</button>                                <button data-id="${c.id}" class="cancel-edit-company-name-btn bg-gray-400 text-white px-3 py-1 rounded-md text-sm hover:bg-gray-500 ml-1">Cancelar</button>                            </div>                        </div>                        <div class="mt-2 sm:mt-0 flex flex-wrap gap-2">                            <button data-company-name="${c.name}" class="view-access-link-btn bg-teal-500 text-white px-3 py-1 rounded-md text-sm hover:bg-teal-600">Link</button>                            <button data-company-id="${c.id}" data-company-name="${c.name}" class="manage-company-users-btn bg-purple-500 text-white px-3 py-1 rounded-md text-sm hover:bg-purple-600">Usuários</button>                            <button data-company-id="${c.id}" data-company-name="${c.name}" class="manage-company-keywords-btn bg-blue-500 text-white px-3 py-1 rounded-md text-sm hover:bg-blue-600">Palavras-Chave</button>                            <button data-company-id="${c.id}" data-company-name="${c.name}" class="manage-company-settings-btn bg-green-500 text-white px-3 py-1 rounded-md text-sm hover:bg-green-600">Opções</button>                            ${actionButtons}                            <button data-company-id="${c.id}" data-company-name="${c.name}" class="delete-company-btn bg-red-600 text-white px-3 py-1 rounded-md text-sm hover:bg-red-800">Excluir</button>                        </div>`;
                     companyList.appendChild(li);
                 });
             }, (error) => {
@@ -1591,12 +1556,7 @@
                 return `<button class="sentiment-btn text-xs font-semibold text-${color}-600 bg-${color}-100 px-2 py-1 rounded-full">${emoji} ${text}</button>`;
             };
 
-            const sentimentMenuHTML = `
-                <div class="sentiment-menu p-1 space-y-1">
-                    <button data-sentiment="0.5" class="sentiment-option w-full text-left text-xs px-2 py-1 rounded hover:bg-gray-100">😊 Positivo</button>
-                    <button data-sentiment="0.0" class="sentiment-option w-full text-left text-xs px-2 py-1 rounded hover:bg-gray-100">😐 Neutro</button>
-                    <button data-sentiment="-0.5" class="sentiment-option w-full text-left text-xs px-2 py-1 rounded hover:bg-gray-100">😠 Negativo</button>
-                </div>`;
+            const sentimentMenuHTML = `                <div class="sentiment-menu p-1 space-y-1">                    <button data-sentiment="0.5" class="sentiment-option w-full text-left text-xs px-2 py-1 rounded hover:bg-gray-100">😊 Positivo</button>                    <button data-sentiment="0.0" class="sentiment-option w-full text-left text-xs px-2 py-1 rounded hover:bg-gray-100">😐 Neutro</button>                    <button data-sentiment="-0.5" class="sentiment-option w-full text-left text-xs px-2 py-1 rounded hover:bg-gray-100">😠 Negativo</button>                </div>`;
 
             const deleteButtonHTML = currentUser && currentUser.canRequestDeletion ? `<button class="request-delete-btn text-red-500 hover:text-red-700 ml-4" title="Solicitar Exclusão">🗑️</button>` : '';
 
@@ -1618,25 +1578,7 @@
                 translationHTML = `<span title="Traduzido do ${article.translationInfo.originalLanguage.toUpperCase()}" class="mr-2">🌐</span>`;
             }
 
-            alertEl.innerHTML = `
-                <div class="alert-body-clickable">
-                    <div class="flex justify-between items-start">
-                        <h4 class="text-lg font-bold text-gray-800 pr-2">${article.title}</h4>
-                        <div class="flex items-center gap-2 flex-shrink-0">
-                            <div class="flex flex-col items-end gap-1">${keywordsHTML}</div>
-                            <div class="sentiment-container relative">${getSentimentHTML(sentimentScore)}${sentimentMenuHTML}</div>
-                        </div>
-                    </div>
-                    <p class="text-sm text-gray-600 mt-2 line-clamp-2">${article.description || 'Descrição não disponível.'}</p>
-                </div>
-                ${aiInsightsHTML}
-                <div class="text-xs text-gray-500 mt-3 flex justify-between items-center">
-                    <span>${translationHTML}Fonte: ${article.source.name} | Publicado: ${formattedDate}</span>
-                    <div>
-                        <a href="${article.url}" target="_blank" rel="noopener noreferrer" class="text-indigo-600 hover:underline font-semibold">Ler no site original →</a>
-                        ${deleteButtonHTML}
-                    </div>
-                </div>`;
+            alertEl.innerHTML = `                <div class="alert-body-clickable">                    <div class="flex justify-between items-start">                        <h4 class="text-lg font-bold text-gray-800 pr-2">${article.title}</h4>                        <div class="flex items-center gap-2 flex-shrink-0">                            <div class="flex flex-col items-end gap-1">${keywordsHTML}</div>                            <div class="sentiment-container relative">${getSentimentHTML(sentimentScore)}${sentimentMenuHTML}</div>                        </div>                    </div>                    <p class="text-sm text-gray-600 mt-2 line-clamp-2">${article.description || 'Descrição não disponível.'}</p>                </div>                ${aiInsightsHTML}                <div class="text-xs text-gray-500 mt-3 flex justify-between items-center">                    <span>${translationHTML}Fonte: ${article.source.name} | Publicado: ${formattedDate}</span>                    <div>                        <a href="${article.url}" target="_blank" rel="noopener noreferrer" class="text-indigo-600 hover:underline font-semibold">Ler no site original →</a>                        ${deleteButtonHTML}                    </div>                </div>`;
             container.appendChild(alertEl);
         }
 
@@ -1939,8 +1881,10 @@
             reportDateEl.textContent = `Gerado em: ${new Date().toLocaleDateString('pt-BR')}`;
             detailTitleEl.textContent = article.title;
 
+            // Exibir a matéria completa
             const fullContent = article.content || article.description || 'Conteúdo completo não disponível.';
             detailContentEl.innerHTML = fullContent.replace(/\n/g, '<br>');
+
 
             const companyLogo = document.querySelector('#header-logo-container img');
             if (companyLogo) {
@@ -2201,23 +2145,21 @@
             if (companySummaryChartInstance) {
                 companySummaryChartInstance.destroy();
             }
-
-            const startDate = reportStartDateInput.value || null;
-            const endDate = reportEndDateInput.value || null;
-
             try {
                 const generateReport = httpsCallable(functions, 'generateSuperAdminReport');
-                const result = await generateReport({ appId, startDate, endDate });
+                const result = await generateReport({ 
+                    appId, 
+                    startDate: reportStartDateInput.value || null,
+                    endDate: reportEndDateInput.value || null 
+                });
                 const reportData = result.data;
-
                 superAdminReportBody.innerHTML = '';
                 if (reportData.length === 0) {
-                    superAdminReportBody.innerHTML = '<tr><td colspan="6" class="text-center py-4">Nenhum dado para exibir no período selecionado.</td></tr>';
+                    superAdminReportBody.innerHTML = '<tr><td colspan="6" class="text-center py-4">Nenhum dado para exibir.</td></tr>';
                     document.getElementById('company-summary-chart').style.display = 'none';
                     return;
                 }
                 document.getElementById('company-summary-chart').style.display = 'block';
-
                 reportData.forEach(item => {
                     const row = document.createElement('tr');
                     row.className = 'hover:bg-gray-50 company-report-row';
@@ -2226,11 +2168,9 @@
                     let sentimentClass = 'text-gray-600';
                     if (item.predominantSentiment === 'Positivo') sentimentClass = 'text-green-600 font-semibold';
                     if (item.predominantSentiment === 'Negativo') sentimentClass = 'text-red-600 font-semibold';
-
                     row.innerHTML = `<td class="px-6 py-4 whitespace-nowrap font-medium text-gray-900">${item.companyName}</td><td class="px-6 py-4 whitespace-nowrap text-gray-500">${item.totalAlerts}</td><td class="px-6 py-4 whitespace-nowrap text-xs"><span class="text-green-600">P: ${item.sentimentPercentage.positive}%</span>, <span class="text-gray-600">N: ${item.sentimentPercentage.neutral}%</span>, <span class="text-red-600">Ng: ${item.sentimentPercentage.negative}%</span></td><td class="px-6 py-4 whitespace-nowrap ${sentimentClass}">${item.predominantSentiment}</td><td class="px-6 py-4 whitespace-nowrap text-gray-500">${item.topChannel}</td><td class="px-6 py-4 whitespace-nowrap text-gray-500">${item.topVehicle}</td>`;
                     superAdminReportBody.appendChild(row);
                 });
-
                 const chartLabels = reportData.map(d => d.companyName);
                 const chartValues = reportData.map(d => d.totalAlerts);
                 companySummaryChartInstance = createChart('company-summary-chart', companySummaryChartInstance, 'line', {
@@ -2511,9 +2451,9 @@
             if (backToDashboard1) backToDashboard1.addEventListener('click', () => updateView('dashboard'));
             if (backToDashboard2) backToDashboard2.addEventListener('click', () => updateView('dashboard'));
             if (backToDashboard3) backToDashboard3.addEventListener('click', () => updateView('dashboard'));
-            if (backFromDetail) backFromDetail.addEventListener('click', () => { 
+            if (backFromDetail) backFromDetail.addEventListener('click', () => {
                 const lastView = 'dashboard';
-                updateView(lastView); 
+                updateView(lastView);
             });
             if (backToSuperAdminReportBtn) backToSuperAdminReportBtn.addEventListener('click', () => updateView('super-admin-report'));
             if (manualAlertForm) manualAlertForm.addEventListener('submit', handleManualAlertSubmit);
@@ -2530,6 +2470,9 @@
             if (shareEmailBtn) shareEmailBtn.addEventListener('click', handleShareActions);
             if (printBtn) printBtn.addEventListener('click', () => window.print());
             if (mapFilterBtn) mapFilterBtn.addEventListener('click', renderMapPage);
+            if (reportStartDateInput) reportStartDateInput.addEventListener('change', renderSuperAdminReport);
+            if (reportEndDateInput) reportEndDateInput.addEventListener('change', renderSuperAdminReport);
+
 
             if (superAdminReportBody) superAdminReportBody.addEventListener('click', async (e) => {
                 const row = e.target.closest('.company-report-row');
@@ -2559,43 +2502,13 @@
                     const getKeywordReport = httpsCallable(functions, 'getCompanyKeywordReport');
                     const result = await getKeywordReport({ appId, companyId });
                     const keywordsData = result.data;
-                    
+
+
                     let tableHTML = '<p class="text-center p-4">Nenhuma palavra-chave encontrada para esta empresa.</p>';
                     if (keywordsData.length > 0) {
-                        tableHTML = `
-                        <div class="p-4 bg-gray-50 rounded-lg">
-                            <h4 class="font-bold mb-2 text-lg text-gray-700">Detalhes por Palavra-Chave</h4>
-                            <table class="min-w-full divide-y divide-gray-300">
-                                <thead class="bg-gray-100">
-                                    <tr>
-                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">Palavra-Chave</th>
-                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">Total de Alertas</th>
-                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">Sentimento (%)</th>
-                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">Sent. Predominante</th>
-                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">Canal Principal</th>
-                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">Veículo Principal</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="bg-white divide-y divide-gray-200">
-                                    ${keywordsData.map(kw => `
-                                        <tr>
-                                            <td class="px-3 py-2 font-medium">${kw.keyword}</td>
-                                            <td class="px-3 py-2">${kw.totalAlerts}</td>
-                                            <td class="px-3 py-2 text-xs">
-                                                <span class="text-green-600">P: ${kw.sentimentPercentage.positive}%</span>, 
-                                                <span class="text-gray-600">N: ${kw.sentimentPercentage.neutral}%</span>, 
-                                                <span class="text-red-600">Ng: ${kw.sentimentPercentage.negative}%</span>
-                                            </td>
-                                            <td class="px-3 py-2">${kw.predominantSentiment}</td>
-                                            <td class="px-3 py-2">${kw.topChannel}</td>
-                                            <td class="px-3 py-2">${kw.topVehicle}</td>
-                                        </tr>
-                                    `).join('')}
-                                </tbody>
-                            </table>
-                        </div>`;
+                        tableHTML = `                        <div class="p-4 bg-gray-50 rounded-lg">                            <h4 class="font-bold mb-2 text-lg text-gray-700">Detalhes por Palavra-Chave</h4>                            <table class="min-w-full divide-y divide-gray-300">                                <thead class="bg-gray-100">                                    <tr>                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">Palavra-Chave</th>                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">Total de Alertas</th>                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">Sentimento (%)</th>                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">Sent. Predominante</th>                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">Canal Principal</th>                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">Veículo Principal</th>                                    </tr>                                </thead>                                <tbody class="bg-white divide-y divide-gray-200">                                    ${keywordsData.map(kw => `                                    <tr>                                        <td class="px-3 py-2 font-medium">${kw.keyword}</td>                                        <td class="px-3 py-2">${kw.totalAlerts}</td>                                        <td class="px-3 py-2 text-xs">                                            <span class="text-green-600">P: ${kw.sentimentPercentage.positive}%</span>,                                             <span class="text-gray-600">N: ${kw.sentimentPercentage.neutral}%</span>,                                             <span class="text-red-600">Ng: ${kw.sentimentPercentage.negative}%</span>                                        </td>                                        <td class="px-3 py-2">${kw.predominantSentiment}</td>                                        <td class="px-3 py-2">${kw.topChannel}</td>                                        <td class="px-3 py-2">${kw.topVehicle}</td>                                    </tr>                                `).join('')}                                </tbody>                            </table>                        </div>`;
                     }
-                    
+
                     detailsRow.querySelector('td').innerHTML = tableHTML;
 
                 } catch (error) {
@@ -2618,11 +2531,10 @@
             }
 
             window.addEventListener('mapReady', (e) => {
-                 mapInstance = e.detail;
+                mapInstance = e.detail;
             });
         });
     </script>
 </body>
 
 </html>
-
