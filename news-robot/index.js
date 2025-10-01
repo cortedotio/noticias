@@ -3,12 +3,14 @@
  * ...
  * * * * CORREÇÃO FINAL (SET/2025): Removida a truncagem de texto para exibir o conteúdo completo.
  * * Reintroduzida e corrigida a lógica de busca do YouTube para garantir a captura de vídeos.
+ * * INCLUÍDO (SET/2025): Implementado scraper com Cheerio para extrair conteúdo completo das matérias.
  */
 
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const axios = require("axios");
 const Parser = require('rss-parser');
+const cheerio = require('cheerio'); // NOVO: Biblioteca para Scraper
 
 const { LanguageServiceClient } = require('@google-cloud/language');
 const { TranslationServiceClient } = require('@google-cloud/translate');
@@ -42,9 +44,71 @@ const regionalFunctions = functions.region("southamerica-east1").runWith(runtime
 // --- Funções Auxiliares ---
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
+// NOVO: Função para extrair o conteúdo completo de uma URL
+async function scrapeArticleContent(url) {
+    try {
+        const { data } = await axios.get(url, {
+            // Simular um navegador para evitar bloqueios simples
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            }
+        });
+
+        const $ = cheerio.load(data);
+
+        // Remove elementos desnecessários que podem poluir o texto
+        $('script, style, noscript, iframe, img, figure, header, footer, nav, .ad, .advertisement, .comments, .sidebar').remove();
+
+        // Lista de seletores comuns para o conteúdo principal de artigos
+        const contentSelectors = [
+            'article .post-content',
+            'article .entry-content',
+            '[itemprop="articleBody"]',
+            '#article-body',
+            '.article-body',
+            '.story-content',
+            'article', // Como última opção, pegar a tag <article> inteira
+        ];
+
+        let bestContent = '';
+        for (const selector of contentSelectors) {
+            const contentHtml = $(selector).html();
+            if (contentHtml && contentHtml.length > bestContent.length) {
+                bestContent = contentHtml;
+            }
+        }
+
+        if (bestContent) {
+            // Carrega o melhor conteúdo encontrado para limpar e extrair o texto
+            const $content = cheerio.load(bestContent);
+            // Remove links, mantendo o texto deles
+            $content('a').replaceWith((i, el) => $content(el).text());
+            
+            // Converte o HTML limpo para texto, preservando parágrafos
+            let fullText = '';
+            $content('p, h1, h2, h3, h4, li').each((i, el) => {
+                const text = $content(el).text().trim();
+                if (text) {
+                    fullText += text + '\n\n';
+                }
+            });
+
+            return fullText.trim();
+        }
+        
+        return null; // Não encontrou conteúdo
+
+    } catch (error) {
+        functions.logger.warn(`Falha ao extrair conteúdo da URL ${url}:`, error.message);
+        return null; // Retorna null em caso de erro para não quebrar o fluxo
+    }
+}
+
+
 const findMatchingKeywords = (article, keywords) => {
     let contentToSearch = (article.title || "").toLowerCase();
-    contentToSearch += " " + (article.contentSnippet || article.description || article.content || "").toLowerCase();
+    // Usa o 'content' (que agora pode ser o texto completo) para a busca de keywords
+    contentToSearch += " " + (article.content || article.description || "").toLowerCase(); 
     if (article.ai?.videoTranscription) {
         contentToSearch += " " + article.ai.videoTranscription.toLowerCase();
     }
@@ -121,11 +185,15 @@ async function detectAndTranslate(text) {
 function normalizeArticle(article, sourceApi) {
     try {
         switch (sourceApi) {
-            case 'gnews': return { title: article.title, description: article.description, content: article.content, url: article.url, image: article.image || null, publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.publishedAt)), source: { name: article.source.name, url: article.source.url }, author: article.author || null, };
-            case 'newsapi': return { title: article.title, description: article.description, content: article.content, url: article.url, image: article.urlToImage || null, publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.publishedAt)), source: { name: article.source.name, url: null }, author: article.author || null, };
-            case 'blogger': const blogName = article.blog ? article.blog.name : 'Blogger'; return { title: article.title, description: (article.content || "").replace(/<[^>]*>?/gm, ''), content: article.content, url: article.url, image: null, publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.published)), source: { name: blogName, url: article.url }, author: article.author?.displayName || null, };
+            case 'gnews':
+                return { title: article.title, description: article.description, content: article.content, url: article.url, image: article.image || null, publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.publishedAt)), source: { name: article.source.name, url: article.source.url }, author: article.author || null, };
+            case 'newsapi':
+                return { title: article.title, description: article.description, content: article.content, url: article.url, image: article.urlToImage || null, publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.publishedAt)), source: { name: article.source.name, url: null }, author: article.author || null, };
+            case 'blogger':
+                const blogName = article.blog ? article.blog.name : 'Blogger'; return { title: article.title, description: (article.content || "").replace(/<[^>]*>?/gm, ''), content: article.content, url: article.url, image: null, publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.published)), source: { name: blogName, url: article.url }, author: article.author?.displayName || null, };
             case 'rss': return { title: article.title, description: (article.contentSnippet || article.content || "").replace(/<[^>]*>?/gm, ''), content: article.content, url: article.link, image: article.enclosure?.url || null, publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.isoDate)), source: { name: article.creator || 'RSS Feed', url: article.link }, author: article.creator || null, };
-            case 'youtube': return { title: article.snippet.title, description: article.snippet.description, content: article.snippet.description, url: `https://www.youtube.com/watch?v=${article.id.videoId}`, image: article.snippet.thumbnails.high.url || null, publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.snippet.publishedAt)), source: { name: 'YouTube', url: `https://www.youtube.com/channel/${article.snippet.channelId}` }, author: article.snippet.channelTitle || null, videoId: article.id.videoId };
+            case 'youtube':
+                return { title: article.snippet.title, description: article.snippet.description, content: article.snippet.description, url: `https://www.youtube.com/watch?v=${article.id.videoId}`, image: article.snippet.thumbnails.high.url || null, publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.snippet.publishedAt)), source: { name: 'YouTube', url: `https://www.youtube.com/channel/${article.snippet.channelId}` }, author: article.snippet.channelTitle || null, videoId: article.id.videoId };
             default: return null;
         }
     } catch (e) {
@@ -135,7 +203,8 @@ function normalizeArticle(article, sourceApi) {
 }
 
 async function analyzeArticleWithAI(article, settings) {
-    const textContent = `${article.title}. ${article.content || article.description || ''}`; // Ensure full content for AI analysis
+    // Para a análise de IA, usamos o campo 'content' que agora pode ter o texto completo.
+    const textContent = `${article.title}. ${article.content || article.description || ''}`;
     let languageData = { sentiment: { score: 0, magnitude: 0 }, entities: [], categories: [] };
     let visionData = { logos: [], ocrText: '' };
     let videoData = { videoTranscription: '' };
@@ -154,7 +223,7 @@ async function analyzeArticleWithAI(article, settings) {
             functions.logger.error("Erro na Natural Language AI:", error.message);
         }
     }
-    
+
     if (article.image && settings.apiKeyVision) {
         try {
             const [logoResult] = await visionClient.logoDetection(article.image);
@@ -175,7 +244,7 @@ async function analyzeArticleWithAI(article, settings) {
 
 async function fetchAllNews() {
     functions.logger.info("=======================================");
-    functions.logger.info("INICIANDO BUSCA DE NOTÍCIAS COM TRADUÇÃO, IA, MÍDIA E GEOCODIFICAÇÃO...");
+    functions.logger.info("INICIANDO BUSCA DE NOTÍCIAS COM TRADUÇÃO, IA, MÍDIA, SCRAPER E GEOCODIFICAÇÃO...");
 
     const globalSettingsRef = db.doc(`artifacts/${APP_ID}/public/data/settings/global`);
     const globalSettingsDoc = await globalSettingsRef.get();
@@ -217,12 +286,31 @@ async function fetchAllNews() {
         if (!normalizedArticle || company.existingUrls.has(normalizedArticle.url)) {
             return;
         }
+
+        // Bloco de Scraper: Tenta extrair o conteúdo completo da URL
+        // Não tenta extrair conteúdo de vídeos do YouTube
+        if (normalizedArticle.url && !normalizedArticle.videoId) {
+            const scrapedContent = await scrapeArticleContent(normalizedArticle.url);
+            // Se o conteúdo extraído for maior que o conteúdo original da API (que geralmente é um resumo), substitui.
+            if (scrapedContent && scrapedContent.length > (normalizedArticle.content?.length || 0)) {
+                functions.logger.info(`Conteúdo completo extraído para: ${normalizedArticle.url}`);
+                normalizedArticle.content = scrapedContent;
+                // Atualiza a descrição também, caso o conteúdo extraído seja mais relevante
+                normalizedArticle.description = scrapedContent.substring(0, 300) + '...'; 
+            }
+        }
         
         const translatedTitle = await detectAndTranslate(normalizedArticle.title);
         const translatedDesc = await detectAndTranslate(normalizedArticle.description);
         normalizedArticle.title = translatedTitle.translatedText;
         normalizedArticle.description = translatedDesc.translatedText;
-        
+        // Se o conteúdo foi raspado e é longo, traduz ele também para a IA.
+        let translatedContent = { translatedText: normalizedArticle.content, languageCode: 'pt', translated: false };
+        if (normalizedArticle.content && normalizedArticle.content.length > 300) { // Limite arbitrário para traduzir conteúdo mais longo
+            translatedContent = await detectAndTranslate(normalizedArticle.content);
+            normalizedArticle.content = translatedContent.translatedText;
+        }
+
         const aiData = await analyzeArticleWithAI(normalizedArticle, settings);
         const finalMatchedKeywords = findMatchingKeywords({ ...normalizedArticle, ai: aiData }, company.keywordsList);
 
@@ -246,7 +334,10 @@ async function fetchAllNews() {
             status: "pending",
             ai: aiData,
             sentiment: { score: aiData.sentiment.score, magnitude: aiData.sentiment.magnitude },
-            translationInfo: { translated: translatedTitle.translated || translatedDesc.translated, originalLanguage: translatedTitle.languageCode },
+            translationInfo: { 
+                translated: translatedTitle.translated || translatedDesc.translated || translatedContent.translated, 
+                originalLanguage: translatedTitle.languageCode 
+            },
             geolocation: geolocation
         };
 
@@ -308,19 +399,19 @@ async function fetchAllNews() {
 
         if (settings.apiKeyYoutube) {
             for (const keyword of company.keywordsList) {
-               await delay(500);
-               const queryUrl = `${YOUTUBE_URL}?part=snippet&q=${encodeURIComponent(`"${keyword}"`)}&type=video&key=${settings.apiKeyYoutube}`;
-               try {
-                   const response = await axios.get(queryUrl);
-                   if (response.data && response.data.items) {
-                       for (const item of response.data.items) {
-                           if (!company.fetchOnlyNew || new Date(item.snippet.publishedAt) >= twentyFourHoursAgo) {
-                               const normalized = normalizeArticle({ ...item, id: { videoId: item.id.videoId } }, 'youtube');
-                               await processAndSaveArticle(normalized, company, [keyword]);
-                           }
-                       }
-                   }
-               } catch (e) { functions.logger.error(`Erro YouTube (keyword: ${keyword}):`, e.message); }
+                await delay(500);
+                const queryUrl = `${YOUTUBE_URL}?part=snippet&q=${encodeURIComponent(`"${keyword}"`)}&type=video&key=${settings.apiKeyYoutube}`;
+                try {
+                    const response = await axios.get(queryUrl);
+                    if (response.data && response.data.items) {
+                        for (const item of response.data.items) {
+                            if (!company.fetchOnlyNew || new Date(item.snippet.publishedAt) >= twentyFourHoursAgo) {
+                                const normalized = normalizeArticle({ ...item, id: { videoId: item.id.videoId } }, 'youtube');
+                                await processAndSaveArticle(normalized, company, [keyword]);
+                            }
+                        }
+                    }
+                } catch (e) { functions.logger.error(`Erro YouTube (keyword: ${keyword}):`, e.message); }
             }
         }
     }
@@ -335,11 +426,11 @@ async function fetchAllNews() {
                 if (feed && feed.items) {
                     for (const item of feed.items) {
                         for (const company of allCompaniesData) {
-                             const matchedKeywords = findMatchingKeywords(item, company.keywordsList);
-                             if (matchedKeywords.length > 0 && (!company.fetchOnlyNew || new Date(item.isoDate) >= twentyFourHoursAgo)) {
-                                 const normalized = normalizeArticle(item, 'rss');
-                                 await processAndSaveArticle(normalized, company, matchedKeywords);
-                             }
+                            const matchedKeywords = findMatchingKeywords(item, company.keywordsList);
+                            if (matchedKeywords.length > 0 && (!company.fetchOnlyNew || (item.isoDate && new Date(item.isoDate) >= twentyFourHoursAgo))) {
+                                const normalized = normalizeArticle(item, 'rss');
+                                await processAndSaveArticle(normalized, company, matchedKeywords);
+                            }
                         }
                     }
                 }
