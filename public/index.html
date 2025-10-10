@@ -12,6 +12,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+    <!-- CHAVE DA API DO GOOGLE MAPS -->
     <script async defer
         src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBlgBbnbhALORtuoTwy6xjjUqtoMI4wlL8&callback=initMap"></script>
 
@@ -637,28 +638,28 @@
                     </div>
                 </div>
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <div class="p-4 border rounded-lg flex justify-center">
-                        <div>
-                            <h3 class="text-xl font-semibold mb-4 text-center">Notícias por Veículo</h3>
-                            <canvas id="source-chart" width="400" height="300"></canvas>
+                    <div class="p-4 border rounded-lg">
+                        <h3 class="text-xl font-semibold mb-4 text-center">Notícias por Veículo</h3>
+                        <div class="relative h-72">
+                            <canvas id="source-chart"></canvas>
                         </div>
                     </div>
-                    <div class="p-4 border rounded-lg flex justify-center">
-                        <div>
-                            <h3 class="text-xl font-semibold mb-4 text-center">Notícias por Canal</h3>
-                            <canvas id="channel-chart" width="400" height="300"></canvas>
+                    <div class="p-4 border rounded-lg">
+                        <h3 class="text-xl font-semibold mb-4 text-center">Notícias por Canal</h3>
+                        <div class="relative h-72">
+                            <canvas id="channel-chart"></canvas>
                         </div>
                     </div>
-                    <div class="p-4 border rounded-lg flex justify-center">
-                        <div>
-                            <h3 class="text-xl font-semibold mb-4 text-center">Notícias por Período</h3>
-                            <canvas id="date-chart" width="400" height="300"></canvas>
+                    <div class="p-4 border rounded-lg">
+                        <h3 class="text-xl font-semibold mb-4 text-center">Notícias por Período</h3>
+                        <div class="relative h-72">
+                            <canvas id="date-chart"></canvas>
                         </div>
                     </div>
-                    <div class="p-4 border rounded-lg flex justify-center">
-                        <div>
-                            <h3 class="text-xl font-semibold mb-4 text-center">Análise de Sentimento</h3>
-                            <canvas id="sentiment-chart" width="400" height="300"></canvas>
+                    <div class="p-4 border rounded-lg">
+                        <h3 class="text-xl font-semibold mb-4 text-center">Análise de Sentimento</h3>
+                        <div class="relative h-72">
+                            <canvas id="sentiment-chart"></canvas>
                         </div>
                     </div>
                 </div>
@@ -784,16 +785,19 @@
         <section id="super-admin-report-page" class="page-section fade-in">
             <button id="back-to-dashboard-3"
                 class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar</button>
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-                <h2 class="text-2xl sm:text-3xl font-bold">Relatório Geral de Empresas</h2>
-                <div class="flex items-center gap-2">
-                    <label for="report-start-date" class="text-sm font-medium">De:</label>
-                    <input type="date" id="report-start-date" class="px-2 py-1 border border-gray-300 rounded-md text-sm">
-                    <label for="report-end-date" class="text-sm font-medium">Até:</label>
-                    <input type="date" id="report-end-date" class="px-2 py-1 border border-gray-300 rounded-md text-sm">
-                </div>
-            </div>
             <div class="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
+                <div class="flex flex-col sm:flex-row justify-between items-start mb-6 gap-4">
+                    <h2 class="text-2xl sm:text-3xl font-bold text-gray-700 mb-4 sm:mb-0">Relatório Geral de Empresas
+                    </h2>
+                    <div class="flex items-center gap-2">
+                        <label for="report-start-date" class="text-sm font-medium">De:</label>
+                        <input type="date" id="report-start-date"
+                            class="px-2 py-1 border border-gray-300 rounded-md text-sm">
+                        <label for="report-end-date" class="text-sm font-medium">Até:</label>
+                        <input type="date" id="report-end-date"
+                            class="px-2 py-1 border border-gray-300 rounded-md text-sm">
+                    </div>
+                </div>
                 <div class="mb-8">
                     <h3 class="text-xl font-semibold text-center mb-4">Total de Alertas por Empresa</h3>
                     <div class="relative h-96">
@@ -804,17 +808,23 @@
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Empresa</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Total de Alertas</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Sentimento (%)</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Sentimento Predominante</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Canal Principal</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Veículo Principal</th>
                             </tr>
                         </thead>
@@ -893,7 +903,8 @@
                     </div>
                 </div>
 
-                <div id="report-meta-grid" class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-6 p-4 bg-gray-50 rounded-md"></div>
+                <div id="report-meta-grid"
+                    class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-6 p-4 bg-gray-50 rounded-md"></div>
                 <h1 id="detail-title" class="text-2xl sm:text-3xl font-bold text-gray-800 mb-6"></h1>
                 <div id="detail-content" class="prose max-w-none text-gray-700 leading-relaxed mb-8"></div>
                 <div id="detail-ai-insights"></div>
@@ -907,6 +918,7 @@
         </section>
     </main>
 
+    <!-- Modais -->
     <div id="justification-modal"
         class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
         <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
@@ -1007,7 +1019,7 @@
             </div>
         </div>
     </div>
-    
+
     <script>
         // Função de callback global para a API do Google Maps
         function initMap() {
@@ -1667,7 +1679,9 @@
             if (instanceVar) instanceVar.destroy();
             const ctx = canvasEl.getContext('2d');
             const defaultOptions = {
-                responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
                 plugins: {
                     legend: {
                         position: 'bottom',
@@ -1869,9 +1883,9 @@
             const pubDate = new Date(article.publishedAt.seconds ? article.publishedAt.toDate() : article.publishedAt);
             reportDateEl.textContent = `Gerado em: ${new Date().toLocaleDateString('pt-BR')}`;
             detailTitleEl.textContent = article.title;
-
+            
             const fullContent = article.content || article.description || 'Conteúdo completo não disponível.';
-            detailContentEl.innerHTML = fullContent.replace(/\n/g, '<br>');
+            detailContentEl.innerHTML = fullContent.split('\n').filter(p => p.trim() !== '').map(p => `<p class="mb-4">${p}</p>`).join('');
 
 
             const companyLogo = document.querySelector('#header-logo-container img');
@@ -2075,7 +2089,7 @@
         function renderDeletionRequests(docs) {
             if (!deletionRequestsList) return;
             deletionRequestsList.innerHTML = '';
-            if (docs.length === 0) {
+            if (docs.empty) {
                 deletionRequestsList.innerHTML = '<p class="text-gray-500">Nenhum pedido de exclusão encontrado.</p>';
                 return;
             }
@@ -2135,19 +2149,19 @@
             }
             try {
                 const generateReport = httpsCallable(functions, 'generateSuperAdminReport');
-                const result = await generateReport({ 
-                    appId, 
+                const result = await generateReport({
+                    appId,
                     startDate: reportStartDateInput.value || null,
-                    endDate: reportEndDateInput.value || null 
+                    endDate: reportEndDateInput.value || null
                 });
                 const reportData = result.data;
                 superAdminReportBody.innerHTML = '';
                 if (reportData.length === 0) {
-                    superAdminReportBody.innerHTML = '<tr><td colspan="6" class="text-center py-4">Nenhum dado para exibir no período selecionado.</td></tr>';
-                    if (companySummaryChartInstance) companySummaryChartInstance.destroy();
+                    superAdminReportBody.innerHTML = '<tr><td colspan="6" class="text-center py-4">Nenhum dado para exibir.</td></tr>';
+                    if(document.getElementById('company-summary-chart')) document.getElementById('company-summary-chart').style.display = 'none';
                     return;
                 }
-                
+                if(document.getElementById('company-summary-chart')) document.getElementById('company-summary-chart').style.display = 'block';
                 reportData.forEach(item => {
                     const row = document.createElement('tr');
                     row.className = 'hover:bg-gray-50 company-report-row';
@@ -2161,16 +2175,17 @@
                 });
                 const chartLabels = reportData.map(d => d.companyName);
                 const chartValues = reportData.map(d => d.totalAlerts);
-                companySummaryChartInstance = createChart('company-summary-chart', companySummaryChartInstance, 'bar', {
+                companySummaryChartInstance = createChart('company-summary-chart', companySummaryChartInstance, 'line', {
                     labels: chartLabels,
-                    datasets: [{ label: 'Total de Alertas', data: chartValues, backgroundColor: '#4F46E5' }]
-                }, { plugins: { legend: { display: false } }, indexAxis: 'y' });
+                    datasets: [{ label: 'Total de Alertas', data: chartValues, borderColor: '#4F46E5', backgroundColor: 'rgba(79, 70, 229, 0.1)', fill: true, tension: 0.1, borderWidth: 2 }]
+                }, { plugins: { legend: { display: false } } });
             } catch (error) {
                 console.error("Erro ao gerar relatório:", error);
                 superAdminReportBody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-red-500">Erro ao gerar relatório: ${error.message}</td></tr>`;
             }
         }
 
+        // --- INICIALIZAÇÃO E OUVINTES DE EVENTOS --- 
         document.addEventListener('DOMContentLoaded', () => {
             pageSections = document.querySelectorAll('.page-section');
             navLoggedIn = document.getElementById('nav-logged-in');
@@ -2438,9 +2453,9 @@
             if (backToDashboard1) backToDashboard1.addEventListener('click', () => updateView('dashboard'));
             if (backToDashboard2) backToDashboard2.addEventListener('click', () => updateView('dashboard'));
             if (backToDashboard3) backToDashboard3.addEventListener('click', () => updateView('dashboard'));
-            if (backFromDetail) backFromDetail.addEventListener('click', () => { 
+            if (backFromDetail) backFromDetail.addEventListener('click', () => {
                 const lastView = 'dashboard';
-                updateView(lastView); 
+                updateView(lastView);
             });
             if (backToSuperAdminReportBtn) backToSuperAdminReportBtn.addEventListener('click', () => updateView('super-admin-report'));
             if (manualAlertForm) manualAlertForm.addEventListener('submit', handleManualAlertSubmit);
@@ -2457,6 +2472,9 @@
             if (shareEmailBtn) shareEmailBtn.addEventListener('click', handleShareActions);
             if (printBtn) printBtn.addEventListener('click', () => window.print());
             if (mapFilterBtn) mapFilterBtn.addEventListener('click', renderMapPage);
+            if (reportStartDateInput) reportStartDateInput.addEventListener('change', renderSuperAdminReport);
+            if (reportEndDateInput) reportEndDateInput.addEventListener('change', renderSuperAdminReport);
+
 
             if (superAdminReportBody) superAdminReportBody.addEventListener('click', async (e) => {
                 const row = e.target.closest('.company-report-row');
@@ -2486,43 +2504,13 @@
                     const getKeywordReport = httpsCallable(functions, 'getCompanyKeywordReport');
                     const result = await getKeywordReport({ appId, companyId });
                     const keywordsData = result.data;
-                    
+
+
                     let tableHTML = '<p class="text-center p-4">Nenhuma palavra-chave encontrada para esta empresa.</p>';
                     if (keywordsData.length > 0) {
-                        tableHTML = `
-                        <div class="p-4 bg-gray-50 rounded-lg">
-                            <h4 class="font-bold mb-2 text-lg text-gray-700">Detalhes por Palavra-Chave</h4>
-                            <table class="min-w-full divide-y divide-gray-300">
-                                <thead class="bg-gray-100">
-                                    <tr>
-                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">Palavra-Chave</th>
-                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">Total de Alertas</th>
-                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">Sentimento (%)</th>
-                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">Sent. Predominante</th>
-                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">Canal Principal</th>
-                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">Veículo Principal</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="bg-white divide-y divide-gray-200">
-                                    ${keywordsData.map(kw => `
-                                        <tr>
-                                            <td class="px-3 py-2 font-medium">${kw.keyword}</td>
-                                            <td class="px-3 py-2">${kw.totalAlerts}</td>
-                                            <td class="px-3 py-2 text-xs">
-                                                <span class="text-green-600">P: ${kw.sentimentPercentage.positive}%</span>, 
-                                                <span class="text-gray-600">N: ${kw.sentimentPercentage.neutral}%</span>, 
-                                                <span class="text-red-600">Ng: ${kw.sentimentPercentage.negative}%</span>
-                                            </td>
-                                            <td class="px-3 py-2">${kw.predominantSentiment}</td>
-                                            <td class="px-3 py-2">${kw.topChannel}</td>
-                                            <td class="px-3 py-2">${kw.topVehicle}</td>
-                                        </tr>
-                                    `).join('')}
-                                </tbody>
-                            </table>
-                        </div>`;
+                        tableHTML = `                        <div class="p-4 bg-gray-50 rounded-lg">                            <h4 class="font-bold mb-2 text-lg text-gray-700">Detalhes por Palavra-Chave</h4>                            <table class="min-w-full divide-y divide-gray-300">                                <thead class="bg-gray-100">                                    <tr>                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">Palavra-Chave</th>                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">Total de Alertas</th>                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">Sentimento (%)</th>                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">Sent. Predominante</th>                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">Canal Principal</th>                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">Veículo Principal</th>                                    </tr>                                </thead>                                <tbody class="bg-white divide-y divide-gray-200">                                    ${keywordsData.map(kw => `                                    <tr>                                        <td class="px-3 py-2 font-medium">${kw.keyword}</td>                                        <td class="px-3 py-2">${kw.totalAlerts}</td>                                        <td class="px-3 py-2 text-xs">                                            <span class="text-green-600">P: ${kw.sentimentPercentage.positive}%</span>,                                             <span class="text-gray-600">N: ${kw.sentimentPercentage.neutral}%</span>,                                             <span class="text-red-600">Ng: ${kw.sentimentPercentage.negative}%</span>                                        </td>                                        <td class="px-3 py-2">${kw.predominantSentiment}</td>                                        <td class="px-3 py-2">${kw.topChannel}</td>                                        <td class="px-3 py-2">${kw.topVehicle}</td>                                    </tr>                                `).join('')}                                </tbody>                            </table>                        </div>`;
                     }
-                    
+
                     detailsRow.querySelector('td').innerHTML = tableHTML;
 
                 } catch (error) {
@@ -2545,7 +2533,7 @@
             }
 
             window.addEventListener('mapReady', (e) => {
-                 mapInstance = e.detail;
+                mapInstance = e.detail;
             });
         });
     </script>
