@@ -328,6 +328,7 @@
                 </div>
                 <p class="text-gray-600 mb-4">Veja onde as notícias estão acontecendo. Passe o mouse sobre um pino para
                     ver o título e clique para ver os detalhes.</p>
+                <div id="region-counts" class="mb-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2"></div>
                 <div id="map"></div>
             </div>
         </section>
@@ -486,6 +487,11 @@
                         <textarea id="rssUrl" rows="3"
                             class="w-full px-3 py-2 border border-gray-300 rounded-md"
                             placeholder="https://site.com/feed"></textarea>
+                        <div class="mt-3 flex flex-wrap gap-2">
+                            <button id="test-rss-btn" class="bg-blue-600 text-white px-3 py-2 rounded-md hover:bg-blue-700">Testar RSS</button>
+                            <button id="clear-rss-preview" class="bg-gray-200 text-gray-800 px-3 py-2 rounded-md hover:bg-gray-300">Limpar Pré-visualização</button>
+                        </div>
+                        <div id="rss-preview" class="mt-3 space-y-2"></div>
                     </div>
                 </div>
             </div>
@@ -502,10 +508,22 @@
                             uma por linha</label>
                         <textarea id="radioSources" rows="5"
                             class="w-full px-3 py-2 border border-gray-300 rounded-md"
-                            placeholder="Ex: Rádio Jovem Pan | http://.../stream.mp3"></textarea>
-                        <p class="mt-2 text-xs text-gray-500">Insira o nome da rádio e o link da transmissão (stream)
-                            de áudio. O monitoramento de rádio é um recurso avançado e precisa de configuração adicional
-                            no servidor.</p>
+                            placeholder="Ex: Rádio Jovem Pan | http://.../stream.mp3 | 08:00-12:30"></textarea>
+                        <p class="mt-2 text-xs text-gray-500">Insira uma linha por fonte no formato: Nome | URL | Horário (opcional).</p>
+                        <p class="mt-1 text-xs text-gray-500">Formato do horário: HH:MM-HH:MM (ex.: 08:00-12:30). O backend usará esse intervalo para monitorar apenas dentro do horário indicado.</p>
+                        <p class="mt-1 text-xs text-gray-500">Se preferir, também pode usar: Nome | URL | HH:MM | HH:MM.</p>
+                        <p class="mt-1 text-xs text-gray-500">Observação: a reprodução no navegador pode depender do tipo de stream e das políticas de CORS.</p>
+                        <div class="mt-3 grid grid-cols-1 sm:grid-cols-6 gap-2">
+                            <input id="radio-name-input" type="text" class="col-span-2 px-3 py-2 border border-gray-300 rounded-md" placeholder="Nome da Rádio">
+                            <input id="radio-url-input" type="text" class="col-span-2 px-3 py-2 border border-gray-300 rounded-md" placeholder="URL do Stream">
+                            <input id="radio-start-input" type="time" class="col-span-1 px-3 py-2 border border-gray-300 rounded-md" placeholder="Início">
+                            <input id="radio-end-input" type="time" class="col-span-1 px-3 py-2 border border-gray-300 rounded-md" placeholder="Fim">
+                            <button id="radio-add-btn" class="sm:col-span-6 bg-indigo-600 text-white px-3 py-2 rounded-md hover:bg-indigo-700">Adicionar Fonte</button>
+                        </div>
+                        <div class="mt-3 flex flex-wrap gap-2">
+                            <button id="test-radio-btn" class="bg-blue-600 text-white px-3 py-2 rounded-md hover:bg-blue-700">Testar Reprodução da Primeira Rádio</button>
+                        </div>
+                        <audio id="radio-audio" class="mt-3 w-full" controls></audio>
                     </div>
                 </div>
             </div>
@@ -1057,7 +1075,7 @@
         let mapInstance = null;
         let mapMarkers = [];
 
-        let pageSections, navLoggedIn, navInicio, navRelatorio, navMapa, navPesquisa, navSuperAdmin, navLogout, navConfiguracoesAdmin, globalAlert, loginPage, dashboardPage, mapPage, searchPage, superAdminPage, companyKeywordAdminPage, companySettingsAdminPage, reportPage, companyUserAdminPage, configuracoesAdminPage, loginForm, dashboardTitle, currentDateTimeEl, dashboardKeywordList, newsAlertsContainer, newsAlerts, alertDateFilter, reportAccessToggle, mapAccessToggle, logoUploadInput, headerLogoContainer, loginLogoContainer, filterContainer, searchInput, searchResults, companyForm, companyList, backToSuperAdminKwBtn, backToSuperAdminSettingsBtn, backToSuperAdminUsersBtn, companyKeywordAdminTitle, companySettingsAdminTitle, companyUserAdminTitle, keywordForm, keywordInput, keywordIdInput, adminKeywordList, userForm, userInput, userPasswordInput, userIdInput, adminUserList, notificationBell, notificationBadge, manualTriggerBtn, deleteModal, confirmDeleteBtn, cancelDeleteBtn, companyNameToDeleteEl, newsScopeContainer, startDateInput, endDateInput, linkModal, accessLinkInput, copyLinkBtn, closeLinkModalBtn, reportKeywordFilterContainer, stateSelectContainer, stateSelect, changePasswordForm, apiKeyNewsApiInput, apiKeyFirebaseNewsInput, apiKeyGNewsInput1, apiKeyGNewsInput2, apiKeyGNewsInput3, apiKeyGNewsInput4, apiKeyYoutubeInput, apiKeyBloggerInput, apiKeyVisionInput, apiKeyVideoIntelligenceInput, showAllAlertsBtn, deletionAccessToggle, justificationModal, justificationText, submitJustificationBtn, cancelJustificationBtn, btnManualAlert, btnDeletionRequests, btnSuperAdminReport, manualAlertPage, deletionRequestsPage, superAdminReportPage, backToDashboard1, backToDashboard2, backToDashboard3, manualAlertForm, deletionRequestsList, superAdminReportBody, deletionRequestsBadge, pendingAlertsPage, pendingAlertsList, btnPendingAlerts, backToDashboard4, confirmDeleteKeywordBtn, cancelDeleteKeywordBtn, confirmDeleteKeywordModal, keywordToDeleteNameEl, bloggerIdInput, rssUrlInput, fetchOnlyNewToggle, changePasswordPage, globalKeysPage, globalSourcesPage, btnChangePassword, btnGlobalKeys, btnNewsSources, backToAdminConfig1, backToAdminConfig2, backToAdminConfig3, globalLogoPage, btnGlobalLogo, backToAdminConfig4, globalLogoUpload, globalLogoArea, logoLink, btnRadioSources, globalRadioSourcesPage, backToAdminConfig5, radioSourcesInput, articleDetailPage, backFromDetail, detailTitle, detailMeta, detailContent, shareWhatsappBtn, shareEmailBtn, companyKeywordReportPage, backToSuperAdminReportBtn, companyKeywordReportTitle, detailAiInsights, printBtn, shareButtonsContainer, mapStartDateInput, mapEndDateInput, mapFilterBtn, reportStartDateInput, reportEndDateInput;
+        let pageSections, navLoggedIn, navInicio, navRelatorio, navMapa, navPesquisa, navSuperAdmin, navLogout, navConfiguracoesAdmin, globalAlert, loginPage, dashboardPage, mapPage, searchPage, superAdminPage, companyKeywordAdminPage, companySettingsAdminPage, reportPage, companyUserAdminPage, configuracoesAdminPage, loginForm, dashboardTitle, currentDateTimeEl, dashboardKeywordList, newsAlertsContainer, newsAlerts, alertDateFilter, reportAccessToggle, mapAccessToggle, logoUploadInput, headerLogoContainer, loginLogoContainer, filterContainer, searchInput, searchResults, companyForm, companyList, backToSuperAdminKwBtn, backToSuperAdminSettingsBtn, backToSuperAdminUsersBtn, companyKeywordAdminTitle, companySettingsAdminTitle, companyUserAdminTitle, keywordForm, keywordInput, keywordIdInput, adminKeywordList, userForm, userInput, userPasswordInput, userIdInput, adminUserList, notificationBell, notificationBadge, manualTriggerBtn, deleteModal, confirmDeleteBtn, cancelDeleteBtn, companyNameToDeleteEl, newsScopeContainer, startDateInput, endDateInput, linkModal, accessLinkInput, copyLinkBtn, closeLinkModalBtn, reportKeywordFilterContainer, stateSelectContainer, stateSelect, changePasswordForm, apiKeyNewsApiInput, apiKeyFirebaseNewsInput, apiKeyGNewsInput1, apiKeyGNewsInput2, apiKeyGNewsInput3, apiKeyGNewsInput4, apiKeyYoutubeInput, apiKeyBloggerInput, apiKeyVisionInput, apiKeyVideoIntelligenceInput, showAllAlertsBtn, deletionAccessToggle, justificationModal, justificationText, submitJustificationBtn, cancelJustificationBtn, btnManualAlert, btnDeletionRequests, btnSuperAdminReport, manualAlertPage, deletionRequestsPage, superAdminReportPage, backToDashboard1, backToDashboard2, backToDashboard3, manualAlertForm, deletionRequestsList, superAdminReportBody, deletionRequestsBadge, pendingAlertsPage, pendingAlertsList, btnPendingAlerts, backToDashboard4, confirmDeleteKeywordBtn, cancelDeleteKeywordBtn, confirmDeleteKeywordModal, keywordToDeleteNameEl, bloggerIdInput, rssUrlInput, fetchOnlyNewToggle, changePasswordPage, globalKeysPage, globalSourcesPage, btnChangePassword, btnGlobalKeys, btnNewsSources, backToAdminConfig1, backToAdminConfig2, backToAdminConfig3, globalLogoPage, btnGlobalLogo, backToAdminConfig4, globalLogoUpload, globalLogoArea, logoLink, btnRadioSources, globalRadioSourcesPage, backToAdminConfig5, radioSourcesInput, articleDetailPage, backFromDetail, detailTitle, detailMeta, detailContent, shareWhatsappBtn, shareEmailBtn, companyKeywordReportPage, backToSuperAdminReportBtn, companyKeywordReportTitle, detailAiInsights, printBtn, shareButtonsContainer, mapStartDateInput, mapEndDateInput, mapFilterBtn, reportStartDateInput, reportEndDateInput, testRssBtn, clearRssPreviewBtn, rssPreviewContainer, testRadioBtn, radioAudioEl, radioNameInput, radioUrlInput, radioStartInput, radioEndInput, radioAddBtn;
 
         function showAlert(message, type = 'success') { const c = type === 'success' ? 'bg-green-100 border-green-500 text-green-700' : 'bg-red-100 border-red-500 text-red-700'; globalAlert.innerHTML = `<div class="${c} border-l-4 p-4 rounded-md fade-in" role="alert"><p>${message}</p></div>`; setTimeout(() => { globalAlert.innerHTML = ''; }, 4000); }
         function getChannelCategory(sourceName) {
@@ -1150,10 +1168,22 @@
                 const articlesSnapshot = await getDocs(articlesQuery);
                 const infoWindow = new google.maps.InfoWindow();
 
+                const regionCountsEl = document.getElementById('region-counts');
+                if (regionCountsEl) regionCountsEl.innerHTML = '';
+
                 if (articlesSnapshot.empty) {
                     showAlert("Nenhuma notícia com geolocalização encontrada para o período selecionado.", "success");
                     return;
                 }
+
+                const stateToRegion = {
+                    'AC':'Norte','AP':'Norte','AM':'Norte','PA':'Norte','RO':'Norte','RR':'Norte','TO':'Norte',
+                    'AL':'Nordeste','BA':'Nordeste','CE':'Nordeste','MA':'Nordeste','PB':'Nordeste','PE':'Nordeste','PI':'Nordeste','RN':'Nordeste','SE':'Nordeste',
+                    'DF':'Centro-Oeste','GO':'Centro-Oeste','MT':'Centro-Oeste','MS':'Centro-Oeste',
+                    'ES':'Sudeste','MG':'Sudeste','RJ':'Sudeste','SP':'Sudeste',
+                    'PR':'Sul','RS':'Sul','SC':'Sul'
+                };
+                const regionCounts = { 'Norte':0, 'Nordeste':0, 'Centro-Oeste':0, 'Sudeste':0, 'Sul':0, 'Indefinido':0 };
 
                 articlesSnapshot.forEach(doc => {
                     const article = { id: doc.id, ...doc.data() };
@@ -1164,6 +1194,28 @@
                         animation: google.maps.Animation.DROP,
                     });
                     mapMarkers.push(marker);
+
+                    const possibleState = (
+                        article.state || article.uf ||
+                        (article.location && (article.location.uf || article.location.state)) ||
+                        (article.source && (article.source.uf || article.source.state)) ||
+                        article.region
+                    );
+                    let regionLabel = 'Indefinido';
+                    if (possibleState) {
+                        const code = String(possibleState).toUpperCase();
+                        if (stateToRegion[code]) {
+                            regionLabel = stateToRegion[code];
+                        } else if (['NORTE','NORDESTE','CENTRO-OESTE','SUDESTE','SUL'].includes(code)) {
+                            const normalized = code.charAt(0) + code.slice(1).toLowerCase();
+                            regionLabel = normalized;
+                        }
+                    }
+                    if (regionCounts[regionLabel] !== undefined) {
+                        regionCounts[regionLabel] += 1;
+                    } else {
+                        regionCounts['Indefinido'] += 1;
+                    }
 
                     marker.addListener('mouseover', () => {
                         infoWindow.setContent(`                        <div class="font-sans p-1">                            <p class="font-bold text-sm">${article.title}</p>                            <p class="text-xs text-gray-500">${article.source.name}</p>                        </div>                        `);
@@ -1180,6 +1232,22 @@
                     });
                 });
 
+                if (regionCountsEl) {
+                    const tile = (label, count) => (
+                        `<div class="p-3 bg-gray-100 rounded-md flex items-center justify-between">`+
+                        `<span class="font-medium text-gray-700">${label}</span>`+
+                        `<span class="text-indigo-700 font-bold">${count}</span>`+
+                        `</div>`
+                    );
+                    regionCountsEl.innerHTML = [
+                        tile('Norte', regionCounts['Norte']),
+                        tile('Nordeste', regionCounts['Nordeste']),
+                        tile('Centro-Oeste', regionCounts['Centro-Oeste']),
+                        tile('Sudeste', regionCounts['Sudeste']),
+                        tile('Sul', regionCounts['Sul']),
+                        tile('Indefinido', regionCounts['Indefinido'])
+                    ].join('');
+                }
             } catch (error) {
                 console.error("Erro ao carregar notícias para o mapa:", error);
                 showAlert("Não foi possível carregar as notícias no mapa. Pode ser necessário criar um índice no Firestore.", "error");
@@ -1203,6 +1271,14 @@
                 manualTriggerBtn.textContent = 'Executar Robô Manualmente';
             }
         }
+
+        // RSS: Testar captação via CORS proxy e pré-visualizar
+        async function testRSSFeeds() { try { if (!rssUrlInput || !document.getElementById('rss-preview')) return; const urls = (rssUrlInput.value || '').split('\n').map(l => l.trim()).filter(Boolean); if (urls.length === 0) { showAlert('Adicione ao menos um URL de RSS para testar.', 'error'); return; } const previewEl = document.getElementById('rss-preview'); previewEl.innerHTML = '<p class="text-gray-500">A carregar RSS...</p>'; const parser = new DOMParser(); const maxPerFeed = 5; let html = ''; for (const url of urls) { try { const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`; const res = await fetch(proxyUrl); if (!res.ok) throw new Error(`Falha ao obter RSS: ${res.status}`); const text = await res.text(); const xml = parser.parseFromString(text, 'application/xml'); const channelTitle = xml.querySelector('channel > title')?.textContent || url; const feedItems = Array.from(xml.querySelectorAll('item')).slice(0, maxPerFeed); html += `<div class="border rounded-md p-3"><div class="font-medium">${channelTitle}</div><ul class="mt-2 space-y-1">${feedItems.map(it => { const title = it.querySelector('title')?.textContent || 'Sem título'; const link = it.querySelector('link')?.textContent || '#'; const pubDate = it.querySelector('pubDate')?.textContent || new Date().toISOString(); return `<li class="text-sm"><a href="${link}" target="_blank" class="text-blue-600 hover:underline">${title}</a> <span class="text-gray-500"> — ${new Date(pubDate).toLocaleString('pt-BR')}</span></li>`; }).join('') || '<li class="text-gray-500 text-sm">Nenhum item encontrado.</li>'}</ul></div>`; } catch (err) { console.error('Erro ao processar RSS', url, err); html += `<div class="border rounded-md p-3"><div class="font-medium">${url}</div><div class="text-red-600 text-sm">Erro: ${err.message}</div></div>`; } } previewEl.innerHTML = html; } catch (error) { console.error('Erro geral ao testar RSS:', error); showAlert('Erro ao testar RSS.', 'error'); } }
+        function clearRssPreview() { const previewEl = document.getElementById('rss-preview'); if (previewEl) previewEl.innerHTML = ''; }
+        // Rádio: Testar reprodução da primeira fonte
+        function testRadioPlayback() { try { if (!radioSourcesInput) return; const audioEl = document.getElementById('radio-audio'); if (!audioEl) return; const lines = (radioSourcesInput.value || '').split('\n').map(l => l.trim()).filter(Boolean); if (lines.length === 0) { showAlert('Adicione ao menos uma fonte de rádio no formato "Nome | URL | Horário".', 'error'); return; } const first = lines[0]; const parts = first.split('|').map(p => p.trim()); const name = parts[0] || 'Rádio'; const streamUrl = parts[1] || ''; const scheduleRaw = parts[2] || ''; if (!streamUrl) { showAlert('Não foi possível extrair o URL do stream da primeira linha.', 'error'); return; } // Parse formatos possíveis: "HH:MM-HH:MM" ou "HH:MM | HH:MM"
+            let startTime = null, endTime = null; if (scheduleRaw) { const dashMatch = scheduleRaw.match(/^(\d{2}:\d{2})\s*-\s*(\d{2}:\d{2})$/); if (dashMatch) { startTime = dashMatch[1]; endTime = dashMatch[2]; } else { const altStart = parts[2]; const altEnd = parts[3]; if (altStart && altEnd && /^\d{2}:\d{2}$/.test(altStart) && /^\d{2}:\d{2}$/.test(altEnd)) { startTime = altStart; endTime = altEnd; } } }
+            audioEl.src = streamUrl; const playPromise = audioEl.play(); if (playPromise && typeof playPromise.then === 'function') { playPromise.then(() => { const scheduleMsg = (startTime && endTime) ? ` (Janela: ${startTime}-${endTime})` : ''; showAlert(`Reprodução de ${name} iniciada.${scheduleMsg} Verifique o áudio abaixo.`, 'success'); }).catch(err => { console.error('Erro ao reproduzir rádio:', err); showAlert('Erro ao reproduzir a rádio. Verifique se o stream permite playback no navegador e se há CORS.', 'error'); }); } } catch (error) { console.error('Erro geral ao testar rádio:', error); showAlert('Erro ao testar rádio.', 'error'); } }
 
         async function handleLogoUpload(e) { const file = e.target.files[0]; if (!file) return; const companyId = currentUser.isSuperAdmin ? selectedCompanyForManagement.id : currentUser.companyId; if (!companyId) return; const reader = new FileReader(); reader.onloadend = async () => { try { const settingsRef = doc(db, "artifacts", appId, "public/data/settings", companyId); await setDoc(settingsRef, { logo: reader.result }, { merge: true }); loadAndDisplayLogo(); showAlert('Logótipo atualizado com sucesso!'); } catch (error) { console.error("Erro ao guardar o logótipo:", error); showAlert("Erro ao guardar o logótipo.", "error"); } }; reader.readAsDataURL(file); }
         async function loadAndDisplayLogo() { const companyId = currentUser ? currentUser.companyId : null; if (!companyId) { if (headerLogoContainer) headerLogoContainer.innerHTML = ''; if (loginLogoContainer) loginLogoContainer.innerHTML = ''; return; } const settingsRef = doc(db, "artifacts", appId, "public/data/settings", companyId); try { const docSnap = await getDoc(settingsRef); const logoData = docSnap.exists() ? docSnap.data().logo : null; const logoHtml = logoData ? `<img src="${logoData}" alt="Logótipo da Empresa" class="h-full w-auto object-contain">` : ''; if (headerLogoContainer) headerLogoContainer.innerHTML = logoHtml; if (loginLogoContainer) loginLogoContainer.innerHTML = logoHtml; } catch (error) { console.error("Erro ao carregar o logótipo:", error); } }
@@ -1467,9 +1543,33 @@
         }
 
         async function handleGlobalSourceChange(e) {
-            const cleanedValue = cleanAndSaveTextarea(e);
+            let cleanedValue = cleanAndSaveTextarea(e);
             const settingsRef = doc(db, "artifacts", appId, "public/data/settings", "global");
             const key = e.target.id;
+            // Para radioSources, normalizar formato do horário para "HH:MM-HH:MM"
+            if (key === 'radioSources') {
+                try {
+                    const lines = (cleanedValue || '').split('\n').map(l => l.trim()).filter(Boolean);
+                    cleanedValue = lines.map(line => {
+                        const parts = line.split('|').map(p => p.trim());
+                        if (parts.length < 2) return line;
+                        const name = parts[0];
+                        const url = parts[1];
+                        let start = null, end = null;
+                        if (parts.length >= 4 && /^\d{2}:\d{2}$/.test(parts[2]) && /^\d{2}:\d{2}$/.test(parts[3])) {
+                            start = parts[2];
+                            end = parts[3];
+                        } else if (parts.length >= 3) {
+                            const m = parts[2].match(/^(\d{2}:\d{2})\s*-\s*(\d{2}:\d{2})$/);
+                            if (m) { start = m[1]; end = m[2]; }
+                        }
+                        const schedule = (start && end) ? `${start}-${end}` : null;
+                        return schedule ? `${name} | ${url} | ${schedule}` : `${name} | ${url}`;
+                    }).join('\n');
+                } catch (err) {
+                    console.error('Erro ao normalizar fontes de rádio:', err);
+                }
+            }
             try {
                 await setDoc(settingsRef, { [key]: cleanedValue }, { merge: true });
                 showAlert('Fonte guardada!', 'success');
@@ -1884,8 +1984,12 @@
             reportDateEl.textContent = `Gerado em: ${new Date().toLocaleDateString('pt-BR')}`;
             detailTitleEl.textContent = article.title;
             
-            const fullContent = article.content || article.description || 'Conteúdo completo não disponível.';
-            detailContentEl.innerHTML = fullContent.split('\n').filter(p => p.trim() !== '').map(p => `<p class="mb-4">${p}</p>`).join('');
+            const fullContent = article.fullText || article.body || article.text || article.contentHtml || article.content || article.description || 'Conteúdo completo não disponível.';
+            if (/<[^>]+>/.test(fullContent)) {
+                detailContentEl.innerHTML = fullContent;
+            } else {
+                detailContentEl.innerHTML = fullContent.split('\n').filter(p => p.trim() !== '').map(p => `<p class="mb-4">${p}</p>`).join('');
+            }
 
 
             const companyLogo = document.querySelector('#header-logo-container img');
@@ -2270,7 +2374,18 @@
             bloggerIdInput = document.getElementById('bloggerId');
             rssUrlInput = document.getElementById('rssUrl');
             radioSourcesInput = document.getElementById('radioSources');
+        radioNameInput = document.getElementById('radio-name-input');
+        radioUrlInput = document.getElementById('radio-url-input');
+        radioStartInput = document.getElementById('radio-start-input');
+        radioEndInput = document.getElementById('radio-end-input');
+        radioAddBtn = document.getElementById('radio-add-btn');
             fetchOnlyNewToggle = document.getElementById('fetch-only-new-toggle');
+            // Novos elementos de teste de RSS e rádio
+            testRssBtn = document.getElementById('test-rss-btn');
+            clearRssPreviewBtn = document.getElementById('clear-rss-preview');
+            rssPreviewContainer = document.getElementById('rss-preview');
+            testRadioBtn = document.getElementById('test-radio-btn');
+            radioAudioEl = document.getElementById('radio-audio');
             changePasswordPage = document.getElementById('change-password-page');
             globalKeysPage = document.getElementById('global-keys-page');
             globalSourcesPage = document.getElementById('global-sources-page');
@@ -2403,6 +2518,37 @@
             if (reportAccessToggle) reportAccessToggle.addEventListener('change', handleSettingsChange);
             if (mapAccessToggle) mapAccessToggle.addEventListener('change', handleSettingsChange);
             if (fetchOnlyNewToggle) fetchOnlyNewToggle.addEventListener('change', handleSettingsChange);
+            // Event listeners para teste de RSS e rádio
+            if (testRssBtn) testRssBtn.addEventListener('click', testRSSFeeds);
+            if (clearRssPreviewBtn) clearRssPreviewBtn.addEventListener('click', clearRssPreview);
+            if (testRadioBtn) testRadioBtn.addEventListener('click', testRadioPlayback);
+            if (radioAddBtn) radioAddBtn.addEventListener('click', () => {
+                const name = (radioNameInput && radioNameInput.value || '').trim();
+                const url = (radioUrlInput && radioUrlInput.value || '').trim();
+                const start = (radioStartInput && radioStartInput.value || '').trim();
+                const end = (radioEndInput && radioEndInput.value || '').trim();
+                if (!name || !url) {
+                    showAlert('Preencha pelo menos o Nome e o URL da rádio.', 'warning');
+                    return;
+                }
+                let line = `${name} | ${url}`;
+                if (start && end) {
+                    line += ` | ${start}-${end}`;
+                } else if (start && !end) {
+                    line += ` | ${start}`;
+                } else if (!start && end) {
+                    line += ` | ${end}`;
+                }
+                const current = (radioSourcesInput && radioSourcesInput.value || '').trim();
+                radioSourcesInput.value = current ? `${current}\n${line}` : line;
+                const event = new Event('change', { bubbles: true });
+                radioSourcesInput.dispatchEvent(event);
+                if (radioNameInput) radioNameInput.value = '';
+                if (radioUrlInput) radioUrlInput.value = '';
+                if (radioStartInput) radioStartInput.value = '';
+                if (radioEndInput) radioEndInput.value = '';
+                showAlert('Fonte de rádio adicionada!', 'success');
+            });
             if (deletionAccessToggle) deletionAccessToggle.addEventListener('change', handleSettingsChange);
             if (stateSelect) stateSelect.addEventListener('change', handleSettingsChange);
             if (keywordForm) keywordForm.addEventListener('submit', handleKeywordSubmit);
