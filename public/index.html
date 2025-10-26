@@ -326,6 +326,10 @@
                             class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-sm">Filtrar</button>
                     </div>
                 </div>
+                <div class="mt-2 w-full">
+                    <label class="text-sm font-medium">Filtrar por Palavra-Chave:</label>
+                    <div id="map-keyword-filter-container" class="w-full p-2 border border-gray-300 rounded-md text-sm bg-white overflow-y-auto max-h-32 space-y-1"></div>
+                </div>
                 <p class="text-gray-600 mb-4">Veja onde as notícias estão acontecendo. Passe o mouse sobre um pino para
                     ver o título e clique para ver os detalhes.</p>
                 <div id="region-counts" class="mb-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2"></div>
@@ -1075,7 +1079,7 @@
         let mapInstance = null;
         let mapMarkers = [];
 
-        let pageSections, navLoggedIn, navInicio, navRelatorio, navMapa, navPesquisa, navSuperAdmin, navLogout, navConfiguracoesAdmin, globalAlert, loginPage, dashboardPage, mapPage, searchPage, superAdminPage, companyKeywordAdminPage, companySettingsAdminPage, reportPage, companyUserAdminPage, configuracoesAdminPage, loginForm, dashboardTitle, currentDateTimeEl, dashboardKeywordList, newsAlertsContainer, newsAlerts, alertDateFilter, reportAccessToggle, mapAccessToggle, logoUploadInput, headerLogoContainer, loginLogoContainer, filterContainer, searchInput, searchResults, companyForm, companyList, backToSuperAdminKwBtn, backToSuperAdminSettingsBtn, backToSuperAdminUsersBtn, companyKeywordAdminTitle, companySettingsAdminTitle, companyUserAdminTitle, keywordForm, keywordInput, keywordIdInput, adminKeywordList, userForm, userInput, userPasswordInput, userIdInput, adminUserList, notificationBell, notificationBadge, manualTriggerBtn, deleteModal, confirmDeleteBtn, cancelDeleteBtn, companyNameToDeleteEl, newsScopeContainer, startDateInput, endDateInput, linkModal, accessLinkInput, copyLinkBtn, closeLinkModalBtn, reportKeywordFilterContainer, stateSelectContainer, stateSelect, changePasswordForm, apiKeyNewsApiInput, apiKeyFirebaseNewsInput, apiKeyGNewsInput1, apiKeyGNewsInput2, apiKeyGNewsInput3, apiKeyGNewsInput4, apiKeyYoutubeInput, apiKeyBloggerInput, apiKeyVisionInput, apiKeyVideoIntelligenceInput, showAllAlertsBtn, deletionAccessToggle, justificationModal, justificationText, submitJustificationBtn, cancelJustificationBtn, btnManualAlert, btnDeletionRequests, btnSuperAdminReport, manualAlertPage, deletionRequestsPage, superAdminReportPage, backToDashboard1, backToDashboard2, backToDashboard3, manualAlertForm, deletionRequestsList, superAdminReportBody, deletionRequestsBadge, pendingAlertsPage, pendingAlertsList, btnPendingAlerts, backToDashboard4, confirmDeleteKeywordBtn, cancelDeleteKeywordBtn, confirmDeleteKeywordModal, keywordToDeleteNameEl, bloggerIdInput, rssUrlInput, fetchOnlyNewToggle, changePasswordPage, globalKeysPage, globalSourcesPage, btnChangePassword, btnGlobalKeys, btnNewsSources, backToAdminConfig1, backToAdminConfig2, backToAdminConfig3, globalLogoPage, btnGlobalLogo, backToAdminConfig4, globalLogoUpload, globalLogoArea, logoLink, btnRadioSources, globalRadioSourcesPage, backToAdminConfig5, radioSourcesInput, articleDetailPage, backFromDetail, detailTitle, detailMeta, detailContent, shareWhatsappBtn, shareEmailBtn, companyKeywordReportPage, backToSuperAdminReportBtn, companyKeywordReportTitle, detailAiInsights, printBtn, shareButtonsContainer, mapStartDateInput, mapEndDateInput, mapFilterBtn, reportStartDateInput, reportEndDateInput, testRssBtn, clearRssPreviewBtn, rssPreviewContainer, testRadioBtn, radioAudioEl, radioNameInput, radioUrlInput, radioStartInput, radioEndInput, radioAddBtn;
+        let pageSections, navLoggedIn, navInicio, navRelatorio, navMapa, navPesquisa, navSuperAdmin, navLogout, navConfiguracoesAdmin, globalAlert, loginPage, dashboardPage, mapPage, searchPage, superAdminPage, companyKeywordAdminPage, companySettingsAdminPage, reportPage, companyUserAdminPage, configuracoesAdminPage, loginForm, dashboardTitle, currentDateTimeEl, dashboardKeywordList, newsAlertsContainer, newsAlerts, alertDateFilter, reportAccessToggle, mapAccessToggle, logoUploadInput, headerLogoContainer, loginLogoContainer, filterContainer, searchInput, searchResults, companyForm, companyList, backToSuperAdminKwBtn, backToSuperAdminSettingsBtn, backToSuperAdminUsersBtn, companyKeywordAdminTitle, companySettingsAdminTitle, companyUserAdminTitle, keywordForm, keywordInput, keywordIdInput, adminKeywordList, userForm, userInput, userPasswordInput, userIdInput, adminUserList, notificationBell, notificationBadge, manualTriggerBtn, deleteModal, confirmDeleteBtn, cancelDeleteBtn, companyNameToDeleteEl, newsScopeContainer, startDateInput, endDateInput, linkModal, accessLinkInput, copyLinkBtn, closeLinkModalBtn, reportKeywordFilterContainer, mapKeywordFilterContainer, stateSelectContainer, stateSelect, changePasswordForm, apiKeyNewsApiInput, apiKeyFirebaseNewsInput, apiKeyGNewsInput1, apiKeyGNewsInput2, apiKeyGNewsInput3, apiKeyGNewsInput4, apiKeyYoutubeInput, apiKeyBloggerInput, apiKeyVisionInput, apiKeyVideoIntelligenceInput, showAllAlertsBtn, deletionAccessToggle, justificationModal, justificationText, submitJustificationBtn, cancelJustificationBtn, btnManualAlert, btnDeletionRequests, btnSuperAdminReport, manualAlertPage, deletionRequestsPage, superAdminReportPage, backToDashboard1, backToDashboard2, backToDashboard3, manualAlertForm, deletionRequestsList, superAdminReportBody, deletionRequestsBadge, pendingAlertsPage, pendingAlertsList, btnPendingAlerts, backToDashboard4, confirmDeleteKeywordBtn, cancelDeleteKeywordBtn, confirmDeleteKeywordModal, keywordToDeleteNameEl, bloggerIdInput, rssUrlInput, fetchOnlyNewToggle, changePasswordPage, globalKeysPage, globalSourcesPage, btnChangePassword, btnGlobalKeys, btnNewsSources, backToAdminConfig1, backToAdminConfig2, backToAdminConfig3, globalLogoPage, btnGlobalLogo, backToAdminConfig4, globalLogoUpload, globalLogoArea, logoLink, btnRadioSources, globalRadioSourcesPage, backToAdminConfig5, radioSourcesInput, articleDetailPage, backFromDetail, detailTitle, detailMeta, detailContent, shareWhatsappBtn, shareEmailBtn, companyKeywordReportPage, backToSuperAdminReportBtn, companyKeywordReportTitle, detailAiInsights, printBtn, shareButtonsContainer, mapStartDateInput, mapEndDateInput, mapFilterBtn, reportStartDateInput, reportEndDateInput, testRssBtn, clearRssPreviewBtn, rssPreviewContainer, testRadioBtn, radioAudioEl, radioNameInput, radioUrlInput, radioStartInput, radioEndInput, radioAddBtn;
 
         function showAlert(message, type = 'success') { const c = type === 'success' ? 'bg-green-100 border-green-500 text-green-700' : 'bg-red-100 border-red-500 text-red-700'; globalAlert.innerHTML = `<div class="${c} border-l-4 p-4 rounded-md fade-in" role="alert"><p>${message}</p></div>`; setTimeout(() => { globalAlert.innerHTML = ''; }, 4000); }
         function getChannelCategory(sourceName) {
@@ -1165,7 +1169,8 @@
                 queryConstraints.push(limit(200));
 
                 const articlesQuery = query(baseCollection, ...queryConstraints);
-                const articlesSnapshot = await getDocs(articlesQuery);
+                const keywordsQuery = query(collection(db, "artifacts", appId, "users", currentUser.companyId, "keywords"));
+                const [articlesSnapshot, keywordsSnapshot] = await Promise.all([getDocs(articlesQuery), getDocs(keywordsQuery)]);
                 const infoWindow = new google.maps.InfoWindow();
 
                 const regionCountsEl = document.getElementById('region-counts');
@@ -1176,6 +1181,20 @@
                     return;
                 }
 
+                // Renderiza lista de palavras-chave para filtro no mapa
+                const keywords = keywordsSnapshot.docs.map(doc => doc.data().word);
+                if (mapKeywordFilterContainer) {
+                    mapKeywordFilterContainer.innerHTML = '';
+                    keywords.forEach(kw => {
+                        const id = `map-kw-${kw.replace(/\s+/g, '-')}`;
+                        const filterEl = document.createElement('div');
+                        filterEl.className = 'flex items-center';
+                        filterEl.innerHTML = `<input type="checkbox" id="${id}" value="${kw}" class="map-kw-checkbox h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"><label for="${id}" class="ml-2 block text-sm text-gray-900">${kw}</label>`;
+                        mapKeywordFilterContainer.appendChild(filterEl);
+                    });
+                }
+                const selectedKeywords = mapKeywordFilterContainer ? Array.from(mapKeywordFilterContainer.querySelectorAll('.map-kw-checkbox:checked')).map(cb => cb.value) : [];
+
                 const stateToRegion = {
                     'AC':'Norte','AP':'Norte','AM':'Norte','PA':'Norte','RO':'Norte','RR':'Norte','TO':'Norte',
                     'AL':'Nordeste','BA':'Nordeste','CE':'Nordeste','MA':'Nordeste','PB':'Nordeste','PE':'Nordeste','PI':'Nordeste','RN':'Nordeste','SE':'Nordeste',
@@ -1185,8 +1204,17 @@
                 };
                 const regionCounts = { 'Norte':0, 'Nordeste':0, 'Centro-Oeste':0, 'Sudeste':0, 'Sul':0, 'Indefinido':0 };
 
-                articlesSnapshot.forEach(doc => {
-                    const article = { id: doc.id, ...doc.data() };
+                // Aplica filtragem por palavras-chave antes de agregação
+                const articles = [];
+                articlesSnapshot.forEach(doc => { articles.push({ id: doc.id, ...doc.data() }); });
+                const filteredArticles = selectedKeywords.length === 0
+                    ? articles
+                    : articles.filter(article => {
+                        const articleKeywords = article.keywords || [article.keyword];
+                        return selectedKeywords.some(sk => articleKeywords.includes(sk));
+                    });
+
+                filteredArticles.forEach(article => {
                     const marker = new google.maps.Marker({
                         position: article.geolocation,
                         map: mapInstance,
@@ -1218,7 +1246,7 @@
                     }
 
                     marker.addListener('mouseover', () => {
-                        infoWindow.setContent(`                        <div class="font-sans p-1">                            <p class="font-bold text-sm">${article.title}</p>                            <p class="text-xs text-gray-500">${article.source.name}</p>                        </div>                        `);
+                        infoWindow.setContent(`                        <div class=\"font-sans p-1\">                            <p class=\"font-bold text-sm\">${article.title}</p>                            <p class=\"text-xs text-gray-500\">${article.source.name}</p>                        </div>                        `);
                         infoWindow.open({
                             anchor: marker,
                             map: mapInstance,
@@ -1234,9 +1262,9 @@
 
                 if (regionCountsEl) {
                     const tile = (label, count) => (
-                        `<div class="p-3 bg-gray-100 rounded-md flex items-center justify-between">`+
-                        `<span class="font-medium text-gray-700">${label}</span>`+
-                        `<span class="text-indigo-700 font-bold">${count}</span>`+
+                        `<div class=\"p-3 bg-gray-100 rounded-md flex items-center justify-between\">`+
+                        `<span class=\"font-medium text-gray-700\">${label}</span>`+
+                        `<span class=\"text-indigo-700 font-bold\">${count}</span>`+
                         `</div>`
                     );
                     regionCountsEl.innerHTML = [
@@ -1247,6 +1275,11 @@
                         tile('Sul', regionCounts['Sul']),
                         tile('Indefinido', regionCounts['Indefinido'])
                     ].join('');
+                }
+
+                // Re-render quando o usuário mudar os checkboxes de palavras
+                if (mapKeywordFilterContainer) {
+                    mapKeywordFilterContainer.onchange = () => renderMapPage();
                 }
             } catch (error) {
                 console.error("Erro ao carregar notícias para o mapa:", error);
@@ -2447,6 +2480,7 @@
             mapStartDateInput = document.getElementById('map-start-date');
             mapEndDateInput = document.getElementById('map-end-date');
             mapFilterBtn = document.getElementById('map-filter-btn');
+            mapKeywordFilterContainer = document.getElementById('map-keyword-filter-container');
             reportStartDateInput = document.getElementById('report-start-date');
             reportEndDateInput = document.getElementById('report-end-date');
 
