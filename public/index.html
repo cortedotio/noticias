@@ -11,6 +11,25 @@
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+
+    <!-- Define initMap antes de carregar a API do Google Maps -->
+    <script>
+        window.initMap = function() {
+            try {
+                const mapDiv = document.getElementById("map");
+                if (!mapDiv) { console.warn("initMap: elemento #map não encontrado."); return; }
+                const map = new google.maps.Map(mapDiv, {
+                    zoom: 4,
+                    center: { lat: -14.235, lng: -51.925 },
+                });
+                const mapReadyEvent = new CustomEvent('mapReady', { detail: map });
+                window.dispatchEvent(mapReadyEvent);
+            } catch (e) {
+                console.error("Erro ao inicializar o mapa do Google:", e);
+            }
+        };
+    </script>
 
     <!-- CHAVE DA API DO GOOGLE MAPS -->
     <script async defer
@@ -299,6 +318,10 @@
                         class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow">
                         <h3 class="text-lg sm:text-xl font-semibold text-gray-700">Relatório Geral</h3>
                     </button>
+                    <button id="btn-super-admin-critical-report"
+                        class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow">
+                        <h3 class="text-lg sm:text-xl font-semibold text-gray-700">Relatório de Análise Crítica</h3>
+                    </button>
                 </div>
                 <div class="mt-6 p-4 bg-blue-100 border-l-4 border-blue-500 text-blue-800 rounded-md text-left">
                     <p class="font-bold">Execução Manual do Robô</p>
@@ -307,6 +330,33 @@
                     <button id="manual-trigger-btn"
                         class="mt-4 w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:bg-blue-300">Executar
                         Robô Manualmente</button>
+                </div>
+                <div class="mt-8 p-4 border rounded-lg" id="unified-critical-report">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xl font-semibold">Relatório de Análise Crítica (Unificado)</h3>
+                        <button id="unified-print-btn" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded">Imprimir</button>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4" id="unified-summary">
+                        <div class="p-3 bg-gray-50 rounded"><div class="text-sm text-gray-500">Itens Totais</div><div id="unified-total" class="text-2xl font-bold">0</div></div>
+                        <div class="p-3 bg-gray-50 rounded"><div class="text-sm text-gray-500">Sentimento Predominante</div><div id="unified-dominant" class="text-2xl font-bold">-</div></div>
+                        <div class="p-3 bg-gray-50 rounded"><div class="text-sm text-gray-500">Keywords em Foco</div><div id="unified-keywords" class="text-sm">-</div></div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fonte</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Palavras‑Chave</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sentimento</th>
+                                </tr>
+                            </thead>
+                            <tbody id="unified-report-body" class="bg-white divide-y divide-gray-200">
+                                <tr><td colspan="5" class="text-center py-4">Carregando...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </section>
@@ -526,8 +576,27 @@
                         </div>
                         <div class="mt-3 flex flex-wrap gap-2">
                             <button id="test-radio-btn" class="bg-blue-600 text-white px-3 py-2 rounded-md hover:bg-blue-700">Testar Reprodução da Primeira Rádio</button>
+                            <button id="capture-radio-btn" class="bg-purple-600 text-white px-3 py-2 rounded-md hover:bg-purple-700">Capturar</button>
+                            <input id="capture-duration" type="number" min="5" max="300" step="5" value="30" class="w-24 px-2 py-2 border border-gray-300 rounded-md" placeholder="segundos">
+                            <input id="radio-alert-keywords" type="text" class="flex-1 px-3 py-2 border border-gray-300 rounded-md" placeholder="Palavras-chave para alertas (vírgulas)">
+                        </div>
+                        <div class="mt-2 flex flex-wrap gap-2">
+                            <button id="radio-migrate-btn" class="bg-green-600 text-white px-3 py-2 rounded-md hover:bg-green-700">Migrar linhas para Firestore</button>
                         </div>
                         <audio id="radio-audio" class="mt-3 w-full" controls></audio>
+                        <div id="radio-sources-preview" class="mt-6">
+                            <h3 class="text-lg font-semibold mb-2">Pré-visualização de Fontes de Rádio</h3>
+                            <p class="text-sm text-gray-600 mb-3">Cada linha deve seguir o padrão: Nome | URL | HH:MM-HH:MM (opcional). Clique em "Reproduzir" para testar uma fonte específica.</p>
+                            <div id="radio-sources-list" class="space-y-2"></div>
+                            <div id="radio-segments" class="mt-6">
+                                <h3 class="text-lg font-semibold mb-2">Segmentos Capturados</h3>
+                                <div id="radio-segments-list" class="space-y-2"></div>
+                            </div>
+                            <div id="radio-transcriptions" class="mt-6">
+                                <h3 class="text-lg font-semibold mb-2">Transcrições e Alertas</h3>
+                                <div id="radio-transcriptions-list" class="space-y-2"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -858,9 +927,29 @@
                     </table>
                 </div>
             </div>
+        <section id="super-admin-critical-report-page" class="page-section fade-in">
+            <button id="back-to-dashboard-crit"
+                class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar</button>
+            <div class="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
+                <div class="flex flex-col sm:flex-row justify-between items-start mb-6 gap-4">
+                    <h2 class="text-2xl sm:text-3xl font-bold text-gray-700 mb-4 sm:mb-0">Relatório de Análise Crítica</h2>
+                    <div class="flex items-center gap-2 w-full sm:w-auto">
+                        <label for="crit-company-select" class="text-sm font-medium">Empresa:</label>
+                        <select id="crit-company-select" class="px-2 py-1 border border-gray-300 rounded-md text-sm">
+                            <option value="">Selecione...</option>
+                        </select>
+                        <label for="crit-start-date" class="text-sm font-medium">De:</label>
+                        <input type="date" id="crit-start-date" class="px-2 py-1 border border-gray-300 rounded-md text-sm">
+                        <label for="crit-end-date" class="text-sm font-medium">Até:</label>
+                        <input type="date" id="crit-end-date" class="px-2 py-1 border border-gray-300 rounded-md text-sm">
+                        <button id="crit-generate-btn" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-sm">Gerar PDF</button>
+                    </div>
+                </div>
+                <div id="crit-preview" class="p-4 border rounded-md bg-gray-50">
+                    <p class="text-gray-500 text-sm">Preencha os campos acima e clique em "Gerar PDF". Uma prévia será exibida aqui e o arquivo será baixado automaticamente.</p>
+                </div>
+            </div>
         </section>
-
-        <section id="company-keyword-report-page" class="page-section fade-in">
             <button id="back-to-super-admin-report"
                 class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">← Voltar para Relatório
                 Geral</button>
@@ -1044,7 +1133,7 @@
 
     <script>
         // Função de callback global para a API do Google Maps
-        function initMap() {
+        window.initMap = function() {
             try {
                 const map = new google.maps.Map(document.getElementById("map"), {
                     zoom: 4,
@@ -1079,7 +1168,7 @@
         let mapInstance = null;
         let mapMarkers = [];
 
-        let pageSections, navLoggedIn, navInicio, navRelatorio, navMapa, navPesquisa, navSuperAdmin, navLogout, navConfiguracoesAdmin, globalAlert, loginPage, dashboardPage, mapPage, searchPage, superAdminPage, companyKeywordAdminPage, companySettingsAdminPage, reportPage, companyUserAdminPage, configuracoesAdminPage, loginForm, dashboardTitle, currentDateTimeEl, dashboardKeywordList, newsAlertsContainer, newsAlerts, alertDateFilter, reportAccessToggle, mapAccessToggle, logoUploadInput, headerLogoContainer, loginLogoContainer, filterContainer, searchInput, searchResults, companyForm, companyList, backToSuperAdminKwBtn, backToSuperAdminSettingsBtn, backToSuperAdminUsersBtn, companyKeywordAdminTitle, companySettingsAdminTitle, companyUserAdminTitle, keywordForm, keywordInput, keywordIdInput, adminKeywordList, userForm, userInput, userPasswordInput, userIdInput, adminUserList, notificationBell, notificationBadge, manualTriggerBtn, deleteModal, confirmDeleteBtn, cancelDeleteBtn, companyNameToDeleteEl, newsScopeContainer, startDateInput, endDateInput, linkModal, accessLinkInput, copyLinkBtn, closeLinkModalBtn, reportKeywordFilterContainer, mapKeywordFilterContainer, stateSelectContainer, stateSelect, changePasswordForm, apiKeyNewsApiInput, apiKeyFirebaseNewsInput, apiKeyGNewsInput1, apiKeyGNewsInput2, apiKeyGNewsInput3, apiKeyGNewsInput4, apiKeyYoutubeInput, apiKeyBloggerInput, apiKeyVisionInput, apiKeyVideoIntelligenceInput, showAllAlertsBtn, deletionAccessToggle, justificationModal, justificationText, submitJustificationBtn, cancelJustificationBtn, btnManualAlert, btnDeletionRequests, btnSuperAdminReport, manualAlertPage, deletionRequestsPage, superAdminReportPage, backToDashboard1, backToDashboard2, backToDashboard3, manualAlertForm, deletionRequestsList, superAdminReportBody, deletionRequestsBadge, pendingAlertsPage, pendingAlertsList, btnPendingAlerts, backToDashboard4, confirmDeleteKeywordBtn, cancelDeleteKeywordBtn, confirmDeleteKeywordModal, keywordToDeleteNameEl, bloggerIdInput, rssUrlInput, fetchOnlyNewToggle, changePasswordPage, globalKeysPage, globalSourcesPage, btnChangePassword, btnGlobalKeys, btnNewsSources, backToAdminConfig1, backToAdminConfig2, backToAdminConfig3, globalLogoPage, btnGlobalLogo, backToAdminConfig4, globalLogoUpload, globalLogoArea, logoLink, btnRadioSources, globalRadioSourcesPage, backToAdminConfig5, radioSourcesInput, articleDetailPage, backFromDetail, detailTitle, detailMeta, detailContent, shareWhatsappBtn, shareEmailBtn, companyKeywordReportPage, backToSuperAdminReportBtn, companyKeywordReportTitle, detailAiInsights, printBtn, shareButtonsContainer, mapStartDateInput, mapEndDateInput, mapFilterBtn, reportStartDateInput, reportEndDateInput, testRssBtn, clearRssPreviewBtn, rssPreviewContainer, testRadioBtn, radioAudioEl, radioNameInput, radioUrlInput, radioStartInput, radioEndInput, radioAddBtn;
+        let pageSections, navLoggedIn, navInicio, navRelatorio, navMapa, navPesquisa, navSuperAdmin, navLogout, navConfiguracoesAdmin, globalAlert, loginPage, dashboardPage, mapPage, searchPage, superAdminPage, companyKeywordAdminPage, companySettingsAdminPage, reportPage, companyUserAdminPage, configuracoesAdminPage, loginForm, dashboardTitle, currentDateTimeEl, dashboardKeywordList, newsAlertsContainer, newsAlerts, alertDateFilter, reportAccessToggle, mapAccessToggle, logoUploadInput, headerLogoContainer, loginLogoContainer, filterContainer, searchInput, searchResults, companyForm, companyList, backToSuperAdminKwBtn, backToSuperAdminSettingsBtn, backToSuperAdminUsersBtn, companyKeywordAdminTitle, companySettingsAdminTitle, companyUserAdminTitle, keywordForm, keywordInput, keywordIdInput, adminKeywordList, userForm, userInput, userPasswordInput, userIdInput, adminUserList, notificationBell, notificationBadge, manualTriggerBtn, deleteModal, confirmDeleteBtn, cancelDeleteBtn, companyNameToDeleteEl, newsScopeContainer, startDateInput, endDateInput, linkModal, accessLinkInput, copyLinkBtn, closeLinkModalBtn, reportKeywordFilterContainer, mapKeywordFilterContainer, stateSelectContainer, stateSelect, changePasswordForm, apiKeyNewsApiInput, apiKeyFirebaseNewsInput, apiKeyGNewsInput1, apiKeyGNewsInput2, apiKeyGNewsInput3, apiKeyGNewsInput4, apiKeyYoutubeInput, apiKeyBloggerInput, apiKeyVisionInput, apiKeyVideoIntelligenceInput, showAllAlertsBtn, deletionAccessToggle, justificationModal, justificationText, submitJustificationBtn, cancelJustificationBtn, btnManualAlert, btnDeletionRequests, btnSuperAdminReport, manualAlertPage, deletionRequestsPage, superAdminReportPage, backToDashboard1, backToDashboard2, backToDashboard3, manualAlertForm, deletionRequestsList, superAdminReportBody, deletionRequestsBadge, pendingAlertsPage, pendingAlertsList, btnPendingAlerts, backToDashboard4, confirmDeleteKeywordBtn, cancelDeleteKeywordBtn, confirmDeleteKeywordModal, keywordToDeleteNameEl, bloggerIdInput, rssUrlInput, fetchOnlyNewToggle, changePasswordPage, globalKeysPage, globalSourcesPage, btnChangePassword, btnGlobalKeys, btnNewsSources, backToAdminConfig1, backToAdminConfig2, backToAdminConfig3, globalLogoPage, btnGlobalLogo, backToAdminConfig4, globalLogoUpload, globalLogoArea, logoLink, btnRadioSources, globalRadioSourcesPage, backToAdminConfig5, radioSourcesInput, articleDetailPage, backFromDetail, detailTitle, detailMeta, detailContent, shareWhatsappBtn, shareEmailBtn, companyKeywordReportPage, backToSuperAdminReportBtn, companyKeywordReportTitle, detailAiInsights, printBtn, shareButtonsContainer, mapStartDateInput, mapEndDateInput, mapFilterBtn, reportStartDateInput, reportEndDateInput, testRssBtn, clearRssPreviewBtn, rssPreviewContainer, testRadioBtn, radioAudioEl, radioNameInput, radioUrlInput, radioStartInput, radioEndInput, radioAddBtn, radioMigrateBtn, btnSuperAdminCriticalReport, superAdminCriticalReportPage, critCompanySelect, critStartDateInput, critEndDateInput, critGenerateBtn, critPreview;
 
         function showAlert(message, type = 'success') { const c = type === 'success' ? 'bg-green-100 border-green-500 text-green-700' : 'bg-red-100 border-red-500 text-red-700'; globalAlert.innerHTML = `<div class="${c} border-l-4 p-4 rounded-md fade-in" role="alert"><p>${message}</p></div>`; setTimeout(() => { globalAlert.innerHTML = ''; }, 4000); }
         function getChannelCategory(sourceName) {
@@ -1120,6 +1209,7 @@
                 case 'manual-alert': manualAlertPage.classList.add('active'); renderManualAlertPage(); break;
                 case 'deletion-requests': deletionRequestsPage.classList.add('active'); setupDeletionRequestsListener(); break;
                 case 'super-admin-report': superAdminReportPage.classList.add('active'); renderSuperAdminReport(); break;
+                case 'super-admin-critical-report': superAdminCriticalReportPage.classList.add('active'); renderSuperAdminCriticalReportPage(); break;
                 case 'super-admin-queue': pendingAlertsPage.classList.add('active'); setupPendingAlertsListener(); break;
                 case 'article-detail': articleDetailPage.classList.add('active'); break;
                 case 'company-keyword-report': companyKeywordReportPage.classList.add('active'); break;
@@ -1562,7 +1652,105 @@
         async function renderGlobalKeysPage() { try { const settingsRef = doc(db, "artifacts", appId, "public/data/settings", "global"); const docSnap = await getDoc(settingsRef); if (docSnap.exists()) { const settings = docSnap.data(); if (apiKeyNewsApiInput) apiKeyNewsApiInput.value = settings.apiKeyNewsApi || ''; if (apiKeyFirebaseNewsInput) apiKeyFirebaseNewsInput.value = settings.apiKeyFirebaseNews || ''; if (apiKeyGNewsInput1) apiKeyGNewsInput1.value = settings.apiKeyGNews1 || ''; if (apiKeyGNewsInput2) apiKeyGNewsInput2.value = settings.apiKeyGNews2 || ''; if (apiKeyGNewsInput3) apiKeyGNewsInput3.value = settings.apiKeyGNews3 || ''; if (apiKeyGNewsInput4) apiKeyGNewsInput4.value = settings.apiKeyGNews4 || ''; if (apiKeyYoutubeInput) apiKeyYoutubeInput.value = settings.apiKeyYoutube || ''; if (apiKeyBloggerInput) apiKeyBloggerInput.value = settings.apiKeyBlogger || ''; if (apiKeyVisionInput) apiKeyVisionInput.value = settings.apiKeyVision || ''; if (apiKeyVideoIntelligenceInput) apiKeyVideoIntelligenceInput.value = settings.apiKeyVideoIntelligence || ''; } } catch (error) { console.error("Erro ao carregar as chaves de API globais:", error); } }
         async function handleGlobalKeyChange(e) { const settingsRef = doc(db, "artifacts", appId, "public/data/settings", "global"); const key = e.target.id; const value = e.target.value; try { await setDoc(settingsRef, { [key]: value }, { merge: true }); showAlert('Chave de API guardada!', 'success'); } catch (error) { console.error("Erro ao guardar a chave de API global:", error); } }
         async function renderGlobalSourcesPage() { try { const settingsRef = doc(db, "artifacts", appId, "public/data/settings", "global"); const docSnap = await getDoc(settingsRef); if (docSnap.exists()) { const settings = docSnap.data(); if (bloggerIdInput) bloggerIdInput.value = settings.bloggerId || ''; if (rssUrlInput) rssUrlInput.value = settings.rssUrl || ''; } } catch (error) { console.error("Erro ao carregar as fontes globais:", error); } }
-        async function renderGlobalRadioSourcesPage() { try { const settingsRef = doc(db, "artifacts", appId, "public/data/settings", "global"); const docSnap = await getDoc(settingsRef); if (docSnap.exists()) { const settings = docSnap.data(); if (radioSourcesInput) radioSourcesInput.value = settings.radioSources || ''; } } catch (error) { console.error("Erro ao carregar as fontes de rádio:", error); } }
+        function renderRadioSourcesPreview() {
+            try {
+                const container = document.getElementById('radio-sources-list');
+                if (!container) return;
+                container.innerHTML = '';
+                // Se existem fontes estruturadas, priorizar essa renderização
+                if (typeof radioSourcesStructured !== 'undefined' && radioSourcesStructured && radioSourcesStructured.length > 0) {
+                    radioSourcesStructured.forEach((s, idx) => {
+                        const name = s.name || `Rádio ${idx+1}`;
+                        const url = s.url || '';
+                        const scheduleRaw = (s.start && s.end) ? `${s.start}-${s.end}` : (s.start || s.end || '');
+                        const row = document.createElement('div');
+                        row.className = 'flex items-center gap-2';
+                        const nameEl = document.createElement('span');
+                        nameEl.className = 'font-medium';
+                        nameEl.textContent = name;
+                        const urlEl = document.createElement('a');
+                        urlEl.href = url || '#';
+                        urlEl.target = '_blank';
+                        urlEl.className = 'text-blue-600 hover:underline break-all';
+                        urlEl.textContent = url || '(sem URL)';
+                        const scheduleEl = document.createElement('span');
+                        scheduleEl.className = 'text-sm text-gray-600';
+                        scheduleEl.textContent = scheduleRaw ? `| ${scheduleRaw}` : '';
+                        const playBtn = document.createElement('button');
+                        playBtn.className = 'ml-auto bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700';
+                        playBtn.textContent = 'Reproduzir';
+                        playBtn.addEventListener('click', () => {
+                            const audioEl = document.getElementById('radio-audio');
+                            if (!audioEl || !url) { showAlert('URL inválido para reprodução.', 'error'); return; }
+                            try { audioEl.src = url; audioEl.play(); showAlert(`Reproduzindo: ${name}`, 'info'); } catch (err) { console.error('Falha ao reproduzir rádio:', err); showAlert('Falha ao reproduzir.', 'error'); }
+                        });
+                        const delBtn = document.createElement('button');
+                        delBtn.className = 'bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700';
+                        delBtn.textContent = 'Excluir';
+                        delBtn.addEventListener('click', async () => {
+                            if (!s.id) return;
+                            try {
+                                await deleteDoc(doc(db, 'artifacts', appId, 'public/data/radioSources', s.id));
+                                showAlert('Fonte excluída!', 'success');
+                                await refreshStructuredRadioSources();
+                            } catch (error) {
+                                console.error('Erro ao excluir a fonte de rádio:', error);
+                                showAlert('Erro ao excluir a fonte.', 'error');
+                            }
+                        });
+                        row.appendChild(nameEl);
+                        row.appendChild(urlEl);
+                        row.appendChild(scheduleEl);
+                        row.appendChild(playBtn);
+                        row.appendChild(delBtn);
+                        container.appendChild(row);
+                    });
+                    return;
+                }
+                // Fallback para texto legado
+                if (!radioSourcesInput) return;
+                const lines = (radioSourcesInput.value || '').split('\n').map(l => l.trim()).filter(Boolean);
+                if (lines.length === 0) {
+                    container.innerHTML = '<p class="text-gray-500 text-sm">Nenhuma fonte cadastrada.</p>';
+                    return;
+                }
+                lines.forEach((line, idx) => {
+                    const parts = line.split('|').map(p => p.trim());
+                    const name = parts[0] || `Rádio ${idx+1}`;
+                    const url = parts[1] || '';
+                    const scheduleRaw = parts[2] || '';
+                    const row = document.createElement('div');
+                    row.className = 'flex items-center gap-2';
+                    const nameEl = document.createElement('span');
+                    nameEl.className = 'font-medium';
+                    nameEl.textContent = name;
+                    const urlEl = document.createElement('a');
+                    urlEl.href = url || '#';
+                    urlEl.target = '_blank';
+                    urlEl.className = 'text-blue-600 hover:underline break-all';
+                    urlEl.textContent = url || '(sem URL)';
+                    const scheduleEl = document.createElement('span');
+                    scheduleEl.className = 'text-sm text-gray-600';
+                    scheduleEl.textContent = scheduleRaw ? `| ${scheduleRaw}` : '';
+                    const playBtn = document.createElement('button');
+                    playBtn.className = 'ml-auto bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700';
+                    playBtn.textContent = 'Reproduzir';
+                    playBtn.addEventListener('click', () => {
+                        const audioEl = document.getElementById('radio-audio');
+                        if (!audioEl || !url) { showAlert('URL inválido para reprodução.', 'error'); return; }
+                        try { audioEl.src = url; audioEl.play(); showAlert(`Reproduzindo: ${name}`, 'info'); } catch (err) { console.error('Falha ao reproduzir rádio:', err); showAlert('Falha ao reproduzir.', 'error'); }
+                    });
+                    row.appendChild(nameEl);
+                    row.appendChild(urlEl);
+                    row.appendChild(scheduleEl);
+                    row.appendChild(playBtn);
+                    container.appendChild(row);
+                });
+            } catch (err) {
+                console.error('Erro ao renderizar preview de rádios:', err);
+            }
+        }
+        async function renderGlobalRadioSourcesPage() { try { const settingsRef = doc(db, "artifacts", appId, "public/data/settings", "global"); const docSnap = await getDoc(settingsRef); if (docSnap.exists()) { const settings = docSnap.data(); if (radioSourcesInput) radioSourcesInput.value = settings.radioSources || ''; } } catch (error) { console.error("Erro ao carregar as fontes de rádio:", error); } finally { await refreshStructuredRadioSources?.(); renderRadioSourcesPreview(); } }
 
         function cleanAndSaveTextarea(e) {
             const textarea = e.target;
@@ -1798,6 +1986,7 @@
                 renderDateChart(filteredArticles, keywordsToDisplay);
                 renderSentimentChart(filteredArticles, keywordsToDisplay);
                 renderChannelChart(filteredArticles, keywordsToDisplay);
+                if (typeof updateUnifiedCriticalReport === 'function') { updateUnifiedCriticalReport(keywordsToDisplay); }
             };
             if (startDateInput) startDateInput.addEventListener('change', updateCharts);
             if (endDateInput) endDateInput.addEventListener('change', updateCharts);
@@ -1873,6 +2062,66 @@
             });
             const sentimentChartOptions = { scales: { y: { ticks: { callback: function (value) { return value + '%'; } }, min: 0, max: 100 } }, plugins: { tooltip: { callbacks: { label: function (context) { let label = context.dataset.label || ''; if (label) { label += ': '; } if (context.parsed.y !== null) { label += context.parsed.y.toFixed(2) + '%'; } return label; } } } } };
             sentimentChartInstance = createChart('sentiment-chart', sentimentChartInstance, 'line', { labels: allSentiments, datasets }, sentimentChartOptions);
+        }
+
+        function updateUnifiedCriticalReport(selectedKeywords = []) {
+            const section = document.getElementById('unified-critical-report');
+            if (!section) return;
+            const tbody = document.getElementById('unified-report-body');
+            const totalEl = document.getElementById('unified-total');
+            const dominantEl = document.getElementById('unified-dominant');
+            const keywordsEl = document.getElementById('unified-keywords');
+            if (!tbody) return;
+            const startDate = startDateInput && startDateInput.value ? new Date(startDateInput.value) : null;
+            const endDate = endDateInput && endDateInput.value ? new Date(endDateInput.value) : null;
+            if (startDate) startDate.setHours(0, 0, 0, 0);
+            if (endDate) endDate.setHours(23, 59, 59, 999);
+            const kwSet = new Set(selectedKeywords || []);
+            const items = [];
+            (allCompanyArticles || []).forEach(a => {
+                const pubDate = a.publishedAt?.toDate ? a.publishedAt.toDate() : new Date();
+                const dateMatch = (!startDate || pubDate >= startDate) && (!endDate || pubDate <= endDate);
+                const kws = (a.keywords || [a.keyword]).filter(Boolean);
+                const kwMatch = kwSet.size === 0 || kws.some(k => kwSet.has(k));
+                if (!dateMatch || !kwMatch) return;
+                const score = a.ai?.sentiment?.score ?? a.sentiment?.score ?? 0;
+                items.push({ type: 'Artigo', source: a.source?.name || '—', date: pubDate, keywords: kws, score });
+            });
+            (window.radioTranscriptionsData || []).forEach(r => {
+                const d = r.date instanceof Date ? r.date : new Date(r.date);
+                const dateMatch = (!startDate || d >= startDate) && (!endDate || d <= endDate);
+                const kws = (Array.isArray(r.matches) && r.matches.length ? r.matches : (r.keywords || [])).filter(Boolean);
+                const kwMatch = kwSet.size === 0 || kws.some(k => kwSet.has(k));
+                if (!dateMatch || !kwMatch) return;
+                const score = typeof r.sentimentScore === 'number' ? r.sentimentScore : 0;
+                items.push({ type: 'Rádio', source: 'Rádio', date: d, keywords: kws, score });
+            });
+            const sentimentCounts = { positive: 0, neutral: 0, negative: 0 };
+            const kwFreq = new Map();
+            items.forEach(it => {
+                const s = it.score;
+                if (s > 0.25) sentimentCounts.positive++; else if (s < -0.25) sentimentCounts.negative++; else sentimentCounts.neutral++;
+                (it.keywords || []).forEach(k => kwFreq.set(k, (kwFreq.get(k) || 0) + 1));
+            });
+            const total = items.length;
+            if (totalEl) totalEl.textContent = String(total);
+            const dominant = Object.entries(sentimentCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'neutral';
+            if (dominantEl) dominantEl.textContent = dominant === 'positive' ? 'Positivo' : dominant === 'negative' ? 'Negativo' : 'Neutro';
+            const topKw = [...kwFreq.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5).map(([k]) => k);
+            if (keywordsEl) keywordsEl.textContent = topKw.length ? topKw.join(', ') : '—';
+            tbody.innerHTML = '';
+            if (items.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-3 text-gray-500">Nenhum item para os filtros selecionados.</td></tr>`;
+                return;
+            }
+            items.sort((a, b) => b.date - a.date).forEach(it => {
+                const label = it.score > 0.25 ? 'Positivo' : it.score < -0.25 ? 'Negativo' : 'Neutro';
+                const dateStr = it.date.toLocaleString('pt-BR');
+                const kws = (it.keywords || []).join(', ');
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td class="px-4 py-2">${it.type}</td><td class="px-4 py-2">${it.source}</td><td class="px-4 py-2">${dateStr}</td><td class="px-4 py-2">${kws || '—'}</td><td class="px-4 py-2">${label}</td>`;
+                tbody.appendChild(tr);
+            });
         }
 
         async function setupSearchPage() { if (!currentUser) return; if (searchInput) searchInput.value = ''; if (searchResults) searchResults.innerHTML = '<p class="text-gray-500">A carregar todos os artigos para pesquisa...</p>'; try { const q = query(collection(db, "artifacts", appId, "users", currentUser.companyId, "articles"), orderBy("publishedAt", "desc")); const articlesSnapshot = await getDocs(q); allCompanyArticles = articlesSnapshot.docs.map(d => ({ ...d.data(), id: d.id })); if (searchResults) searchResults.innerHTML = `<p class="text-gray-500">Pronto para pesquisar em ${allCompanyArticles.length} artigos. Digite um termo ou utilize os filtros.</p>`; setupFilters(); } catch (error) { console.error("Erro ao buscar artigos para pesquisa:", error); if (searchResults) searchResults.innerHTML = '<p class="text-red-500">Não foi possível carregar os artigos para pesquisa.</p>'; } }
@@ -2322,6 +2571,116 @@
             }
         }
 
+        // Funções do Relatório de Análise Crítica
+        async function loadCompaniesIntoSelect(selectEl) {
+            try {
+                if (!selectEl) return;
+                const qCompanies = query(collection(db, "artifacts", appId, "public/data/companies"));
+                const snap = await getDocs(qCompanies);
+                selectEl.innerHTML = '<option value="">Selecione uma empresa</option>';
+                snap.docs.forEach(d => {
+                    const data = d.data();
+                    const opt = document.createElement('option');
+                    opt.value = d.id;
+                    opt.textContent = data.name || d.id;
+                    selectEl.appendChild(opt);
+                });
+            } catch (error) {
+                console.error("Erro ao carregar empresas:", error);
+                showAlert("Erro ao carregar empresas.", "error");
+            }
+        }
+        function renderSuperAdminCriticalReportPage() {
+            if (critPreview) {
+                critPreview.innerHTML = '<div class="text-gray-600">Selecione a empresa e o período, depois clique em "Gerar PDF".</div>';
+            }
+            if (critCompanySelect && !critCompanySelect.options.length) {
+                loadCompaniesIntoSelect(critCompanySelect);
+            }
+        }
+        async function handleGenerateCriticalReport() {
+            try {
+                if (!critCompanySelect || !critStartDateInput || !critEndDateInput) return;
+                const companyId = critCompanySelect.value;
+                const start = critStartDateInput.value;
+                const end = critEndDateInput.value;
+                if (!companyId || !start || !end) { showAlert('Selecione empresa e período.', 'error'); return; }
+                const startDate = new Date(start);
+                const endDate = new Date(end);
+                const ref = collection(db, "artifacts", appId, "users", companyId, "articles");
+                const q = query(ref, orderBy("publishedAt", "desc"));
+                const snap = await getDocs(q);
+                const items = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(a => {
+                    const dtStr = a.publishedAt || a.createdAt || a.date || null;
+                    const dt = dtStr ? new Date(dtStr) : null;
+                    return dt ? (dt >= startDate && dt <= endDate) : false;
+                });
+                const totalAlerts = items.length;
+                let pos = 0, neu = 0, neg = 0;
+                const channelCounts = {};
+                const vehicleCounts = {};
+                items.forEach(a => {
+                    const score = (a.ai && a.ai.sentiment && typeof a.ai.sentiment.score === 'number') ? a.ai.sentiment.score : ((a.sentiment && typeof a.sentiment.score === 'number') ? a.sentiment.score : 0);
+                    if (score > 0.2) pos++; else if (score < -0.2) neg++; else neu++;
+                    const channel = getChannelCategory(a.sourceName || a.source || '');
+                    channelCounts[channel] = (channelCounts[channel] || 0) + 1;
+                    const vehicle = (a.sourceName || a.source || 'Desconhecido');
+                    vehicleCounts[vehicle] = (vehicleCounts[vehicle] || 0) + 1;
+                });
+                const totalSent = Math.max(1, pos + neu + neg);
+                const sentimentPercentage = {
+                    positive: Math.round((pos / totalSent) * 100),
+                    neutral: Math.round((neu / totalSent) * 100),
+                    negative: Math.round((neg / totalSent) * 100)
+                };
+                const predominantSentiment = pos >= neu && pos >= neg ? 'Positivo' : (neg >= pos && neg >= neu ? 'Negativo' : 'Neutro');
+                const topChannel = Object.entries(channelCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'N/A';
+                const topVehicle = Object.entries(vehicleCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'N/A';
+
+                // Preview básico em HTML
+                if (critPreview) {
+                    critPreview.innerHTML = `
+                        <div class="p-4 bg-white rounded-md shadow">
+                            <h3 class="text-lg font-semibold mb-2">Resumo</h3>
+                            <p><strong>Empresa:</strong> ${companyId}</p>
+                            <p><strong>Período:</strong> ${start} a ${end}</p>
+                            <p><strong>Total de alertas:</strong> ${totalAlerts}</p>
+                            <p><strong>Sentimento:</strong> <span class="text-green-600">P: ${sentimentPercentage.positive}%</span>, <span class="text-gray-600">N: ${sentimentPercentage.neutral}%</span>, <span class="text-red-600">Ng: ${sentimentPercentage.negative}%</span> (${predominantSentiment})</p>
+                            <p><strong>Canal principal:</strong> ${topChannel}</p>
+                            <p><strong>Veículo principal:</strong> ${topVehicle}</p>
+                        </div>`;
+                }
+
+                // Geração de PDF simples
+                const jspdfNS = window.jspdf || {};
+                const jsPDFCtor = jspdfNS.jsPDF;
+                if (!jsPDFCtor) { showAlert('Biblioteca jsPDF não carregada.', 'error'); return; }
+                const doc = new jsPDFCtor({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+                doc.setFontSize(16);
+                doc.text('Relatório de Análise Crítica', 10, 20);
+                doc.setFontSize(12);
+                doc.text(`Empresa: ${companyId}`, 10, 30);
+                doc.text(`Período: ${start} a ${end}`, 10, 38);
+                doc.text(`Total de alertas: ${totalAlerts}`, 10, 46);
+                doc.text(`Sentimento: P ${sentimentPercentage.positive}% / N ${sentimentPercentage.neutral}% / Ng ${sentimentPercentage.negative}% (${predominantSentiment})`, 10, 54);
+                doc.text(`Canal principal: ${topChannel}`, 10, 62);
+                doc.text(`Veículo principal: ${topVehicle}`, 10, 70);
+
+                doc.addPage();
+                doc.text('Análises avançadas (gráficos, comparativos) - em desenvolvimento', 10, 20);
+                doc.addPage();
+                doc.text('Rádios (transcrições, duração, sentimento) - em desenvolvimento', 10, 20);
+                doc.addPage();
+                doc.text('Espaço ocupado (web/impressos) - em desenvolvimento', 10, 20);
+
+                doc.save('relatorio-critico.pdf');
+                showAlert('Relatório crítico gerado e descarregado.', 'success');
+            } catch (error) {
+                console.error('Erro ao gerar relatório crítico:', error);
+                showAlert('Erro ao gerar relatório crítico.', 'error');
+            }
+        }
+
         // --- INICIALIZAÇÃO E OUVINTES DE EVENTOS --- 
         document.addEventListener('DOMContentLoaded', () => {
             pageSections = document.querySelectorAll('.page-section');
@@ -2412,6 +2771,7 @@
         radioStartInput = document.getElementById('radio-start-input');
         radioEndInput = document.getElementById('radio-end-input');
         radioAddBtn = document.getElementById('radio-add-btn');
+        radioMigrateBtn = document.getElementById('radio-migrate-btn');
             fetchOnlyNewToggle = document.getElementById('fetch-only-new-toggle');
             // Novos elementos de teste de RSS e rádio
             testRssBtn = document.getElementById('test-rss-btn');
@@ -2439,10 +2799,13 @@
             cancelJustificationBtn = document.getElementById('cancel-justification-btn');
             btnManualAlert = document.getElementById('btn-manual-alert');
             btnDeletionRequests = document.getElementById('btn-deletion-requests');
-            btnSuperAdminReport = document.getElementById('btn-super-admin-report');
-            manualAlertPage = document.getElementById('manual-alert-page');
-            deletionRequestsPage = document.getElementById('deletion-requests-page');
-            superAdminReportPage = document.getElementById('super-admin-report-page');
+            btnSuperAdminCriticalReport = document.getElementById('btn-super-admin-critical-report');
+            superAdminCriticalReportPage = document.getElementById('super-admin-critical-report-page');
+            critCompanySelect = document.getElementById('crit-company-select');
+            critStartDateInput = document.getElementById('crit-start-date');
+            critEndDateInput = document.getElementById('crit-end-date');
+            critGenerateBtn = document.getElementById('crit-generate-btn');
+            critPreview = document.getElementById('crit-preview');
             backToDashboard1 = document.getElementById('back-to-dashboard-1');
             backToDashboard2 = document.getElementById('back-to-dashboard-2');
             backToDashboard3 = document.getElementById('back-to-dashboard-3');
@@ -2548,7 +2911,7 @@
             if (apiKeyVideoIntelligenceInput) apiKeyVideoIntelligenceInput.addEventListener('change', handleGlobalKeyChange);
             if (bloggerIdInput) bloggerIdInput.addEventListener('change', handleGlobalSourceChange);
             if (rssUrlInput) rssUrlInput.addEventListener('change', handleGlobalSourceChange);
-            if (radioSourcesInput) radioSourcesInput.addEventListener('change', handleGlobalSourceChange);
+            if (radioSourcesInput) { radioSourcesInput.addEventListener('change', handleGlobalSourceChange); radioSourcesInput.addEventListener('input', renderRadioSourcesPreview); }
             if (reportAccessToggle) reportAccessToggle.addEventListener('change', handleSettingsChange);
             if (mapAccessToggle) mapAccessToggle.addEventListener('change', handleSettingsChange);
             if (fetchOnlyNewToggle) fetchOnlyNewToggle.addEventListener('change', handleSettingsChange);
@@ -2556,7 +2919,129 @@
             if (testRssBtn) testRssBtn.addEventListener('click', testRSSFeeds);
             if (clearRssPreviewBtn) clearRssPreviewBtn.addEventListener('click', clearRssPreview);
             if (testRadioBtn) testRadioBtn.addEventListener('click', testRadioPlayback);
-            if (radioAddBtn) radioAddBtn.addEventListener('click', () => {
+            const captureBtn = document.getElementById('capture-radio-btn');
+            const captureDurationInput = document.getElementById('capture-duration');
+            const radioAlertKeywordsInput = document.getElementById('radio-alert-keywords');
+            const radioSegmentsList = document.getElementById('radio-segments-list');
+            const radioTranscriptionsList = document.getElementById('radio-transcriptions-list');
+            window.radioTranscriptionsData = window.radioTranscriptionsData || [];
+            async function loadSegmentsAndTranscribe(keywords = []) {
+                try {
+                    const listResp = await fetch('http://127.0.0.1:6060/segments');
+                    const listData = await listResp.json();
+                    if (radioSegmentsList && Array.isArray(listData?.segments)) {
+                        radioSegmentsList.innerHTML = listData.segments.slice(0,10).map(s => `
+                            <div class=\"flex items-center gap-2\">
+                                <audio controls src=\"${s.url}\"></audio>
+                                <button class=\"bg-gray-200 text-gray-800 px-2 py-1 rounded\" data-file=\"${s.file}\">Transcrever</button>
+                                <span class=\"text-xs text-gray-500\">${new Date(s.mtime).toLocaleString('pt-BR')} - ${s.file}</span>
+                            </div>
+                        `).join('');
+                        // bind transcription buttons
+                        radioSegmentsList.querySelectorAll('button[data-file]').forEach(btn => {
+                            btn.addEventListener('click', async () => {
+                                const file = btn.getAttribute('data-file');
+                                try {
+                                    const resp = await fetch('http://127.0.0.1:6060/transcribe', {
+                                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ file, keywords })
+                                    });
+                                    const data = await resp.json();
+                                    if (!resp.ok) throw new Error(data?.error || 'Falha ao transcrever');
+                                    if (radioTranscriptionsList) {
+                                        const item = document.createElement('div');
+                                        item.className = 'p-2 border rounded-md';
+                                        item.innerHTML = `<div class=\"text-sm\"><strong>${file}</strong>: ${data.text}</div>
+                                            <div class=\"text-xs text-gray-600\">Language: ${data.language} | Sentimento: ${data.sentiment?.score ?? 0}</div>
+                                            ${data.matches?.length ? `<div class=\"text-xs text-red-600\">Alertas: ${data.matches.join(', ')}</div>` : ''}`;
+                                        radioTranscriptionsList.prepend(item);
+                                    }
+                                    // Integrar a um conjunto de artigos fictícios para gráficos de sentimento
+                                    const fakeArticle = { source: { name: 'Rádio' }, keywords, publishedAt: { toDate: () => new Date() }, ai: { sentiment: { score: data.sentiment?.score ?? 0 } } };
+                                    renderSentimentChart([fakeArticle], keywords);
+                                    // Atualizar dados em memória para o relatório unificado e renderizar
+                                    try {
+                                        window.radioTranscriptionsData.push({ file, text: data.text, language: data.language, sentimentScore: data.sentiment?.score ?? 0, matches: data.matches || [], date: new Date(), keywords });
+                                        updateUnifiedCriticalReport(keywords);
+                                    } catch (err) { console.warn('Falha ao atualizar relatório unificado:', err); }
+                                } catch (e) {
+                                    showAlert('Erro na transcrição (stub).', 'error');
+                                }
+                            });
+                        });
+                    }
+                } catch (e) {
+                    console.error('Erro ao carregar segmentos:', e);
+                }
+            }
+            if (captureBtn) captureBtn.addEventListener('click', async () => {
+                try {
+                    const firstLine = (radioSourcesInput?.value || '').split('\n').map(l => l.trim()).filter(Boolean)[0];
+                    const [name, url] = (firstLine || '').split('|').map(s => s.trim());
+                    const duration = Number(captureDurationInput?.value) || 30;
+                    const alertKeywords = (radioAlertKeywordsInput?.value || '').split(',').map(s => s.trim()).filter(Boolean);
+                    if (!url) { showAlert('Nenhuma fonte válida na primeira linha.', 'error'); return; }
+                    const resp = await fetch('http://127.0.0.1:6060/capture', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ url, name, duration })
+                    });
+                    const data = await resp.json();
+                    if (!resp.ok) throw new Error(data?.error || 'Falha ao capturar');
+                    showAlert(`Captura concluída: ${data.file}`, 'success');
+                    await loadSegmentsAndTranscribe(alertKeywords);
+                } catch (e) {
+                    console.error('Erro na captura:', e);
+                    showAlert('Erro na captura. Verifique o servidor em http://127.0.0.1:6060', 'error');
+                }
+            });
+            if (radioMigrateBtn) radioMigrateBtn.addEventListener('click', async () => {
+                if (!radioSourcesInput) return;
+                const lines = (radioSourcesInput.value || '').split('\n').map(l => l.trim()).filter(Boolean);
+                if (lines.length === 0) { showAlert('Nenhuma linha para migrar.', 'warning'); return; }
+                let success = 0, failed = 0;
+                for (const line of lines) {
+                    const parts = line.split('|').map(p => p.trim());
+                    const name = parts[0] || '';
+                    const url = parts[1] || '';
+                    let start = '', end = '';
+                    if (parts[2]) {
+                        const t = parts[2].split('-').map(x => x.trim());
+                        if (t.length === 2) { start = t[0]; end = t[1]; }
+                        else if (t.length === 1) { start = t[0]; }
+                    }
+                    if (!name || !url) { failed++; continue; }
+                    try { await addStructuredRadioSource(name, url, start, end); success++; }
+                    catch (e) { console.error('Falha ao migrar linha:', line, e); failed++; }
+                }
+                showAlert(`Migração concluída. Sucesso: ${success}, Falhas: ${failed}.`, 'info');
+            });
+            async function refreshStructuredRadioSources() {
+                try {
+                    const querySnap = await getDocs(collection(db, 'artifacts', appId, 'public/data/radioSources'));
+                    window.radioSourcesStructured = querySnap.docs.map(d => ({ id: d.id, ...d.data() }));
+                    renderRadioSourcesPreview();
+                } catch (error) { console.error('Erro ao carregar fontes estruturadas:', error); }
+            }
+            async function addStructuredRadioSource(name, url, start, end) {
+                try {
+                    const timezone = Intl?.DateTimeFormat?.().resolvedOptions?.().timeZone || 'America/Sao_Paulo';
+                    const payload = {
+                        name,
+                        url,
+                        start: start || null,
+                        end: end || null,
+                        daysOfWeek: [0,1,2,3,4,5,6],
+                        timezone,
+                        active: true,
+                        notes: '',
+                        createdAt: Date.now()
+                    };
+                    await addDoc(collection(db, 'artifacts', appId, 'public/data/radioSources'), payload);
+                    await refreshStructuredRadioSources();
+                    showAlert('Fonte de rádio adicionada!', 'success');
+                } catch (error) { console.error('Erro ao adicionar fonte de rádio:', error); showAlert('Erro ao adicionar a fonte.', 'error'); }
+            }
+            if (radioAddBtn) radioAddBtn.addEventListener('click', async () => {
                 const name = (radioNameInput && radioNameInput.value || '').trim();
                 const url = (radioUrlInput && radioUrlInput.value || '').trim();
                 const start = (radioStartInput && radioStartInput.value || '').trim();
@@ -2565,23 +3050,22 @@
                     showAlert('Preencha pelo menos o Nome e o URL da rádio.', 'warning');
                     return;
                 }
-                let line = `${name} | ${url}`;
-                if (start && end) {
-                    line += ` | ${start}-${end}`;
-                } else if (start && !end) {
-                    line += ` | ${start}`;
-                } else if (!start && end) {
-                    line += ` | ${end}`;
-                }
-                const current = (radioSourcesInput && radioSourcesInput.value || '').trim();
-                radioSourcesInput.value = current ? `${current}\n${line}` : line;
-                const event = new Event('change', { bubbles: true });
-                radioSourcesInput.dispatchEvent(event);
+                // Persistir no Firestore estruturado
+                await addStructuredRadioSource(name, url, start, end);
+                // Limpar inputs
                 if (radioNameInput) radioNameInput.value = '';
                 if (radioUrlInput) radioUrlInput.value = '';
                 if (radioStartInput) radioStartInput.value = '';
                 if (radioEndInput) radioEndInput.value = '';
-                showAlert('Fonte de rádio adicionada!', 'success');
+                // Atualizar textarea legado para manter compatibilidade visual
+                let line = `${name} | ${url}`;
+                if (start && end) { line += ` | ${start}-${end}`; }
+                else if (start && !end) { line += ` | ${start}`; }
+                else if (!start && end) { line += ` | ${end}`; }
+                const current = (radioSourcesInput && radioSourcesInput.value || '').trim();
+                radioSourcesInput.value = current ? `${current}\n${line}` : line;
+                const event = new Event('change', { bubbles: true });
+                radioSourcesInput.dispatchEvent(event);
             });
             if (deletionAccessToggle) deletionAccessToggle.addEventListener('change', handleSettingsChange);
             if (stateSelect) stateSelect.addEventListener('change', handleSettingsChange);
@@ -2651,9 +3135,19 @@
             if (shareWhatsappBtn) shareWhatsappBtn.addEventListener('click', handleShareActions);
             if (shareEmailBtn) shareEmailBtn.addEventListener('click', handleShareActions);
             if (printBtn) printBtn.addEventListener('click', () => window.print());
+            const unifiedPrintBtn = document.getElementById('unified-print-btn');
+            if (unifiedPrintBtn) unifiedPrintBtn.addEventListener('click', () => window.print());
             if (mapFilterBtn) mapFilterBtn.addEventListener('click', renderMapPage);
             if (reportStartDateInput) reportStartDateInput.addEventListener('change', renderSuperAdminReport);
             if (reportEndDateInput) reportEndDateInput.addEventListener('change', renderSuperAdminReport);
+
+            if (btnSuperAdminCriticalReport) btnSuperAdminCriticalReport.addEventListener('click', () => updateView('super-admin-critical-report'));
+            const backToDashboardCrit = document.getElementById('back-to-dashboard-crit');
+            if (backToDashboardCrit) backToDashboardCrit.addEventListener('click', () => updateView('dashboard'));
+            if (critGenerateBtn) critGenerateBtn.addEventListener('click', handleGenerateCriticalReport);
+            if (critCompanySelect) loadCompaniesIntoSelect(critCompanySelect);
+            if (critStartDateInput) critStartDateInput.addEventListener('change', renderSuperAdminCriticalReportPage);
+            if (critEndDateInput) critEndDateInput.addEventListener('change', renderSuperAdminCriticalReportPage);
 
 
             if (superAdminReportBody) superAdminReportBody.addEventListener('click', async (e) => {
