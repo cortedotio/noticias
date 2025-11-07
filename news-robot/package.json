@@ -7,6 +7,7 @@
     "@google-cloud/translate": "^8.2.0",
     "@google-cloud/video-intelligence": "^5.1.0",
     "@google-cloud/vision": "^4.3.0",
+    "@google-cloud/speech": "^6.4.0",
     "@googlemaps/google-maps-services-js": "^3.4.0",
     "axios": "^1.7.2",
     "cheerio": "^1.1.2",

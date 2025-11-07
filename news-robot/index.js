@@ -3,14 +3,12 @@
  * ...
  * * * * CORREÇÃO FINAL (SET/2025): Removida a truncagem de texto para exibir o conteúdo completo.
  * * Reintroduzida e corrigida a lógica de busca do YouTube para garantir a captura de vídeos.
- * * INCLUÍDO (SET/2025): Implementado scraper com Cheerio para extrair conteúdo completo das matérias.
  */
 
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const axios = require("axios");
 const Parser = require('rss-parser');
-const cheerio = require('cheerio'); // NOVO: Biblioteca para Scraper
 
 const { LanguageServiceClient } = require('@google-cloud/language');
 const { TranslationServiceClient } = require('@google-cloud/translate');
@@ -32,6 +30,7 @@ const GNEWS_URL = "https://gnews.io/api/v4/search";
 const NEWSAPI_URL = "https://newsapi.org/v2/everything";
 const BLOGGER_URL = "https://www.googleapis.com/blogger/v3/blogs";
 const YOUTUBE_URL = "https://www.googleapis.com/youtube/v3/search";
+const YOUTUBE_PLAYLIST_ITEMS_URL = "https://www.googleapis.com/youtube/v3/playlistItems";
 const APP_ID = "noticias-6e952";
 const GOOGLE_PROJECT_ID = "noticias-6e952";
 
@@ -44,71 +43,64 @@ const regionalFunctions = functions.region("southamerica-east1").runWith(runtime
 // --- Funções Auxiliares ---
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-// NOVO: Função para extrair o conteúdo completo de uma URL
-async function scrapeArticleContent(url) {
+// Descoberta automática de endpoints RSS
+const COMMON_FEED_PATHS = ['/feed', '/rss', '/index.xml', '/atom.xml', '/rss.xml', '/feed.xml', '/feeds/posts/default'];
+
+async function tryValidateFeed(url) {
     try {
-        const { data } = await axios.get(url, {
-            // Simular um navegador para evitar bloqueios simples
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-            }
-        });
-
-        const $ = cheerio.load(data);
-
-        // Remove elementos desnecessários que podem poluir o texto
-        $('script, style, noscript, iframe, img, figure, header, footer, nav, .ad, .advertisement, .comments, .sidebar').remove();
-
-        // Lista de seletores comuns para o conteúdo principal de artigos
-        const contentSelectors = [
-            'article .post-content',
-            'article .entry-content',
-            '[itemprop="articleBody"]',
-            '#article-body',
-            '.article-body',
-            '.story-content',
-            'article', // Como última opção, pegar a tag <article> inteira
-        ];
-
-        let bestContent = '';
-        for (const selector of contentSelectors) {
-            const contentHtml = $(selector).html();
-            if (contentHtml && contentHtml.length > bestContent.length) {
-                bestContent = contentHtml;
-            }
-        }
-
-        if (bestContent) {
-            // Carrega o melhor conteúdo encontrado para limpar e extrair o texto
-            const $content = cheerio.load(bestContent);
-            // Remove links, mantendo o texto deles
-            $content('a').replaceWith((i, el) => $content(el).text());
-            
-            // Converte o HTML limpo para texto, preservando parágrafos
-            let fullText = '';
-            $content('p, h1, h2, h3, h4, li').each((i, el) => {
-                const text = $content(el).text().trim();
-                if (text) {
-                    fullText += text + '\n\n';
-                }
-            });
-
-            return fullText.trim();
-        }
-        
-        return null; // Não encontrou conteúdo
-
-    } catch (error) {
-        functions.logger.warn(`Falha ao extrair conteúdo da URL ${url}:`, error.message);
-        return null; // Retorna null em caso de erro para não quebrar o fluxo
+        const feed = await parser.parseURL(url);
+        return !!(feed && typeof feed.items !== 'undefined');
+    } catch (e) {
+        return false;
     }
 }
 
+async function discoverRssFeeds(baseSiteUrl) {
+    const discovered = new Set();
+    let base;
+    try { base = new URL(baseSiteUrl); } catch { return discovered; }
+    const homepageUrl = base.origin;
 
+    const candidates = new Set();
+    // Tentar coletar via tags <link rel="alternate" type="application/rss+xml|atom">
+    for (const url of [base.href, homepageUrl]) {
+        try {
+            const resp = await axios.get(url, { headers: { 'User-Agent': 'Mozilla/5.0 (RSS Discovery Bot)' }, timeout: 8000 });
+            const html = resp.data || '';
+            const linkRegex = /<link[^>]*rel=["']?alternate["']?[^>]*>/gi;
+            let m;
+            while ((m = linkRegex.exec(html)) !== null) {
+                const tag = m[0];
+                if (/type=["']?(application\/(rss\+xml|atom\+xml))["']?/i.test(tag)) {
+                    const hrefMatch = tag.match(/href=["']([^"']+)["']/i);
+                    if (hrefMatch && hrefMatch[1]) {
+                        try { const resolved = new URL(hrefMatch[1], url).href; candidates.add(resolved); } catch {}
+                    }
+                }
+            }
+        } catch (e) {
+            functions.logger.warn(`Falha ao buscar HTML de ${url} para descoberta RSS: ${e.message}`);
+        }
+    }
+
+    // Tentar caminhos comuns
+    for (const path of COMMON_FEED_PATHS) {
+        try { candidates.add(new URL(path, homepageUrl).href); } catch {}
+    }
+
+    const candidateArray = Array.from(candidates).slice(0, 20);
+    for (const cand of candidateArray) {
+        try {
+            const ok = await tryValidateFeed(cand);
+            if (ok) { discovered.add(cand); }
+        } catch {}
+        if (discovered.size >= 5) break; // limitar quantidade por site
+    }
+    return discovered;
+}
 const findMatchingKeywords = (article, keywords) => {
     let contentToSearch = (article.title || "").toLowerCase();
-    // Usa o 'content' (que agora pode ser o texto completo) para a busca de keywords
-    contentToSearch += " " + (article.content || article.description || "").toLowerCase(); 
+    contentToSearch += " " + (article.contentSnippet || article.description || article.content || "").toLowerCase();
     if (article.ai?.videoTranscription) {
         contentToSearch += " " + article.ai.videoTranscription.toLowerCase();
     }
@@ -185,15 +177,11 @@ async function detectAndTranslate(text) {
 function normalizeArticle(article, sourceApi) {
     try {
         switch (sourceApi) {
-            case 'gnews':
-                return { title: article.title, description: article.description, content: article.content, url: article.url, image: article.image || null, publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.publishedAt)), source: { name: article.source.name, url: article.source.url }, author: article.author || null, };
-            case 'newsapi':
-                return { title: article.title, description: article.description, content: article.content, url: article.url, image: article.urlToImage || null, publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.publishedAt)), source: { name: article.source.name, url: null }, author: article.author || null, };
-            case 'blogger':
-                const blogName = article.blog ? article.blog.name : 'Blogger'; return { title: article.title, description: (article.content || "").replace(/<[^>]*>?/gm, ''), content: article.content, url: article.url, image: null, publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.published)), source: { name: blogName, url: article.url }, author: article.author?.displayName || null, };
-            case 'rss': return { title: article.title, description: (article.contentSnippet || article.content || "").replace(/<[^>]*>?/gm, ''), content: article.content, url: article.link, image: article.enclosure?.url || null, publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.isoDate)), source: { name: article.creator || 'RSS Feed', url: article.link }, author: article.creator || null, };
-            case 'youtube':
-                return { title: article.snippet.title, description: article.snippet.description, content: article.snippet.description, url: `https://www.youtube.com/watch?v=${article.id.videoId}`, image: article.snippet.thumbnails.high.url || null, publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.snippet.publishedAt)), source: { name: 'YouTube', url: `https://www.youtube.com/channel/${article.snippet.channelId}` }, author: article.snippet.channelTitle || null, videoId: article.id.videoId };
+            case 'gnews': return { title: article.title, description: article.description, url: article.url, image: article.image || null, publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.publishedAt)), source: { name: article.source.name, url: article.source.url }, author: article.author || null, };
+            case 'newsapi': return { title: article.title, description: article.description, url: article.url, image: article.urlToImage || null, publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.publishedAt)), source: { name: article.source.name, url: null }, author: article.author || null, };
+            case 'blogger': const blogName = article.blog ? article.blog.name : 'Blogger'; return { title: article.title, description: (article.content || "").replace(/<[^>]*>?/gm, ''), url: article.url, image: null, publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.published)), source: { name: blogName, url: article.url }, author: article.author?.displayName || null, };
+            case 'rss': return { title: article.title, description: (article.contentSnippet || article.content || "").replace(/<[^>]*>?/gm, ''), url: article.link, image: article.enclosure?.url || null, publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.isoDate)), source: { name: article.creator || 'RSS Feed', url: article.link }, author: article.creator || null, };
+            case 'youtube': return { title: article.snippet.title, description: article.snippet.description, url: `https://www.youtube.com/watch?v=${article.id.videoId}`, image: article.snippet.thumbnails.high.url || null, publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.snippet.publishedAt)), source: { name: 'YouTube', url: `https://www.youtube.com/channel/${article.snippet.channelId}` }, author: article.snippet.channelTitle || null, videoId: article.id.videoId };
             default: return null;
         }
     } catch (e) {
@@ -203,8 +191,7 @@ function normalizeArticle(article, sourceApi) {
 }
 
 async function analyzeArticleWithAI(article, settings) {
-    // Para a análise de IA, usamos o campo 'content' que agora pode ter o texto completo.
-    const textContent = `${article.title}. ${article.content || article.description || ''}`;
+    const textContent = `${article.title}. ${article.description}`;
     let languageData = { sentiment: { score: 0, magnitude: 0 }, entities: [], categories: [] };
     let visionData = { logos: [], ocrText: '' };
     let videoData = { videoTranscription: '' };
@@ -223,7 +210,7 @@ async function analyzeArticleWithAI(article, settings) {
             functions.logger.error("Erro na Natural Language AI:", error.message);
         }
     }
-
+    
     if (article.image && settings.apiKeyVision) {
         try {
             const [logoResult] = await visionClient.logoDetection(article.image);
@@ -244,16 +231,55 @@ async function analyzeArticleWithAI(article, settings) {
 
 async function fetchAllNews() {
     functions.logger.info("=======================================");
-    functions.logger.info("INICIANDO BUSCA DE NOTÍCIAS COM TRADUÇÃO, IA, MÍDIA, SCRAPER E GEOCODIFICAÇÃO...");
+    functions.logger.info("INICIANDO BUSCA DE NOTÍCIAS COM TRADUÇÃO, IA, MÍDIA E GEOCODIFICAÇÃO...");
 
     const globalSettingsRef = db.doc(`artifacts/${APP_ID}/public/data/settings/global`);
     const globalSettingsDoc = await globalSettingsRef.get();
     if (!globalSettingsDoc.exists) { throw new Error("Configurações globais não encontradas."); }
     const settings = globalSettingsDoc.data();
-    const firebaseApiKey = settings.apiKeyFirebaseNews; 
-
+    const mapsApiKey = settings.apiKeyGoogleMaps || settings.apiKeyFirebaseNews; 
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
+    // Configurações do YouTube
+    const youtubeChannels = settings.youtubeChannels ? settings.youtubeChannels.split('\n').map(s => s.trim()).filter(s => s.length > 0) : [];
+    const youtubeFrequencyHours = Number(settings.youtubeFrequencyHours || 6);
+    const youtubeFrequencyTime = (settings.youtubeFrequencyTime || '').trim(); // formato HH:MM
+    const lastRun = settings.youtubeLastRun && typeof settings.youtubeLastRun.toDate === 'function' ? settings.youtubeLastRun.toDate() : null;
+    const now = new Date();
+    const frequencyOk = !lastRun || (now.getTime() - lastRun.getTime()) >= youtubeFrequencyHours * 60 * 60 * 1000;
+    let desiredTimeOk = true;
+    if (youtubeFrequencyTime) {
+        const parts = youtubeFrequencyTime.split(':');
+        const hh = Number(parts[0]);
+        const mm = Number(parts[1]);
+        if (!Number.isNaN(hh) && !Number.isNaN(mm) && hh >= 0 && hh <= 23 && mm >= 0 && mm <= 59) {
+            const desiredToday = new Date(now);
+            desiredToday.setHours(hh, mm, 0, 0);
+            const diffMinutes = Math.abs((now.getTime() - desiredToday.getTime()) / 60000);
+            // Permitir execução quando estiver dentro de uma janela de 30 minutos do horário desejado
+            desiredTimeOk = diffMinutes <= 30;
+        }
+    }
+    const canRunYouTube = frequencyOk && desiredTimeOk;
+    // Gate para GNews configurável
+    const gnewsLastRun = settings.gnewsLastRun && typeof settings.gnewsLastRun.toDate === 'function' ? settings.gnewsLastRun.toDate() : null;
+    const gnewsFrequencyHours = Number(settings.gnewsFrequencyHours || 2);
+    const canRunGNews = !gnewsLastRun || (now.getTime() - gnewsLastRun.getTime()) >= gnewsFrequencyHours * 60 * 60 * 1000;
+    // Gate para RSS configurável
+    const rssLastRun = settings.rssLastRun && typeof settings.rssLastRun.toDate === 'function' ? settings.rssLastRun.toDate() : null;
+    const rssFrequencyMinutes = Number(settings.rssFrequencyMinutes || 10);
+    const canRunRSS = !rssLastRun || (now.getTime() - rssLastRun.getTime()) >= rssFrequencyMinutes * 60 * 1000;
+
+    // Gate específico para monitoramento de IDs de Canais (YouTube)
+    const youtubeChannelsLastRun = settings.youtubeChannelsLastRun && typeof settings.youtubeChannelsLastRun.toDate === 'function' ? settings.youtubeChannelsLastRun.toDate() : null;
+    const youtubeChannelsFrequencyMinutes = Number(settings.youtubeChannelsFrequencyMinutes || rssFrequencyMinutes);
+    const canRunYouTubeChannels = !youtubeChannelsLastRun || (now.getTime() - youtubeChannelsLastRun.getTime()) >= youtubeChannelsFrequencyMinutes * 60 * 1000;
+
+    let executedGNews = false;
+    let executedRSS = false;
+    let executedYouTubeKeywords = false;
+    let executedYouTubeChannels = false;
+    const newRssSites = new Set();
     const companiesSnapshot = await db.collection(`artifacts/${APP_ID}/public/data/companies`).where("status", "==", "active").get();
     if (companiesSnapshot.empty) {
         functions.logger.warn("Nenhuma empresa ativa encontrada para processar.");
@@ -286,31 +312,12 @@ async function fetchAllNews() {
         if (!normalizedArticle || company.existingUrls.has(normalizedArticle.url)) {
             return;
         }
-
-        // Bloco de Scraper: Tenta extrair o conteúdo completo da URL
-        // Não tenta extrair conteúdo de vídeos do YouTube
-        if (normalizedArticle.url && !normalizedArticle.videoId) {
-            const scrapedContent = await scrapeArticleContent(normalizedArticle.url);
-            // Se o conteúdo extraído for maior que o conteúdo original da API (que geralmente é um resumo), substitui.
-            if (scrapedContent && scrapedContent.length > (normalizedArticle.content?.length || 0)) {
-                functions.logger.info(`Conteúdo completo extraído para: ${normalizedArticle.url}`);
-                normalizedArticle.content = scrapedContent;
-                // Atualiza a descrição também, caso o conteúdo extraído seja mais relevante
-                normalizedArticle.description = scrapedContent.substring(0, 300) + '...'; 
-            }
-        }
         
         const translatedTitle = await detectAndTranslate(normalizedArticle.title);
         const translatedDesc = await detectAndTranslate(normalizedArticle.description);
         normalizedArticle.title = translatedTitle.translatedText;
         normalizedArticle.description = translatedDesc.translatedText;
-        // Se o conteúdo foi raspado e é longo, traduz ele também para a IA.
-        let translatedContent = { translatedText: normalizedArticle.content, languageCode: 'pt', translated: false };
-        if (normalizedArticle.content && normalizedArticle.content.length > 300) { // Limite arbitrário para traduzir conteúdo mais longo
-            translatedContent = await detectAndTranslate(normalizedArticle.content);
-            normalizedArticle.content = translatedContent.translatedText;
-        }
-
+        
         const aiData = await analyzeArticleWithAI(normalizedArticle, settings);
         const finalMatchedKeywords = findMatchingKeywords({ ...normalizedArticle, ai: aiData }, company.keywordsList);
 
@@ -322,7 +329,7 @@ async function fetchAllNews() {
         if (aiData.entities && aiData.entities.length > 0) {
             const firstLocation = aiData.entities.find(e => e.type === 'LOCATION');
             if (firstLocation) {
-                geolocation = await geocodeLocation(firstLocation.name, firebaseApiKey);
+                geolocation = await geocodeLocation(firstLocation.name, mapsApiKey);
             }
         }
 
@@ -334,10 +341,7 @@ async function fetchAllNews() {
             status: "pending",
             ai: aiData,
             sentiment: { score: aiData.sentiment.score, magnitude: aiData.sentiment.magnitude },
-            translationInfo: { 
-                translated: translatedTitle.translated || translatedDesc.translated || translatedContent.translated, 
-                originalLanguage: translatedTitle.languageCode 
-            },
+            translationInfo: { translated: translatedTitle.translated || translatedDesc.translated, originalLanguage: translatedTitle.languageCode },
             geolocation: geolocation
         };
 
@@ -354,13 +358,14 @@ async function fetchAllNews() {
         functions.logger.info(`--- Processando empresa: ${company.companyName} ---`);
         const combinedQuery = company.keywordsList.map(kw => `"${kw}"`).join(" OR ");
         
-        if (settings.apiKeyGNews1) {
+        if (canRunGNews && settings.apiKeyGNews1) {
             const currentHour = new Date().getHours();
             let gnewsApiKey = settings.apiKeyGNews4;
             if (currentHour >= 0 && currentHour < 6) gnewsApiKey = settings.apiKeyGNews1;
             else if (currentHour >= 6 && currentHour < 12) gnewsApiKey = settings.apiKeyGNews2;
             else if (currentHour >= 12 && currentHour < 18) gnewsApiKey = settings.apiKeyGNews3;
             if (gnewsApiKey) {
+                executedGNews = true;
                 for (const keyword of company.keywordsList) {
                     await delay(1000);
                     const searchQuery = `"${keyword}"`;
@@ -369,6 +374,16 @@ async function fetchAllNews() {
                         const response = await axios.get(queryUrl);
                         if (response.data && response.data.articles) {
                             for (const article of response.data.articles) {
+                                // Capturar site de origem e preparar para inclusão automática em RSS
+                                const siteUrl = article?.source?.url;
+                                if (siteUrl) {
+                                    try {
+                                        const u = new URL(siteUrl);
+                                        newRssSites.add(u.origin);
+                                    } catch {
+                                        newRssSites.add(siteUrl);
+                                    }
+                                }
                                 if (!company.fetchOnlyNew || new Date(article.publishedAt) >= twentyFourHoursAgo) {
                                     const normalized = normalizeArticle(article, 'gnews');
                                     await processAndSaveArticle(normalized, company, [keyword]);
@@ -397,28 +412,94 @@ async function fetchAllNews() {
             } catch (e) { functions.logger.error(`Erro NewsAPI para ${company.companyName}:`, e.message); }
         }
 
-        if (settings.apiKeyYoutube) {
-            for (const keyword of company.keywordsList) {
-                await delay(500);
-                const queryUrl = `${YOUTUBE_URL}?part=snippet&q=${encodeURIComponent(`"${keyword}"`)}&type=video&key=${settings.apiKeyYoutube}`;
+        // YouTube por canais configurados, com portão baseado em frequência
+        if (settings.apiKeyYoutube && canRunYouTubeChannels && youtubeChannels.length > 0) {
+             functions.logger.info(`--- Buscando YouTube por canais (${youtubeChannels.length}) sob gate específico de canais ---`);
+             executedYouTubeChannels = true;
+             for (const channelId of youtubeChannels) {
+                await delay(1000);
+                const publishedAfter = lastRun ? (lastRun.toDate ? lastRun.toDate().toISOString() : new Date(lastRun).toISOString()) : new Date(now.getTime() - youtubeFrequencyHours*60*60*1000).toISOString();
+                // Para playlistItems.list, precisamos do uploads playlist do canal.
+                // Obter a playlist padrão "uploads" via atalho: UCxxxx -> UUxxxx (mapeamento padrão do YouTube)
+                const uploadsPlaylistId = channelId.startsWith('UC') ? `UU${channelId.substring(2)}` : channelId;
+                const queryUrl = `${YOUTUBE_PLAYLIST_ITEMS_URL}?part=snippet&playlistId=${encodeURIComponent(uploadsPlaylistId)}&maxResults=10&key=${settings.apiKeyYoutube}`;
                 try {
+                    const response = await axios.get(queryUrl);
+                    if (response.data && response.data.items) {
+                        for (const item of response.data.items) {
+                            if (!company.fetchOnlyNew || new Date(item.snippet.publishedAt) >= twentyFourHoursAgo) {
+                                const normalized = normalizeArticle({ ...item, id: { videoId: item.snippet?.resourceId?.videoId } }, 'youtube');
+                                const matchedKeywords = findMatchingKeywords(normalized, company.keywordsList);
+                                if (matchedKeywords.length > 0) {
+                                    await processAndSaveArticle(normalized, company, matchedKeywords);
+                                }
+                            }
+                        }
+                    }
+                } catch (e) { functions.logger.error(`Erro YouTube canal ${channelId} para ${company.companyName}:`, e.message); }
+                // Auto-add channel to playlist if not present (only during frequency-gated search)
+                if (!youtubeChannels.includes(channelId)) {
+                    try {
+                        const updatedList = [...youtubeChannels, channelId].join('\n');
+                        await globalSettingsRef.set({ youtubeChannels: updatedList }, { merge: true });
+                        functions.logger.info(`Canal adicionado à playlist de IDs: ${channelId}`);
+                        youtubeChannels.push(channelId);
+                    } catch (err) {
+                        functions.logger.error(`Falha ao adicionar canal ${channelId} à playlist:`, err.message);
+                    }
+                }
+            }
+            // Atualiza última execução do RSS quando a busca por canais do YouTube roda sob esse gate
+            try {
+                await globalSettingsRef.set({ youtubeChannelsLastRun: admin.firestore.Timestamp.now() }, { merge: true });
+            functions.logger.info(`youtubeChannelsLastRun atualizado (YouTube por canais).`);
+        } catch (e) {
+            functions.logger.error(`Falha ao atualizar youtubeChannelsLastRun (YouTube por canais):`, e.message);
+            }
+        }
+
+        // CORREÇÃO: Lógica de busca do YouTube por palavra-chave mantida (sem portão)
+        if (settings.apiKeyYoutube && canRunYouTube) {
+            executedYouTubeKeywords = true;
+            for (const keyword of company.keywordsList) {
+               await delay(500);
+               const queryUrl = `${YOUTUBE_URL}?part=snippet&q=${encodeURIComponent(`"${keyword}"`)}&type=video&key=${settings.apiKeyYoutube}`;
+               try {
                     const response = await axios.get(queryUrl);
                     if (response.data && response.data.items) {
                         for (const item of response.data.items) {
                             if (!company.fetchOnlyNew || new Date(item.snippet.publishedAt) >= twentyFourHoursAgo) {
                                 const normalized = normalizeArticle({ ...item, id: { videoId: item.id.videoId } }, 'youtube');
                                 await processAndSaveArticle(normalized, company, [keyword]);
+                                // Auto-add discovered channel to playlist when frequency gate is open
+                                const discoveredChannelId = item?.snippet?.channelId;
+                                if (canRunYouTube && discoveredChannelId && !youtubeChannels.includes(discoveredChannelId)) {
+                                    try {
+                                        const updatedList = [...youtubeChannels, discoveredChannelId].join('\n');
+                                        await globalSettingsRef.set({ youtubeChannels: updatedList }, { merge: true });
+                                        functions.logger.info(`Canal descoberto adicionado à playlist: ${discoveredChannelId}`);
+                                        youtubeChannels.push(discoveredChannelId);
+                                    } catch (err) {
+                                        functions.logger.error(`Falha ao adicionar canal descoberto ${discoveredChannelId}:`, err.message);
+                                    }
+                                }
                             }
                         }
                     }
-                } catch (e) { functions.logger.error(`Erro YouTube (keyword: ${keyword}):`, e.message); }
+               } catch (e) { functions.logger.error(`Erro YouTube (keyword: ${keyword}):`, e.message); }
             }
+        } else if (settings.apiKeyYoutube && !canRunYouTube) {
+            functions.logger.info("Gate do YouTube por palavras-chave ativo — aguardando janela de frequência/horário.");
+        }
+        if (settings.apiKeyYoutube && !canRunYouTubeChannels && youtubeChannels.length > 0) {
+            functions.logger.info("Gate específico de canais do YouTube ativo — aguardando janela de frequência.");
         }
     }
 
     const rssUrls = settings.rssUrl ? settings.rssUrl.split('\n').filter(url => url.trim() !== '') : [];
-    if (rssUrls.length > 0) {
+    if (rssUrls.length > 0 && canRunRSS) {
         functions.logger.info(`--- Processando ${rssUrls.length} Feeds RSS para todas as empresas ---`);
+        executedRSS = true;
         for (const rssUrl of rssUrls) {
             try {
                 await delay(1000);
@@ -426,8 +507,8 @@ async function fetchAllNews() {
                 if (feed && feed.items) {
                     for (const item of feed.items) {
                         for (const company of allCompaniesData) {
-                            const matchedKeywords = findMatchingKeywords(item, company.keywordsList);
-                            if (matchedKeywords.length > 0 && (!company.fetchOnlyNew || (item.isoDate && new Date(item.isoDate) >= twentyFourHoursAgo))) {
+                             const matchedKeywords = findMatchingKeywords(item, company.keywordsList);
+                             if (matchedKeywords.length > 0 && (!company.fetchOnlyNew || new Date(item.isoDate) >= twentyFourHoursAgo)) {
                                 const normalized = normalizeArticle(item, 'rss');
                                 await processAndSaveArticle(normalized, company, matchedKeywords);
                             }
@@ -438,8 +519,58 @@ async function fetchAllNews() {
                 functions.logger.error(`Erro ao buscar o feed RSS: ${rssUrl}. Mensagem: ${e.message}`);
             }
         }
+        // Atualiza última execução do RSS se gate foi utilizado
+        try {
+            await globalSettingsRef.set({ rssLastRun: admin.firestore.Timestamp.now() }, { merge: true });
+            functions.logger.info(`rssLastRun atualizado.`);
+        } catch (e) {
+            functions.logger.error(`Falha ao atualizar rssLastRun:`, e.message);
+        }
+    } else if (rssUrls.length > 0 && !canRunRSS) {
+        functions.logger.info(`Gate de RSS ativo. Próxima execução em ${rssFrequencyMinutes} minuto(s).`);
     }
     
+    // Atualiza última execução do YouTube se gate foi utilizado
+    if (canRunYouTube && executedYouTubeKeywords) {
+        try {
+            await globalSettingsRef.set({ youtubeLastRun: admin.firestore.Timestamp.now() }, { merge: true });
+            functions.logger.info(`youtubeLastRun atualizado.`);
+        } catch (e) {
+            functions.logger.error(`Falha ao atualizar youtubeLastRun:`, e.message);
+        }
+    }
+    // Descoberta automática e inclusão de feeds RSS válidos a partir dos sites capturados via GNews
+    if (executedGNews && newRssSites.size > 0) {
+        try {
+            const discoveredFeeds = new Set();
+            for (const site of newRssSites) {
+                const feeds = await discoverRssFeeds(site);
+                feeds.forEach(f => discoveredFeeds.add(f));
+            }
+            if (discoveredFeeds.size > 0) {
+                const existingRssList = (settings.rssUrl || '').split('\n').map(s => s.trim()).filter(s => s);
+                const existingSet = new Set(existingRssList);
+                discoveredFeeds.forEach(f => { if (!existingSet.has(f)) existingSet.add(f); });
+                const updatedList = Array.from(existingSet).join('\n');
+                await globalSettingsRef.set({ rssUrl: updatedList }, { merge: true });
+                functions.logger.info(`rssUrl atualizado com ${discoveredFeeds.size} feed(s) RSS válidos descobertos automaticamente.`);
+            } else {
+                functions.logger.warn(`Nenhum endpoint RSS válido descoberto para ${newRssSites.size} site(s) capturados do GNews.`);
+            }
+        } catch (e) {
+            functions.logger.error(`Falha ao atualizar rssUrl automático (descoberta de feeds):`, e.message);
+        }
+    }
+    // Atualiza última execução do GNews se gate foi utilizado
+    if (executedGNews) {
+        try {
+            await globalSettingsRef.set({ gnewsLastRun: admin.firestore.Timestamp.now() }, { merge: true });
+            functions.logger.info(`gnewsLastRun atualizado.`);
+        } catch (e) {
+            functions.logger.error(`Falha ao atualizar gnewsLastRun:`, e.message);
+        }
+    }
+
     functions.logger.info(`Busca concluída. ${articlesToSaveCount} novos artigos únicos foram guardados na fila de aprovação.`);
     return { success: true, totalSaved: articlesToSaveCount };
 }
@@ -453,7 +584,7 @@ exports.manualFetch = regionalFunctions.https.onCall(async (data, context) => {
     }
 });
 
-exports.scheduledFetch = regionalFunctions.pubsub.schedule("every 30 minutes")
+exports.scheduledFetch = regionalFunctions.pubsub.schedule("every 10 minutes")
   .timeZone("America/Sao_Paulo")
   .onRun(async (context) => {
     try {
@@ -464,7 +595,6 @@ exports.scheduledFetch = regionalFunctions.pubsub.schedule("every 30 minutes")
         return null;
     }
 });
-
 exports.approveAlert = regionalFunctions.https.onCall(async (data, context) => {
     const { appId, alertId } = data;
     if (!appId || !alertId) { throw new functions.https.HttpsError("invalid-argument", "O ID da aplicação e do alerta são necessários."); }
@@ -599,53 +729,24 @@ function getTopCount(counts) {
 }
 
 exports.generateSuperAdminReport = regionalFunctions.https.onCall(async (data, context) => {
-    const { appId, startDate: rawStartDate, endDate: rawEndDate } = data; // Destructure dates here
+    const { appId } = data;
     if (!appId) {
         throw new functions.https.HttpsError("invalid-argument", "O ID da aplicação é necessário.");
     }
     functions.logger.info("Iniciando geração do relatório geral de empresas...");
-
-    const startDate = rawStartDate ? new Date(rawStartDate) : null;
-    const endDate = rawEndDate ? new Date(rawEndDate) : null;
-
-    if (startDate) startDate.setHours(0, 0, 0, 0); // Start of day
-    if (endDate) endDate.setHours(23, 59, 59, 999); // End of day
-
     const companiesSnapshot = await db.collection(`artifacts/${appId}/public/data/companies`).get();
     const reportData = [];
-
     for (const companyDoc of companiesSnapshot.docs) {
         const companyId = companyDoc.id;
         const companyName = companyDoc.data().name;
         functions.logger.info(`Processando relatório para: ${companyName} (ID: ${companyId})`);
-
-        let articlesQueryRef = db.collection(`artifacts/${appId}/users/${companyId}/articles`);
-
-        // Apply date filters if present. Firestore requires orderBy on the same field if range filters are used.
-        if (startDate && endDate) {
-            articlesQueryRef = articlesQueryRef
-                .where("publishedAt", ">=", startDate)
-                .where("publishedAt", "<=", endDate)
-                .orderBy("publishedAt", "desc");
-        } else if (startDate) {
-            articlesQueryRef = articlesQueryRef
-                .where("publishedAt", ">=", startDate)
-                .orderBy("publishedAt", "desc");
-        } else if (endDate) {
-            articlesQueryRef = articlesQueryRef
-                .where("publishedAt", "<=", endDate)
-                .orderBy("publishedAt", "desc");
-        } else {
-            // Default ordering if no date filters
-            articlesQueryRef = articlesQueryRef.orderBy("publishedAt", "desc");
-        }
-
-        const articlesSnapshot = await articlesQueryRef.get();
+        
+        const articlesSnapshot = await db.collection(`artifacts/${appId}/users/${companyId}/articles`).get();
         const totalAlerts = articlesSnapshot.size;
-
+        
         let positiveCount = 0, neutralCount = 0, negativeCount = 0;
         const channelCounts = {}, vehicleCounts = {};
-
+        
         if (articlesSnapshot.size > 0) {
             articlesSnapshot.docs.forEach(doc => {
                 const article = doc.data();
@@ -666,7 +767,7 @@ exports.generateSuperAdminReport = regionalFunctions.https.onCall(async (data, c
             neutral: totalSentiments > 0 ? parseFloat(((neutralCount / totalSentiments) * 100).toFixed(2)) : 0,
             negative: totalSentiments > 0 ? parseFloat(((negativeCount / totalSentiments) * 100).toFixed(2)) : 0,
         };
-
+        
         const predominantSentiment = getPredominantSentiment(sentimentPercentage);
         const topChannel = getTopCount(channelCounts);
         const topVehicle = getTopCount(vehicleCounts);
@@ -676,66 +777,4 @@ exports.generateSuperAdminReport = regionalFunctions.https.onCall(async (data, c
     return reportData;
 });
 
-exports.getCompanyKeywordReport = regionalFunctions.https.onCall(async (data, context) => {
-    const { appId, companyId } = data;
-    if (!appId || !companyId) {
-        throw new functions.https.HttpsError("invalid-argument", "O ID da aplicação e da empresa são necessários.");
-    }
 
-    const keywordsSnapshot = await db.collection(`artifacts/${appId}/users/${companyId}/keywords`).get();
-    const articlesSnapshot = await db.collection(`artifacts/${appId}/users/${companyId}/articles`).get();
-    
-    const articles = articlesSnapshot.docs.map(doc => doc.data());
-    const keywordReport = [];
-
-    for (const keywordDoc of keywordsSnapshot.docs) {
-        const keyword = keywordDoc.data().word;
-        const relevantArticles = articles.filter(a => (a.keywords || []).includes(keyword));
-        
-        const totalAlerts = relevantArticles.length;
-        if (totalAlerts === 0) {
-            keywordReport.push({
-                keyword,
-                totalAlerts: 0,
-                sentimentPercentage: { positive: 0, neutral: 0, negative: 0 },
-                predominantSentiment: 'N/A',
-                topChannel: 'N/A',
-                topVehicle: 'N/A'
-            });
-            continue;
-        }
-
-        let positiveCount = 0, neutralCount = 0, negativeCount = 0;
-        const channelCounts = {}, vehicleCounts = {};
-
-        relevantArticles.forEach(article => {
-            const score = article.sentiment?.score ?? 0;
-            if (score > 0.2) positiveCount++;
-            else if (score < -0.2) negativeCount++;
-            else neutralCount++;
-
-            const channel = article.source?.name ? getChannelCategory(article.source.name) : 'Outros';
-            channelCounts[channel] = (channelCounts[channel] || 0) + 1;
-            const vehicle = article.source?.name || 'Outros';
-            vehicleCounts[vehicle] = (vehicleCounts[vehicle] || 0) + 1;
-        });
-
-        const totalSentiments = positiveCount + neutralCount + negativeCount;
-        const sentimentPercentage = {
-            positive: totalSentiments > 0 ? parseFloat(((positiveCount / totalSentiments) * 100).toFixed(2)) : 0,
-            neutral: totalSentiments > 0 ? parseFloat(((neutralCount / totalSentiments) * 100).toFixed(2)) : 0,
-            negative: totalSentiments > 0 ? parseFloat(((negativeCount / totalSentiments) * 100).toFixed(2)) : 0,
-        };
-
-        keywordReport.push({
-            keyword,
-            totalAlerts,
-            sentimentPercentage,
-            predominantSentiment: getPredominantSentiment(sentimentPercentage),
-            topChannel: getTopCount(channelCounts),
-            topVehicle: getTopCount(vehicleCounts)
-        });
-    }
-
-    return keywordReport;
-});

@@ -11,25 +11,6 @@
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-
-    <!-- Define initMap antes de carregar a API do Google Maps -->
-    <script>
-        window.initMap = function() {
-            try {
-                const mapDiv = document.getElementById("map");
-                if (!mapDiv) { console.warn("initMap: elemento #map não encontrado."); return; }
-                const map = new google.maps.Map(mapDiv, {
-                    zoom: 4,
-                    center: { lat: -14.235, lng: -51.925 },
-                });
-                const mapReadyEvent = new CustomEvent('mapReady', { detail: map });
-                window.dispatchEvent(mapReadyEvent);
-            } catch (e) {
-                console.error("Erro ao inicializar o mapa do Google:", e);
-            }
-        };
-    </script>
 
     <!-- CHAVE DA API DO GOOGLE MAPS -->
     <script async defer
@@ -241,7 +222,7 @@
     <main class="container mx-auto p-4 sm:p-6">
         <div id="global-alert" class="mb-6"></div>
 
-        <section id="login-page" class="page-section fade-in">
+        <section id="login-page" class="page-section active fade-in">
             <div class="max-w-md mx-auto bg-gray-50 p-4 sm:p-8 rounded-lg shadow-lg mt-10 relative">
                 <div id="login-logo-container" class="absolute top-4 right-4 h-12 w-auto"></div>
                 <h1 class="text-2xl sm:text-3xl font-bold text-center text-gray-800">Bem-Vindo</h1>
@@ -318,7 +299,7 @@
                         class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow">
                         <h3 class="text-lg sm:text-xl font-semibold text-gray-700">Relatório Geral</h3>
                     </button>
-                    <button id="btn-super-admin-critical-report"
+                    <button id="btn-critical-report"
                         class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow">
                         <h3 class="text-lg sm:text-xl font-semibold text-gray-700">Relatório de Análise Crítica</h3>
                     </button>
@@ -330,33 +311,6 @@
                     <button id="manual-trigger-btn"
                         class="mt-4 w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:bg-blue-300">Executar
                         Robô Manualmente</button>
-                </div>
-                <div class="mt-8 p-4 border rounded-lg" id="unified-critical-report">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-xl font-semibold">Relatório de Análise Crítica (Unificado)</h3>
-                        <button id="unified-print-btn" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded">Imprimir</button>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4" id="unified-summary">
-                        <div class="p-3 bg-gray-50 rounded"><div class="text-sm text-gray-500">Itens Totais</div><div id="unified-total" class="text-2xl font-bold">0</div></div>
-                        <div class="p-3 bg-gray-50 rounded"><div class="text-sm text-gray-500">Sentimento Predominante</div><div id="unified-dominant" class="text-2xl font-bold">-</div></div>
-                        <div class="p-3 bg-gray-50 rounded"><div class="text-sm text-gray-500">Keywords em Foco</div><div id="unified-keywords" class="text-sm">-</div></div>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fonte</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Palavras‑Chave</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sentimento</th>
-                                </tr>
-                            </thead>
-                            <tbody id="unified-report-body" class="bg-white divide-y divide-gray-200">
-                                <tr><td colspan="5" class="text-center py-4">Carregando...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
                 </div>
             </div>
         </section>
@@ -376,13 +330,8 @@
                             class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-sm">Filtrar</button>
                     </div>
                 </div>
-                <div class="mt-2 w-full">
-                    <label class="text-sm font-medium">Filtrar por Palavra-Chave:</label>
-                    <div id="map-keyword-filter-container" class="w-full p-2 border border-gray-300 rounded-md text-sm bg-white overflow-y-auto max-h-32 space-y-1"></div>
-                </div>
                 <p class="text-gray-600 mb-4">Veja onde as notícias estão acontecendo. Passe o mouse sobre um pino para
                     ver o título e clique para ver os detalhes.</p>
-                <div id="region-counts" class="mb-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2"></div>
                 <div id="map"></div>
             </div>
         </section>
@@ -472,6 +421,10 @@
                             class="w-full px-3 py-2 border border-gray-300 rounded-md">
                     </div>
                     <div class="bg-gray-100 p-3 rounded-md">
+                        <label for="apiKeyGoogleMaps" class="block text-sm font-medium text-gray-700 mb-1">Chave da API (Google Maps - Geocoding)</label>
+                        <input type="text" id="apiKeyGoogleMaps" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                    </div>
+                    <div class="bg-gray-100 p-3 rounded-md">
                         <label for="apiKeyGNews1" class="block text-sm font-medium text-gray-700 mb-1">Chave GNews
                             (00:00 - 05:59)</label>
                         <input type="text" id="apiKeyGNews1"
@@ -519,6 +472,10 @@
                         <input type="text" id="apiKeyVideoIntelligence"
                             class="w-full px-3 py-2 border border-gray-300 rounded-md">
                     </div>
+                    <div class="bg-gray-100 p-3 rounded-md">
+                        <label for="apiKeySpeechToText" class="block text-sm font-medium text-gray-700 mb-1">Chave da API (Cloud Speech-to-Text)</label>
+                        <input type="text" id="apiKeySpeechToText" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                    </div>
                 </div>
             </div>
         </section>
@@ -541,11 +498,37 @@
                         <textarea id="rssUrl" rows="3"
                             class="w-full px-3 py-2 border border-gray-300 rounded-md"
                             placeholder="https://site.com/feed"></textarea>
-                        <div class="mt-3 flex flex-wrap gap-2">
-                            <button id="test-rss-btn" class="bg-blue-600 text-white px-3 py-2 rounded-md hover:bg-blue-700">Testar RSS</button>
-                            <button id="clear-rss-preview" class="bg-gray-200 text-gray-800 px-3 py-2 rounded-md hover:bg-gray-300">Limpar Pré-visualização</button>
+                        <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label for="rssFrequencyMinutes" class="block text-sm font-medium text-gray-700 mb-1">Frequência do monitoramento por RSS (em minutos)</label>
+                                <input type="number" id="rssFrequencyMinutes" min="5" step="5" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="10">
+                                <p class="mt-2 text-xs text-gray-500">Ex.: 10 minutos. O robô só buscará RSS quando o tempo configurado tiver passado desde a última execução.</p>
+                            </div>
+                            <div>
+                                <label for="gnewsFrequencyHours" class="block text-sm font-medium text-gray-700 mb-1">Frequência da busca no GNews (em horas)</label>
+                                <input type="number" id="gnewsFrequencyHours" min="1" step="1" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="2">
+                                <p class="mt-2 text-xs text-gray-500">Ex.: 2 horas. Controla o intervalo mínimo entre execuções do GNews.</p>
+                            </div>
                         </div>
-                        <div id="rss-preview" class="mt-3 space-y-2"></div>
+                    </div>
+                    <div class="bg-gray-100 p-3 rounded-md">
+                        <label for="youtubeChannels" class="block text-sm font-medium text-gray-700 mb-1">IDs de Canais (YouTube) - um por linha</label>
+                        <textarea id="youtubeChannels" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="UC_x5XG1OV2P6uZZ5FSM9Ttw"></textarea>
+                    </div>
+                    <div class="bg-gray-100 p-3 rounded-md">
+                        <label for="youtubeChannelsFrequencyMinutes" class="block text-sm font-medium text-gray-700 mb-1">Frequência do monitoramento para IDs de Canais (YouTube) (em minutos)</label>
+                        <input type="number" id="youtubeChannelsFrequencyMinutes" min="1" step="1" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="10">
+                        <p class="mt-2 text-xs text-gray-500">Ex.: 10 minutos. Controla o intervalo mínimo entre execuções de busca por canais do YouTube.</p>
+                    </div>
+                    <div class="bg-gray-100 p-3 rounded-md">
+                        <label for="youtubeFrequencyHours" class="block text-sm font-medium text-gray-700 mb-1">Frequência da busca no YouTube (em horas)</label>
+                        <input type="number" id="youtubeFrequencyHours" min="1" step="1" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="6">
+                        <p class="mt-2 text-xs text-gray-500">Ex.: 6 horas. O robô só buscará no YouTube quando o tempo configurado tiver passado desde a última execução.</p>
+                        <div class="mt-3">
+                            <label for="youtubeFrequencyTime" class="block text-sm font-medium text-gray-700 mb-1">Horário desejado para realizar a busca (HH:MM)</label>
+                            <input type="time" id="youtubeFrequencyTime" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="08:00">
+                            <p class="mt-2 text-xs text-gray-500">Opcional: se definido, a busca gated por frequência só ocorrerá no horário desejado do dia.</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -555,49 +538,12 @@
             <button id="back-to-admin-config-5"
                 class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar</button>
             <h2 class="text-2xl sm:text-3xl font-bold mb-6">Fontes de Rádio Globais</h2>
-            <div class="max-w-lg mx-auto bg-white p-4 sm:p-6 rounded-lg shadow-lg">
-                <div class="space-y-4">
-                    <div class="bg-gray-100 p-3 rounded-md">
-                        <label for="radioSources" class="block text-sm font-medium text-gray-700 mb-1">Fontes de Rádio -
-                            uma por linha</label>
-                        <textarea id="radioSources" rows="5"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md"
-                            placeholder="Ex: Rádio Jovem Pan | http://.../stream.mp3 | 08:00-12:30"></textarea>
-                        <p class="mt-2 text-xs text-gray-500">Insira uma linha por fonte no formato: Nome | URL | Horário (opcional).</p>
-                        <p class="mt-1 text-xs text-gray-500">Formato do horário: HH:MM-HH:MM (ex.: 08:00-12:30). O backend usará esse intervalo para monitorar apenas dentro do horário indicado.</p>
-                        <p class="mt-1 text-xs text-gray-500">Se preferir, também pode usar: Nome | URL | HH:MM | HH:MM.</p>
-                        <p class="mt-1 text-xs text-gray-500">Observação: a reprodução no navegador pode depender do tipo de stream e das políticas de CORS.</p>
-                        <div class="mt-3 grid grid-cols-1 sm:grid-cols-6 gap-2">
-                            <input id="radio-name-input" type="text" class="col-span-2 px-3 py-2 border border-gray-300 rounded-md" placeholder="Nome da Rádio">
-                            <input id="radio-url-input" type="text" class="col-span-2 px-3 py-2 border border-gray-300 rounded-md" placeholder="URL do Stream">
-                            <input id="radio-start-input" type="time" class="col-span-1 px-3 py-2 border border-gray-300 rounded-md" placeholder="Início">
-                            <input id="radio-end-input" type="time" class="col-span-1 px-3 py-2 border border-gray-300 rounded-md" placeholder="Fim">
-                            <button id="radio-add-btn" class="sm:col-span-6 bg-indigo-600 text-white px-3 py-2 rounded-md hover:bg-indigo-700">Adicionar Fonte</button>
-                        </div>
-                        <div class="mt-3 flex flex-wrap gap-2">
-                            <button id="test-radio-btn" class="bg-blue-600 text-white px-3 py-2 rounded-md hover:bg-blue-700">Testar Reprodução da Primeira Rádio</button>
-                            <button id="capture-radio-btn" class="bg-purple-600 text-white px-3 py-2 rounded-md hover:bg-purple-700">Capturar</button>
-                            <input id="capture-duration" type="number" min="5" max="300" step="5" value="30" class="w-24 px-2 py-2 border border-gray-300 rounded-md" placeholder="segundos">
-                            <input id="radio-alert-keywords" type="text" class="flex-1 px-3 py-2 border border-gray-300 rounded-md" placeholder="Palavras-chave para alertas (vírgulas)">
-                        </div>
-                        <div class="mt-2 flex flex-wrap gap-2">
-                            <button id="radio-migrate-btn" class="bg-green-600 text-white px-3 py-2 rounded-md hover:bg-green-700">Migrar linhas para Firestore</button>
-                        </div>
-                        <audio id="radio-audio" class="mt-3 w-full" controls></audio>
-                        <div id="radio-sources-preview" class="mt-6">
-                            <h3 class="text-lg font-semibold mb-2">Pré-visualização de Fontes de Rádio</h3>
-                            <p class="text-sm text-gray-600 mb-3">Cada linha deve seguir o padrão: Nome | URL | HH:MM-HH:MM (opcional). Clique em "Reproduzir" para testar uma fonte específica.</p>
-                            <div id="radio-sources-list" class="space-y-2"></div>
-                            <div id="radio-segments" class="mt-6">
-                                <h3 class="text-lg font-semibold mb-2">Segmentos Capturados</h3>
-                                <div id="radio-segments-list" class="space-y-2"></div>
-                            </div>
-                            <div id="radio-transcriptions" class="mt-6">
-                                <h3 class="text-lg font-semibold mb-2">Transcrições e Alertas</h3>
-                                <div id="radio-transcriptions-list" class="space-y-2"></div>
-                            </div>
-                        </div>
-                    </div>
+            <div class="max-w-2xl mx-auto bg-white p-4 sm:p-6 rounded-lg shadow-lg">
+                <div class="bg-gray-50 p-3 rounded-md">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Campos por rádio</label>
+                    <p class="text-xs text-gray-500 mb-2">Edite o nome da rádio, o URL do stream e o horário de monitoramento (início e fim). Sempre haverá um campo vazio extra no final para adicionar a próxima rádio.</p>
+                    <textarea id="radioSources" class="hidden"></textarea>
+                    <div id="radioTimesList" class="space-y-2 max-h-96 overflow-auto border border-gray-200 rounded-md p-2"></div>
                 </div>
             </div>
         </section>
@@ -731,26 +677,26 @@
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     <div class="p-4 border rounded-lg">
                         <h3 class="text-xl font-semibold mb-4 text-center">Notícias por Veículo</h3>
-                        <div class="relative h-72">
-                            <canvas id="source-chart"></canvas>
+                        <div class="relative h-[420px]">
+                            <canvas id="source-chart" class="w-full h-full"></canvas>
                         </div>
                     </div>
                     <div class="p-4 border rounded-lg">
                         <h3 class="text-xl font-semibold mb-4 text-center">Notícias por Canal</h3>
-                        <div class="relative h-72">
-                            <canvas id="channel-chart"></canvas>
+                        <div class="relative h-[420px]">
+                            <canvas id="channel-chart" class="w-full h-full"></canvas>
                         </div>
                     </div>
                     <div class="p-4 border rounded-lg">
                         <h3 class="text-xl font-semibold mb-4 text-center">Notícias por Período</h3>
-                        <div class="relative h-72">
-                            <canvas id="date-chart"></canvas>
+                        <div class="relative h-[420px]">
+                            <canvas id="date-chart" class="w-full h-full"></canvas>
                         </div>
                     </div>
                     <div class="p-4 border rounded-lg">
                         <h3 class="text-xl font-semibold mb-4 text-center">Análise de Sentimento</h3>
-                        <div class="relative h-72">
-                            <canvas id="sentiment-chart"></canvas>
+                        <div class="relative h-[420px]">
+                            <canvas id="sentiment-chart" class="w-full h-full"></canvas>
                         </div>
                     </div>
                 </div>
@@ -891,8 +837,8 @@
                 </div>
                 <div class="mb-8">
                     <h3 class="text-xl font-semibold text-center mb-4">Total de Alertas por Empresa</h3>
-                    <div class="relative h-96">
-                        <canvas id="company-summary-chart"></canvas>
+                    <div class="relative h-[420px]">
+                        <canvas id="company-summary-chart" class="w-full h-full"></canvas>
                     </div>
                 </div>
                 <div class="overflow-x-auto">
@@ -927,42 +873,82 @@
                     </table>
                 </div>
             </div>
-        <section id="super-admin-critical-report-page" class="page-section fade-in">
-            <button id="back-to-dashboard-crit"
-                class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar</button>
-            <div class="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
-                <div class="flex flex-col sm:flex-row justify-between items-start mb-6 gap-4">
-                    <h2 class="text-2xl sm:text-3xl font-bold text-gray-700 mb-4 sm:mb-0">Relatório de Análise Crítica</h2>
-                    <div class="flex items-center gap-2 w-full sm:w-auto">
-                        <label for="crit-company-select" class="text-sm font-medium">Empresa:</label>
-                        <select id="crit-company-select" class="px-2 py-1 border border-gray-300 rounded-md text-sm">
-                            <option value="">Selecione...</option>
-                        </select>
-                        <label for="crit-start-date" class="text-sm font-medium">De:</label>
-                        <input type="date" id="crit-start-date" class="px-2 py-1 border border-gray-300 rounded-md text-sm">
-                        <label for="crit-end-date" class="text-sm font-medium">Até:</label>
-                        <input type="date" id="crit-end-date" class="px-2 py-1 border border-gray-300 rounded-md text-sm">
-                        <button id="crit-generate-btn" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-sm">Gerar PDF</button>
-                    </div>
-                </div>
-                <div id="crit-preview" class="p-4 border rounded-md bg-gray-50">
-                    <p class="text-gray-500 text-sm">Preencha os campos acima e clique em "Gerar PDF". Uma prévia será exibida aqui e o arquivo será baixado automaticamente.</p>
-                </div>
-            </div>
         </section>
+
+        <section id="company-keyword-report-page" class="page-section fade-in">
             <button id="back-to-super-admin-report"
                 class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">← Voltar para Relatório
                 Geral</button>
             <h2 id="company-keyword-report-title" class="text-2xl sm:text-3xl font-bold mb-6">Análise por Palavra-Chave
             </h2>
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div class="p-4 bg-white rounded-lg shadow-lg min-h-[300px] sm:min-h-[400px]">
+                <div class="p-4 bg-white rounded-lg shadow-lg h-[420px]">
                     <h3 class="text-xl font-semibold mb-4 text-center">Total de Alertas por Palavra-Chave</h3>
-                    <canvas id="keyword-total-chart"></canvas>
+                    <canvas id="keyword-total-chart" class="w-full h-full"></canvas>
                 </div>
-                <div class="p-4 bg-white rounded-lg shadow-lg min-h-[300px] sm:min-h-[400px]">
+                <div class="p-4 bg-white rounded-lg shadow-lg h-[420px]">
                     <h3 class="text-xl font-semibold mb-4 text-center">Sentimento por Palavra-Chave</h3>
-                    <canvas id="keyword-sentiment-chart"></canvas>
+                    <canvas id="keyword-sentiment-chart" class="w-full h-full"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <section id="critical-report-page" class="page-section fade-in">
+            <button id="back-to-super-admin-critical"
+                class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">← Voltar para Painel
+                de Super-Administrador</button>
+            <h2 class="text-2xl sm:text-3xl font-bold mb-6">Relatório de Análise Crítica</h2>
+
+            <div class="mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div id="critical-company-container" class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1" for="critical-company-select">Empresa</label>
+                    <select id="critical-company-select" class="w-full border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"></select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1" for="critical-start-date">Período Inicial</label>
+                    <input id="critical-start-date" type="date" class="w-full border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500" />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1" for="critical-end-date">Período Final</label>
+                    <input id="critical-end-date" type="date" class="w-full border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500" />
+                </div>
+            </div>
+            <button id="critical-generate-btn" class="mb-6 w-full bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700">Gerar Relatório</button>
+
+            <div id="critical-summary" class="mb-6 p-4 bg-gray-50 rounded-md text-gray-800"></div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="p-4 bg-white rounded-lg shadow-lg h-[420px]">
+                    <h3 class="text-xl font-semibold mb-4 text-center">Distribuição da Mídia</h3>
+                    <canvas id="critical-channel-chart" class="w-full h-full"></canvas>
+                </div>
+                <div class="p-4 bg-white rounded-lg shadow-lg h-[420px]">
+                    <h3 class="text-xl font-semibold mb-4 text-center">Notícias por tipo de texto</h3>
+                    <canvas id="critical-space-chart" class="w-full h-full"></canvas>
+                </div>
+                <div class="p-4 bg-white rounded-lg shadow-lg h-[420px]">
+                    <h3 class="text-xl font-semibold mb-4 text-center">Direta/Indireta</h3>
+                    <canvas id="critical-space-qual-chart" class="w-full h-full"></canvas>
+                </div>
+                <div class="p-4 bg-white rounded-lg shadow-lg h-[420px]">
+                    <h3 class="text-xl font-semibold mb-4 text-center">Notícias por Veículo</h3>
+                    <canvas id="critical-vehicle-chart" class="w-full h-full"></canvas>
+                </div>
+                <div class="p-4 bg-white rounded-lg shadow-lg h-[420px]">
+                    <h3 class="text-xl font-semibold mb-4 text-center">Análise qualitativa das matérias</h3>
+                    <canvas id="critical-valuation-chart" class="w-full h-full"></canvas>
+                </div>
+                <div class="p-4 bg-white rounded-lg shadow-lg h-[420px] lg:col-span-2">
+                    <h3 class="text-xl font-semibold mb-4 text-center">Notícias por Data de Publicação</h3>
+                    <canvas id="critical-date-chart" class="w-full h-full"></canvas>
+                </div>
+                <div class="p-4 bg-white rounded-lg shadow-lg h-[420px] lg:col-span-2">
+                    <h3 class="text-xl font-semibold mb-4 text-center">Assunto (Nuvem de Palavras)</h3>
+                    <div id="critical-wordcloud" class="w-full h-full overflow-auto flex flex-wrap items-start content-start gap-2"></div>
+                </div>
+                <div class="p-4 bg-white rounded-lg shadow-lg min-h-[300px] sm:min-h-[400px] lg:col-span-2">
+                    <h3 class="text-xl font-semibold mb-4 text-center">Mapa de Notícias</h3>
+                    <div id="critical-report-map" class="w-full h-[400px] rounded-md border border-gray-200"></div>
                 </div>
             </div>
         </section>
@@ -1133,7 +1119,7 @@
 
     <script>
         // Função de callback global para a API do Google Maps
-        window.initMap = function() {
+        function initMap() {
             try {
                 const map = new google.maps.Map(document.getElementById("map"), {
                     zoom: 4,
@@ -1158,9 +1144,28 @@
         const auth = getAuth(app);
         const functions = getFunctions(app, 'southamerica-east1');
 
+        // Exibir erros globais para diagnosticar tela branca
+        window.addEventListener('error', (e) => {
+            const el = document.getElementById('global-alert');
+            const msg = `Erro de script: ${e.message || (e.error && e.error.message) || 'desconhecido'}`;
+            if (el) {
+                el.innerHTML = `<div class="bg-red-100 border-red-500 text-red-700 border-l-4 p-4 rounded-md" role="alert"><p>${msg}</p></div>`;
+            }
+            console.error('Captured window error:', e);
+        });
+        window.addEventListener('unhandledrejection', (e) => {
+            const el = document.getElementById('global-alert');
+            const reason = e.reason && (e.reason.message || e.reason) || 'desconhecido';
+            const msg = `Erro inesperado: ${reason}`;
+            if (el) {
+                el.innerHTML = `<div class="bg-red-100 border-red-500 text-red-700 border-l-4 p-4 rounded-md" role="alert"><p>${msg}</p></div>`;
+            }
+            console.error('Captured unhandledrejection:', e);
+        });
+
         const appId = firebaseConfig.projectId;
         let currentUser = null, clockInterval = null, selectedCompanyForManagement = null, allCompanyArticles = [], companyIdToDelete = null, articleToDeleteInfo = null;
-        let sourceChartInstance = null, dateChartInstance = null, sentimentChartInstance = null, channelChartInstance = null, companySummaryChartInstance = null, keywordTotalChartInstance = null, keywordSentimentChartInstance = null;
+        let sourceChartInstance = null, dateChartInstance = null, sentimentChartInstance = null, channelChartInstance = null, companySummaryChartInstance = null, keywordTotalChartInstance = null, keywordSentimentChartInstance = null, criticalChannelChartInstance = null, criticalSpaceChartInstance = null, criticalSpaceQualChartInstance = null, criticalVehicleChartInstance = null, criticalValuationChartInstance = null, criticalDateChartInstance = null;
         let superAdminCredentials = { user: 'ulysses', pass: 'adminqwert' };
         let notificationListener = null, companiesListener = null, deletionRequestsListener = null, pendingAlertsListener = null;
         let keywordToDeleteInfo = null;
@@ -1168,9 +1173,23 @@
         let mapInstance = null;
         let mapMarkers = [];
 
-        let pageSections, navLoggedIn, navInicio, navRelatorio, navMapa, navPesquisa, navSuperAdmin, navLogout, navConfiguracoesAdmin, globalAlert, loginPage, dashboardPage, mapPage, searchPage, superAdminPage, companyKeywordAdminPage, companySettingsAdminPage, reportPage, companyUserAdminPage, configuracoesAdminPage, loginForm, dashboardTitle, currentDateTimeEl, dashboardKeywordList, newsAlertsContainer, newsAlerts, alertDateFilter, reportAccessToggle, mapAccessToggle, logoUploadInput, headerLogoContainer, loginLogoContainer, filterContainer, searchInput, searchResults, companyForm, companyList, backToSuperAdminKwBtn, backToSuperAdminSettingsBtn, backToSuperAdminUsersBtn, companyKeywordAdminTitle, companySettingsAdminTitle, companyUserAdminTitle, keywordForm, keywordInput, keywordIdInput, adminKeywordList, userForm, userInput, userPasswordInput, userIdInput, adminUserList, notificationBell, notificationBadge, manualTriggerBtn, deleteModal, confirmDeleteBtn, cancelDeleteBtn, companyNameToDeleteEl, newsScopeContainer, startDateInput, endDateInput, linkModal, accessLinkInput, copyLinkBtn, closeLinkModalBtn, reportKeywordFilterContainer, mapKeywordFilterContainer, stateSelectContainer, stateSelect, changePasswordForm, apiKeyNewsApiInput, apiKeyFirebaseNewsInput, apiKeyGNewsInput1, apiKeyGNewsInput2, apiKeyGNewsInput3, apiKeyGNewsInput4, apiKeyYoutubeInput, apiKeyBloggerInput, apiKeyVisionInput, apiKeyVideoIntelligenceInput, showAllAlertsBtn, deletionAccessToggle, justificationModal, justificationText, submitJustificationBtn, cancelJustificationBtn, btnManualAlert, btnDeletionRequests, btnSuperAdminReport, manualAlertPage, deletionRequestsPage, superAdminReportPage, backToDashboard1, backToDashboard2, backToDashboard3, manualAlertForm, deletionRequestsList, superAdminReportBody, deletionRequestsBadge, pendingAlertsPage, pendingAlertsList, btnPendingAlerts, backToDashboard4, confirmDeleteKeywordBtn, cancelDeleteKeywordBtn, confirmDeleteKeywordModal, keywordToDeleteNameEl, bloggerIdInput, rssUrlInput, fetchOnlyNewToggle, changePasswordPage, globalKeysPage, globalSourcesPage, btnChangePassword, btnGlobalKeys, btnNewsSources, backToAdminConfig1, backToAdminConfig2, backToAdminConfig3, globalLogoPage, btnGlobalLogo, backToAdminConfig4, globalLogoUpload, globalLogoArea, logoLink, btnRadioSources, globalRadioSourcesPage, backToAdminConfig5, radioSourcesInput, articleDetailPage, backFromDetail, detailTitle, detailMeta, detailContent, shareWhatsappBtn, shareEmailBtn, companyKeywordReportPage, backToSuperAdminReportBtn, companyKeywordReportTitle, detailAiInsights, printBtn, shareButtonsContainer, mapStartDateInput, mapEndDateInput, mapFilterBtn, reportStartDateInput, reportEndDateInput, testRssBtn, clearRssPreviewBtn, rssPreviewContainer, testRadioBtn, radioAudioEl, radioNameInput, radioUrlInput, radioStartInput, radioEndInput, radioAddBtn, radioMigrateBtn, btnSuperAdminCriticalReport, superAdminCriticalReportPage, critCompanySelect, critStartDateInput, critEndDateInput, critGenerateBtn, critPreview;
+        let pageSections, navLoggedIn, navInicio, navRelatorio, navMapa, navPesquisa, navSuperAdmin, navLogout, navConfiguracoesAdmin, globalAlert, loginPage, dashboardPage, mapPage, searchPage, superAdminPage, companyKeywordAdminPage, companySettingsAdminPage, reportPage, companyUserAdminPage, configuracoesAdminPage, loginForm, dashboardTitle, currentDateTimeEl, dashboardKeywordList, newsAlertsContainer, newsAlerts, alertDateFilter, reportAccessToggle, mapAccessToggle, logoUploadInput, headerLogoContainer, loginLogoContainer, filterContainer, searchInput, searchResults, companyForm, companyList, backToSuperAdminKwBtn, backToSuperAdminSettingsBtn, backToSuperAdminUsersBtn, companyKeywordAdminTitle, companySettingsAdminTitle, companyUserAdminTitle, keywordForm, keywordInput, keywordIdInput, adminKeywordList, userForm, userInput, userPasswordInput, userIdInput, adminUserList, notificationBell, notificationBadge, manualTriggerBtn, deleteModal, confirmDeleteBtn, cancelDeleteBtn, companyNameToDeleteEl, newsScopeContainer, startDateInput, endDateInput, linkModal, accessLinkInput, copyLinkBtn, closeLinkModalBtn, reportKeywordFilterContainer, stateSelectContainer, stateSelect, changePasswordForm, apiKeyNewsApiInput, apiKeyFirebaseNewsInput, apiKeyGoogleMapsInput, apiKeyGNewsInput1, apiKeyGNewsInput2, apiKeyGNewsInput3, apiKeyGNewsInput4, apiKeyYoutubeInput, apiKeyBloggerInput, apiKeyVisionInput, apiKeyVideoIntelligenceInput, showAllAlertsBtn, deletionAccessToggle, justificationModal, justificationText, submitJustificationBtn, cancelJustificationBtn, btnManualAlert, btnDeletionRequests, btnSuperAdminReport, manualAlertPage, deletionRequestsPage, superAdminReportPage, backToDashboard1, backToDashboard2, backToDashboard3, manualAlertForm, deletionRequestsList, superAdminReportBody, deletionRequestsBadge, pendingAlertsPage, pendingAlertsList, btnPendingAlerts, backToDashboard4, confirmDeleteKeywordBtn, cancelDeleteKeywordBtn, confirmDeleteKeywordModal, keywordToDeleteNameEl, bloggerIdInput, rssUrlInput, fetchOnlyNewToggle, changePasswordPage, globalKeysPage, globalSourcesPage, btnChangePassword, btnGlobalKeys, btnNewsSources, backToAdminConfig1, backToAdminConfig2, backToAdminConfig3, globalLogoPage, btnGlobalLogo, backToAdminConfig4, globalLogoUpload, globalLogoArea, logoLink, btnRadioSources, globalRadioSourcesPage, backToAdminConfig5, radioSourcesInput, youtubeChannelsInput, youtubeChannelsFrequencyInput, youtubeFrequencyInput, youtubeFrequencyTimeInput, articleDetailPage, backFromDetail, detailTitle, detailMeta, detailContent, shareWhatsappBtn, shareEmailBtn, companyKeywordReportPage, backToSuperAdminReportBtn, companyKeywordReportTitle, detailAiInsights, printBtn, shareButtonsContainer, mapStartDateInput, mapEndDateInput, mapFilterBtn, reportStartDateInput, reportEndDateInput, criticalReportPage, backToSuperAdminCriticalBtn, criticalCompanySelect, criticalStartDateInput, criticalEndDateInput, criticalGenerateBtn, criticalSummary, rssFrequencyInput, gnewsFrequencyInput;
 
-        function showAlert(message, type = 'success') { const c = type === 'success' ? 'bg-green-100 border-green-500 text-green-700' : 'bg-red-100 border-red-500 text-red-700'; globalAlert.innerHTML = `<div class="${c} border-l-4 p-4 rounded-md fade-in" role="alert"><p>${message}</p></div>`; setTimeout(() => { globalAlert.innerHTML = ''; }, 4000); }
+        function showAlert(message, type = 'success') {
+            // Suprimir diagnóstico nas páginas das empresas (usuários não-super-admin)
+            try {
+                const isDiagnostic = typeof message === 'string' && message.trim().toLowerCase().startsWith('diagnóstico:');
+                if (isDiagnostic && currentUser && !currentUser.isSuperAdmin) {
+                    return; // não exibir diagnóstico para empresas
+                }
+            } catch (_) { /* noop */ }
+
+            const el = globalAlert || document.getElementById('global-alert');
+            if (!el) { console.warn('global-alert element not found. Message:', message); return; }
+            const c = type === 'success' ? 'bg-green-100 border-green-500 text-green-700' : 'bg-red-100 border-red-500 text-red-700';
+            el.innerHTML = `<div class="${c} border-l-4 p-4 rounded-md fade-in" role="alert"><p>${message}</p></div>`;
+            setTimeout(() => { if (el) el.innerHTML = ''; }, 4000);
+        }
         function getChannelCategory(sourceName) {
             const name = (sourceName || "").toLowerCase();
             if (name.includes('youtube')) return 'YouTube';
@@ -1180,6 +1199,9 @@
             return 'Sites';
         }
         function updateView(pageName) {
+            if (!pageSections || typeof pageSections.forEach !== 'function') {
+                pageSections = document.querySelectorAll('.page-section');
+            }
             pageSections.forEach(s => s.classList.remove('active'));
             const i = !!currentUser;
             if (navLoggedIn) navLoggedIn.style.display = i ? 'flex' : 'none';
@@ -1209,11 +1231,17 @@
                 case 'manual-alert': manualAlertPage.classList.add('active'); renderManualAlertPage(); break;
                 case 'deletion-requests': deletionRequestsPage.classList.add('active'); setupDeletionRequestsListener(); break;
                 case 'super-admin-report': superAdminReportPage.classList.add('active'); renderSuperAdminReport(); break;
-                case 'super-admin-critical-report': superAdminCriticalReportPage.classList.add('active'); renderSuperAdminCriticalReportPage(); break;
+                case 'critical-report': criticalReportPage.classList.add('active'); renderCriticalReportPage(); break;
                 case 'super-admin-queue': pendingAlertsPage.classList.add('active'); setupPendingAlertsListener(); break;
                 case 'article-detail': articleDetailPage.classList.add('active'); break;
                 case 'company-keyword-report': companyKeywordReportPage.classList.add('active'); break;
             }
+            // Fallback: if nothing activated, ensure login is visible
+            try {
+                const sections = pageSections || document.querySelectorAll('.page-section');
+                const anyActive = Array.from(sections).some(s => s.classList.contains('active'));
+                if (!anyActive && loginPage) loginPage.classList.add('active');
+            } catch (err) { console.warn('Fallback activation failed', err); }
         }
         function getStorage(key, defaultValue) { try { const d = localStorage.getItem(key); return d ? JSON.parse(d) : defaultValue; } catch (e) { console.error(e); return defaultValue; } }
         function setStorage(key, value) { localStorage.setItem(key, JSON.stringify(value)); }
@@ -1259,52 +1287,16 @@
                 queryConstraints.push(limit(200));
 
                 const articlesQuery = query(baseCollection, ...queryConstraints);
-                const keywordsQuery = query(collection(db, "artifacts", appId, "users", currentUser.companyId, "keywords"));
-                const [articlesSnapshot, keywordsSnapshot] = await Promise.all([getDocs(articlesQuery), getDocs(keywordsQuery)]);
+                const articlesSnapshot = await getDocs(articlesQuery);
                 const infoWindow = new google.maps.InfoWindow();
-
-                const regionCountsEl = document.getElementById('region-counts');
-                if (regionCountsEl) regionCountsEl.innerHTML = '';
 
                 if (articlesSnapshot.empty) {
                     showAlert("Nenhuma notícia com geolocalização encontrada para o período selecionado.", "success");
                     return;
                 }
 
-                // Renderiza lista de palavras-chave para filtro no mapa
-                const keywords = keywordsSnapshot.docs.map(doc => doc.data().word);
-                if (mapKeywordFilterContainer) {
-                    mapKeywordFilterContainer.innerHTML = '';
-                    keywords.forEach(kw => {
-                        const id = `map-kw-${kw.replace(/\s+/g, '-')}`;
-                        const filterEl = document.createElement('div');
-                        filterEl.className = 'flex items-center';
-                        filterEl.innerHTML = `<input type="checkbox" id="${id}" value="${kw}" class="map-kw-checkbox h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"><label for="${id}" class="ml-2 block text-sm text-gray-900">${kw}</label>`;
-                        mapKeywordFilterContainer.appendChild(filterEl);
-                    });
-                }
-                const selectedKeywords = mapKeywordFilterContainer ? Array.from(mapKeywordFilterContainer.querySelectorAll('.map-kw-checkbox:checked')).map(cb => cb.value) : [];
-
-                const stateToRegion = {
-                    'AC':'Norte','AP':'Norte','AM':'Norte','PA':'Norte','RO':'Norte','RR':'Norte','TO':'Norte',
-                    'AL':'Nordeste','BA':'Nordeste','CE':'Nordeste','MA':'Nordeste','PB':'Nordeste','PE':'Nordeste','PI':'Nordeste','RN':'Nordeste','SE':'Nordeste',
-                    'DF':'Centro-Oeste','GO':'Centro-Oeste','MT':'Centro-Oeste','MS':'Centro-Oeste',
-                    'ES':'Sudeste','MG':'Sudeste','RJ':'Sudeste','SP':'Sudeste',
-                    'PR':'Sul','RS':'Sul','SC':'Sul'
-                };
-                const regionCounts = { 'Norte':0, 'Nordeste':0, 'Centro-Oeste':0, 'Sudeste':0, 'Sul':0, 'Indefinido':0 };
-
-                // Aplica filtragem por palavras-chave antes de agregação
-                const articles = [];
-                articlesSnapshot.forEach(doc => { articles.push({ id: doc.id, ...doc.data() }); });
-                const filteredArticles = selectedKeywords.length === 0
-                    ? articles
-                    : articles.filter(article => {
-                        const articleKeywords = article.keywords || [article.keyword];
-                        return selectedKeywords.some(sk => articleKeywords.includes(sk));
-                    });
-
-                filteredArticles.forEach(article => {
+                articlesSnapshot.forEach(doc => {
+                    const article = { id: doc.id, ...doc.data() };
                     const marker = new google.maps.Marker({
                         position: article.geolocation,
                         map: mapInstance,
@@ -1313,30 +1305,8 @@
                     });
                     mapMarkers.push(marker);
 
-                    const possibleState = (
-                        article.state || article.uf ||
-                        (article.location && (article.location.uf || article.location.state)) ||
-                        (article.source && (article.source.uf || article.source.state)) ||
-                        article.region
-                    );
-                    let regionLabel = 'Indefinido';
-                    if (possibleState) {
-                        const code = String(possibleState).toUpperCase();
-                        if (stateToRegion[code]) {
-                            regionLabel = stateToRegion[code];
-                        } else if (['NORTE','NORDESTE','CENTRO-OESTE','SUDESTE','SUL'].includes(code)) {
-                            const normalized = code.charAt(0) + code.slice(1).toLowerCase();
-                            regionLabel = normalized;
-                        }
-                    }
-                    if (regionCounts[regionLabel] !== undefined) {
-                        regionCounts[regionLabel] += 1;
-                    } else {
-                        regionCounts['Indefinido'] += 1;
-                    }
-
                     marker.addListener('mouseover', () => {
-                        infoWindow.setContent(`                        <div class=\"font-sans p-1\">                            <p class=\"font-bold text-sm\">${article.title}</p>                            <p class=\"text-xs text-gray-500\">${article.source.name}</p>                        </div>                        `);
+                        infoWindow.setContent(`                        <div class="font-sans p-1">                            <p class="font-bold text-sm">${article.title}</p>                            <p class="text-xs text-gray-500">${article.source.name}</p>                        </div>                        `);
                         infoWindow.open({
                             anchor: marker,
                             map: mapInstance,
@@ -1350,27 +1320,6 @@
                     });
                 });
 
-                if (regionCountsEl) {
-                    const tile = (label, count) => (
-                        `<div class=\"p-3 bg-gray-100 rounded-md flex items-center justify-between\">`+
-                        `<span class=\"font-medium text-gray-700\">${label}</span>`+
-                        `<span class=\"text-indigo-700 font-bold\">${count}</span>`+
-                        `</div>`
-                    );
-                    regionCountsEl.innerHTML = [
-                        tile('Norte', regionCounts['Norte']),
-                        tile('Nordeste', regionCounts['Nordeste']),
-                        tile('Centro-Oeste', regionCounts['Centro-Oeste']),
-                        tile('Sudeste', regionCounts['Sudeste']),
-                        tile('Sul', regionCounts['Sul']),
-                        tile('Indefinido', regionCounts['Indefinido'])
-                    ].join('');
-                }
-
-                // Re-render quando o usuário mudar os checkboxes de palavras
-                if (mapKeywordFilterContainer) {
-                    mapKeywordFilterContainer.onchange = () => renderMapPage();
-                }
             } catch (error) {
                 console.error("Erro ao carregar notícias para o mapa:", error);
                 showAlert("Não foi possível carregar as notícias no mapa. Pode ser necessário criar um índice no Firestore.", "error");
@@ -1394,14 +1343,6 @@
                 manualTriggerBtn.textContent = 'Executar Robô Manualmente';
             }
         }
-
-        // RSS: Testar captação via CORS proxy e pré-visualizar
-        async function testRSSFeeds() { try { if (!rssUrlInput || !document.getElementById('rss-preview')) return; const urls = (rssUrlInput.value || '').split('\n').map(l => l.trim()).filter(Boolean); if (urls.length === 0) { showAlert('Adicione ao menos um URL de RSS para testar.', 'error'); return; } const previewEl = document.getElementById('rss-preview'); previewEl.innerHTML = '<p class="text-gray-500">A carregar RSS...</p>'; const parser = new DOMParser(); const maxPerFeed = 5; let html = ''; for (const url of urls) { try { const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`; const res = await fetch(proxyUrl); if (!res.ok) throw new Error(`Falha ao obter RSS: ${res.status}`); const text = await res.text(); const xml = parser.parseFromString(text, 'application/xml'); const channelTitle = xml.querySelector('channel > title')?.textContent || url; const feedItems = Array.from(xml.querySelectorAll('item')).slice(0, maxPerFeed); html += `<div class="border rounded-md p-3"><div class="font-medium">${channelTitle}</div><ul class="mt-2 space-y-1">${feedItems.map(it => { const title = it.querySelector('title')?.textContent || 'Sem título'; const link = it.querySelector('link')?.textContent || '#'; const pubDate = it.querySelector('pubDate')?.textContent || new Date().toISOString(); return `<li class="text-sm"><a href="${link}" target="_blank" class="text-blue-600 hover:underline">${title}</a> <span class="text-gray-500"> — ${new Date(pubDate).toLocaleString('pt-BR')}</span></li>`; }).join('') || '<li class="text-gray-500 text-sm">Nenhum item encontrado.</li>'}</ul></div>`; } catch (err) { console.error('Erro ao processar RSS', url, err); html += `<div class="border rounded-md p-3"><div class="font-medium">${url}</div><div class="text-red-600 text-sm">Erro: ${err.message}</div></div>`; } } previewEl.innerHTML = html; } catch (error) { console.error('Erro geral ao testar RSS:', error); showAlert('Erro ao testar RSS.', 'error'); } }
-        function clearRssPreview() { const previewEl = document.getElementById('rss-preview'); if (previewEl) previewEl.innerHTML = ''; }
-        // Rádio: Testar reprodução da primeira fonte
-        function testRadioPlayback() { try { if (!radioSourcesInput) return; const audioEl = document.getElementById('radio-audio'); if (!audioEl) return; const lines = (radioSourcesInput.value || '').split('\n').map(l => l.trim()).filter(Boolean); if (lines.length === 0) { showAlert('Adicione ao menos uma fonte de rádio no formato "Nome | URL | Horário".', 'error'); return; } const first = lines[0]; const parts = first.split('|').map(p => p.trim()); const name = parts[0] || 'Rádio'; const streamUrl = parts[1] || ''; const scheduleRaw = parts[2] || ''; if (!streamUrl) { showAlert('Não foi possível extrair o URL do stream da primeira linha.', 'error'); return; } // Parse formatos possíveis: "HH:MM-HH:MM" ou "HH:MM | HH:MM"
-            let startTime = null, endTime = null; if (scheduleRaw) { const dashMatch = scheduleRaw.match(/^(\d{2}:\d{2})\s*-\s*(\d{2}:\d{2})$/); if (dashMatch) { startTime = dashMatch[1]; endTime = dashMatch[2]; } else { const altStart = parts[2]; const altEnd = parts[3]; if (altStart && altEnd && /^\d{2}:\d{2}$/.test(altStart) && /^\d{2}:\d{2}$/.test(altEnd)) { startTime = altStart; endTime = altEnd; } } }
-            audioEl.src = streamUrl; const playPromise = audioEl.play(); if (playPromise && typeof playPromise.then === 'function') { playPromise.then(() => { const scheduleMsg = (startTime && endTime) ? ` (Janela: ${startTime}-${endTime})` : ''; showAlert(`Reprodução de ${name} iniciada.${scheduleMsg} Verifique o áudio abaixo.`, 'success'); }).catch(err => { console.error('Erro ao reproduzir rádio:', err); showAlert('Erro ao reproduzir a rádio. Verifique se o stream permite playback no navegador e se há CORS.', 'error'); }); } } catch (error) { console.error('Erro geral ao testar rádio:', error); showAlert('Erro ao testar rádio.', 'error'); } }
 
         async function handleLogoUpload(e) { const file = e.target.files[0]; if (!file) return; const companyId = currentUser.isSuperAdmin ? selectedCompanyForManagement.id : currentUser.companyId; if (!companyId) return; const reader = new FileReader(); reader.onloadend = async () => { try { const settingsRef = doc(db, "artifacts", appId, "public/data/settings", companyId); await setDoc(settingsRef, { logo: reader.result }, { merge: true }); loadAndDisplayLogo(); showAlert('Logótipo atualizado com sucesso!'); } catch (error) { console.error("Erro ao guardar o logótipo:", error); showAlert("Erro ao guardar o logótipo.", "error"); } }; reader.readAsDataURL(file); }
         async function loadAndDisplayLogo() { const companyId = currentUser ? currentUser.companyId : null; if (!companyId) { if (headerLogoContainer) headerLogoContainer.innerHTML = ''; if (loginLogoContainer) loginLogoContainer.innerHTML = ''; return; } const settingsRef = doc(db, "artifacts", appId, "public/data/settings", companyId); try { const docSnap = await getDoc(settingsRef); const logoData = docSnap.exists() ? docSnap.data().logo : null; const logoHtml = logoData ? `<img src="${logoData}" alt="Logótipo da Empresa" class="h-full w-auto object-contain">` : ''; if (headerLogoContainer) headerLogoContainer.innerHTML = logoHtml; if (loginLogoContainer) loginLogoContainer.innerHTML = logoHtml; } catch (error) { console.error("Erro ao carregar o logótipo:", error); } }
@@ -1649,108 +1590,150 @@
         async function renderCompanySettingsAdminPage() { if (!selectedCompanyForManagement || !companySettingsAdminTitle) return; companySettingsAdminTitle.textContent = `Opções para: ${selectedCompanyForManagement.name}`; try { const settingsRef = doc(db, "artifacts", appId, "public/data/settings", selectedCompanyForManagement.id); const docSnap = await getDoc(settingsRef); if (docSnap.exists()) { const settings = docSnap.data(); if (reportAccessToggle) reportAccessToggle.checked = settings.reportAccess !== false; if (mapAccessToggle) mapAccessToggle.checked = settings.mapAccess !== false; if (fetchOnlyNewToggle) fetchOnlyNewToggle.checked = settings.fetchOnlyNew === true; if (deletionAccessToggle) deletionAccessToggle.checked = settings.canRequestDeletion === true; if (document.querySelector(`input[name="news-scope"][value="${settings.searchScope || 'br'}"]`)) document.querySelector(`input[name="news-scope"][value="${settings.searchScope || 'br'}"]`).checked = true; if (stateSelect) stateSelect.value = settings.searchState || ''; } else { if (reportAccessToggle) reportAccessToggle.checked = true; if (mapAccessToggle) mapAccessToggle.checked = true; if (fetchOnlyNewToggle) fetchOnlyNewToggle.checked = false; if (deletionAccessToggle) deletionAccessToggle.checked = false; if (document.querySelector('input[name="news-scope"][value="br"]')) document.querySelector('input[name="news-scope"][value="br"]').checked = true; if (stateSelect) stateSelect.value = ''; } handleScopeChange(); } catch (error) { console.error("Erro ao renderizar as configurações:", error); } }
         async function handleSettingsChange(e) { if (!selectedCompanyForManagement) return; const settingsRef = doc(db, "artifacts", appId, "public/data/settings", selectedCompanyForManagement.id); let key, value; switch (e.target.id) { case 'report-access-toggle': key = 'reportAccess'; value = e.target.checked; break; case 'map-access-toggle': key = 'mapAccess'; value = e.target.checked; break; case 'fetch-only-new-toggle': key = 'fetchOnlyNew'; value = e.target.checked; break; case 'deletion-access-toggle': key = 'canRequestDeletion'; value = e.target.checked; break; case 'state-select': key = 'searchState'; value = e.target.value; break; default: if (e.target.name === 'news-scope') { key = 'searchScope'; value = e.target.value; } else { return; } } try { await setDoc(settingsRef, { [key]: value }, { merge: true }); showAlert('Opção guardada!', 'success'); } catch (error) { console.error("Erro ao guardar a configuração:", error); } }
         function handleScopeChange() { if (!stateSelectContainer || !document.querySelector('input[name="news-scope"]:checked')) return; const selectedScope = document.querySelector('input[name="news-scope"]:checked').value; stateSelectContainer.classList.toggle('hidden', selectedScope !== 'state'); }
-        async function renderGlobalKeysPage() { try { const settingsRef = doc(db, "artifacts", appId, "public/data/settings", "global"); const docSnap = await getDoc(settingsRef); if (docSnap.exists()) { const settings = docSnap.data(); if (apiKeyNewsApiInput) apiKeyNewsApiInput.value = settings.apiKeyNewsApi || ''; if (apiKeyFirebaseNewsInput) apiKeyFirebaseNewsInput.value = settings.apiKeyFirebaseNews || ''; if (apiKeyGNewsInput1) apiKeyGNewsInput1.value = settings.apiKeyGNews1 || ''; if (apiKeyGNewsInput2) apiKeyGNewsInput2.value = settings.apiKeyGNews2 || ''; if (apiKeyGNewsInput3) apiKeyGNewsInput3.value = settings.apiKeyGNews3 || ''; if (apiKeyGNewsInput4) apiKeyGNewsInput4.value = settings.apiKeyGNews4 || ''; if (apiKeyYoutubeInput) apiKeyYoutubeInput.value = settings.apiKeyYoutube || ''; if (apiKeyBloggerInput) apiKeyBloggerInput.value = settings.apiKeyBlogger || ''; if (apiKeyVisionInput) apiKeyVisionInput.value = settings.apiKeyVision || ''; if (apiKeyVideoIntelligenceInput) apiKeyVideoIntelligenceInput.value = settings.apiKeyVideoIntelligence || ''; } } catch (error) { console.error("Erro ao carregar as chaves de API globais:", error); } }
+        async function renderGlobalKeysPage() { try { const settingsRef = doc(db, "artifacts", appId, "public/data/settings", "global"); const docSnap = await getDoc(settingsRef); if (docSnap.exists()) { const settings = docSnap.data(); if (apiKeyNewsApiInput) apiKeyNewsApiInput.value = settings.apiKeyNewsApi || ''; if (apiKeyFirebaseNewsInput) apiKeyFirebaseNewsInput.value = settings.apiKeyFirebaseNews || ''; if (typeof apiKeyGoogleMapsInput !== 'undefined' && apiKeyGoogleMapsInput) apiKeyGoogleMapsInput.value = settings.apiKeyGoogleMaps || ''; if (apiKeyGNewsInput1) apiKeyGNewsInput1.value = settings.apiKeyGNews1 || ''; if (apiKeyGNewsInput2) apiKeyGNewsInput2.value = settings.apiKeyGNews2 || ''; if (apiKeyGNewsInput3) apiKeyGNewsInput3.value = settings.apiKeyGNews3 || ''; if (apiKeyGNewsInput4) apiKeyGNewsInput4.value = settings.apiKeyGNews4 || ''; if (apiKeyYoutubeInput) apiKeyYoutubeInput.value = settings.apiKeyYoutube || ''; if (apiKeyBloggerInput) apiKeyBloggerInput.value = settings.apiKeyBlogger || ''; if (apiKeyVisionInput) apiKeyVisionInput.value = settings.apiKeyVision || ''; if (apiKeyVideoIntelligenceInput) apiKeyVideoIntelligenceInput.value = settings.apiKeyVideoIntelligence || ''; } } catch (error) { console.error("Erro ao carregar as chaves de API globais:", error); } }
         async function handleGlobalKeyChange(e) { const settingsRef = doc(db, "artifacts", appId, "public/data/settings", "global"); const key = e.target.id; const value = e.target.value; try { await setDoc(settingsRef, { [key]: value }, { merge: true }); showAlert('Chave de API guardada!', 'success'); } catch (error) { console.error("Erro ao guardar a chave de API global:", error); } }
-        async function renderGlobalSourcesPage() { try { const settingsRef = doc(db, "artifacts", appId, "public/data/settings", "global"); const docSnap = await getDoc(settingsRef); if (docSnap.exists()) { const settings = docSnap.data(); if (bloggerIdInput) bloggerIdInput.value = settings.bloggerId || ''; if (rssUrlInput) rssUrlInput.value = settings.rssUrl || ''; } } catch (error) { console.error("Erro ao carregar as fontes globais:", error); } }
-        function renderRadioSourcesPreview() {
+        async function renderGlobalSourcesPage() { try { const settingsRef = doc(db, "artifacts", appId, "public/data/settings", "global"); const docSnap = await getDoc(settingsRef); if (docSnap.exists()) { const settings = docSnap.data(); if (bloggerIdInput) bloggerIdInput.value = settings.bloggerId || ''; if (rssUrlInput) rssUrlInput.value = settings.rssUrl || ''; if (youtubeChannelsInput) youtubeChannelsInput.value = settings.youtubeChannels || ''; if (youtubeChannelsFrequencyInput) youtubeChannelsFrequencyInput.value = settings.youtubeChannelsFrequencyMinutes || ''; if (youtubeFrequencyInput) youtubeFrequencyInput.value = settings.youtubeFrequencyHours || ''; if (youtubeFrequencyTimeInput) youtubeFrequencyTimeInput.value = settings.youtubeFrequencyTime || ''; if (typeof rssFrequencyInput !== 'undefined' && rssFrequencyInput) rssFrequencyInput.value = settings.rssFrequencyMinutes || ''; if (typeof gnewsFrequencyInput !== 'undefined' && gnewsFrequencyInput) gnewsFrequencyInput.value = settings.gnewsFrequencyHours || ''; } } catch (error) { console.error("Erro ao carregar as fontes globais:", error); } }
+        async function renderGlobalRadioSourcesPage() { try { const settingsRef = doc(db, "artifacts", appId, "public/data/settings", "global"); const docSnap = await getDoc(settingsRef); if (docSnap.exists()) { const settings = docSnap.data(); if (radioSourcesInput) radioSourcesInput.value = settings.radioSources || ''; }
+        if (typeof renderRadioTimesList === 'function') renderRadioTimesList();
+    } catch (error) { console.error("Erro ao carregar as fontes de rádio:", error); } }
+
+        // Renderização auxiliar: lista de horários por rádio baseada no conteúdo do textarea
+        function renderRadioTimesList() {
             try {
-                const container = document.getElementById('radio-sources-list');
-                if (!container) return;
-                container.innerHTML = '';
-                // Se existem fontes estruturadas, priorizar essa renderização
-                if (typeof radioSourcesStructured !== 'undefined' && radioSourcesStructured && radioSourcesStructured.length > 0) {
-                    radioSourcesStructured.forEach((s, idx) => {
-                        const name = s.name || `Rádio ${idx+1}`;
-                        const url = s.url || '';
-                        const scheduleRaw = (s.start && s.end) ? `${s.start}-${s.end}` : (s.start || s.end || '');
-                        const row = document.createElement('div');
-                        row.className = 'flex items-center gap-2';
-                        const nameEl = document.createElement('span');
-                        nameEl.className = 'font-medium';
-                        nameEl.textContent = name;
-                        const urlEl = document.createElement('a');
-                        urlEl.href = url || '#';
-                        urlEl.target = '_blank';
-                        urlEl.className = 'text-blue-600 hover:underline break-all';
-                        urlEl.textContent = url || '(sem URL)';
-                        const scheduleEl = document.createElement('span');
-                        scheduleEl.className = 'text-sm text-gray-600';
-                        scheduleEl.textContent = scheduleRaw ? `| ${scheduleRaw}` : '';
-                        const playBtn = document.createElement('button');
-                        playBtn.className = 'ml-auto bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700';
-                        playBtn.textContent = 'Reproduzir';
-                        playBtn.addEventListener('click', () => {
-                            const audioEl = document.getElementById('radio-audio');
-                            if (!audioEl || !url) { showAlert('URL inválido para reprodução.', 'error'); return; }
-                            try { audioEl.src = url; audioEl.play(); showAlert(`Reproduzindo: ${name}`, 'info'); } catch (err) { console.error('Falha ao reproduzir rádio:', err); showAlert('Falha ao reproduzir.', 'error'); }
-                        });
-                        const delBtn = document.createElement('button');
-                        delBtn.className = 'bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700';
-                        delBtn.textContent = 'Excluir';
-                        delBtn.addEventListener('click', async () => {
-                            if (!s.id) return;
-                            try {
-                                await deleteDoc(doc(db, 'artifacts', appId, 'public/data/radioSources', s.id));
-                                showAlert('Fonte excluída!', 'success');
-                                await refreshStructuredRadioSources();
-                            } catch (error) {
-                                console.error('Erro ao excluir a fonte de rádio:', error);
-                                showAlert('Erro ao excluir a fonte.', 'error');
-                            }
-                        });
-                        row.appendChild(nameEl);
-                        row.appendChild(urlEl);
-                        row.appendChild(scheduleEl);
-                        row.appendChild(playBtn);
-                        row.appendChild(delBtn);
-                        container.appendChild(row);
-                    });
-                    return;
-                }
-                // Fallback para texto legado
-                if (!radioSourcesInput) return;
-                const lines = (radioSourcesInput.value || '').split('\n').map(l => l.trim()).filter(Boolean);
-                if (lines.length === 0) {
-                    container.innerHTML = '<p class="text-gray-500 text-sm">Nenhuma fonte cadastrada.</p>';
-                    return;
-                }
+                const listEl = document.getElementById('radioTimesList');
+                const srcEl = document.getElementById('radioSources');
+                if (!listEl || !srcEl) return;
+                const lines = (srcEl.value || '').split('\n').map(l => l.trim()).filter(l => l.length > 0);
+                listEl.innerHTML = '';
                 lines.forEach((line, idx) => {
                     const parts = line.split('|').map(p => p.trim());
                     const name = parts[0] || `Rádio ${idx+1}`;
                     const url = parts[1] || '';
-                    const scheduleRaw = parts[2] || '';
+                    const timeRaw = parts[2] || '';
+                    const match = timeRaw.match(/^(\d{2}:\d{2})(\s*-\s*)(\d{2}:\d{2})$/);
+                    const startTime = match ? match[1] : (timeRaw || '').split('-')[0]?.trim() || '';
+                    const endTime = match ? match[3] : (timeRaw || '').split('-')[1]?.trim() || '';
                     const row = document.createElement('div');
-                    row.className = 'flex items-center gap-2';
-                    const nameEl = document.createElement('span');
-                    nameEl.className = 'font-medium';
-                    nameEl.textContent = name;
-                    const urlEl = document.createElement('a');
-                    urlEl.href = url || '#';
-                    urlEl.target = '_blank';
-                    urlEl.className = 'text-blue-600 hover:underline break-all';
-                    urlEl.textContent = url || '(sem URL)';
-                    const scheduleEl = document.createElement('span');
-                    scheduleEl.className = 'text-sm text-gray-600';
-                    scheduleEl.textContent = scheduleRaw ? `| ${scheduleRaw}` : '';
-                    const playBtn = document.createElement('button');
-                    playBtn.className = 'ml-auto bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700';
-                    playBtn.textContent = 'Reproduzir';
-                    playBtn.addEventListener('click', () => {
-                        const audioEl = document.getElementById('radio-audio');
-                        if (!audioEl || !url) { showAlert('URL inválido para reprodução.', 'error'); return; }
-                        try { audioEl.src = url; audioEl.play(); showAlert(`Reproduzindo: ${name}`, 'info'); } catch (err) { console.error('Falha ao reproduzir rádio:', err); showAlert('Falha ao reproduzir.', 'error'); }
-                    });
-                    row.appendChild(nameEl);
-                    row.appendChild(urlEl);
-                    row.appendChild(scheduleEl);
-                    row.appendChild(playBtn);
-                    container.appendChild(row);
+                    row.className = 'grid grid-cols-1 sm:grid-cols-5 items-center gap-2 border-b border-gray-100 pb-2 mb-2';
+
+                    const nameInput = document.createElement('input');
+                    nameInput.type = 'text';
+                    nameInput.value = name;
+                    nameInput.placeholder = 'Nome da rádio';
+                    nameInput.className = 'col-span-2 px-2 py-1 border border-gray-300 rounded-md text-sm';
+
+                    const urlInput = document.createElement('input');
+                    urlInput.type = 'url';
+                    urlInput.value = url;
+                    urlInput.placeholder = 'URL do stream';
+                    urlInput.className = 'col-span-2 px-2 py-1 border border-gray-300 rounded-md text-sm';
+
+                    const inputStart = document.createElement('input');
+                    inputStart.type = 'time';
+                    inputStart.value = startTime;
+                    inputStart.className = 'px-2 py-1 border border-gray-300 rounded-md text-sm';
+
+                    const dash = document.createElement('span');
+                    dash.className = 'text-xs text-gray-600 text-center';
+                    dash.textContent = '-';
+
+                    const inputEnd = document.createElement('input');
+                    inputEnd.type = 'time';
+                    inputEnd.value = endTime;
+                    inputEnd.className = 'px-2 py-1 border border-gray-300 rounded-md text-sm';
+
+                    const persist = () => {
+                        const n = (nameInput.value || '').trim();
+                        const u = (urlInput.value || '').trim();
+                        const segments = [];
+                        if (n) segments.push(n);
+                        if (u) segments.push(u);
+                        if (inputStart.value && inputEnd.value) {
+                            segments.push(`${inputStart.value} - ${inputEnd.value}`);
+                        } else if (inputStart.value) {
+                            segments.push(inputStart.value);
+                        }
+                        const newLine = segments.join(' | ');
+                        lines[idx] = newLine;
+                        srcEl.value = lines.join('\n');
+                        const event = new Event('change');
+                        srcEl.dispatchEvent(event);
+                    };
+
+                    nameInput.addEventListener('change', persist);
+                    urlInput.addEventListener('change', persist);
+                    inputStart.addEventListener('change', persist);
+                    inputEnd.addEventListener('change', persist);
+
+                    row.appendChild(nameInput);
+                    row.appendChild(urlInput);
+                    row.appendChild(inputStart);
+                    row.appendChild(dash);
+                    row.appendChild(inputEnd);
+                    listEl.appendChild(row);
                 });
-            } catch (err) {
-                console.error('Erro ao renderizar preview de rádios:', err);
+
+                // Linha extra vazia para novo cadastro de rádio
+                const newRow = document.createElement('div');
+                newRow.className = 'grid grid-cols-1 sm:grid-cols-5 items-center gap-2 border-b border-gray-100 pb-2 mb-2';
+
+                const newNameInput = document.createElement('input');
+                newNameInput.type = 'text';
+                newNameInput.placeholder = 'Nome da rádio';
+                newNameInput.className = 'col-span-2 px-2 py-1 border border-gray-300 rounded-md text-sm';
+
+                const newUrlInput = document.createElement('input');
+                newUrlInput.type = 'url';
+                newUrlInput.placeholder = 'URL do stream';
+                newUrlInput.className = 'col-span-2 px-2 py-1 border border-gray-300 rounded-md text-sm';
+
+                const newInputStart = document.createElement('input');
+                newInputStart.type = 'time';
+                newInputStart.className = 'px-2 py-1 border border-gray-300 rounded-md text-sm';
+
+                const newDash = document.createElement('span');
+                newDash.className = 'text-xs text-gray-600 text-center';
+                newDash.textContent = '-';
+
+                const newInputEnd = document.createElement('input');
+                newInputEnd.type = 'time';
+                newInputEnd.className = 'px-2 py-1 border border-gray-300 rounded-md text-sm';
+
+                const persistNew = () => {
+                    const n = (newNameInput.value || '').trim();
+                    const u = (newUrlInput.value || '').trim();
+                    const segments = [];
+                    if (n) segments.push(n);
+                    if (u) segments.push(u);
+                    if (newInputStart.value && newInputEnd.value) {
+                        segments.push(`${newInputStart.value} - ${newInputEnd.value}`);
+                    } else if (newInputStart.value) {
+                        segments.push(newInputStart.value);
+                    }
+                    const newLine = segments.join(' | ');
+                    if (!newLine) return; // não persiste se todos campos estiverem vazios
+                    const currLines = (srcEl.value || '').split('\n').map(l => l.trim()).filter(l => l.length > 0);
+                    currLines.push(newLine);
+                    srcEl.value = currLines.join('\n');
+                    const event = new Event('change');
+                    srcEl.dispatchEvent(event);
+                };
+
+                newNameInput.addEventListener('change', persistNew);
+                newUrlInput.addEventListener('change', persistNew);
+                newInputStart.addEventListener('change', persistNew);
+                newInputEnd.addEventListener('change', persistNew);
+
+                newRow.appendChild(newNameInput);
+                newRow.appendChild(newUrlInput);
+                newRow.appendChild(newInputStart);
+                newRow.appendChild(newDash);
+                newRow.appendChild(newInputEnd);
+                listEl.appendChild(newRow);
+            } catch (error) {
+                console.error('Erro ao renderizar horários das rádios:', error);
             }
         }
-        async function renderGlobalRadioSourcesPage() { try { const settingsRef = doc(db, "artifacts", appId, "public/data/settings", "global"); const docSnap = await getDoc(settingsRef); if (docSnap.exists()) { const settings = docSnap.data(); if (radioSourcesInput) radioSourcesInput.value = settings.radioSources || ''; } } catch (error) { console.error("Erro ao carregar as fontes de rádio:", error); } finally { await refreshStructuredRadioSources?.(); renderRadioSourcesPreview(); } }
 
         function cleanAndSaveTextarea(e) {
             const textarea = e.target;
@@ -1764,33 +1747,9 @@
         }
 
         async function handleGlobalSourceChange(e) {
-            let cleanedValue = cleanAndSaveTextarea(e);
+            const cleanedValue = cleanAndSaveTextarea(e);
             const settingsRef = doc(db, "artifacts", appId, "public/data/settings", "global");
             const key = e.target.id;
-            // Para radioSources, normalizar formato do horário para "HH:MM-HH:MM"
-            if (key === 'radioSources') {
-                try {
-                    const lines = (cleanedValue || '').split('\n').map(l => l.trim()).filter(Boolean);
-                    cleanedValue = lines.map(line => {
-                        const parts = line.split('|').map(p => p.trim());
-                        if (parts.length < 2) return line;
-                        const name = parts[0];
-                        const url = parts[1];
-                        let start = null, end = null;
-                        if (parts.length >= 4 && /^\d{2}:\d{2}$/.test(parts[2]) && /^\d{2}:\d{2}$/.test(parts[3])) {
-                            start = parts[2];
-                            end = parts[3];
-                        } else if (parts.length >= 3) {
-                            const m = parts[2].match(/^(\d{2}:\d{2})\s*-\s*(\d{2}:\d{2})$/);
-                            if (m) { start = m[1]; end = m[2]; }
-                        }
-                        const schedule = (start && end) ? `${start}-${end}` : null;
-                        return schedule ? `${name} | ${url} | ${schedule}` : `${name} | ${url}`;
-                    }).join('\n');
-                } catch (err) {
-                    console.error('Erro ao normalizar fontes de rádio:', err);
-                }
-            }
             try {
                 await setDoc(settingsRef, { [key]: cleanedValue }, { merge: true });
                 showAlert('Fonte guardada!', 'success');
@@ -1986,7 +1945,6 @@
                 renderDateChart(filteredArticles, keywordsToDisplay);
                 renderSentimentChart(filteredArticles, keywordsToDisplay);
                 renderChannelChart(filteredArticles, keywordsToDisplay);
-                if (typeof updateUnifiedCriticalReport === 'function') { updateUnifiedCriticalReport(keywordsToDisplay); }
             };
             if (startDateInput) startDateInput.addEventListener('change', updateCharts);
             if (endDateInput) endDateInput.addEventListener('change', updateCharts);
@@ -2062,66 +2020,6 @@
             });
             const sentimentChartOptions = { scales: { y: { ticks: { callback: function (value) { return value + '%'; } }, min: 0, max: 100 } }, plugins: { tooltip: { callbacks: { label: function (context) { let label = context.dataset.label || ''; if (label) { label += ': '; } if (context.parsed.y !== null) { label += context.parsed.y.toFixed(2) + '%'; } return label; } } } } };
             sentimentChartInstance = createChart('sentiment-chart', sentimentChartInstance, 'line', { labels: allSentiments, datasets }, sentimentChartOptions);
-        }
-
-        function updateUnifiedCriticalReport(selectedKeywords = []) {
-            const section = document.getElementById('unified-critical-report');
-            if (!section) return;
-            const tbody = document.getElementById('unified-report-body');
-            const totalEl = document.getElementById('unified-total');
-            const dominantEl = document.getElementById('unified-dominant');
-            const keywordsEl = document.getElementById('unified-keywords');
-            if (!tbody) return;
-            const startDate = startDateInput && startDateInput.value ? new Date(startDateInput.value) : null;
-            const endDate = endDateInput && endDateInput.value ? new Date(endDateInput.value) : null;
-            if (startDate) startDate.setHours(0, 0, 0, 0);
-            if (endDate) endDate.setHours(23, 59, 59, 999);
-            const kwSet = new Set(selectedKeywords || []);
-            const items = [];
-            (allCompanyArticles || []).forEach(a => {
-                const pubDate = a.publishedAt?.toDate ? a.publishedAt.toDate() : new Date();
-                const dateMatch = (!startDate || pubDate >= startDate) && (!endDate || pubDate <= endDate);
-                const kws = (a.keywords || [a.keyword]).filter(Boolean);
-                const kwMatch = kwSet.size === 0 || kws.some(k => kwSet.has(k));
-                if (!dateMatch || !kwMatch) return;
-                const score = a.ai?.sentiment?.score ?? a.sentiment?.score ?? 0;
-                items.push({ type: 'Artigo', source: a.source?.name || '—', date: pubDate, keywords: kws, score });
-            });
-            (window.radioTranscriptionsData || []).forEach(r => {
-                const d = r.date instanceof Date ? r.date : new Date(r.date);
-                const dateMatch = (!startDate || d >= startDate) && (!endDate || d <= endDate);
-                const kws = (Array.isArray(r.matches) && r.matches.length ? r.matches : (r.keywords || [])).filter(Boolean);
-                const kwMatch = kwSet.size === 0 || kws.some(k => kwSet.has(k));
-                if (!dateMatch || !kwMatch) return;
-                const score = typeof r.sentimentScore === 'number' ? r.sentimentScore : 0;
-                items.push({ type: 'Rádio', source: 'Rádio', date: d, keywords: kws, score });
-            });
-            const sentimentCounts = { positive: 0, neutral: 0, negative: 0 };
-            const kwFreq = new Map();
-            items.forEach(it => {
-                const s = it.score;
-                if (s > 0.25) sentimentCounts.positive++; else if (s < -0.25) sentimentCounts.negative++; else sentimentCounts.neutral++;
-                (it.keywords || []).forEach(k => kwFreq.set(k, (kwFreq.get(k) || 0) + 1));
-            });
-            const total = items.length;
-            if (totalEl) totalEl.textContent = String(total);
-            const dominant = Object.entries(sentimentCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'neutral';
-            if (dominantEl) dominantEl.textContent = dominant === 'positive' ? 'Positivo' : dominant === 'negative' ? 'Negativo' : 'Neutro';
-            const topKw = [...kwFreq.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5).map(([k]) => k);
-            if (keywordsEl) keywordsEl.textContent = topKw.length ? topKw.join(', ') : '—';
-            tbody.innerHTML = '';
-            if (items.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-3 text-gray-500">Nenhum item para os filtros selecionados.</td></tr>`;
-                return;
-            }
-            items.sort((a, b) => b.date - a.date).forEach(it => {
-                const label = it.score > 0.25 ? 'Positivo' : it.score < -0.25 ? 'Negativo' : 'Neutro';
-                const dateStr = it.date.toLocaleString('pt-BR');
-                const kws = (it.keywords || []).join(', ');
-                const tr = document.createElement('tr');
-                tr.innerHTML = `<td class="px-4 py-2">${it.type}</td><td class="px-4 py-2">${it.source}</td><td class="px-4 py-2">${dateStr}</td><td class="px-4 py-2">${kws || '—'}</td><td class="px-4 py-2">${label}</td>`;
-                tbody.appendChild(tr);
-            });
         }
 
         async function setupSearchPage() { if (!currentUser) return; if (searchInput) searchInput.value = ''; if (searchResults) searchResults.innerHTML = '<p class="text-gray-500">A carregar todos os artigos para pesquisa...</p>'; try { const q = query(collection(db, "artifacts", appId, "users", currentUser.companyId, "articles"), orderBy("publishedAt", "desc")); const articlesSnapshot = await getDocs(q); allCompanyArticles = articlesSnapshot.docs.map(d => ({ ...d.data(), id: d.id })); if (searchResults) searchResults.innerHTML = `<p class="text-gray-500">Pronto para pesquisar em ${allCompanyArticles.length} artigos. Digite um termo ou utilize os filtros.</p>`; setupFilters(); } catch (error) { console.error("Erro ao buscar artigos para pesquisa:", error); if (searchResults) searchResults.innerHTML = '<p class="text-red-500">Não foi possível carregar os artigos para pesquisa.</p>'; } }
@@ -2242,7 +2140,7 @@
             }
         }
 
-        function renderArticleDetailPage(article) {
+        async function renderArticleDetailPage(article) {
             if (!detailTitle || !detailContent || !detailAiInsights) return;
 
             const auroraLogoEl = document.getElementById('aurora-clipping-logo');
@@ -2266,13 +2164,31 @@
             reportDateEl.textContent = `Gerado em: ${new Date().toLocaleDateString('pt-BR')}`;
             detailTitleEl.textContent = article.title;
             
-            const fullContent = article.fullText || article.body || article.text || article.contentHtml || article.content || article.description || 'Conteúdo completo não disponível.';
-            if (/<[^>]+>/.test(fullContent)) {
-                detailContentEl.innerHTML = fullContent;
-            } else {
-                detailContentEl.innerHTML = fullContent.split('\n').filter(p => p.trim() !== '').map(p => `<p class="mb-4">${p}</p>`).join('');
-            }
+            const fullContent = article.content || article.description || 'Conteúdo completo não disponível.';
+            const initialParagraphs = fullContent.split('\n').filter(p => p.trim() !== '').map(p => `<p class="mb-4">${p}</p>`).join('');
+            detailContentEl.innerHTML = initialParagraphs;
 
+            const looksTruncated = (article.content && /\[\+\d+\s*chars\]/i.test(article.content)) || (fullContent && fullContent.length < 600);
+            if (looksTruncated && article.url) {
+                try {
+                    detailContentEl.innerHTML = '<p class="text-gray-500">A carregar conteúdo completo da notícia...</p>';
+                    const resp = await fetch('/extract-article', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ url: article.url })
+                    });
+                    const data = await resp.json();
+                    if (data && data.ok && data.content) {
+                        const paragraphs = String(data.content).split(/\n{1,}/).filter(p => p.trim() !== '');
+                        detailContentEl.innerHTML = paragraphs.map(p => `<p class="mb-4">${p}</p>`).join('');
+                    } else {
+                        detailContentEl.innerHTML = initialParagraphs;
+                    }
+                } catch (e) {
+                    console.error('Falha ao extrair conteúdo completo:', e);
+                    detailContentEl.innerHTML = initialParagraphs;
+                }
+            }
 
             const companyLogo = document.querySelector('#header-logo-container img');
             if (companyLogo) {
@@ -2346,6 +2262,60 @@
             });
         }
 
+        async function runDiagnosticsAndManual() {
+            try {
+                // Validar empresas ativas e palavras‑chave
+                const companiesSnapshot = await getDocs(query(collection(db, "artifacts", appId, "public/data/companies"), where("status", "==", "active")));
+                const activeCompaniesCount = companiesSnapshot.size;
+                const companiesMissingKeywords = [];
+                let totalKeywords = 0;
+                for (const docSnap of companiesSnapshot.docs) {
+                    const companyId = docSnap.id;
+                    const companyName = docSnap.data().name || companyId;
+                    const kwSnap = await getDocs(collection(db, "artifacts", appId, "users", companyId, "keywords"));
+                    const kwCount = kwSnap.size;
+                    totalKeywords += kwCount;
+                    if (kwCount === 0) companiesMissingKeywords.push(companyName);
+                }
+
+                // Conferir chaves globais
+                const settingsRef = doc(db, "artifacts", appId, "public/data/settings", "global");
+                const settingsSnap = await getDoc(settingsRef);
+                const s = settingsSnap.exists() ? settingsSnap.data() : {};
+                const keysStatus = {
+                    apiKeyNewsApi: !!s.apiKeyNewsApi,
+                    apiKeyGNews1: !!s.apiKeyGNews1,
+                    apiKeyGNews2: !!s.apiKeyGNews2,
+                    apiKeyGNews3: !!s.apiKeyGNews3,
+                    apiKeyGNews4: !!s.apiKeyGNews4,
+                    rssUrl: !!s.rssUrl,
+                    bloggerId: !!s.bloggerId,
+                };
+
+                console.log('[Diagnóstico] Empresas ativas:', activeCompaniesCount, 'Total palavras‑chave:', totalKeywords, 'Empresas sem palavras‑chave:', companiesMissingKeywords);
+                console.log('[Diagnóstico] Chaves globais:', keysStatus);
+                showAlert(`Diagnóstico: ${activeCompaniesCount} empresa(s) ativa(s), ${totalKeywords} palavra(s)‑chave no total. ${companiesMissingKeywords.length ? 'Sem keywords em: ' + companiesMissingKeywords.join(', ') : 'Todas com keywords.'}`, 'success');
+
+                // Rodar robô manual
+                const manualFetch = httpsCallable(functions, 'manualFetch');
+                const result = await manualFetch({ appId });
+                const totalSaved = (result?.data?.totalSaved) || 0;
+                showAlert(`Robô manual executado: ${totalSaved} alertas novos enviados para a fila em artifacts/${appId}/public/data/pendingAlerts.`, 'success');
+
+                // Abrir Fila de Aprovação e confirmar listener
+                updateView('super-admin-queue');
+                setupPendingAlertsListener();
+
+                // Logar amostra de pendentes
+                const pendingSnap = await getDocs(collection(db, "artifacts", appId, "public/data/pendingAlerts"));
+                const sample = pendingSnap.docs.slice(0,3).map(d => ({ id: d.id, title: d.data().title, companyId: d.data().companyId }));
+                console.log('[Diagnóstico] Total na coleção pendingAlerts:', pendingSnap.size, 'Exemplos:', sample);
+            } catch (e) {
+                console.error('Erro no diagnóstico/robô manual:', e);
+                showAlert(`Erro no diagnóstico/robô: ${e.message || e}`, 'error');
+            }
+        }
+
         function renderPendingAlerts(docs) {
             if (!pendingAlertsList) return;
             pendingAlertsList.innerHTML = '';
@@ -2382,8 +2352,11 @@
             alertEl.className = 'bg-white p-4 rounded-lg shadow-md border-l-4 border-yellow-500 fade-in';
             alertEl.dataset.id = alert.id;
             alertEl.dataset.companyId = alert.companyId;
-            const keywordsString = Array.isArray(alert.keywords) ? alert.keywords.join(', ') : alert.keyword;
-            alertEl.innerHTML = `<div class="flex justify-between items-start"><h4 class="text-lg font-bold text-gray-800 pr-2">${alert.title}</h4><span class="flex-shrink-0 text-xs font-semibold bg-gray-100 text-gray-800 px-2 py-1 rounded-full">${alert.companyName} - ${keywordsString}</span></div><p class="text-sm text-gray-600 mt-2">${alert.description || 'Descrição não disponível.'}</p><div class="text-xs text-gray-500 mt-3 flex justify-between items-center"><span>Fonte: ${alert.source.name} | Publicado: ${formattedDate}</span><div class="flex gap-2"><button class="approve-alert-btn bg-green-500 text-white px-3 py-1 rounded-md text-sm hover:bg-green-600">Aprovar</button><button class="reject-alert-btn bg-red-500 text-white px-3 py-1 rounded-md text-sm hover:bg-red-600">Rejeitar</button></div></div>`;
+            const companyLabel = alert.companyName || alert.companyId || '(sem empresa)';
+            const kwArray = Array.isArray(alert.keywords) ? alert.keywords.filter(Boolean) : [];
+            const keywordsString = kwArray.length ? kwArray.join(', ') : (alert.keyword || '(sem keywords)');
+            const sourceName = (alert.source && alert.source.name) ? alert.source.name : '-';
+            alertEl.innerHTML = `<div class="flex justify-between items-start"><h4 class="text-lg font-bold text-gray-800 pr-2">${alert.title}</h4><span class="flex-shrink-0 text-xs font-semibold bg-gray-100 text-gray-800 px-2 py-1 rounded-full">${companyLabel} - ${keywordsString}</span></div><p class="text-sm text-gray-600 mt-2">${alert.description || 'Descrição não disponível.'}</p><div class="text-xs text-gray-500 mt-3 flex justify-between items-center"><span>Fonte: ${sourceName} | Publicado: ${formattedDate}</span><div class="flex gap-2"><button class="approve-alert-btn bg-green-500 text-white px-3 py-1 rounded-md text-sm hover:bg-green-600">Aprovar</button><button class="reject-alert-btn bg-red-500 text-white px-3 py-1 rounded-md text-sm hover:bg-red-600">Rejeitar</button></div></div>`;
             container.appendChild(alertEl);
         }
 
@@ -2572,112 +2545,118 @@
         }
 
         // Funções do Relatório de Análise Crítica
-        async function loadCompaniesIntoSelect(selectEl) {
+        async function renderCriticalReportPage() {
+            if (!criticalReportPage) return;
             try {
-                if (!selectEl) return;
-                const qCompanies = query(collection(db, "artifacts", appId, "public/data/companies"));
-                const snap = await getDocs(qCompanies);
-                selectEl.innerHTML = '<option value="">Selecione uma empresa</option>';
-                snap.docs.forEach(d => {
-                    const data = d.data();
-                    const opt = document.createElement('option');
-                    opt.value = d.id;
-                    opt.textContent = data.name || d.id;
-                    selectEl.appendChild(opt);
-                });
-            } catch (error) {
-                console.error("Erro ao carregar empresas:", error);
-                showAlert("Erro ao carregar empresas.", "error");
-            }
-        }
-        function renderSuperAdminCriticalReportPage() {
-            if (critPreview) {
-                critPreview.innerHTML = '<div class="text-gray-600">Selecione a empresa e o período, depois clique em "Gerar PDF".</div>';
-            }
-            if (critCompanySelect && !critCompanySelect.options.length) {
-                loadCompaniesIntoSelect(critCompanySelect);
-            }
-        }
-        async function handleGenerateCriticalReport() {
-            try {
-                if (!critCompanySelect || !critStartDateInput || !critEndDateInput) return;
-                const companyId = critCompanySelect.value;
-                const start = critStartDateInput.value;
-                const end = critEndDateInput.value;
-                if (!companyId || !start || !end) { showAlert('Selecione empresa e período.', 'error'); return; }
-                const startDate = new Date(start);
-                const endDate = new Date(end);
-                const ref = collection(db, "artifacts", appId, "users", companyId, "articles");
-                const q = query(ref, orderBy("publishedAt", "desc"));
-                const snap = await getDocs(q);
-                const items = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(a => {
-                    const dtStr = a.publishedAt || a.createdAt || a.date || null;
-                    const dt = dtStr ? new Date(dtStr) : null;
-                    return dt ? (dt >= startDate && dt <= endDate) : false;
-                });
-                const totalAlerts = items.length;
-                let pos = 0, neu = 0, neg = 0;
-                const channelCounts = {};
-                const vehicleCounts = {};
-                items.forEach(a => {
-                    const score = (a.ai && a.ai.sentiment && typeof a.ai.sentiment.score === 'number') ? a.ai.sentiment.score : ((a.sentiment && typeof a.sentiment.score === 'number') ? a.sentiment.score : 0);
-                    if (score > 0.2) pos++; else if (score < -0.2) neg++; else neu++;
-                    const channel = getChannelCategory(a.sourceName || a.source || '');
-                    channelCounts[channel] = (channelCounts[channel] || 0) + 1;
-                    const vehicle = (a.sourceName || a.source || 'Desconhecido');
-                    vehicleCounts[vehicle] = (vehicleCounts[vehicle] || 0) + 1;
-                });
-                const totalSent = Math.max(1, pos + neu + neg);
-                const sentimentPercentage = {
-                    positive: Math.round((pos / totalSent) * 100),
-                    neutral: Math.round((neu / totalSent) * 100),
-                    negative: Math.round((neg / totalSent) * 100)
-                };
-                const predominantSentiment = pos >= neu && pos >= neg ? 'Positivo' : (neg >= pos && neg >= neu ? 'Negativo' : 'Neutro');
-                const topChannel = Object.entries(channelCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'N/A';
-                const topVehicle = Object.entries(vehicleCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'N/A';
-
-                // Preview básico em HTML
-                if (critPreview) {
-                    critPreview.innerHTML = `
-                        <div class="p-4 bg-white rounded-md shadow">
-                            <h3 class="text-lg font-semibold mb-2">Resumo</h3>
-                            <p><strong>Empresa:</strong> ${companyId}</p>
-                            <p><strong>Período:</strong> ${start} a ${end}</p>
-                            <p><strong>Total de alertas:</strong> ${totalAlerts}</p>
-                            <p><strong>Sentimento:</strong> <span class="text-green-600">P: ${sentimentPercentage.positive}%</span>, <span class="text-gray-600">N: ${sentimentPercentage.neutral}%</span>, <span class="text-red-600">Ng: ${sentimentPercentage.negative}%</span> (${predominantSentiment})</p>
-                            <p><strong>Canal principal:</strong> ${topChannel}</p>
-                            <p><strong>Veículo principal:</strong> ${topVehicle}</p>
-                        </div>`;
+                if (criticalCompanySelect) {
+                    criticalCompanySelect.innerHTML = '<option value="">Selecione uma empresa</option>';
+                    const companiesSnapshot = await getDocs(query(collection(db, "artifacts", appId, "public/data/companies"), where("status", "==", "active")));
+                    companiesSnapshot.forEach(docSnap => {
+                        const data = docSnap.data();
+                        const opt = document.createElement('option');
+                        opt.value = docSnap.id;
+                        opt.textContent = data.name || 'Sem nome';
+                        criticalCompanySelect.appendChild(opt);
+                    });
                 }
+            } catch (e) { console.error('Erro ao carregar empresas para relatório crítico:', e); }
+            if (criticalSummary) criticalSummary.innerHTML = 'Selecione a empresa e o período, depois clique em Gerar.';
+            [criticalChannelChartInstance, criticalSpaceChartInstance, criticalSpaceQualChartInstance, criticalVehicleChartInstance, criticalValuationChartInstance, criticalDateChartInstance].forEach(inst => { if (inst) { try { inst.destroy(); } catch(_){} } });
+        }
 
-                // Geração de PDF simples
-                const jspdfNS = window.jspdf || {};
-                const jsPDFCtor = jspdfNS.jsPDF;
-                if (!jsPDFCtor) { showAlert('Biblioteca jsPDF não carregada.', 'error'); return; }
-                const doc = new jsPDFCtor({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-                doc.setFontSize(16);
-                doc.text('Relatório de Análise Crítica', 10, 20);
-                doc.setFontSize(12);
-                doc.text(`Empresa: ${companyId}`, 10, 30);
-                doc.text(`Período: ${start} a ${end}`, 10, 38);
-                doc.text(`Total de alertas: ${totalAlerts}`, 10, 46);
-                doc.text(`Sentimento: P ${sentimentPercentage.positive}% / N ${sentimentPercentage.neutral}% / Ng ${sentimentPercentage.negative}% (${predominantSentiment})`, 10, 54);
-                doc.text(`Canal principal: ${topChannel}`, 10, 62);
-                doc.text(`Veículo principal: ${topVehicle}`, 10, 70);
-
-                doc.addPage();
-                doc.text('Análises avançadas (gráficos, comparativos) - em desenvolvimento', 10, 20);
-                doc.addPage();
-                doc.text('Rádios (transcrições, duração, sentimento) - em desenvolvimento', 10, 20);
-                doc.addPage();
-                doc.text('Espaço ocupado (web/impressos) - em desenvolvimento', 10, 20);
-
-                doc.save('relatorio-critico.pdf');
-                showAlert('Relatório crítico gerado e descarregado.', 'success');
+        async function handleGenerateCriticalReport() {
+            if (!criticalCompanySelect) return;
+            const companyId = criticalCompanySelect.value;
+            const startDate = criticalStartDateInput && criticalStartDateInput.value ? criticalStartDateInput.value : null;
+            const endDate = criticalEndDateInput && criticalEndDateInput.value ? criticalEndDateInput.value : null;
+            if (!companyId) { showAlert('Selecione uma empresa.', 'error'); return; }
+            if (criticalSummary) criticalSummary.innerHTML = 'Gerando relatório...';
+            [criticalChannelChartInstance, criticalSpaceChartInstance, criticalSpaceQualChartInstance, criticalVehicleChartInstance, criticalValuationChartInstance, criticalDateChartInstance].forEach(inst => { if (inst) { try { inst.destroy(); } catch(_){} } });
+            try {
+                const generateCritical = httpsCallable(functions, 'generateCriticalReport');
+                const result = await generateCritical({ appId, companyId, startDate, endDate });
+                const data = result.data || {};
+                const articles = Array.isArray(data.articles) ? data.articles : (Array.isArray(data) ? data : []);
+                const channelCounts = data.channelCounts || {};
+                const spaceCounts = data.spaceCounts || {};
+                const spaceQualCounts = data.spaceQualCounts || {};
+                const vehicleCounts = data.vehicleCounts || {};
+                const valuation = data.valuation || {};
+                const dateCounts = data.dateCounts || {};
+                const keywordCounts = data.keywordCounts || {};
+                const topChannel = data.topChannel || null;
+                const topVehicle = data.topVehicle || null;
+                if (!Object.keys(channelCounts).length && articles.length) {
+                    articles.forEach(a => {
+                        const ch = getChannelCategory(a?.source?.name || '');
+                        channelCounts[ch] = (channelCounts[ch] || 0) + 1;
+                        const veh = (a?.source?.name || 'Desconhecido');
+                        vehicleCounts[veh] = (vehicleCounts[veh] || 0) + 1;
+                        const pubDate = a?.publishedAt ? new Date(a.publishedAt) : null;
+                        if (pubDate) {
+                            const key = pubDate.toISOString().slice(0,10);
+                            dateCounts[key] = (dateCounts[key] || 0) + 1;
+                        }
+                        const val = (a?.sentiment?.label || a?.valuation || 'Neutro');
+                        valuation[val] = (valuation[val] || 0) + 1;
+                    });
+                }
+                const total = articles.length || (data.totalAlerts || 0) || Object.values(channelCounts).reduce((s,v)=>s+v,0);
+                if (criticalSummary) {
+                    const topCh = topChannel || (Object.entries(channelCounts).sort((a,b)=>b[1]-a[1])[0]?.[0] || '-');
+                    const topVeh = topVehicle || (Object.entries(vehicleCounts).sort((a,b)=>b[1]-a[1])[0]?.[0] || '-');
+                    criticalSummary.innerHTML = `
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+                            <div class="p-3 bg-white rounded shadow"><div class="text-sm text-gray-500">TOTAL DE NOTÍCIAS</div><div class="text-2xl font-bold">${total}</div></div>
+                            <div class="p-3 bg-white rounded shadow"><div class="text-sm text-gray-500">Mídia com maior número de notícias</div><div class="text-lg font-semibold">${topCh}</div></div>
+                            <div class="p-3 bg-white rounded shadow"><div class="text-sm text-gray-500">Veículo com maior número de notícias</div><div class="text-lg font-semibold">${topVeh}</div></div>
+                        </div>
+                    `;
+                }
+                const channelLabels = Object.keys(channelCounts);
+                const channelValues = channelLabels.map(k => channelCounts[k]);
+                criticalChannelChartInstance = createChart('critical-channel-chart', criticalChannelChartInstance, 'bar', { labels: channelLabels, datasets: [{ label: 'Distribuição por mídia', data: channelValues, backgroundColor: '#4F46E5' }] }, { plugins: { legend: { display: false } } });
+                const spaceLabels = Object.keys(spaceCounts);
+                const spaceValues = spaceLabels.map(k => spaceCounts[k]);
+                if (spaceLabels.length) {
+                    criticalSpaceChartInstance = createChart('critical-space-chart', criticalSpaceChartInstance, 'bar', { labels: spaceLabels, datasets: [{ label: 'Tipo de texto', data: spaceValues, backgroundColor: '#10B981' }] }, { plugins: { legend: { display: false } } });
+                }
+                const spaceQualLabels = Object.keys(spaceQualCounts);
+                const spaceQualValues = spaceQualLabels.map(k => spaceQualCounts[k]);
+                if (spaceQualLabels.length) {
+                    criticalSpaceQualChartInstance = createChart('critical-space-qual-chart', criticalSpaceQualChartInstance, 'bar', { labels: spaceQualLabels, datasets: [{ label: 'Direta/Indireta', data: spaceQualValues, backgroundColor: '#F59E0B' }] }, { plugins: { legend: { display: false } } });
+                }
+                const vehicleLabels = Object.keys(vehicleCounts).slice(0,10);
+                const vehicleValues = vehicleLabels.map(k => vehicleCounts[k]);
+                if (vehicleLabels.length) {
+                    criticalVehicleChartInstance = createChart('critical-vehicle-chart', criticalVehicleChartInstance, 'bar', { labels: vehicleLabels, datasets: [{ label: 'Veículos (top 10)', data: vehicleValues, backgroundColor: '#EF4444' }] }, { plugins: { legend: { display: false } }, indexAxis: 'y' });
+                }
+                const valuationLabels = Object.keys(valuation);
+                const valuationValues = valuationLabels.map(k => valuation[k]);
+                if (valuationLabels.length) {
+                    criticalValuationChartInstance = createChart('critical-valuation-chart', criticalValuationChartInstance, 'pie', { labels: valuationLabels, datasets: [{ data: valuationValues, backgroundColor: ['#22C55E','#F59E0B','#EF4444','#6366F1','#0EA5E9'] }] }, {});
+                }
+                const dateLabels = Object.keys(dateCounts).sort();
+                const dateValues = dateLabels.map(k => dateCounts[k]);
+                if (dateLabels.length) {
+                    criticalDateChartInstance = createChart('critical-date-chart', criticalDateChartInstance, 'line', { labels: dateLabels, datasets: [{ label: 'Alertas/dia', data: dateValues, borderColor: '#0EA5E9', backgroundColor: 'rgba(14,165,233,0.1)', fill: true, tension: 0.1, borderWidth: 2 }] }, { plugins: { legend: { display: false } } });
+                }
+                const wordcloudEl = document.getElementById('critical-wordcloud');
+                if (wordcloudEl) {
+                    const entries = Object.entries(keywordCounts).sort((a,b)=>b[1]-a[1]).slice(0,50);
+                    wordcloudEl.innerHTML = '';
+                    entries.forEach(([word,count], idx) => {
+                        const weight = Math.min(6, 1 + Math.log(count+1));
+                        const span = document.createElement('span');
+                        span.textContent = word;
+                        span.className = `inline-block px-2 py-1 rounded ${idx<10? 'bg-indigo-50 text-indigo-700':'bg-gray-100 text-gray-700'}`;
+                        span.style.fontSize = `${0.75 + weight * 0.25}rem`;
+                        wordcloudEl.appendChild(span);
+                    });
+                }
             } catch (error) {
                 console.error('Erro ao gerar relatório crítico:', error);
-                showAlert('Erro ao gerar relatório crítico.', 'error');
+                if (criticalSummary) criticalSummary.innerHTML = `<span class="text-red-600">Erro: ${error.message}</span>`;
             }
         }
 
@@ -2755,6 +2734,7 @@
             changePasswordForm = document.getElementById('change-password-form');
             apiKeyNewsApiInput = document.getElementById('apiKeyNewsApi');
             apiKeyFirebaseNewsInput = document.getElementById('apiKeyFirebaseNews');
+            apiKeyGoogleMapsInput = document.getElementById('apiKeyGoogleMaps');
             apiKeyGNewsInput1 = document.getElementById('apiKeyGNews1');
             apiKeyGNewsInput2 = document.getElementById('apiKeyGNews2');
             apiKeyGNewsInput3 = document.getElementById('apiKeyGNews3');
@@ -2764,21 +2744,15 @@
             apiKeyVisionInput = document.getElementById('apiKeyVision');
             apiKeyVideoIntelligenceInput = document.getElementById('apiKeyVideoIntelligence');
             bloggerIdInput = document.getElementById('bloggerId');
-            rssUrlInput = document.getElementById('rssUrl');
-            radioSourcesInput = document.getElementById('radioSources');
-        radioNameInput = document.getElementById('radio-name-input');
-        radioUrlInput = document.getElementById('radio-url-input');
-        radioStartInput = document.getElementById('radio-start-input');
-        radioEndInput = document.getElementById('radio-end-input');
-        radioAddBtn = document.getElementById('radio-add-btn');
-        radioMigrateBtn = document.getElementById('radio-migrate-btn');
+        rssUrlInput = document.getElementById('rssUrl');
+         rssFrequencyInput = document.getElementById('rssFrequencyMinutes');
+         gnewsFrequencyInput = document.getElementById('gnewsFrequencyHours');
+         radioSourcesInput = document.getElementById('radioSources');
+         youtubeChannelsInput = document.getElementById('youtubeChannels');
+youtubeChannelsFrequencyInput = document.getElementById('youtubeChannelsFrequencyMinutes');
+youtubeFrequencyInput = document.getElementById('youtubeFrequencyHours');
+youtubeFrequencyTimeInput = document.getElementById('youtubeFrequencyTime');
             fetchOnlyNewToggle = document.getElementById('fetch-only-new-toggle');
-            // Novos elementos de teste de RSS e rádio
-            testRssBtn = document.getElementById('test-rss-btn');
-            clearRssPreviewBtn = document.getElementById('clear-rss-preview');
-            rssPreviewContainer = document.getElementById('rss-preview');
-            testRadioBtn = document.getElementById('test-radio-btn');
-            radioAudioEl = document.getElementById('radio-audio');
             changePasswordPage = document.getElementById('change-password-page');
             globalKeysPage = document.getElementById('global-keys-page');
             globalSourcesPage = document.getElementById('global-sources-page');
@@ -2799,13 +2773,11 @@
             cancelJustificationBtn = document.getElementById('cancel-justification-btn');
             btnManualAlert = document.getElementById('btn-manual-alert');
             btnDeletionRequests = document.getElementById('btn-deletion-requests');
-            btnSuperAdminCriticalReport = document.getElementById('btn-super-admin-critical-report');
-            superAdminCriticalReportPage = document.getElementById('super-admin-critical-report-page');
-            critCompanySelect = document.getElementById('crit-company-select');
-            critStartDateInput = document.getElementById('crit-start-date');
-            critEndDateInput = document.getElementById('crit-end-date');
-            critGenerateBtn = document.getElementById('crit-generate-btn');
-            critPreview = document.getElementById('crit-preview');
+            btnSuperAdminReport = document.getElementById('btn-super-admin-report');
+            const btnCriticalReport = document.getElementById('btn-critical-report');
+            manualAlertPage = document.getElementById('manual-alert-page');
+            deletionRequestsPage = document.getElementById('deletion-requests-page');
+            superAdminReportPage = document.getElementById('super-admin-report-page');
             backToDashboard1 = document.getElementById('back-to-dashboard-1');
             backToDashboard2 = document.getElementById('back-to-dashboard-2');
             backToDashboard3 = document.getElementById('back-to-dashboard-3');
@@ -2843,9 +2815,15 @@
             mapStartDateInput = document.getElementById('map-start-date');
             mapEndDateInput = document.getElementById('map-end-date');
             mapFilterBtn = document.getElementById('map-filter-btn');
-            mapKeywordFilterContainer = document.getElementById('map-keyword-filter-container');
             reportStartDateInput = document.getElementById('report-start-date');
             reportEndDateInput = document.getElementById('report-end-date');
+            criticalReportPage = document.getElementById('critical-report-page');
+            backToSuperAdminCriticalBtn = document.getElementById('back-to-super-admin-critical');
+            criticalCompanySelect = document.getElementById('critical-company-select');
+            criticalStartDateInput = document.getElementById('critical-start-date');
+            criticalEndDateInput = document.getElementById('critical-end-date');
+            criticalGenerateBtn = document.getElementById('critical-generate-btn');
+            criticalSummary = document.getElementById('critical-summary');
 
             const states = { "AC": "Acre", "AL": "Alagoas", "AP": "Amapá", "AM": "Amazonas", "BA": "Bahia", "CE": "Ceará", "DF": "Distrito Federal", "ES": "Espírito Santo", "GO": "Goiás", "MA": "Maranhão", "MT": "Mato Grosso", "MS": "Mato Grosso do Sul", "MG": "Minas Gerais", "PA": "Pará", "PB": "Paraíba", "PR": "Paraná", "PE": "Pernambuco", "PI": "Piauí", "RJ": "Rio de Janeiro", "RN": "Rio Grande do Norte", "RS": "Rio Grande do Sul", "RO": "Rondônia", "RR": "Roraima", "SC": "Santa Catarina", "SP": "São Paulo", "SE": "Sergipe", "TO": "Tocantins" };
             for (const [uf, name] of Object.entries(states)) {
@@ -2868,6 +2846,7 @@
                             currentUser = null;
                             updateView('login');
                         }
+                        if (!window.__ranDiagnostics) { window.__ranDiagnostics = true; runDiagnosticsAndManual(); }
                     } else {
                         currentUser = null;
                         updateView('login');
@@ -2901,6 +2880,7 @@
             if (newsScopeContainer) newsScopeContainer.addEventListener('change', (e) => { handleSettingsChange(e); handleScopeChange(); });
             if (apiKeyNewsApiInput) apiKeyNewsApiInput.addEventListener('change', handleGlobalKeyChange);
             if (apiKeyFirebaseNewsInput) apiKeyFirebaseNewsInput.addEventListener('change', handleGlobalKeyChange);
+            if (apiKeyGoogleMapsInput) apiKeyGoogleMapsInput.addEventListener('change', handleGlobalKeyChange);
             if (apiKeyGNewsInput1) apiKeyGNewsInput1.addEventListener('change', handleGlobalKeyChange);
             if (apiKeyGNewsInput2) apiKeyGNewsInput2.addEventListener('change', handleGlobalKeyChange);
             if (apiKeyGNewsInput3) apiKeyGNewsInput3.addEventListener('change', handleGlobalKeyChange);
@@ -2911,162 +2891,46 @@
             if (apiKeyVideoIntelligenceInput) apiKeyVideoIntelligenceInput.addEventListener('change', handleGlobalKeyChange);
             if (bloggerIdInput) bloggerIdInput.addEventListener('change', handleGlobalSourceChange);
             if (rssUrlInput) rssUrlInput.addEventListener('change', handleGlobalSourceChange);
-            if (radioSourcesInput) { radioSourcesInput.addEventListener('change', handleGlobalSourceChange); radioSourcesInput.addEventListener('input', renderRadioSourcesPreview); }
+            if (rssFrequencyInput) rssFrequencyInput.addEventListener('change', (e) => {
+                const settingsRef = doc(db, "artifacts", appId, "public/data/settings", "global");
+                const value = e.target.value;
+                setDoc(settingsRef, { rssFrequencyMinutes: value }, { merge: true })
+                    .then(() => showAlert('Frequência de RSS guardada!', 'success'))
+                    .catch((error) => console.error('Erro ao guardar a frequência de RSS:', error));
+            });
+            if (gnewsFrequencyInput) gnewsFrequencyInput.addEventListener('change', (e) => {
+                const settingsRef = doc(db, "artifacts", appId, "public/data/settings", "global");
+                const value = e.target.value;
+                setDoc(settingsRef, { gnewsFrequencyHours: value }, { merge: true })
+                    .then(() => showAlert('Frequência do GNews guardada!', 'success'))
+                    .catch((error) => console.error('Erro ao guardar a frequência do GNews:', error));
+            });
+            if (radioSourcesInput) radioSourcesInput.addEventListener('change', (e) => { handleGlobalSourceChange(e); if (typeof renderRadioTimesList === 'function') renderRadioTimesList(); });
+            if (youtubeChannelsInput) youtubeChannelsInput.addEventListener('change', handleGlobalSourceChange);
+if (youtubeChannelsFrequencyInput) youtubeChannelsFrequencyInput.addEventListener('change', (e) => {
+                const settingsRef = doc(db, "artifacts", appId, "public/data/settings", "global");
+                const value = e.target.value;
+                setDoc(settingsRef, { youtubeChannelsFrequencyMinutes: value }, { merge: true })
+                    .then(() => showAlert('Frequência dos canais do YouTube guardada!', 'success'))
+                    .catch((error) => console.error('Erro ao guardar a frequência dos canais do YouTube:', error));
+            });
+if (youtubeFrequencyInput) youtubeFrequencyInput.addEventListener('change', (e) => {
+                const settingsRef = doc(db, "artifacts", appId, "public/data/settings", "global");
+                const value = e.target.value;
+                setDoc(settingsRef, { youtubeFrequencyHours: value }, { merge: true })
+                    .then(() => showAlert('Frequência do YouTube guardada!', 'success'))
+                    .catch((error) => console.error('Erro ao guardar a frequência do YouTube:', error));
+            });
+            if (youtubeFrequencyTimeInput) youtubeFrequencyTimeInput.addEventListener('change', (e) => {
+                const settingsRef = doc(db, "artifacts", appId, "public/data/settings", "global");
+                const value = e.target.value;
+                setDoc(settingsRef, { youtubeFrequencyTime: value }, { merge: true })
+                    .then(() => showAlert('Horário da busca do YouTube guardado!', 'success'))
+                    .catch((error) => console.error('Erro ao guardar o horário do YouTube:', error));
+            });
             if (reportAccessToggle) reportAccessToggle.addEventListener('change', handleSettingsChange);
             if (mapAccessToggle) mapAccessToggle.addEventListener('change', handleSettingsChange);
             if (fetchOnlyNewToggle) fetchOnlyNewToggle.addEventListener('change', handleSettingsChange);
-            // Event listeners para teste de RSS e rádio
-            if (testRssBtn) testRssBtn.addEventListener('click', testRSSFeeds);
-            if (clearRssPreviewBtn) clearRssPreviewBtn.addEventListener('click', clearRssPreview);
-            if (testRadioBtn) testRadioBtn.addEventListener('click', testRadioPlayback);
-            const captureBtn = document.getElementById('capture-radio-btn');
-            const captureDurationInput = document.getElementById('capture-duration');
-            const radioAlertKeywordsInput = document.getElementById('radio-alert-keywords');
-            const radioSegmentsList = document.getElementById('radio-segments-list');
-            const radioTranscriptionsList = document.getElementById('radio-transcriptions-list');
-            window.radioTranscriptionsData = window.radioTranscriptionsData || [];
-            async function loadSegmentsAndTranscribe(keywords = []) {
-                try {
-                    const listResp = await fetch('http://127.0.0.1:6060/segments');
-                    const listData = await listResp.json();
-                    if (radioSegmentsList && Array.isArray(listData?.segments)) {
-                        radioSegmentsList.innerHTML = listData.segments.slice(0,10).map(s => `
-                            <div class=\"flex items-center gap-2\">
-                                <audio controls src=\"${s.url}\"></audio>
-                                <button class=\"bg-gray-200 text-gray-800 px-2 py-1 rounded\" data-file=\"${s.file}\">Transcrever</button>
-                                <span class=\"text-xs text-gray-500\">${new Date(s.mtime).toLocaleString('pt-BR')} - ${s.file}</span>
-                            </div>
-                        `).join('');
-                        // bind transcription buttons
-                        radioSegmentsList.querySelectorAll('button[data-file]').forEach(btn => {
-                            btn.addEventListener('click', async () => {
-                                const file = btn.getAttribute('data-file');
-                                try {
-                                    const resp = await fetch('http://127.0.0.1:6060/transcribe', {
-                                        method: 'POST', headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({ file, keywords })
-                                    });
-                                    const data = await resp.json();
-                                    if (!resp.ok) throw new Error(data?.error || 'Falha ao transcrever');
-                                    if (radioTranscriptionsList) {
-                                        const item = document.createElement('div');
-                                        item.className = 'p-2 border rounded-md';
-                                        item.innerHTML = `<div class=\"text-sm\"><strong>${file}</strong>: ${data.text}</div>
-                                            <div class=\"text-xs text-gray-600\">Language: ${data.language} | Sentimento: ${data.sentiment?.score ?? 0}</div>
-                                            ${data.matches?.length ? `<div class=\"text-xs text-red-600\">Alertas: ${data.matches.join(', ')}</div>` : ''}`;
-                                        radioTranscriptionsList.prepend(item);
-                                    }
-                                    // Integrar a um conjunto de artigos fictícios para gráficos de sentimento
-                                    const fakeArticle = { source: { name: 'Rádio' }, keywords, publishedAt: { toDate: () => new Date() }, ai: { sentiment: { score: data.sentiment?.score ?? 0 } } };
-                                    renderSentimentChart([fakeArticle], keywords);
-                                    // Atualizar dados em memória para o relatório unificado e renderizar
-                                    try {
-                                        window.radioTranscriptionsData.push({ file, text: data.text, language: data.language, sentimentScore: data.sentiment?.score ?? 0, matches: data.matches || [], date: new Date(), keywords });
-                                        updateUnifiedCriticalReport(keywords);
-                                    } catch (err) { console.warn('Falha ao atualizar relatório unificado:', err); }
-                                } catch (e) {
-                                    showAlert('Erro na transcrição (stub).', 'error');
-                                }
-                            });
-                        });
-                    }
-                } catch (e) {
-                    console.error('Erro ao carregar segmentos:', e);
-                }
-            }
-            if (captureBtn) captureBtn.addEventListener('click', async () => {
-                try {
-                    const firstLine = (radioSourcesInput?.value || '').split('\n').map(l => l.trim()).filter(Boolean)[0];
-                    const [name, url] = (firstLine || '').split('|').map(s => s.trim());
-                    const duration = Number(captureDurationInput?.value) || 30;
-                    const alertKeywords = (radioAlertKeywordsInput?.value || '').split(',').map(s => s.trim()).filter(Boolean);
-                    if (!url) { showAlert('Nenhuma fonte válida na primeira linha.', 'error'); return; }
-                    const resp = await fetch('http://127.0.0.1:6060/capture', {
-                        method: 'POST', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ url, name, duration })
-                    });
-                    const data = await resp.json();
-                    if (!resp.ok) throw new Error(data?.error || 'Falha ao capturar');
-                    showAlert(`Captura concluída: ${data.file}`, 'success');
-                    await loadSegmentsAndTranscribe(alertKeywords);
-                } catch (e) {
-                    console.error('Erro na captura:', e);
-                    showAlert('Erro na captura. Verifique o servidor em http://127.0.0.1:6060', 'error');
-                }
-            });
-            if (radioMigrateBtn) radioMigrateBtn.addEventListener('click', async () => {
-                if (!radioSourcesInput) return;
-                const lines = (radioSourcesInput.value || '').split('\n').map(l => l.trim()).filter(Boolean);
-                if (lines.length === 0) { showAlert('Nenhuma linha para migrar.', 'warning'); return; }
-                let success = 0, failed = 0;
-                for (const line of lines) {
-                    const parts = line.split('|').map(p => p.trim());
-                    const name = parts[0] || '';
-                    const url = parts[1] || '';
-                    let start = '', end = '';
-                    if (parts[2]) {
-                        const t = parts[2].split('-').map(x => x.trim());
-                        if (t.length === 2) { start = t[0]; end = t[1]; }
-                        else if (t.length === 1) { start = t[0]; }
-                    }
-                    if (!name || !url) { failed++; continue; }
-                    try { await addStructuredRadioSource(name, url, start, end); success++; }
-                    catch (e) { console.error('Falha ao migrar linha:', line, e); failed++; }
-                }
-                showAlert(`Migração concluída. Sucesso: ${success}, Falhas: ${failed}.`, 'info');
-            });
-            async function refreshStructuredRadioSources() {
-                try {
-                    const querySnap = await getDocs(collection(db, 'artifacts', appId, 'public/data/radioSources'));
-                    window.radioSourcesStructured = querySnap.docs.map(d => ({ id: d.id, ...d.data() }));
-                    renderRadioSourcesPreview();
-                } catch (error) { console.error('Erro ao carregar fontes estruturadas:', error); }
-            }
-            async function addStructuredRadioSource(name, url, start, end) {
-                try {
-                    const timezone = Intl?.DateTimeFormat?.().resolvedOptions?.().timeZone || 'America/Sao_Paulo';
-                    const payload = {
-                        name,
-                        url,
-                        start: start || null,
-                        end: end || null,
-                        daysOfWeek: [0,1,2,3,4,5,6],
-                        timezone,
-                        active: true,
-                        notes: '',
-                        createdAt: Date.now()
-                    };
-                    await addDoc(collection(db, 'artifacts', appId, 'public/data/radioSources'), payload);
-                    await refreshStructuredRadioSources();
-                    showAlert('Fonte de rádio adicionada!', 'success');
-                } catch (error) { console.error('Erro ao adicionar fonte de rádio:', error); showAlert('Erro ao adicionar a fonte.', 'error'); }
-            }
-            if (radioAddBtn) radioAddBtn.addEventListener('click', async () => {
-                const name = (radioNameInput && radioNameInput.value || '').trim();
-                const url = (radioUrlInput && radioUrlInput.value || '').trim();
-                const start = (radioStartInput && radioStartInput.value || '').trim();
-                const end = (radioEndInput && radioEndInput.value || '').trim();
-                if (!name || !url) {
-                    showAlert('Preencha pelo menos o Nome e o URL da rádio.', 'warning');
-                    return;
-                }
-                // Persistir no Firestore estruturado
-                await addStructuredRadioSource(name, url, start, end);
-                // Limpar inputs
-                if (radioNameInput) radioNameInput.value = '';
-                if (radioUrlInput) radioUrlInput.value = '';
-                if (radioStartInput) radioStartInput.value = '';
-                if (radioEndInput) radioEndInput.value = '';
-                // Atualizar textarea legado para manter compatibilidade visual
-                let line = `${name} | ${url}`;
-                if (start && end) { line += ` | ${start}-${end}`; }
-                else if (start && !end) { line += ` | ${start}`; }
-                else if (!start && end) { line += ` | ${end}`; }
-                const current = (radioSourcesInput && radioSourcesInput.value || '').trim();
-                radioSourcesInput.value = current ? `${current}\n${line}` : line;
-                const event = new Event('change', { bubbles: true });
-                radioSourcesInput.dispatchEvent(event);
-            });
             if (deletionAccessToggle) deletionAccessToggle.addEventListener('change', handleSettingsChange);
             if (stateSelect) stateSelect.addEventListener('change', handleSettingsChange);
             if (keywordForm) keywordForm.addEventListener('submit', handleKeywordSubmit);
@@ -3114,6 +2978,9 @@
             if (btnManualAlert) btnManualAlert.addEventListener('click', () => updateView('manual-alert'));
             if (btnDeletionRequests) btnDeletionRequests.addEventListener('click', () => updateView('deletion-requests'));
             if (btnSuperAdminReport) btnSuperAdminReport.addEventListener('click', () => updateView('super-admin-report'));
+            if (btnCriticalReport) btnCriticalReport.addEventListener('click', () => updateView('critical-report'));
+            if (backToSuperAdminCriticalBtn) backToSuperAdminCriticalBtn.addEventListener('click', () => updateView('super-admin-report'));
+            if (criticalGenerateBtn) criticalGenerateBtn.addEventListener('click', handleGenerateCriticalReport);
             if (backToDashboard1) backToDashboard1.addEventListener('click', () => updateView('dashboard'));
             if (backToDashboard2) backToDashboard2.addEventListener('click', () => updateView('dashboard'));
             if (backToDashboard3) backToDashboard3.addEventListener('click', () => updateView('dashboard'));
@@ -3135,19 +3002,9 @@
             if (shareWhatsappBtn) shareWhatsappBtn.addEventListener('click', handleShareActions);
             if (shareEmailBtn) shareEmailBtn.addEventListener('click', handleShareActions);
             if (printBtn) printBtn.addEventListener('click', () => window.print());
-            const unifiedPrintBtn = document.getElementById('unified-print-btn');
-            if (unifiedPrintBtn) unifiedPrintBtn.addEventListener('click', () => window.print());
             if (mapFilterBtn) mapFilterBtn.addEventListener('click', renderMapPage);
             if (reportStartDateInput) reportStartDateInput.addEventListener('change', renderSuperAdminReport);
             if (reportEndDateInput) reportEndDateInput.addEventListener('change', renderSuperAdminReport);
-
-            if (btnSuperAdminCriticalReport) btnSuperAdminCriticalReport.addEventListener('click', () => updateView('super-admin-critical-report'));
-            const backToDashboardCrit = document.getElementById('back-to-dashboard-crit');
-            if (backToDashboardCrit) backToDashboardCrit.addEventListener('click', () => updateView('dashboard'));
-            if (critGenerateBtn) critGenerateBtn.addEventListener('click', handleGenerateCriticalReport);
-            if (critCompanySelect) loadCompaniesIntoSelect(critCompanySelect);
-            if (critStartDateInput) critStartDateInput.addEventListener('change', renderSuperAdminCriticalReportPage);
-            if (critEndDateInput) critEndDateInput.addEventListener('change', renderSuperAdminCriticalReportPage);
 
 
             if (superAdminReportBody) superAdminReportBody.addEventListener('click', async (e) => {
