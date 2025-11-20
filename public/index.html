@@ -256,7 +256,7 @@
         <div id="global-alert" class="mb-6"></div>
 
         <section id="login-page" class="page-section active fade-in">
-            <div class="max-w-md mx-auto bg-gray-50 p-4 sm:p-8 rounded-lg shadow-lg mt-10 relative">
+            <div class="w-full max-w-none mx-auto bg-gray-50 p-4 sm:p-8 rounded-lg shadow-lg mt-10 relative">
                 <div id="login-logo-container" class="absolute top-4 right-4 h-12 w-auto"></div>
                 <h1 class="text-2xl sm:text-3xl font-bold text-center text-gray-800">Bem-Vindo</h1>
                 <p class="text-center text-gray-500 mt-2 mb-6">Informe os seus dados de acesso</p>
@@ -455,7 +455,7 @@
         <section id="usuario-admin-page" class="page-section fade-in">
             <button id="back-to-admin-config-6" class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar</button>
             <h2 class="text-2xl sm:text-3xl font-bold mb-6">Usuario-Admin</h2>
-            <div class="max-w-lg mx-auto bg-white p-4 sm:p-6 rounded-lg shadow-lg">
+            <div class="w-full max-w-none bg-white p-4 sm:p-6 rounded-lg shadow-lg">
                 <form id="usuario-admin-form" class="space-y-4">
                     <div>
                         <label for="usuario-admin-username" class="block text-sm font-medium text-gray-700 mb-1">Usuário</label>
@@ -483,7 +483,7 @@
             <button id="back-to-admin-config-1"
                 class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar</button>
             <h2 class="text-2xl sm:text-3xl font-bold mb-6">Alterar Palavra-passe de Acesso</h2>
-            <div class="max-w-lg mx-auto bg-white p-4 sm:p-6 rounded-lg shadow-lg">
+            <div class="w-full max-w-none bg-white p-4 sm:p-6 rounded-lg shadow-lg">
                 <form id="change-password-form" class="space-y-4">
                     <div><label for="current-password" class="block text-sm font-medium text-gray-700">Palavra-passe
                             Atual</label><input type="password" id="current-password"
@@ -502,7 +502,7 @@
             <button id="back-to-admin-config-2"
                 class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar</button>
             <h2 class="text-2xl sm:text-3xl font-bold mb-6">Chaves de API Globais</h2>
-            <div class="max-w-lg mx-auto bg-white p-4 sm:p-6 rounded-lg shadow-lg">
+            <div class="w-full max-w-none bg-white p-4 sm:p-6 rounded-lg shadow-lg">
                 <div class="space-y-4">
                     <div class="bg-gray-100 p-3 rounded-md">
                         <label for="apiKeyNewsApi" class="block text-sm font-medium text-gray-700 mb-1">Chave da API
@@ -580,7 +580,7 @@
             <button id="back-to-admin-config-3"
                 class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar</button>
             <h2 class="text-2xl sm:text-3xl font-bold mb-6">Fontes de Notícias Globais</h2>
-            <div class="max-w-lg mx-auto bg-white p-4 sm:p-6 rounded-lg shadow-lg">
+            <div class="w-full max-w-none bg-white p-4 sm:p-6 rounded-lg shadow-lg">
                 <div class="space-y-4">
                     <div class="bg-gray-100 p-3 rounded-md">
                         <label for="bloggerId" class="block text-sm font-medium text-gray-700 mb-1">IDs de Blogs
@@ -618,15 +618,7 @@
                                 <textarea id="youtubeChannelNames" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="Google Developers"></textarea>
                             </div>
                         </div>
-                        <div class="mt-3">
-                            <div class="rounded-xl bg-gray-800 text-gray-100 p-4">
-                                <div class="grid grid-cols-2 gap-4 mb-2">
-                                    <div class="text-sm font-semibold">ID do Canal</div>
-                                    <div class="text-sm font-semibold">Nome do Canal</div>
-                                </div>
-                                <div id="youtubeChannelsPreview" class="space-y-2"></div>
-                            </div>
-                        </div>
+
                     </div>
                     <div class="bg-gray-100 p-3 rounded-md">
                         <label for="youtubeChannelsFrequencyMinutes" class="block text-sm font-medium text-gray-700 mb-1">Frequência do monitoramento para IDs de Canais (YouTube) (em minutos)</label>
@@ -651,12 +643,12 @@
             <button id="back-to-admin-config-5"
                 class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar</button>
             <h2 class="text-2xl sm:text-3xl font-bold mb-6">Fontes de Rádio Globais</h2>
-            <div class="max-w-2xl mx-auto bg-white p-4 sm:p-6 rounded-lg shadow-lg">
+            <div class="w-full max-w-none bg-white p-4 sm:p-6 rounded-lg shadow-lg">
                 <div class="bg-gray-50 p-3 rounded-md">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Campos por rádio</label>
                     <p class="text-xs text-gray-500 mb-2">Edite o nome da rádio, o URL do stream e o horário de monitoramento (início e fim). Sempre haverá um campo vazio extra no final para adicionar a próxima rádio.</p>
                     <textarea id="radioSources" class="hidden"></textarea>
-                    <div id="radioTimesList" class="space-y-2 border border-gray-200 rounded-md p-2"></div>
+                    <div id="radioTimesList" class="space-y-2 border border-gray-200 rounded-md p-2 w-full overflow-x-auto"></div>
                 </div>
             </div>
         </section>
@@ -666,12 +658,12 @@
             <button id="back-to-admin-config-7" onclick="updateView('configuracoes-admin')"
                 class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar</button>
             <h2 class="text-2xl sm:text-3xl font-bold mb-6">Fontes de TV Globais</h2>
-            <div class="max-w-2xl mx-auto bg-white p-4 sm:p-6 rounded-lg shadow-lg">
+            <div class="w-full max-w-none bg-white p-4 sm:p-6 rounded-lg shadow-lg">
                 <div class="bg-gray-50 p-3 rounded-md">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Campos por TV</label>
                     <p class="text-xs text-gray-500 mb-2">Edite o nome da emissora, o URL do stream de TV e o horário de monitoramento (início e fim). Sempre haverá um campo vazio extra no final para adicionar a próxima fonte de TV.</p>
                     <textarea id="tvSources" class="hidden"></textarea>
-                    <div id="tvIntervalsList" class="space-y-2 max-h-96 overflow-auto border border-gray-200 rounded-md p-2"></div>
+                    <div id="tvIntervalsList" class="space-y-2 max-h-96 overflow-auto border border-gray-200 rounded-md p-2 w-full overflow-x-auto"></div>
                 </div>
             </div>
         </section>
@@ -680,7 +672,7 @@
             <button id="back-to-admin-config-4"
                 class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar</button>
             <h2 class="text-2xl sm:text-3xl font-bold mb-6">Logótipo Global da Aplicação</h2>
-            <div class="max-w-lg mx-auto bg-white p-4 sm:p-6 rounded-lg shadow-lg">
+            <div class="w-full max-w-none bg-white p-4 sm:p-6 rounded-lg shadow-lg">
                 <p class="text-gray-600 mb-4">Faça o upload do logótipo que aparecerá no cabeçalho de todas as páginas,
                     substituindo o nome "Aurora clipping".</p>
                 <div>
@@ -1173,7 +1165,7 @@
     <!-- Modais -->
     <div id="justification-modal"
         class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-        <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
+        <div class="relative top-20 mx-auto p-5 border w-full max-w-none shadow-lg rounded-md bg-white">
             <div class="mt-3">
                 <h3 class="text-lg leading-6 font-medium text-gray-900">Justificar Exclusão</h3>
                 <div class="mt-2 py-3">
@@ -1459,7 +1451,10 @@ let keywordToTransferInfo = null;
                 case 'configuracoes-admin': configuracoesAdminPage.classList.add('active'); break;
                 case 'change-password': changePasswordPage.classList.add('active'); break;
                 case 'global-keys': globalKeysPage.classList.add('active'); renderGlobalKeysPage(); break;
-                case 'global-sources': globalSourcesPage.classList.add('active'); renderGlobalSourcesPage(); break;
+                case 'global-sources': globalSourcesPage.classList.add('active'); renderGlobalSourcesPage();
+                // Pós-carregamento: capturar valores atuais como lastValue para evitar apagamentos
+                setTimeout(() => { try { const r = document.getElementById('rssFrequencyMinutes'); const g = document.getElementById('gnewsFrequencyHours'); if (r) r.dataset.lastValue = r.value || ''; if (g) g.dataset.lastValue = g.value || ''; } catch (_) {} }, 0);
+                break;
                 case 'global-radio-sources': globalRadioSourcesPage.classList.add('active'); renderGlobalRadioSourcesPage(); break;
                 case 'global-tv-sources': globalTvSourcesPage.classList.add('active'); if (typeof renderGlobalTvSourcesPage === 'function') renderGlobalTvSourcesPage(); break;
                 case 'global-logo': globalLogoPage.classList.add('active'); break;
@@ -2450,55 +2445,6 @@ let keywordToTransferInfo = null;
             }
         }
 
-        // Visualização lado a lado: IDs — Nomes dos canais do YouTube
-        function renderYouTubeChannelsPreview() {
-            try {
-                const preview = document.getElementById('youtubeChannelsPreview');
-                const idsEl = document.getElementById('youtubeChannels');
-                const namesEl = document.getElementById('youtubeChannelNames');
-                if (!preview || !idsEl || !namesEl) return;
-                const ids = (idsEl.value || '').split('\n').map(s => s.trim()).filter(Boolean);
-                const names = (namesEl.value || '').split('\n').map(s => s.trim());
-                preview.innerHTML = '';
-
-                // Cabeçalho
-                const header = document.createElement('div');
-                header.className = 'grid grid-cols-2 gap-4 text-xs font-semibold text-gray-300';
-                const hId = document.createElement('span');
-                hId.textContent = 'ID do Canal';
-                const hNm = document.createElement('span');
-                hNm.textContent = 'Nome do Canal';
-                header.appendChild(hId);
-                header.appendChild(hNm);
-                preview.appendChild(header);
-
-                const max = Math.max(ids.length, names.length);
-                for (let i = 0; i < max; i++) {
-                    const id = ids[i] || '';
-                    const nm = names[i] || '';
-                    const row = document.createElement('div');
-                    row.className = 'grid grid-cols-2 gap-4';
-                    const idBadge = document.createElement('span');
-                    idBadge.className = 'inline-block px-3 py-1 rounded-md bg-gray-700 text-gray-200 text-sm break-all';
-                    idBadge.textContent = id;
-                    const nameTxt = document.createElement('span');
-                    nameTxt.className = 'inline-block text-sm text-gray-100';
-                    nameTxt.textContent = nm;
-                    row.appendChild(idBadge);
-                    row.appendChild(nameTxt);
-                    preview.appendChild(row);
-                }
-            } catch (e) { /* silencioso */ }
-        }
-
-        // Hook: após carregar fontes globais, atualizar a visualização
-        if (typeof renderGlobalSourcesPage === 'function') {
-            const _renderGlobalSourcesPage = renderGlobalSourcesPage;
-            renderGlobalSourcesPage = async function() {
-                await _renderGlobalSourcesPage.apply(this, arguments);
-                renderYouTubeChannelsPreview();
-            };
-        }
 
         function setupNotificationListener() {
             if (notificationListener) notificationListener();
@@ -3758,6 +3704,9 @@ let keywordToTransferInfo = null;
         rssUrlInput = document.getElementById('rssUrl');
          rssFrequencyInput = document.getElementById('rssFrequencyMinutes');
          gnewsFrequencyInput = document.getElementById('gnewsFrequencyHours');
+         // Inicializar lastValue para proteger contra apagamentos por valores vazios
+         if (rssFrequencyInput) { rssFrequencyInput.dataset.lastValue = rssFrequencyInput.value || ''; }
+         if (gnewsFrequencyInput) { gnewsFrequencyInput.dataset.lastValue = gnewsFrequencyInput.value || ''; }
          radioSourcesInput = document.getElementById('radioSources');
          tvSourcesInput = document.getElementById('tvSources');
          youtubeChannelsInput = document.getElementById('youtubeChannels');
@@ -3917,15 +3866,32 @@ youtubeFrequencyTimeInput = document.getElementById('youtubeFrequencyTime');
             if (rssUrlInput) rssUrlInput.addEventListener('change', handleGlobalSourceChange);
             if (rssFrequencyInput) rssFrequencyInput.addEventListener('change', (e) => {
                 const settingsRef = doc(db, "artifacts", appId, "public/data/settings", "global");
-                const value = e.target.value;
-                setDoc(settingsRef, { rssFrequencyMinutes: value }, { merge: true })
+                const value = (e.target.value || '').toString().trim();
+                if (value === '' || isNaN(Number(value)) || Number(value) <= 0) {
+                    // Restaura último valor conhecido em memória para não apagar
+                    if (typeof e.target.dataset.lastValue !== 'undefined') {
+                        e.target.value = e.target.dataset.lastValue;
+                    }
+                    showAlert('Valor inválido. Mantida a última frequência de RSS.', 'error');
+                    return;
+                }
+                e.target.dataset.lastValue = value;
+                setDoc(settingsRef, { rssFrequencyMinutes: Number(value) }, { merge: true })
                     .then(() => showAlert('Frequência de RSS guardada!', 'success'))
                     .catch((error) => console.error('Erro ao guardar a frequência de RSS:', error));
             });
             if (gnewsFrequencyInput) gnewsFrequencyInput.addEventListener('change', (e) => {
                 const settingsRef = doc(db, "artifacts", appId, "public/data/settings", "global");
-                const value = e.target.value;
-                setDoc(settingsRef, { gnewsFrequencyHours: value }, { merge: true })
+                const value = (e.target.value || '').toString().trim();
+                if (value === '' || isNaN(Number(value)) || Number(value) <= 0) {
+                    if (typeof e.target.dataset.lastValue !== 'undefined') {
+                        e.target.value = e.target.dataset.lastValue;
+                    }
+                    showAlert('Valor inválido. Mantida a última frequência do GNews.', 'error');
+                    return;
+                }
+                e.target.dataset.lastValue = value;
+                setDoc(settingsRef, { gnewsFrequencyHours: Number(value) }, { merge: true })
                     .then(() => showAlert('Frequência do GNews guardada!', 'success'))
                     .catch((error) => console.error('Erro ao guardar a frequência do GNews:', error));
             });
@@ -3939,8 +3905,8 @@ youtubeFrequencyTimeInput = document.getElementById('youtubeFrequencyTime');
                     radioSourcesInput.dispatchEvent(ev);
                 }, 800);
             });
-            if (youtubeChannelsInput) { youtubeChannelsInput.addEventListener('change', handleGlobalSourceChange); youtubeChannelsInput.addEventListener('input', () => { if (typeof renderYouTubeChannelsPreview === 'function') renderYouTubeChannelsPreview(); }); }
-            if (youtubeChannelNamesInput) { youtubeChannelNamesInput.addEventListener('change', handleGlobalSourceChange); youtubeChannelNamesInput.addEventListener('input', () => { if (typeof renderYouTubeChannelsPreview === 'function') renderYouTubeChannelsPreview(); }); }
+            if (youtubeChannelsInput) { youtubeChannelsInput.addEventListener('change', handleGlobalSourceChange); }
+            if (youtubeChannelNamesInput) { youtubeChannelNamesInput.addEventListener('change', handleGlobalSourceChange); }
             { const el = document.getElementById('tvSources'); if (el) el.addEventListener('change', (e) => { handleGlobalSourceChange(e); if (typeof renderTvIntervalsList === 'function') renderTvIntervalsList(); }); }
 if (youtubeChannelsFrequencyInput) youtubeChannelsFrequencyInput.addEventListener('change', (e) => {
                 const settingsRef = doc(db, "artifacts", appId, "public/data/settings", "global");
