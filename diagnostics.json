@@ -1,0 +1,130 @@
+{
+  "global": {
+    "apiKeys": {
+      "apiKeyGNews1": true,
+      "apiKeyGNews2": true,
+      "apiKeyGNews3": true,
+      "apiKeyGNews4": true,
+      "apiKeyNewsApi": true,
+      "apiKeyYoutube": true
+    },
+    "missingKeys": [],
+    "lists": {
+      "rssCount": 45,
+      "youtubeChannelsCount": 5
+    },
+    "gates": {
+      "canRunRSS": false,
+      "canRunGNews": false,
+      "canRunYouTube": false,
+      "canRunYouTubeChannels": false,
+      "desiredTimeOk": true
+    },
+    "lastRuns": {
+      "youtubeLastRun": "2025-11-12T19:48:40.441Z",
+      "gnewsLastRun": "2025-11-12T22:39:13.301Z",
+      "rssLastRun": "2025-11-12T22:58:19.405Z",
+      "youtubeChannelsLastRun": "2025-11-12T22:56:32.408Z"
+    },
+    "settings": {
+      "rssFrequencyMinutes": 5,
+      "gnewsFrequencyHours": 1.2,
+      "youtubeFrequencyHours": 4.1,
+      "youtubeFrequencyTime": "",
+      "youtubeChannelsFrequencyMinutes": 10
+    }
+  },
+  "almt": {
+    "companyId": "G5b3QuYZS4f3gaGVrhte",
+    "companyName": "ALMT",
+    "registeredKeywordCount": 12,
+    "registeredKeywords": [
+      "chico guarnieri",
+      "Juca do Guaraná",
+      "Max Russi",
+      "Margareth Buzetti",
+      "julio campos",
+      "Diego Guimarães",
+      "Jose Medeiros",
+      "Wellington Fagundes",
+      "Janaina Riva",
+      "Jayme Campos",
+      "Gilberto Cattani",
+      "Faissal Calil"
+    ],
+    "providedKeywordCount": 12,
+    "providedKeywords": [
+      "chico guarnieri",
+      "Juca do Guaraná",
+      "Max Russi",
+      "Margareth Buzetti",
+      "julio campos",
+      "Diego Guimarães",
+      "Jose Medeiros",
+      "Wellington Fagundes",
+      "Janaina Riva",
+      "Jayme Campos",
+      "Gilberto Cattani",
+      "Faissal Calil"
+    ],
+    "overlapWithRegistered": [
+      "chico guarnieri",
+      "juca do guaraná",
+      "max russi",
+      "margareth buzetti",
+      "julio campos",
+      "diego guimarães",
+      "jose medeiros",
+      "wellington fagundes",
+      "janaina riva",
+      "jayme campos",
+      "gilberto cattani",
+      "faissal calil"
+    ],
+    "missingInRegistered": [],
+    "pendingLast7d": {
+      "count": 2,
+      "sample": [
+        {
+          "id": "aGaZxBeDQ7MYq1ZwJyZ1",
+          "title": "Deputado Max Russi defende urgência na aprovação da aposentadoria especial para ACS e ACE",
+          "url": "https://afolhadomedionorte.com.br/deputado-max-russi-defende-urgencia-na-aprovacao-da-aposentadoria-especial-para-acs-e-ace/",
+          "publishedAt": "2025-11-12T22:38:18.000Z",
+          "keywords": [
+            "Max Russi"
+          ],
+          "channel": null
+        },
+        {
+          "id": "wOJxir61o0FG9GQGDyTz",
+          "title": "AL aprova PL de Janaina e mulheres de MT poderão ter acesso a política estadual voltada à saúde no climatério e na menopausa",
+          "url": "https://popularmt1.com.br/politica-mt/al-aprova-pl-de-janaina-e-mulheres-de-mt-poderao-ter-acesso-a-politica-estadual-voltada-a-saude-no-climaterio-e-na-menopausa/",
+          "publishedAt": "2025-11-12T22:33:27.000Z",
+          "keywords": [
+            "Janaina Riva"
+          ],
+          "channel": null
+        }
+      ]
+    },
+    "articleAudit": {
+      "recentCount": 0,
+      "totalMatches": 0,
+      "matchesByKeyword": {
+        "chico guarnieri": 0,
+        "juca do guaraná": 0,
+        "max russi": 0,
+        "margareth buzetti": 0,
+        "julio campos": 0,
+        "diego guimarães": 0,
+        "jose medeiros": 0,
+        "wellington fagundes": 0,
+        "janaina riva": 0,
+        "jayme campos": 0,
+        "gilberto cattani": 0,
+        "faissal calil": 0
+      },
+      "samples": []
+    }
+  }
+}

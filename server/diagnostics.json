@@ -1,0 +1,200 @@
+{
+  "global": {
+    "apiKeys": {
+      "apiKeyGNews1": true,
+      "apiKeyGNews2": true,
+      "apiKeyGNews3": true,
+      "apiKeyGNews4": true,
+      "apiKeyNewsApi": true,
+      "apiKeyYoutube": true
+    },
+    "missingKeys": [],
+    "lists": {
+      "rssCount": 45,
+      "youtubeChannelsCount": 5
+    },
+    "gates": {
+      "canRunRSS": true,
+      "canRunGNews": false,
+      "canRunYouTube": false,
+      "canRunYouTubeChannels": true,
+      "desiredTimeOk": true
+    },
+    "lastRuns": {
+      "youtubeLastRun": "2025-11-12T23:58:57.009Z",
+      "gnewsLastRun": "2025-11-12T23:59:10.483Z",
+      "rssLastRun": "2025-11-13T00:58:05.853Z",
+      "youtubeChannelsLastRun": "2025-11-13T00:56:33.439Z"
+    },
+    "settings": {
+      "rssFrequencyMinutes": 5,
+      "gnewsFrequencyHours": 1.2,
+      "youtubeFrequencyHours": 4.1,
+      "youtubeFrequencyTime": "",
+      "youtubeChannelsFrequencyMinutes": 10
+    }
+  },
+  "almt": {
+    "companyId": "G5b3QuYZS4f3gaGVrhte",
+    "companyName": "ALMT",
+    "registeredKeywordCount": 12,
+    "registeredKeywords": [
+      "chico guarnieri",
+      "Juca do Guaraná",
+      "Max Russi",
+      "Margareth Buzetti",
+      "julio campos",
+      "Diego Guimarães",
+      "Jose Medeiros",
+      "Wellington Fagundes",
+      "Janaina Riva",
+      "Jayme Campos",
+      "Gilberto Cattani",
+      "Faissal Calil"
+    ],
+    "providedKeywordCount": 12,
+    "providedKeywords": [
+      "chico guarnieri",
+      "Juca do Guaraná",
+      "Max Russi",
+      "Margareth Buzetti",
+      "julio campos",
+      "Diego Guimarães",
+      "Jose Medeiros",
+      "Wellington Fagundes",
+      "Janaina Riva",
+      "Jayme Campos",
+      "Gilberto Cattani",
+      "Faissal Calil"
+    ],
+    "overlapWithRegistered": [
+      "chico guarnieri",
+      "juca do guaraná",
+      "max russi",
+      "margareth buzetti",
+      "julio campos",
+      "diego guimarães",
+      "jose medeiros",
+      "wellington fagundes",
+      "janaina riva",
+      "jayme campos",
+      "gilberto cattani",
+      "faissal calil"
+    ],
+    "missingInRegistered": [],
+    "pendingLast7d": {
+      "count": 9,
+      "sample": [
+        {
+          "id": "yiQ527P07iLgIdezAqQt",
+          "title": "Jayme Campos alerta para aumento da violência contra jovens",
+          "url": "https://afolhadomedionorte.com.br/jayme-campos-alerta-para-aumento-da-violencia-contra-jovens/",
+          "publishedAt": "2025-11-13T01:02:16.000Z",
+          "keywords": [
+            "Jayme Campos"
+          ],
+          "channel": null
+        },
+        {
+          "id": "qOA27OGHOnV8K9fNExFr",
+          "title": "Projeto de inclusão com apoio de senador, leva crianças ao circo em Primavera do Leste!",
+          "url": "https://www.youtube.com/watch?v=aZWYj0IDV_I",
+          "publishedAt": "2025-11-13T00:44:52.000Z",
+          "keywords": [
+            "Wellington Fagundes"
+          ],
+          "channel": null
+        },
+        {
+          "id": "k7ryVODNAedHS2l4VnPr",
+          "title": "Deputado Max Russi defende urgência na aprovação da aposentadoria especial para ACS e ACE",
+          "url": "https://quanoticias.com.br/deputado-max-russi-defende-urgencia-na-aprovacao-da-aposentadoria-especial-para-acs-e-ace/",
+          "publishedAt": "2025-11-13T00:04:31.000Z",
+          "keywords": [
+            "Max Russi"
+          ],
+          "channel": null
+        },
+        {
+          "id": "pEc5I7tGkCyaQYAjlhPD",
+          "title": "Jayme Campos alerta para aumento da violência contra jovens",
+          "url": "https://popularmt1.com.br/politica-nacional/jayme-campos-alerta-para-aumento-da-violencia-contra-jovens/",
+          "publishedAt": "2025-11-13T00:01:20.000Z",
+          "keywords": [
+            "Jayme Campos"
+          ],
+          "channel": null
+        },
+        {
+          "id": "3KwnsRNsX3o2EVmF25I1",
+          "title": "AL aprova PL de Janaina e mulheres de MT poderão ter acesso a política estadual voltada à saúde no climatério e na menopausa",
+          "url": "https://noticiainfoco.com.br/politica-mt/al-aprova-pl-de-janaina-e-mulheres-de-mt-poderao-ter-acesso-a-politica-estadual-voltada-a-saude-no-climaterio-e-na-menopausa/",
+          "publishedAt": "2025-11-13T00:01:05.000Z",
+          "keywords": [
+            "Janaina Riva"
+          ],
+          "channel": null
+        },
+        {
+          "id": "XNtUnQqeoBZOlddh5fmZ",
+          "title": "AL aprova PL de Janaina e mulheres de MT poderão ter acesso a política estadual voltada à saúde no climatério e na menopausa",
+          "url": "https://oempallador.com.br/al-aprova-pl-de-janaina-e-mulheres-de-mt-poderao-ter-acesso-a-politica-estadual-voltada-a-saude-no-climaterio-e-na-menopausa/",
+          "publishedAt": "2025-11-12T23:35:06.000Z",
+          "keywords": [
+            "Janaina Riva"
+          ],
+          "channel": null
+        },
+        {
+          "id": "kIoTGua9gEnvF8JLLc7j",
+          "title": "AL aprova PL de Janaina e mulheres de MT poderão ter acesso a política estadual voltada à saúde no climatério e na menopausa",
+          "url": "https://afolhadomedionorte.com.br/al-aprova-pl-de-janaina-e-mulheres-de-mt-poderao-ter-acesso-a-politica-estadual-voltada-a-saude-no-climaterio-e-na-menopausa/",
+          "publishedAt": "2025-11-12T23:34:25.000Z",
+          "keywords": [
+            "Janaina Riva"
+          ],
+          "channel": null
+        },
+        {
+          "id": "Stu4GGzsRHwCHk4nVaQi",
+          "title": "AL aprova PL de Janaina e mulheres de MT poderão ter acesso a política estadual voltada à saúde no climatério e na menopausa",
+          "url": "https://jbnews.com.br/al-aprova-pl-de-janaina-e-mulheres-de-mt-poderao-ter-acesso-a-politica-estadual-voltada-a-saude-no-climaterio-e-na-menopausa/",
+          "publishedAt": "2025-11-12T23:01:22.000Z",
+          "keywords": [
+            "Janaina Riva"
+          ],
+          "channel": null
+        },
+        {
+          "id": "PYdrhF921oabH8Gxrp8o",
+          "title": "AL aprova PL de Janaina e mulheres de MT poderão ter acesso a política estadual voltada à saúde no climatério e na menopausa",
+          "url": "https://atualmt.com.br/2025/11/12/al-aprova-pl-de-janaina-e-mulheres-de-mt-poderao-ter-acesso-a-politica-estadual-voltada-a-saude-no-climaterio-e-na-menopausa/",
+          "publishedAt": "2025-11-12T23:00:20.000Z",
+          "keywords": [
+            "Janaina Riva"
+          ],
+          "channel": null
+        }
+      ]
+    },
+    "articleAudit": {
+      "recentCount": 0,
+      "totalMatches": 0,
+      "matchesByKeyword": {
+        "chico guarnieri": 0,
+        "juca do guaraná": 0,
+        "max russi": 0,
+        "margareth buzetti": 0,
+        "julio campos": 0,
+        "diego guimarães": 0,
+        "jose medeiros": 0,
+        "wellington fagundes": 0,
+        "janaina riva": 0,
+        "jayme campos": 0,
+        "gilberto cattani": 0,
+        "faissal calil": 0
+      },
+      "samples": []
+    }
+  }
+}

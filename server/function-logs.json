@@ -1,0 +1,305 @@
+{
+  "count": 100,
+  "entries": [
+    {
+      "timestamp": "2025-11-13T01:06:06.611Z",
+      "severity": "INFO",
+      "function": "scheduledFetch",
+      "text": "\"--- Processando 45 Feeds RSS para todas as empresas ---\""
+    },
+    {
+      "timestamp": "2025-11-13T01:06:06.611Z",
+      "severity": "INFO",
+      "function": "scheduledFetch",
+      "text": "\"Gate específico de canais do YouTube ativo — aguardando janela de frequência.\""
+    },
+    {
+      "timestamp": "2025-11-13T01:06:06.611Z",
+      "severity": "INFO",
+      "function": "scheduledFetch",
+      "text": "\"Gate do YouTube por palavras-chave ativo — aguardando janela de frequência/horário.\""
+    },
+    {
+      "timestamp": "2025-11-13T01:06:06.611Z",
+      "severity": "ERROR",
+      "function": "scheduledFetch",
+      "text": "\"Error: Erro NewsAPI para FMF: Request failed with status code 429\\n    at entryFromArgs (/workspace/node_modules/firebase-functions/lib/logger/index.js:133:19)\\n    at Object.error (/workspace/node_modules/firebase-functions/lib/logger/index.js:120:11)\\n    at fetchAllNews (/workspace/index.js:441:44)\\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\\n    at async /workspace/index.js:628:9\""
+    },
+    {
+      "timestamp": "2025-11-13T01:06:05.459Z",
+      "severity": "INFO",
+      "function": "scheduledFetch",
+      "text": "\"--- Processando empresa: FMF ---\""
+    },
+    {
+      "timestamp": "2025-11-13T01:06:05.459Z",
+      "severity": "INFO",
+      "function": "scheduledFetch",
+      "text": "\"Gate específico de canais do YouTube ativo — aguardando janela de frequência.\""
+    },
+    {
+      "timestamp": "2025-11-13T01:06:05.459Z",
+      "severity": "INFO",
+      "function": "scheduledFetch",
+      "text": "\"Gate do YouTube por palavras-chave ativo — aguardando janela de frequência/horário.\""
+    },
+    {
+      "timestamp": "2025-11-13T01:06:05.459Z",
+      "severity": "ERROR",
+      "function": "scheduledFetch",
+      "text": "\"Error: Erro NewsAPI para ALTO GARÇAS: Request failed with status code 429\\n    at entryFromArgs (/workspace/node_modules/firebase-functions/lib/logger/index.js:133:19)\\n    at Object.error (/workspace/node_modules/firebase-functions/lib/logger/index.js:120:11)\\n    at fetchAllNews (/workspace/index.js:441:44)\\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\\n    at async /workspace/index.js:628:9\""
+    },
+    {
+      "timestamp": "2025-11-13T01:06:04.326Z",
+      "severity": "INFO",
+      "function": "scheduledFetch",
+      "text": "\"--- Processando empresa: ALTO GARÇAS ---\""
+    },
+    {
+      "timestamp": "2025-11-13T01:06:04.326Z",
+      "severity": "INFO",
+      "function": "scheduledFetch",
+      "text": "\"Gate específico de canais do YouTube ativo — aguardando janela de frequência.\""
+    },
+    {
+      "timestamp": "2025-11-13T01:06:04.326Z",
+      "severity": "INFO",
+      "function": "scheduledFetch",
+      "text": "\"Gate do YouTube por palavras-chave ativo — aguardando janela de frequência/horário.\""
+    },
+    {
+      "timestamp": "2025-11-13T01:06:04.326Z",
+      "severity": "ERROR",
+      "function": "scheduledFetch",
+      "text": "\"Error: Erro NewsAPI para ALMT: Request failed with status code 429\\n    at entryFromArgs (/workspace/node_modules/firebase-functions/lib/logger/index.js:133:19)\\n    at Object.error (/workspace/node_modules/firebase-functions/lib/logger/index.js:120:11)\\n    at fetchAllNews (/workspace/index.js:441:44)\\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\\n    at async /workspace/index.js:628:9\""
+    },
+    {
+      "timestamp": "2025-11-13T01:06:03.129Z",
+      "severity": "INFO",
+      "function": "scheduledFetch",
+      "text": "\"--- Processando empresa: ALMT ---\""
+    },
+    {
+      "timestamp": "2025-11-13T01:06:02.135Z",
+      "severity": "INFO",
+      "function": "scheduledFetch",
+      "text": "\"INICIANDO BUSCA DE NOTÍCIAS COM TRADUÇÃO, IA, MÍDIA E GEOCODIFICAÇÃO...\""
+    },
+    {
+      "timestamp": "2025-11-13T01:06:02.135Z",
+      "severity": "INFO",
+      "function": "scheduledFetch",
+      "text": "\"=======================================\""
+    },
+    {
+      "timestamp": "2025-11-13T01:06:02.124Z",
+      "severity": "DEBUG",
+      "function": "scheduledFetch",
+      "text": "\"Function execution started\""
+    },
+    {
+      "timestamp": "2025-11-13T00:58:05.925Z",
+      "severity": "DEBUG",
+      "function": "scheduledFetch",
+      "text": "\"Function execution took 123821 ms, finished with status: 'ok'\""
+    },
+    {
+      "timestamp": "2025-11-13T00:58:05.922Z",
+      "severity": "INFO",
+      "function": "scheduledFetch",
+      "text": "\"Busca concluída. 1 novos artigos únicos foram guardados na fila de aprovação.\""
+    },
+    {
+      "timestamp": "2025-11-13T00:58:05.922Z",
+      "severity": "INFO",
+      "function": "scheduledFetch",
+      "text": "\"rssLastRun atualizado.\""
+    },
+    {
+      "timestamp": "2025-11-13T00:57:56.293Z",
+      "severity": "ERROR",
+      "function": "scheduledFetch",
+      "text": "\"Error: Erro ao buscar o feed RSS: https://www.metropoles.com/rss. Mensagem: Non-whitespace before first tag.\\nLine: 0\\nColumn: 1\\nChar: \\u001f\\n    at entryFromArgs (/workspace/node_modules/firebase-functions/lib/logger/index.js:133:19)\\n    at Object.error (/workspace/node_modules/firebase-functions/lib/logger/index.js:120:11)\\n    at fetchAllNews (/workspace/index.js:556:34)\\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\\n    at async /workspace/index.js:628:9\""
+    },
+    {
+      "timestamp": "2025-11-13T00:57:39.573Z",
+      "severity": "ERROR",
+      "function": "scheduledFetch",
+      "text": "\"Error: Erro ao buscar o feed RSS: https://marretaurgente.com.br/feed/. Mensagem: Invalid character in entity name\\nLine: 101\\nColumn: 64\\nChar: =\\n    at entryFromArgs (/workspace/node_modules/firebase-functions/lib/logger/index.js:133:19)\\n    at Object.error (/workspace/node_modules/firebase-functions/lib/logger/index.js:120:11)\\n    at fetchAllNews (/workspace/index.js:556:34)\\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\\n    at async /workspace/index.js:628:9\""
+    },
+    {
+      "timestamp": "2025-11-13T00:56:33.491Z",
+      "severity": "INFO",
+      "function": "scheduledFetch",
+      "text": "\"--- Processando 45 Feeds RSS para todas as empresas ---\""
+    },
+    {
+      "timestamp": "2025-11-13T00:56:33.491Z",
+      "severity": "INFO",
+      "function": "scheduledFetch",
+      "text": "\"Gate do YouTube por palavras-chave ativo — aguardando janela de frequência/horário.\""
+    },
+    {
+      "timestamp": "2025-11-13T00:56:33.491Z",
+      "severity": "INFO",
+      "function": "scheduledFetch",
+      "text": "\"youtubeChannelsLastRun atualizado (YouTube por canais).\""
+    },
+    {
+      "timestamp": "2025-11-13T00:56:26.670Z",
+      "severity": "INFO",
+      "function": "scheduledFetch",
+      "text": "\"--- Buscando YouTube por canais (5) sob gate específico de canais ---\""
+    },
+    {
+      "timestamp": "2025-11-13T00:56:26.670Z",
+      "severity": "ERROR",
+      "function": "scheduledFetch",
+      "text": "\"Error: Erro NewsAPI para FMF: Request failed with status code 429\\n    at entryFromArgs (/workspace/node_modules/firebase-functions/lib/logger/index.js:133:19)\\n    at Object.error (/workspace/node_modules/firebase-functions/lib/logger/index.js:120:11)\\n    at fetchAllNews (/workspace/index.js:441:44)\\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\\n    at async /workspace/index.js:628:9\""
+    },
+    {
+      "timestamp": "2025-11-13T00:56:25.522Z",
+      "severity": "INFO",
+      "function": "scheduledFetch",
+      "text": "\"--- Processando empresa: FMF ---\""
+    },
+    {
+      "timestamp": "2025-11-13T00:56:25.522Z",
+      "severity": "INFO",
+      "function": "scheduledFetch",
+      "text": "\"Gate do YouTube por palavras-chave ativo — aguardando janela de frequência/horário.\""
+    },
+    {
+      "timestamp": "2025-11-13T00:56:25.522Z",
+      "severity": "INFO",
+      "function": "scheduledFetch",
+      "text": "\"youtubeChannelsLastRun atualizado (YouTube por canais).\""
+    },
+    {
+      "timestamp": "2025-11-13T00:56:18.873Z",
+      "severity": "INFO",
+      "function": "scheduledFetch",
+      "text": "\"--- Buscando YouTube por canais (5) sob gate específico de canais ---\""
+    },
+    {
+      "timestamp": "2025-11-13T00:56:18.873Z",
+      "severity": "ERROR",
+      "function": "scheduledFetch",
+      "text": "\"Error: Erro NewsAPI para ALTO GARÇAS: Request failed with status code 429\\n    at entryFromArgs (/workspace/node_modules/firebase-functions/lib/logger/index.js:133:19)\\n    at Object.error (/workspace/node_modules/firebase-functions/lib/logger/index.js:120:11)\\n    at fetchAllNews (/workspace/index.js:441:44)\\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\\n    at async /workspace/index.js:628:9\""
+    },
+    {
+      "timestamp": "2025-11-13T00:56:17.693Z",
+      "severity": "INFO",
+      "function": "scheduledFetch",
+      "text": "\"--- Processando empresa: ALTO GARÇAS ---\""
+    },
+    {
+      "timestamp": "2025-11-13T00:56:17.693Z",
+      "severity": "INFO",
+      "function": "scheduledFetch",
+      "text": "\"Gate do YouTube por palavras-chave ativo — aguardando janela de frequência/horário.\""
+    },
+    {
+      "timestamp": "2025-11-13T00:56:17.693Z",
+      "severity": "INFO",
+      "function": "scheduledFetch",
+      "text": "\"youtubeChannelsLastRun atualizado (YouTube por canais).\""
+    },
+    {
+      "timestamp": "2025-11-13T00:56:11.672Z",
+      "severity": "WARNING",
+      "function": "scheduledFetch",
+      "text": "\"A transcrição de vídeo para aZWYj0IDV_I foi pulada. Requer upload para o Google Cloud Storage.\""
+    },
+    {
+      "timestamp": "2025-11-13T00:56:04.303Z",
+      "severity": "INFO",
+      "function": "scheduledFetch",
+      "text": "\"--- Buscando YouTube por canais (5) sob gate específico de canais ---\""
+    },
+    {
+      "timestamp": "2025-11-13T00:56:04.303Z",
+      "severity": "ERROR",
+      "function": "scheduledFetch",
+      "text": "\"Error: Erro NewsAPI para ALMT: Request failed with status code 429\\n    at entryFromArgs (/workspace/node_modules/firebase-functions/lib/logger/index.js:133:19)\\n    at Object.error (/workspace/node_modules/firebase-functions/lib/logger/index.js:120:11)\\n    at fetchAllNews (/workspace/index.js:441:44)\\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\\n    at async /workspace/index.js:628:9\""
+    },
+    {
+      "timestamp": "2025-11-13T00:56:03.126Z",
+      "severity": "INFO",
+      "function": "scheduledFetch",
+      "text": "\"--- Processando empresa: ALMT ---\""
+    },
+    {
+      "timestamp": "2025-11-13T00:56:02.118Z",
+      "severity": "INFO",
+      "function": "scheduledFetch",
+      "text": "\"INICIANDO BUSCA DE NOTÍCIAS COM TRADUÇÃO, IA, MÍDIA E GEOCODIFICAÇÃO...\""
+    },
+    {
+      "timestamp": "2025-11-13T00:56:02.118Z",
+      "severity": "INFO",
+      "function": "scheduledFetch",
+      "text": "\"=======================================\""
+    },
+    {
+      "timestamp": "2025-11-13T00:56:02.104Z",
+      "severity": "DEBUG",
+      "function": "scheduledFetch",
+      "text": "\"Function execution started\""
+    },
+    {
+      "timestamp": "2025-11-13T00:47:45.395Z",
+      "severity": "DEBUG",
+      "function": "scheduledFetch",
+      "text": "\"Function execution took 103358 ms, finished with status: 'ok'\""
+    },
+    {
+      "timestamp": "2025-11-13T00:47:45.394Z",
+      "severity": "INFO",
+      "function": "scheduledFetch",
+      "text": "\"Busca concluída. 0 novos artigos únicos foram guardados na fila de aprovação.\""
+    },
+    {
+      "timestamp": "2025-11-13T00:47:45.394Z",
+      "severity": "INFO",
+      "function": "scheduledFetch",
+      "text": "\"rssLastRun atualizado.\""
+    },
+    {
+      "timestamp": "2025-11-13T00:47:15.259Z",
+      "severity": "ERROR",
+      "function": "scheduledFetch",
+      "text": "\"Error: Erro ao buscar o feed RSS: https://marretaurgente.com.br/feed/. Mensagem: Invalid character in entity name\\nLine: 101\\nColumn: 64\\nChar: =\\n    at entryFromArgs (/workspace/node_modules/firebase-functions/lib/logger/index.js:133:19)\\n    at Object.error (/workspace/node_modules/firebase-functions/lib/logger/index.js:120:11)\\n    at fetchAllNews (/workspace/index.js:556:34)\\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\\n    at async /workspace/index.js:628:9\""
+    },
+    {
+      "timestamp": "2025-11-13T00:46:06.602Z",
+      "severity": "INFO",
+      "function": "scheduledFetch",
+      "text": "\"--- Processando 45 Feeds RSS para todas as empresas ---\""
+    },
+    {
+      "timestamp": "2025-11-13T00:46:06.602Z",
+      "severity": "INFO",
+      "function": "scheduledFetch",
+      "text": "\"Gate específico de canais do YouTube ativo — aguardando janela de frequência.\""
+    },
+    {
+      "timestamp": "2025-11-13T00:46:06.602Z",
+      "severity": "INFO",
+      "function": "scheduledFetch",
+      "text": "\"Gate do YouTube por palavras-chave ativo — aguardando janela de frequência/horário.\""
+    },
+    {
+      "timestamp": "2025-11-13T00:46:06.602Z",
+      "severity": "ERROR",
+      "function": "scheduledFetch",
+      "text": "\"Error: Erro NewsAPI para FMF: Request failed with status code 429\\n    at entryFromArgs (/workspace/node_modules/firebase-functions/lib/logger/index.js:133:19)\\n    at Object.error (/workspace/node_modules/firebase-functions/lib/logger/index.js:120:11)\\n    at fetchAllNews (/workspace/index.js:441:44)\\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\\n    at async /workspace/index.js:628:9\""
+    },
+    {
+      "timestamp": "2025-11-13T00:46:05.462Z",
+      "severity": "INFO",
+      "function": "scheduledFetch",
+      "text": "\"--- Processando empresa: FMF ---\""
+    }
+  ]
+}

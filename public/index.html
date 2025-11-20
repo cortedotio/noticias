@@ -10,6 +10,37 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Fallback automático caso o CDN do Tailwind não carregue (ex.: CSP/Proxy bloqueando scripts externos) -->
+    <script>
+      (function () {
+        function ensureTailwindLoaded() {
+          try {
+            var test = document.createElement('div');
+            test.className = 'hidden';
+            document.body.appendChild(test);
+            var hasTailwind = window.getComputedStyle(test).display === 'none';
+            test.remove();
+            if (!hasTailwind) {
+              var link = document.createElement('link');
+              link.rel = 'stylesheet';
+              link.href = 'https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css';
+              document.head.appendChild(link);
+              console.warn('Tailwind CDN não carregou. CSS fallback (v2.2.19) aplicado.');
+            }
+          } catch (e) {
+            var link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = 'https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css';
+            document.head.appendChild(link);
+          }
+        }
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', ensureTailwindLoaded);
+        } else {
+          ensureTailwindLoaded();
+        }
+      })();
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <!-- CHAVE DA API DO GOOGLE MAPS -->
@@ -196,6 +227,8 @@
                         de Notícias</a>
                     <a href="#" id="nav-pesquisa"
                         class="text-gray-600 hover:text-indigo-600 px-2 py-1 sm:px-3 sm:py-2 rounded-md text-sm font-medium">Pesquisa</a>
+                    <a href="#" id="nav-atividade"
+                        class="text-gray-600 hover:text-indigo-600 px-2 py-1 sm:px-3 sm:py-2 rounded-md text-sm font-medium">Atividade</a>
                     <a href="#" id="nav-super-admin"
                         class="hidden text-red-600 hover:text-red-800 px-2 py-1 sm:px-3 sm:py-2 rounded-md text-sm font-bold">Super
                         Admin</a>
@@ -352,7 +385,33 @@
                 </div>
                 <div class="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
                     <h3 class="text-xl font-semibold mb-4">Empresas Registadas</h3>
-                    <ul id="company-list" class="space-y-2 max-h-96 overflow-y-auto"></ul>
+<input type="text" id="company-search-input" placeholder="Pesquisar empresas..." class="w-full px-3 py-2 border border-gray-300 rounded-md mb-3">
+<ul id="company-list" class="space-y-2 max-h-96 overflow-y-auto"></ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="activity-page" class="page-section fade-in">
+            <div class="bg-white p-4 sm:p-6 md:p-8 rounded-lg shadow-lg">
+                <h2 class="text-xl sm:text-2xl md:text-3xl font-bold mb-6">Atividade</h2>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Empresa</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sites</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">YouTube</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Revistas</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rádio</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">TV</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total a Aprovar</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aguardando Exclusão</th>
+                            </tr>
+                        </thead>
+                        <tbody id="activity-table-body" class="bg-white divide-y divide-gray-200">
+                            <!-- Linhas geradas dinamicamente -->
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </section>
@@ -380,6 +439,43 @@
                     class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow">
                     <h3 class="text-lg sm:text-xl font-semibold">Logótipo Global</h3>
                 </button>
+                <!-- Novo botão Usuario-Admin -->
+                <button id="btn-usuario-admin"
+                    class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow">
+                    <h3 class="text-lg sm:text-xl font-semibold">Usuario-Admin</h3>
+                </button>
+                <!-- Novo botão Fontes de TV -->
+                <button id="btn-tv-sources"
+                    class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow">
+                    <h3 class="text-lg sm:text-xl font-semibold">Fontes de TV</h3>
+                </button>
+            </div>
+        </section>
+        <!-- Nova página Usuario-Admin -->
+        <section id="usuario-admin-page" class="page-section fade-in">
+            <button id="back-to-admin-config-6" class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar</button>
+            <h2 class="text-2xl sm:text-3xl font-bold mb-6">Usuario-Admin</h2>
+            <div class="max-w-lg mx-auto bg-white p-4 sm:p-6 rounded-lg shadow-lg">
+                <form id="usuario-admin-form" class="space-y-4">
+                    <div>
+                        <label for="usuario-admin-username" class="block text-sm font-medium text-gray-700 mb-1">Usuário</label>
+                        <input type="text" id="usuario-admin-username" class="w-full px-3 py-2 border border-gray-300 rounded-md" required />
+                    </div>
+                    <div>
+                        <label for="usuario-admin-password" class="block text-sm font-medium text-gray-700 mb-1">Palavra-passe</label>
+                        <input type="password" id="usuario-admin-password" class="w-full px-3 py-2 border border-gray-300 rounded-md" required />
+                    </div>
+                    <div>
+                        <label for="usuario-admin-companies-list" class="block text-sm font-medium text-gray-700 mb-1">Empresas Ativas</label>
+                        <div id="usuario-admin-companies-list" class="w-full px-3 py-2 border border-gray-300 rounded-md h-40 overflow-y-auto"></div>
+                        <p class="text-xs text-gray-500 mt-1">Selecione uma ou mais empresas às quais este usuário terá acesso.</p>
+                    </div>
+                    <button type="submit" class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700">Criar Usuário Restrito</button>
+                </form>
+                <div class="mt-6">
+                    <h3 class="text-lg font-semibold mb-2">Usuários Criados</h3>
+                    <ul id="restricted-user-list" class="space-y-2"></ul>
+                </div>
             </div>
         </section>
 
@@ -512,8 +608,25 @@
                         </div>
                     </div>
                     <div class="bg-gray-100 p-3 rounded-md">
-                        <label for="youtubeChannels" class="block text-sm font-medium text-gray-700 mb-1">IDs de Canais (YouTube) - um por linha</label>
-                        <textarea id="youtubeChannels" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="UC_x5XG1OV2P6uZZ5FSM9Ttw"></textarea>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label for="youtubeChannels" class="block text-sm font-medium text-gray-700 mb-1">IDs de Canais (YouTube) - um por linha</label>
+                                <textarea id="youtubeChannels" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="UC_x5XG1OV2P6uZZ5FSM9Ttw"></textarea>
+                            </div>
+                            <div>
+                                <label for="youtubeChannelNames" class="block text-sm font-medium text-gray-700 mb-1">Nome do Canal (YouTube) - um por linha</label>
+                                <textarea id="youtubeChannelNames" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="Google Developers"></textarea>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <div class="rounded-xl bg-gray-800 text-gray-100 p-4">
+                                <div class="grid grid-cols-2 gap-4 mb-2">
+                                    <div class="text-sm font-semibold">ID do Canal</div>
+                                    <div class="text-sm font-semibold">Nome do Canal</div>
+                                </div>
+                                <div id="youtubeChannelsPreview" class="space-y-2"></div>
+                            </div>
+                        </div>
                     </div>
                     <div class="bg-gray-100 p-3 rounded-md">
                         <label for="youtubeChannelsFrequencyMinutes" class="block text-sm font-medium text-gray-700 mb-1">Frequência do monitoramento para IDs de Canais (YouTube) (em minutos)</label>
@@ -543,7 +656,22 @@
                     <label class="block text-sm font-medium text-gray-700 mb-1">Campos por rádio</label>
                     <p class="text-xs text-gray-500 mb-2">Edite o nome da rádio, o URL do stream e o horário de monitoramento (início e fim). Sempre haverá um campo vazio extra no final para adicionar a próxima rádio.</p>
                     <textarea id="radioSources" class="hidden"></textarea>
-                    <div id="radioTimesList" class="space-y-2 max-h-96 overflow-auto border border-gray-200 rounded-md p-2"></div>
+                    <div id="radioTimesList" class="space-y-2 border border-gray-200 rounded-md p-2"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Nova página: Fontes de TV Globais -->
+        <section id="global-tv-sources-page" class="page-section fade-in">
+            <button id="back-to-admin-config-7" onclick="updateView('configuracoes-admin')"
+                class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar</button>
+            <h2 class="text-2xl sm:text-3xl font-bold mb-6">Fontes de TV Globais</h2>
+            <div class="max-w-2xl mx-auto bg-white p-4 sm:p-6 rounded-lg shadow-lg">
+                <div class="bg-gray-50 p-3 rounded-md">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Campos por TV</label>
+                    <p class="text-xs text-gray-500 mb-2">Edite o nome da emissora, o URL do stream de TV e o horário de monitoramento (início e fim). Sempre haverá um campo vazio extra no final para adicionar a próxima fonte de TV.</p>
+                    <textarea id="tvSources" class="hidden"></textarea>
+                    <div id="tvIntervalsList" class="space-y-2 max-h-96 overflow-auto border border-gray-200 rounded-md p-2"></div>
                 </div>
             </div>
         </section>
@@ -676,7 +804,7 @@
                 </div>
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     <div class="p-4 border rounded-lg">
-                        <h3 class="text-xl font-semibold mb-4 text-center">Notícias por Veículo</h3>
+                        <h3 class="text-xl font-semibold mb-4 text-center">Notícias por Fonte</h3>
                         <div class="relative h-[420px]">
                             <canvas id="source-chart" class="w-full h-full"></canvas>
                         </div>
@@ -699,6 +827,12 @@
                             <canvas id="sentiment-chart" class="w-full h-full"></canvas>
                         </div>
                     </div>
+                    <div class="p-4 border rounded-lg">
+                        <h3 class="text-xl font-semibold mb-4 text-center">Direta/Indireta</h3>
+                        <div class="relative h-[420px]">
+                            <canvas id="directness-chart" class="w-full h-full"></canvas>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
@@ -710,7 +844,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                         <div>
                             <label for="search-source-filter" class="block text-sm font-medium text-gray-700">Notícias
-                                por Veículo</label>
+                                por Fonte</label>
                             <select id="search-source-filter"
                                 class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
                                 <option value="">Todos</option>
@@ -726,6 +860,7 @@
                                 <option value="Sites">Sites</option>
                                 <option value="Revistas">Revistas</option>
                                 <option value="Rádios">Rádios</option>
+                                <option value="TV">TV</option>
                             </select>
                         </div>
                         <div>
@@ -769,14 +904,13 @@
                     <div>
                         <label for="manual-alert-company"
                             class="block text-sm font-medium text-gray-700">Empresa</label>
-                        <select id="manual-alert-company" class="w-full px-3 py-2 border border-gray-300 rounded-md"
-                            required></select>
+                        <select id="manual-alert-company" class="w-full px-3 py-2 border border-gray-300 rounded-md"></select>
                     </div>
-                    <div><label for="manual-alert-title"
+                    <div class="hidden"><label for="manual-alert-title"
                             class="block text-sm font-medium text-gray-700">Título</label><input type="text"
-                            id="manual-alert-title" class="w-full px-3 py-2 border border-gray-300 rounded-md" required>
+                            id="manual-alert-title" class="w-full px-3 py-2 border border-gray-300 rounded-md">
                     </div>
-                    <div><label for="manual-alert-desc"
+                    <div class="hidden"><label for="manual-alert-desc"
                             class="block text-sm font-medium text-gray-700">Descrição</label><textarea
                             id="manual-alert-desc" rows="3"
                             class="w-full px-3 py-2 border border-gray-300 rounded-md"></textarea></div>
@@ -784,13 +918,34 @@
                             class="block text-sm font-medium text-gray-700">URL</label><input type="url"
                             id="manual-alert-url" class="w-full px-3 py-2 border border-gray-300 rounded-md" required>
                     </div>
-                    <div><label for="manual-alert-source" class="block text-sm font-medium text-gray-700">Fonte
+                    <div class="hidden"><label for="manual-alert-source" class="block text-sm font-medium text-gray-700">Fonte
                             (Veículo)</label><input type="text" id="manual-alert-source"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md" required></div>
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md"></div>
+                    <!-- Novo: Data da Publicação -->
+                    <div class="hidden">
+                        <label for="manual-alert-publishedAt" class="block text-sm font-medium text-gray-700">Data da Publicação</label>
+                        <input type="datetime-local" id="manual-alert-publishedAt" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                    </div>
+                    <!-- Novo: Autor da Matéria -->
+                    <div class="hidden">
+                        <label for="manual-alert-author" class="block text-sm font-medium text-gray-700">Autor</label>
+                        <input type="text" id="manual-alert-author" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="Nome do autor (opcional)">
+                    </div>
+                    <!-- Novo: Canal (mídia) -->
+                    <div class="hidden">
+                        <label for="manual-alert-channel" class="block text-sm font-medium text-gray-700">Canal</label>
+                        <select id="manual-alert-channel" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                            <option value="Sites">Sites</option>
+                            <option value="YouTube">YouTube</option>
+                            <option value="Rádios">Rádios</option>
+                            <option value="Revistas">Revistas</option>
+                            <option value="TV">TV</option>
+                        </select>
+                    </div>
                     <div>
                         <label for="manual-alert-keyword" class="block text-sm font-medium text-gray-700">Palavras-Chave</label>
                         <select id="manual-alert-keyword" class="w-full px-3 py-2 border border-gray-300 rounded-md"
-                            multiple required>
+                            multiple>
                             <option disabled>Selecione uma empresa primeiro</option>
                         </select>
                     </div>
@@ -862,7 +1017,7 @@
                                     Canal Principal</th>
                                 <th
                                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Veículo Principal</th>
+                                    Fonte Principal</th>
                             </tr>
                         </thead>
                         <tbody id="super-admin-report-body" class="bg-white divide-y divide-gray-200">
@@ -931,7 +1086,7 @@
                     <canvas id="critical-space-qual-chart" class="w-full h-full"></canvas>
                 </div>
                 <div class="p-4 bg-white rounded-lg shadow-lg h-[420px]">
-                    <h3 class="text-xl font-semibold mb-4 text-center">Notícias por Veículo</h3>
+                    <h3 class="text-xl font-semibold mb-4 text-center">Notícias por Fonte</h3>
                     <canvas id="critical-vehicle-chart" class="w-full h-full"></canvas>
                 </div>
                 <div class="p-4 bg-white rounded-lg shadow-lg h-[420px]">
@@ -1117,6 +1272,26 @@
         </div>
     </div>
 
+    <div id="transfer-keyword-modal"
+        class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+                <h3 class="text-lg leading-6 font-medium text-gray-900">Transferir Palavra-Chave</h3>
+                <div class="mt-2 px-2 py-3">
+                    <p class="text-sm text-gray-700">Selecione a empresa de destino para transferir a palavra-chave "<strong id="keyword-to-transfer-name"></strong>" e todo o histórico de alertas associados.</p>
+                    <label class="block text-sm font-medium text-gray-700 mt-3">Empresa de destino</label>
+                    <select id="transfer-company-select" class="mt-1 w-full bg-gray-100 p-2 border rounded-md text-sm"></select>
+                </div>
+                <div class="items-center px-2 py-3">
+                    <button id="confirm-transfer-keyword-btn"
+                        class="px-4 py-2 bg-indigo-600 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-indigo-700">Transferir</button>
+                    <button id="cancel-transfer-keyword-btn"
+                        class="mt-3 px-4 py-2 bg-gray-200 text-gray-900 text-base font-medium rounded-md w-full shadow-sm hover:bg-gray-300">Cancelar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Função de callback global para a API do Google Maps
         function initMap() {
@@ -1135,14 +1310,25 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, getDocs, doc, getDoc, setDoc, addDoc, deleteDoc, updateDoc, query, where, orderBy, limit, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js";
+        import { getFirestore, connectFirestoreEmulator, collection, getDocs, doc, getDoc, setDoc, addDoc, deleteDoc, updateDoc, query, where, orderBy, limit, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFunctions, httpsCallable, connectFunctionsEmulator } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js";
 
         const firebaseConfig = { apiKey: "AIzaSyDC4vQ3PiAAy0WYIrLUTKZGb6WejSVdLrE", authDomain: "noticias-6e952.firebaseapp.com", projectId: "noticias-6e952", storageBucket: "noticias-6e952.appspot.com", messagingSenderId: "788555331572", appId: "1:788555331572:web:328cc3967fad0155352ba1" };
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
         const functions = getFunctions(app, 'southamerica-east1');
+        // Conectar emuladores localmente via flags separadas (?functions=true, ?firestore=true)
+        const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+        const params = new URLSearchParams(location.search);
+        const useFunctionsEmu = isLocal && params.get('functions') === 'true';
+        const useFirestoreEmu = isLocal && params.get('firestore') === 'true';
+        if (useFunctionsEmu) {
+            try { connectFunctionsEmulator(functions, '127.0.0.1', 5002); } catch (e) { console.warn('Falha ao conectar ao Functions Emulator:', e); }
+        }
+        if (useFirestoreEmu) {
+            try { connectFirestoreEmulator(db, '127.0.0.1', 8080); } catch (e) { console.warn('Falha ao conectar ao Firestore Emulator:', e); }
+        }
 
         // Exibir erros globais para diagnosticar tela branca
         window.addEventListener('error', (e) => {
@@ -1165,15 +1351,16 @@
 
         const appId = firebaseConfig.projectId;
         let currentUser = null, clockInterval = null, selectedCompanyForManagement = null, allCompanyArticles = [], companyIdToDelete = null, articleToDeleteInfo = null;
-        let sourceChartInstance = null, dateChartInstance = null, sentimentChartInstance = null, channelChartInstance = null, companySummaryChartInstance = null, keywordTotalChartInstance = null, keywordSentimentChartInstance = null, criticalChannelChartInstance = null, criticalSpaceChartInstance = null, criticalSpaceQualChartInstance = null, criticalVehicleChartInstance = null, criticalValuationChartInstance = null, criticalDateChartInstance = null;
+        let sourceChartInstance = null, dateChartInstance = null, sentimentChartInstance = null, directnessChartInstance = null, channelChartInstance = null, companySummaryChartInstance = null, keywordTotalChartInstance = null, keywordSentimentChartInstance = null, criticalChannelChartInstance = null, criticalSpaceChartInstance = null, criticalSpaceQualChartInstance = null, criticalVehicleChartInstance = null, criticalValuationChartInstance = null, criticalDateChartInstance = null;
         let superAdminCredentials = { user: 'ulysses', pass: 'adminqwert' };
-        let notificationListener = null, companiesListener = null, deletionRequestsListener = null, pendingAlertsListener = null;
+        let notificationListener = null, companiesListener = null, deletionRequestsListener = null, pendingAlertsListener = null, activityCompaniesListener = null, activityPendingListener = null, activityDeletionListener = null;
         let keywordToDeleteInfo = null;
+let keywordToTransferInfo = null;
         let currentDetailArticle = null;
         let mapInstance = null;
         let mapMarkers = [];
 
-        let pageSections, navLoggedIn, navInicio, navRelatorio, navMapa, navPesquisa, navSuperAdmin, navLogout, navConfiguracoesAdmin, globalAlert, loginPage, dashboardPage, mapPage, searchPage, superAdminPage, companyKeywordAdminPage, companySettingsAdminPage, reportPage, companyUserAdminPage, configuracoesAdminPage, loginForm, dashboardTitle, currentDateTimeEl, dashboardKeywordList, newsAlertsContainer, newsAlerts, alertDateFilter, reportAccessToggle, mapAccessToggle, logoUploadInput, headerLogoContainer, loginLogoContainer, filterContainer, searchInput, searchResults, companyForm, companyList, backToSuperAdminKwBtn, backToSuperAdminSettingsBtn, backToSuperAdminUsersBtn, companyKeywordAdminTitle, companySettingsAdminTitle, companyUserAdminTitle, keywordForm, keywordInput, keywordIdInput, adminKeywordList, userForm, userInput, userPasswordInput, userIdInput, adminUserList, notificationBell, notificationBadge, manualTriggerBtn, deleteModal, confirmDeleteBtn, cancelDeleteBtn, companyNameToDeleteEl, newsScopeContainer, startDateInput, endDateInput, linkModal, accessLinkInput, copyLinkBtn, closeLinkModalBtn, reportKeywordFilterContainer, stateSelectContainer, stateSelect, changePasswordForm, apiKeyNewsApiInput, apiKeyFirebaseNewsInput, apiKeyGoogleMapsInput, apiKeyGNewsInput1, apiKeyGNewsInput2, apiKeyGNewsInput3, apiKeyGNewsInput4, apiKeyYoutubeInput, apiKeyBloggerInput, apiKeyVisionInput, apiKeyVideoIntelligenceInput, showAllAlertsBtn, deletionAccessToggle, justificationModal, justificationText, submitJustificationBtn, cancelJustificationBtn, btnManualAlert, btnDeletionRequests, btnSuperAdminReport, manualAlertPage, deletionRequestsPage, superAdminReportPage, backToDashboard1, backToDashboard2, backToDashboard3, manualAlertForm, deletionRequestsList, superAdminReportBody, deletionRequestsBadge, pendingAlertsPage, pendingAlertsList, btnPendingAlerts, backToDashboard4, confirmDeleteKeywordBtn, cancelDeleteKeywordBtn, confirmDeleteKeywordModal, keywordToDeleteNameEl, bloggerIdInput, rssUrlInput, fetchOnlyNewToggle, changePasswordPage, globalKeysPage, globalSourcesPage, btnChangePassword, btnGlobalKeys, btnNewsSources, backToAdminConfig1, backToAdminConfig2, backToAdminConfig3, globalLogoPage, btnGlobalLogo, backToAdminConfig4, globalLogoUpload, globalLogoArea, logoLink, btnRadioSources, globalRadioSourcesPage, backToAdminConfig5, radioSourcesInput, youtubeChannelsInput, youtubeChannelsFrequencyInput, youtubeFrequencyInput, youtubeFrequencyTimeInput, articleDetailPage, backFromDetail, detailTitle, detailMeta, detailContent, shareWhatsappBtn, shareEmailBtn, companyKeywordReportPage, backToSuperAdminReportBtn, companyKeywordReportTitle, detailAiInsights, printBtn, shareButtonsContainer, mapStartDateInput, mapEndDateInput, mapFilterBtn, reportStartDateInput, reportEndDateInput, criticalReportPage, backToSuperAdminCriticalBtn, criticalCompanySelect, criticalStartDateInput, criticalEndDateInput, criticalGenerateBtn, criticalSummary, rssFrequencyInput, gnewsFrequencyInput;
+        let pageSections, navLoggedIn, navInicio, navRelatorio, navMapa, navPesquisa, navAtividade, navSuperAdmin, navLogout, navConfiguracoesAdmin, globalAlert, loginPage, dashboardPage, mapPage, searchPage, activityPage, superAdminPage, companyKeywordAdminPage, companySettingsAdminPage, reportPage, companyUserAdminPage, configuracoesAdminPage, loginForm, dashboardTitle, currentDateTimeEl, dashboardKeywordList, newsAlertsContainer, newsAlerts, alertDateFilter, reportAccessToggle, mapAccessToggle, logoUploadInput, headerLogoContainer, loginLogoContainer, filterContainer, searchInput, searchResults, companyForm, companyList, backToSuperAdminKwBtn, backToSuperAdminSettingsBtn, backToSuperAdminUsersBtn, companyKeywordAdminTitle, companySettingsAdminTitle, companyUserAdminTitle, keywordForm, keywordInput, keywordIdInput, adminKeywordList, userForm, userInput, userPasswordInput, userIdInput, adminUserList, notificationBell, notificationBadge, manualTriggerBtn, deleteModal, confirmDeleteBtn, cancelDeleteBtn, companyNameToDeleteEl, newsScopeContainer, startDateInput, endDateInput, linkModal, accessLinkInput, copyLinkBtn, closeLinkModalBtn, reportKeywordFilterContainer, stateSelectContainer, stateSelect, changePasswordForm, apiKeyNewsApiInput, apiKeyFirebaseNewsInput, apiKeyGoogleMapsInput, apiKeyGNewsInput1, apiKeyGNewsInput2, apiKeyGNewsInput3, apiKeyGNewsInput4, apiKeyYoutubeInput, apiKeyBloggerInput, apiKeyVisionInput, apiKeyVideoIntelligenceInput, showAllAlertsBtn, deletionAccessToggle, justificationModal, justificationText, submitJustificationBtn, cancelJustificationBtn, btnManualAlert, btnDeletionRequests, btnSuperAdminReport, manualAlertPage, deletionRequestsPage, superAdminReportPage, backToDashboard1, backToDashboard2, backToDashboard3, manualAlertForm, deletionRequestsList, superAdminReportBody, deletionRequestsBadge, pendingAlertsPage, pendingAlertsList, btnPendingAlerts, backToDashboard4, confirmDeleteKeywordBtn, cancelDeleteKeywordBtn, confirmDeleteKeywordModal, keywordToDeleteNameEl, bloggerIdInput, rssUrlInput, fetchOnlyNewToggle, changePasswordPage, globalKeysPage, globalSourcesPage, btnChangePassword, btnGlobalKeys, btnNewsSources, backToAdminConfig1, backToAdminConfig2, backToAdminConfig3, globalLogoPage, btnGlobalLogo, backToAdminConfig4, globalLogoUpload, globalLogoArea, logoLink, btnRadioSources, globalRadioSourcesPage, backToAdminConfig5, radioSourcesInput, youtubeChannelsInput, youtubeChannelsFrequencyInput, youtubeFrequencyInput, youtubeFrequencyTimeInput, articleDetailPage, backFromDetail, detailTitle, detailMeta, detailContent, shareWhatsappBtn, shareEmailBtn, companyKeywordReportPage, backToSuperAdminReportBtn, companyKeywordReportTitle, detailAiInsights, printBtn, shareButtonsContainer, mapStartDateInput, mapEndDateInput, mapFilterBtn, reportStartDateInput, reportEndDateInput, criticalReportPage, backToSuperAdminCriticalBtn, criticalCompanySelect, criticalStartDateInput, criticalEndDateInput, criticalGenerateBtn, criticalSummary, rssFrequencyInput, gnewsFrequencyInput, globalTvSourcesPage, btnTvSources, backToAdminConfig7, tvSourcesInput, transferKeywordModal, transferCompanySelect, confirmTransferKeywordBtn, cancelTransferKeywordBtn, keywordToTransferNameEl, companySearchInput;
 
         function showAlert(message, type = 'success') {
             // Suprimir diagnóstico nas páginas das empresas (usuários não-super-admin)
@@ -1198,6 +1385,50 @@
             if (name.includes('cbn') || name.includes('bandeirantes')) return 'Rádios';
             return 'Sites';
         }
+        function getDisplaySourceName(item) {
+            try {
+                const srcNameLower = String(item?.source?.name || '').toLowerCase();
+                const urlCandidate = String(item?.source?.url || item?.url || '');
+                const isYouTube = srcNameLower.includes('youtube') || urlCandidate.includes('youtube.com') || urlCandidate.includes('youtu.be');
+                if (isYouTube) {
+                    const channelTitle = (item && (item.author || item.channelTitle || item.source?.channelTitle)) || '';
+                    if (channelTitle && channelTitle.trim().length > 0) return channelTitle.trim();
+                    try {
+                        const candidate = urlCandidate.startsWith('http') ? urlCandidate : `https://${urlCandidate}`;
+                        const u = new URL(candidate);
+                        const parts = u.pathname.split('/').filter(Boolean);
+                        const handle = parts.find(p => p.startsWith('@'));
+                        if (handle) return handle.replace(/^@/, '');
+                    } catch {}
+                    return 'YouTube';
+                }
+                // Preferir nome normalizado da fonte quando disponível
+                const normalizedName = (item?.source?.displayName ?? item?.source?.name ?? '').toString().trim();
+                if (normalizedName.length > 0) return normalizedName;
+                // Fallback para domínio do URL quando não houver nome
+                let host = '';
+                try {
+                    const candidate = urlCandidate.startsWith('http') ? urlCandidate : `https://${urlCandidate}`;
+                    const u = new URL(candidate);
+                    host = u.hostname.replace(/^www\./, '');
+                    if (host === 'google.com' && u.pathname.includes('/search')) {
+                        const q = u.searchParams.get('q');
+                        if (q) {
+                            const decoded = decodeURIComponent(q);
+                            const domainMatch = decoded.match(/([a-z0-9.-]+\.[a-z]{2,})/i);
+                            if (domainMatch) host = domainMatch[1].replace(/^www\./, '');
+                        }
+                    }
+                } catch (e) {
+                    const lower = urlCandidate.toLowerCase();
+                    const m = lower.match(/(?:https?:\/\/)?(?:www\.)?([^\/]+)/);
+                    if (m && m[1]) host = m[1].replace(/^www\./, '');
+                }
+                return host || '-';
+            } catch {
+                return (item?.source?.displayName ?? item?.source?.name ?? '-');
+            }
+        }
         function updateView(pageName) {
             if (!pageSections || typeof pageSections.forEach !== 'function') {
                 pageSections = document.querySelectorAll('.page-section');
@@ -1207,8 +1438,10 @@
             if (navLoggedIn) navLoggedIn.style.display = i ? 'flex' : 'none';
             if (navRelatorio) navRelatorio.classList.toggle('hidden', !currentUser || currentUser.isSuperAdmin || !currentUser.canAccessReport);
             if (navMapa) navMapa.classList.toggle('hidden', !currentUser || currentUser.isSuperAdmin || !currentUser.canAccessMap);
-            if (navSuperAdmin) navSuperAdmin.classList.toggle('hidden', !currentUser || !currentUser.isSuperAdmin);
-            if (navConfiguracoesAdmin) navConfiguracoesAdmin.classList.toggle('hidden', !currentUser || !currentUser.isSuperAdmin);
+            if (navSuperAdmin) navSuperAdmin.classList.toggle('hidden', !currentUser || !currentUser.isSuperAdmin || (currentUser && currentUser.isRestrictedGlobal));
+            if (navConfiguracoesAdmin) navConfiguracoesAdmin.classList.toggle('hidden', !currentUser || !currentUser.isSuperAdmin || (currentUser && currentUser.isRestrictedGlobal));
+            if (navPesquisa) navPesquisa.classList.toggle('hidden', !currentUser || (currentUser && currentUser.isSuperAdmin));
+            if (navAtividade) navAtividade.classList.toggle('hidden', !currentUser || !currentUser.isSuperAdmin || (currentUser && currentUser.isRestrictedGlobal));
             if (clockInterval) clearInterval(clockInterval);
             loadAndDisplayLogo();
             loadAndDisplayGlobalLogo();
@@ -1216,8 +1449,9 @@
                 case 'login': loginPage.classList.add('active'); break;
                 case 'dashboard': dashboardPage.classList.add('active'); renderDashboard(); updateDateTime(); clockInterval = setInterval(updateDateTime, 60000); break;
                 case 'map': mapPage.classList.add('active'); renderMapPage(); break;
+                case 'search': searchPage.classList.add('active'); if (typeof setupSearchPage === 'function') setupSearchPage(); break;
                 case 'super-admin': superAdminPage.classList.add('active'); setupCompaniesListener(); break;
-                case 'search': searchPage.classList.add('active'); setupSearchPage(); break;
+                case 'activity': activityPage.classList.add('active'); setupActivityListeners(); if (typeof renderActivityPage === 'function') renderActivityPage(); break;
                 case 'company-keyword-admin': companyKeywordAdminPage.classList.add('active'); renderCompanyKeywordAdminPage(); break;
                 case 'company-settings-admin': companySettingsAdminPage.classList.add('active'); renderCompanySettingsAdminPage(); break;
                 case 'company-user-admin': companyUserAdminPage.classList.add('active'); renderCompanyUserAdminPage(); break;
@@ -1227,7 +1461,44 @@
                 case 'global-keys': globalKeysPage.classList.add('active'); renderGlobalKeysPage(); break;
                 case 'global-sources': globalSourcesPage.classList.add('active'); renderGlobalSourcesPage(); break;
                 case 'global-radio-sources': globalRadioSourcesPage.classList.add('active'); renderGlobalRadioSourcesPage(); break;
+                case 'global-tv-sources': globalTvSourcesPage.classList.add('active'); if (typeof renderGlobalTvSourcesPage === 'function') renderGlobalTvSourcesPage(); break;
                 case 'global-logo': globalLogoPage.classList.add('active'); break;
+                case 'usuario-admin': {
+                    const page = document.getElementById('usuario-admin-page');
+                    if (page) page.classList.add('active');
+                    const list = document.getElementById('usuario-admin-companies-list');
+                    if (list) {
+                        list.innerHTML = '';
+                        try {
+                            const q = query(collection(db, "artifacts", appId, "public/data/companies"), where("status", "==", "active"));
+                            getDocs(q).then((snap) => {
+                                snap.docs.forEach(docSnap => {
+                                    const c = { id: docSnap.id, ...docSnap.data() };
+                                    const wrapper = document.createElement('label');
+                                    wrapper.className = 'flex items-center gap-2 py-1';
+                                    const cb = document.createElement('input');
+                                    cb.type = 'checkbox';
+                                    cb.value = c.id;
+                                    cb.className = 'form-checkbox h-4 w-4';
+                                    const span = document.createElement('span');
+                                    span.textContent = c.name;
+                                    wrapper.appendChild(cb);
+                                    wrapper.appendChild(span);
+                                    list.appendChild(wrapper);
+                                });
+                            }).catch((error) => {
+                                console.error("Erro ao carregar empresas ativas:", error);
+                                showAlert("Erro ao carregar empresas ativas.", "error");
+                            });
+                        } catch (error) {
+                            console.error("Erro ao carregar empresas ativas:", error);
+                            showAlert("Erro ao carregar empresas ativas.", "error");
+                        }
+                    }
+                    // Renderizar lista de usuários restritos
+                    renderRestrictedUsers();
+                    break;
+                }
                 case 'manual-alert': manualAlertPage.classList.add('active'); renderManualAlertPage(); break;
                 case 'deletion-requests': deletionRequestsPage.classList.add('active'); setupDeletionRequestsListener(); break;
                 case 'super-admin-report': superAdminReportPage.classList.add('active'); renderSuperAdminReport(); break;
@@ -1306,7 +1577,7 @@
                     mapMarkers.push(marker);
 
                     marker.addListener('mouseover', () => {
-                        infoWindow.setContent(`                        <div class="font-sans p-1">                            <p class="font-bold text-sm">${article.title}</p>                            <p class="text-xs text-gray-500">${article.source.name}</p>                        </div>                        `);
+                        infoWindow.setContent(`                        <div class="font-sans p-1">                            <p class="font-bold text-sm">${article.title}</p>                            <p class="text-xs text-gray-500">${getDisplaySourceName(article)}</p>                        </div>                        `);
                         infoWindow.open({
                             anchor: marker,
                             map: mapInstance,
@@ -1331,7 +1602,7 @@
             manualTriggerBtn.disabled = true;
             manualTriggerBtn.textContent = 'A executar...';
             showAlert('A recolha manual de notícias foi iniciada. Isto pode demorar alguns minutos.', 'success');
-            const manualFetch = httpsCallable(functions, 'manualFetch');
+            const manualFetch = httpsCallable(functions, 'manualFetch', { timeout: 540000 });
             try {
                 const result = await manualFetch({ appId });
                 showAlert(`Robô executado com sucesso! ${result.data.totalSaved} novos alertas foram para a fila de aprovação.`, 'success');
@@ -1368,13 +1639,33 @@
             const user = document.getElementById('login-user').value.trim();
             const pass = document.getElementById('login-password').value.trim();
 
+            // Super Admin total
             if (companyName.toLowerCase() === 'newsclip' && user.toLowerCase() === superAdminCredentials.user && pass === superAdminCredentials.pass) {
-                currentUser = { username: 'Ulysses', isSuperAdmin: true, companyId: 'super', companyName: 'Super Admin' };
+                currentUser = { username: 'Ulysses', isSuperAdmin: true, isRestrictedGlobal: false, allowedCompanies: [], companyId: 'super', companyName: 'Super Admin' };
                 setStorage('clipping_currentUser', currentUser);
                 updateView('dashboard');
                 return;
             }
 
+            // Usuário Global Restrito (coleção dedicada)
+            if (companyName.toLowerCase() === 'newsclip') {
+                try {
+                    const restrictedQuery = query(collection(db, "artifacts", appId, "public/data/restrictedUsers"), where("username", "==", user), where("password", "==", pass));
+                    const restrictedSnap = await getDocs(restrictedQuery);
+                    if (!restrictedSnap.empty) {
+                        const ru = restrictedSnap.docs[0].data();
+                        const allowedCompanies = Array.isArray(ru.allowedCompanies) ? ru.allowedCompanies.filter(Boolean) : [];
+                        currentUser = { username: user, isSuperAdmin: true, isRestrictedGlobal: true, allowedCompanies, companyId: 'super', companyName: 'Super Admin (Restrito)' };
+                        setStorage('clipping_currentUser', currentUser);
+                        updateView('dashboard');
+                        return;
+                    }
+                } catch (err) {
+                    console.error('Erro ao verificar usuário restrito:', err);
+                }
+            }
+
+            // Usuário de empresa
             try {
                 const companiesQuery = query(collection(db, "artifacts", appId, "public/data/companies"), where("name", "==", companyName.toUpperCase()));
                 const companiesSnapshot = await getDocs(companiesQuery);
@@ -1411,6 +1702,9 @@
             if (companiesListener) companiesListener();
             if (deletionRequestsListener) deletionRequestsListener();
             if (pendingAlertsListener) pendingAlertsListener();
+            if (activityCompaniesListener) activityCompaniesListener();
+            if (activityPendingListener) activityPendingListener();
+            if (activityDeletionListener) activityDeletionListener();
             currentUser = null;
             selectedCompanyForManagement = null;
             localStorage.removeItem('clipping_currentUser');
@@ -1425,6 +1719,30 @@
             if (currentUser.isSuperAdmin) {
                 if (document.getElementById('dashboard-grid')) document.getElementById('dashboard-grid').style.display = 'none';
                 if (document.getElementById('super-admin-dashboard-message')) document.getElementById('super-admin-dashboard-message').style.display = 'block';
+                // Ajuste de visibilidade de ações para usuários globais restritos
+                (function(){
+                    const reportBtnEl = document.getElementById('btn-super-admin-report');
+                    const criticalBtnEl = document.getElementById('btn-critical-report');
+                    const manualAlertBtnEl = document.getElementById('btn-manual-alert');
+                    const pendingAlertsBtnEl = document.getElementById('btn-pending-alerts');
+                    const deletionRequestsBtnEl = document.getElementById('btn-deletion-requests');
+                    const manualBtnEl = document.getElementById('manual-trigger-btn');
+                    if (currentUser && currentUser.isRestrictedGlobal) {
+                        if (reportBtnEl) reportBtnEl.style.display = 'none';
+                        if (criticalBtnEl) criticalBtnEl.style.display = 'none';
+                        if (manualBtnEl) { manualBtnEl.style.display = 'none'; if (manualBtnEl.parentElement) manualBtnEl.parentElement.style.display = 'none'; }
+                        if (manualAlertBtnEl) manualAlertBtnEl.style.display = 'block';
+                        if (pendingAlertsBtnEl) pendingAlertsBtnEl.style.display = 'block';
+                        if (deletionRequestsBtnEl) deletionRequestsBtnEl.style.display = 'block';
+                    } else {
+                        if (reportBtnEl) reportBtnEl.style.display = 'block';
+                        if (criticalBtnEl) criticalBtnEl.style.display = 'block';
+                        if (manualBtnEl) { manualBtnEl.style.display = 'block'; if (manualBtnEl.parentElement) manualBtnEl.parentElement.style.display = 'block'; }
+                        if (manualAlertBtnEl) manualAlertBtnEl.style.display = 'block';
+                        if (pendingAlertsBtnEl) pendingAlertsBtnEl.style.display = 'block';
+                        if (deletionRequestsBtnEl) deletionRequestsBtnEl.style.display = 'block';
+                    }
+                })();
                 setupPendingAlertsListener();
                 setupDeletionRequestsListener();
             } else {
@@ -1535,7 +1853,7 @@
         async function handleUserActions(e) { if (!selectedCompanyForManagement) return; const id = e.target.dataset.id; if (!id) return; try { if (e.target.classList.contains('edit-user-btn')) { const userDoc = await getDoc(doc(db, "artifacts", appId, "users", selectedCompanyForManagement.id, "users", id)); if (userDoc.exists()) { const user = userDoc.data(); if (userInput) userInput.value = user.username; if (userPasswordInput) userPasswordInput.value = user.password; if (userIdInput) userIdInput.value = id; if (userInput) userInput.focus(); } } if (e.target.classList.contains('delete-user-btn')) { await deleteDoc(doc(db, "artifacts", appId, "users", selectedCompanyForManagement.id, "users", id)); renderUsersForSelectedCompany(); } } catch (error) { console.error("Erro ao lidar com a ação do usuário:", error); } }
 
         async function renderCompanyKeywordAdminPage() { if (!selectedCompanyForManagement || !companyKeywordAdminTitle) return; companyKeywordAdminTitle.textContent = `Gerir Palavras-Chave para: ${selectedCompanyForManagement.name}`; renderKeywordsForSelectedCompany(); }
-        async function renderKeywordsForSelectedCompany() { try { const keywordsRef = collection(db, "artifacts", appId, "users", selectedCompanyForManagement.id, "keywords"); const querySnapshot = await getDocs(keywordsRef); const keywords = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); if (!adminKeywordList) return; adminKeywordList.innerHTML = ''; keywords.forEach(kw => { const li = document.createElement('li'); li.className = 'flex justify-between items-center bg-gray-100 p-2 rounded-md'; li.innerHTML = `<span>${kw.word}</span><div><button data-id="${kw.id}" class="edit-keyword-btn text-blue-500 hover:text-blue-700 mr-2">Editar</button><button data-id="${kw.id}" data-word="${kw.word}" class="delete-keyword-btn text-red-500 hover:text-red-700">Excluir</button></div>`; adminKeywordList.appendChild(li); }); } catch (error) { console.error("Erro ao renderizar palavras-chave:", error); } }
+        async function renderKeywordsForSelectedCompany() { try { const keywordsRef = collection(db, "artifacts", appId, "users", selectedCompanyForManagement.id, "keywords"); const querySnapshot = await getDocs(keywordsRef); const keywords = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); if (!adminKeywordList) return; adminKeywordList.innerHTML = ''; keywords.forEach(kw => { const li = document.createElement('li'); li.className = 'flex justify-between items-center bg-gray-100 p-2 rounded-md'; li.innerHTML = `<span>${kw.word}</span><div><button data-id="${kw.id}" class="edit-keyword-btn text-blue-500 hover:text-blue-700 mr-2">Editar</button><button data-id="${kw.id}" data-word="${kw.word}" class="transfer-keyword-btn text-indigo-500 hover:text-indigo-700 mr-2">Transferir</button><button data-id="${kw.id}" data-word="${kw.word}" class="delete-keyword-btn text-red-500 hover:text-red-700">Excluir</button></div>`; adminKeywordList.appendChild(li); }); } catch (error) { console.error("Erro ao renderizar palavras-chave:", error); } }
         async function handleKeywordSubmit(e) { e.preventDefault(); const word = keywordInput.value.trim(), id = keywordIdInput.value; if (!word || !selectedCompanyForManagement) return; try { const keywordsRef = collection(db, "artifacts", appId, "users", selectedCompanyForManagement.id, "keywords"); if (id) { await updateDoc(doc(db, "artifacts", appId, "users", selectedCompanyForManagement.id, "keywords", id), { word }); } else { await addDoc(keywordsRef, { word }); } if (keywordInput) keywordInput.value = ''; if (keywordIdInput) keywordIdInput.value = ''; renderKeywordsForSelectedCompany(); } catch (error) { console.error("Erro ao guardar a palavra-chave:", error); } }
         async function handleKeywordActions(e) {
             if (!selectedCompanyForManagement) return;
@@ -1553,6 +1871,15 @@
                         if (keywordInput) keywordInput.focus();
                     }
                 }
+                if (target.classList.contains('transfer-keyword-btn')) {
+                    keywordToTransferInfo = {
+                        id: id,
+                        word: target.dataset.word
+                    };
+                    if (keywordToTransferNameEl) keywordToTransferNameEl.textContent = keywordToTransferInfo.word;
+                    await populateTransferCompaniesOptions();
+                    if (transferKeywordModal) transferKeywordModal.classList.remove('hidden');
+                }
                 if (target.classList.contains('delete-keyword-btn')) {
                     keywordToDeleteInfo = {
                         id: id,
@@ -1564,6 +1891,26 @@
             } catch (error) {
                 console.error("Erro ao lidar com a ação da palavra-chave:", error);
                 showAlert(`Erro: ${error.message}`, 'error');
+            }
+        }
+
+        async function populateTransferCompaniesOptions() {
+            if (!transferCompanySelect) return;
+            transferCompanySelect.innerHTML = '';
+            try {
+                const companiesQ = query(collection(db, "artifacts", appId, "public/data/companies"), where("status", "==", "active"));
+                const snapshot = await getDocs(companiesQ);
+                const companies = snapshot.docs.map(d => ({ id: d.id, ...(d.data() || {}) }));
+                companies
+                    .filter(c => c.id !== (selectedCompanyForManagement ? selectedCompanyForManagement.id : null))
+                    .forEach(c => {
+                        const opt = document.createElement('option');
+                        opt.value = c.id;
+                        opt.textContent = c.name || c.id;
+                        transferCompanySelect.appendChild(opt);
+                    });
+            } catch (e) {
+                console.error('Erro ao carregar empresas para transferência:', e);
             }
         }
 
@@ -1587,12 +1934,110 @@
             }
         }
 
+        async function handleConfirmTransferKeyword() {
+            if (!keywordToTransferInfo || !transferCompanySelect || !confirmTransferKeywordBtn || !transferKeywordModal) return;
+            const destCompanyId = transferCompanySelect.value;
+            if (!destCompanyId) { showAlert('Selecione a empresa de destino.', 'error'); return; }
+            confirmTransferKeywordBtn.disabled = true;
+            confirmTransferKeywordBtn.textContent = 'A transferir...';
+            try {
+                const transferFn = httpsCallable(functions, 'transferKeywordAndHistory');
+                await transferFn({ appId, sourceCompanyId: selectedCompanyForManagement.id, destCompanyId, keyword: keywordToTransferInfo.word });
+                showAlert('Palavra-chave e histórico transferidos com sucesso!', 'success');
+                renderKeywordsForSelectedCompany();
+            } catch (error) {
+                console.error('Erro ao transferir palavra-chave:', error);
+                showAlert(`Erro: ${error.message}`, 'error');
+            } finally {
+                transferKeywordModal.classList.add('hidden');
+                confirmTransferKeywordBtn.disabled = false;
+                confirmTransferKeywordBtn.textContent = 'Transferir';
+                keywordToTransferInfo = null;
+            }
+        }
+
+        // Usuario-Admin: listar, excluir, alterar senha e gerenciar empresas por usuário restrito
+        async function renderRestrictedUsers() {
+            const list = document.getElementById('restricted-user-list');
+            if (!list) return;
+            list.innerHTML = '';
+            try {
+                const usersRef = collection(db, "artifacts", appId, "public/data/restrictedUsers");
+                const companiesQ = query(collection(db, "artifacts", appId, "public/data/companies"), where("status", "==", "active"));
+                const [usersSnap, companiesSnap] = await Promise.all([getDocs(usersRef), getDocs(companiesQ)]);
+                const users = usersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                const companies = companiesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                users.forEach(u => {
+                    const li = document.createElement('li');
+                    li.className = 'bg-gray-100 p-2 rounded-md mb-2';
+                    const companiesHtml = companies.map(c => `
+                        <label class="flex items-center gap-2 py-1">
+                            <input type="checkbox" class="restricted-company-checkbox form-checkbox h-4 w-4" data-user-id="${u.id}" value="${c.id}" ${Array.isArray(u.allowedCompanies) && u.allowedCompanies.includes(c.id) ? 'checked' : ''}>
+                            <span>${c.name}</span>
+                        </label>
+                    `).join('');
+                    li.innerHTML = `
+                        <div class="flex justify-between items-center">
+                            <span class="font-medium">${u.username}</span>
+                            <div>
+                                <button data-id="${u.id}" class="change-pass-btn text-blue-600 hover:text-blue-800 mr-2">Alterar Senha</button>
+                                <button data-id="${u.id}" class="delete-restricted-user-btn text-red-600 hover:text-red-800">Excluir</button>
+                            </div>
+                        </div>
+                        <div class="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">${companiesHtml}</div>
+                    `;
+                    list.appendChild(li);
+                });
+            } catch (error) {
+                console.error('Erro ao listar usuários restritos:', error);
+                showAlert('Erro ao listar usuários restritos.', 'error');
+            }
+        }
+
+        async function handleRestrictedUserActions(e) {
+            try {
+                const btn = e.target.closest('button');
+                if (btn) {
+                    const id = btn.dataset.id;
+                    if (!id) return;
+                    if (btn.classList.contains('delete-restricted-user-btn')) {
+                        await deleteDoc(doc(db, "artifacts", appId, "public/data/restrictedUsers", id));
+                        showAlert('Usuário restrito excluído.', 'success');
+                        renderRestrictedUsers();
+                        return;
+                    }
+                    if (btn.classList.contains('change-pass-btn')) {
+                        const newPass = prompt('Digite a nova senha para este usuário:');
+                        if (!newPass) return;
+                        await updateDoc(doc(db, "artifacts", appId, "public/data/restrictedUsers", id), { password: newPass });
+                        showAlert('Senha atualizada com sucesso.', 'success');
+                        renderRestrictedUsers();
+                        return;
+                    }
+                }
+                const checkbox = e.target.closest('input.restricted-company-checkbox');
+                if (checkbox) {
+                    const userId = checkbox.dataset.userId;
+                    if (!userId) return;
+                    const li = checkbox.closest('li');
+                    if (!li) return;
+                    const newAllowedCompanies = Array.from(li.querySelectorAll('input.restricted-company-checkbox:checked')).map(cb => cb.value);
+                    await updateDoc(doc(db, "artifacts", appId, "public/data/restrictedUsers", userId), { allowedCompanies: newAllowedCompanies });
+                    showAlert('Empresas atualizadas para o usuário.', 'success');
+                    return;
+                }
+            } catch (error) {
+                console.error('Erro ao executar ação do usuário restrito:', error);
+                showAlert('Erro ao executar ação.', 'error');
+            }
+        }
+
         async function renderCompanySettingsAdminPage() { if (!selectedCompanyForManagement || !companySettingsAdminTitle) return; companySettingsAdminTitle.textContent = `Opções para: ${selectedCompanyForManagement.name}`; try { const settingsRef = doc(db, "artifacts", appId, "public/data/settings", selectedCompanyForManagement.id); const docSnap = await getDoc(settingsRef); if (docSnap.exists()) { const settings = docSnap.data(); if (reportAccessToggle) reportAccessToggle.checked = settings.reportAccess !== false; if (mapAccessToggle) mapAccessToggle.checked = settings.mapAccess !== false; if (fetchOnlyNewToggle) fetchOnlyNewToggle.checked = settings.fetchOnlyNew === true; if (deletionAccessToggle) deletionAccessToggle.checked = settings.canRequestDeletion === true; if (document.querySelector(`input[name="news-scope"][value="${settings.searchScope || 'br'}"]`)) document.querySelector(`input[name="news-scope"][value="${settings.searchScope || 'br'}"]`).checked = true; if (stateSelect) stateSelect.value = settings.searchState || ''; } else { if (reportAccessToggle) reportAccessToggle.checked = true; if (mapAccessToggle) mapAccessToggle.checked = true; if (fetchOnlyNewToggle) fetchOnlyNewToggle.checked = false; if (deletionAccessToggle) deletionAccessToggle.checked = false; if (document.querySelector('input[name="news-scope"][value="br"]')) document.querySelector('input[name="news-scope"][value="br"]').checked = true; if (stateSelect) stateSelect.value = ''; } handleScopeChange(); } catch (error) { console.error("Erro ao renderizar as configurações:", error); } }
         async function handleSettingsChange(e) { if (!selectedCompanyForManagement) return; const settingsRef = doc(db, "artifacts", appId, "public/data/settings", selectedCompanyForManagement.id); let key, value; switch (e.target.id) { case 'report-access-toggle': key = 'reportAccess'; value = e.target.checked; break; case 'map-access-toggle': key = 'mapAccess'; value = e.target.checked; break; case 'fetch-only-new-toggle': key = 'fetchOnlyNew'; value = e.target.checked; break; case 'deletion-access-toggle': key = 'canRequestDeletion'; value = e.target.checked; break; case 'state-select': key = 'searchState'; value = e.target.value; break; default: if (e.target.name === 'news-scope') { key = 'searchScope'; value = e.target.value; } else { return; } } try { await setDoc(settingsRef, { [key]: value }, { merge: true }); showAlert('Opção guardada!', 'success'); } catch (error) { console.error("Erro ao guardar a configuração:", error); } }
         function handleScopeChange() { if (!stateSelectContainer || !document.querySelector('input[name="news-scope"]:checked')) return; const selectedScope = document.querySelector('input[name="news-scope"]:checked').value; stateSelectContainer.classList.toggle('hidden', selectedScope !== 'state'); }
         async function renderGlobalKeysPage() { try { const settingsRef = doc(db, "artifacts", appId, "public/data/settings", "global"); const docSnap = await getDoc(settingsRef); if (docSnap.exists()) { const settings = docSnap.data(); if (apiKeyNewsApiInput) apiKeyNewsApiInput.value = settings.apiKeyNewsApi || ''; if (apiKeyFirebaseNewsInput) apiKeyFirebaseNewsInput.value = settings.apiKeyFirebaseNews || ''; if (typeof apiKeyGoogleMapsInput !== 'undefined' && apiKeyGoogleMapsInput) apiKeyGoogleMapsInput.value = settings.apiKeyGoogleMaps || ''; if (apiKeyGNewsInput1) apiKeyGNewsInput1.value = settings.apiKeyGNews1 || ''; if (apiKeyGNewsInput2) apiKeyGNewsInput2.value = settings.apiKeyGNews2 || ''; if (apiKeyGNewsInput3) apiKeyGNewsInput3.value = settings.apiKeyGNews3 || ''; if (apiKeyGNewsInput4) apiKeyGNewsInput4.value = settings.apiKeyGNews4 || ''; if (apiKeyYoutubeInput) apiKeyYoutubeInput.value = settings.apiKeyYoutube || ''; if (apiKeyBloggerInput) apiKeyBloggerInput.value = settings.apiKeyBlogger || ''; if (apiKeyVisionInput) apiKeyVisionInput.value = settings.apiKeyVision || ''; if (apiKeyVideoIntelligenceInput) apiKeyVideoIntelligenceInput.value = settings.apiKeyVideoIntelligence || ''; } } catch (error) { console.error("Erro ao carregar as chaves de API globais:", error); } }
         async function handleGlobalKeyChange(e) { const settingsRef = doc(db, "artifacts", appId, "public/data/settings", "global"); const key = e.target.id; const value = e.target.value; try { await setDoc(settingsRef, { [key]: value }, { merge: true }); showAlert('Chave de API guardada!', 'success'); } catch (error) { console.error("Erro ao guardar a chave de API global:", error); } }
-        async function renderGlobalSourcesPage() { try { const settingsRef = doc(db, "artifacts", appId, "public/data/settings", "global"); const docSnap = await getDoc(settingsRef); if (docSnap.exists()) { const settings = docSnap.data(); if (bloggerIdInput) bloggerIdInput.value = settings.bloggerId || ''; if (rssUrlInput) rssUrlInput.value = settings.rssUrl || ''; if (youtubeChannelsInput) youtubeChannelsInput.value = settings.youtubeChannels || ''; if (youtubeChannelsFrequencyInput) youtubeChannelsFrequencyInput.value = settings.youtubeChannelsFrequencyMinutes || ''; if (youtubeFrequencyInput) youtubeFrequencyInput.value = settings.youtubeFrequencyHours || ''; if (youtubeFrequencyTimeInput) youtubeFrequencyTimeInput.value = settings.youtubeFrequencyTime || ''; if (typeof rssFrequencyInput !== 'undefined' && rssFrequencyInput) rssFrequencyInput.value = settings.rssFrequencyMinutes || ''; if (typeof gnewsFrequencyInput !== 'undefined' && gnewsFrequencyInput) gnewsFrequencyInput.value = settings.gnewsFrequencyHours || ''; } } catch (error) { console.error("Erro ao carregar as fontes globais:", error); } }
+        async function renderGlobalSourcesPage() { try { const settingsRef = doc(db, "artifacts", appId, "public/data/settings", "global"); const docSnap = await getDoc(settingsRef); if (docSnap.exists()) { const settings = docSnap.data(); if (bloggerIdInput) bloggerIdInput.value = settings.bloggerId || ''; if (rssUrlInput) rssUrlInput.value = settings.rssUrl || ''; if (youtubeChannelsInput) youtubeChannelsInput.value = settings.youtubeChannels || ''; if (youtubeChannelNamesInput) youtubeChannelNamesInput.value = settings.youtubeChannelNames || ''; if (youtubeChannelsFrequencyInput) youtubeChannelsFrequencyInput.value = settings.youtubeChannelsFrequencyMinutes || ''; if (youtubeFrequencyInput) youtubeFrequencyInput.value = settings.youtubeFrequencyHours || ''; if (youtubeFrequencyTimeInput) youtubeFrequencyTimeInput.value = settings.youtubeFrequencyTime || ''; if (typeof rssFrequencyInput !== 'undefined' && rssFrequencyInput) rssFrequencyInput.value = settings.rssFrequencyMinutes || ''; if (typeof gnewsFrequencyInput !== 'undefined' && gnewsFrequencyInput) gnewsFrequencyInput.value = settings.gnewsFrequencyHours || ''; } } catch (error) { console.error("Erro ao carregar as fontes globais:", error); } }
         async function renderGlobalRadioSourcesPage() { try { const settingsRef = doc(db, "artifacts", appId, "public/data/settings", "global"); const docSnap = await getDoc(settingsRef); if (docSnap.exists()) { const settings = docSnap.data(); if (radioSourcesInput) radioSourcesInput.value = settings.radioSources || ''; }
         if (typeof renderRadioTimesList === 'function') renderRadioTimesList();
     } catch (error) { console.error("Erro ao carregar as fontes de rádio:", error); } }
@@ -1608,140 +2053,387 @@
                 lines.forEach((line, idx) => {
                     const parts = line.split('|').map(p => p.trim());
                     const name = parts[0] || `Rádio ${idx+1}`;
-                    const url = parts[1] || '';
-                    const timeRaw = parts[2] || '';
-                    const match = timeRaw.match(/^(\d{2}:\d{2})(\s*-\s*)(\d{2}:\d{2})$/);
+                    let program = '';
+                    let site = '';
+                    let url = '';
+                    let timeRaw = '';
+                    let timeIndex = -1;
+
+                    const isTime = (s) => /^\d{2}:\d{2}(?:\s*-\s*\d{2}:\d{2})?$/.test(s || '');
+                    const isStreamURL = (s) => /^(https?:\/\/)/.test(s || '') && /m3u8|\.mp3|\.aac|\.ogg|icecast|shoutcast|stream|live|playlist/i.test(s);
+                    const isWebsite = (s) => /^(https?:\/\/)/.test(s || '') && !isStreamURL(s);
+
+                    if (parts.length >= 5) {
+                        program = parts[1] || '';
+                        site = parts[2] || '';
+                        url = parts[3] || '';
+                        timeRaw = parts[4] || '';
+                        timeIndex = 4;
+                    } else if (parts.length === 4) {
+                        // pode ser [name, program, site, url] OU formato antigo [name, url, time, dias]
+                        if (isTime(parts[2])) {
+                            program = '';
+                            site = '';
+                            url = parts[1] || '';
+                            timeRaw = parts[2] || '';
+                            timeIndex = 2;
+                        } else {
+                            program = parts[1] || '';
+                            site = parts[2] || '';
+                            url = parts[3] || '';
+                            timeRaw = '';
+                            timeIndex = 3;
+                        }
+                    } else if (parts.length === 3) {
+                        const p2 = parts[2] || '';
+                        if (isTime(p2)) {
+                            program = '';
+                            site = '';
+                            url = parts[1] || '';
+                            timeRaw = p2;
+                            timeIndex = 2;
+                        } else if (isWebsite(p2)) {
+                            // name | program | site (sem url)
+                            program = parts[1] || '';
+                            site = parts[2] || '';
+                            url = '';
+                            timeRaw = '';
+                            timeIndex = 2;
+                        } else {
+                            // name | program | url
+                            program = parts[1] || '';
+                            site = '';
+                            url = parts[2] || '';
+                            timeRaw = '';
+                            timeIndex = 2;
+                        }
+                    } else if (parts.length === 2) {
+                        // name | url OU name | program (se não parecer URL de stream)
+                        if (isStreamURL(parts[1])) {
+                            program = '';
+                            site = '';
+                            url = parts[1] || '';
+                        } else {
+                            program = parts[1] || '';
+                            site = '';
+                            url = '';
+                        }
+                        timeRaw = '';
+                        timeIndex = 1;
+                    }
+
+                    const match = (timeRaw || '').match(/^(\d{2}:\d{2})(\s*-\s*)(\d{2}:\d{2})$/);
                     const startTime = match ? match[1] : (timeRaw || '').split('-')[0]?.trim() || '';
                     const endTime = match ? match[3] : (timeRaw || '').split('-')[1]?.trim() || '';
+                    // Dias selecionados (tokens extras após o campo de horário)
+                    const weekdayAbbr = ['seg','ter','qua','qui','sex','sab','dom'];
+                    const daysTokensCombined = parts.slice(timeIndex + 1).join(' ').toLowerCase();
+                    const selectedDays = new Set(daysTokensCombined.split(/\s+/).filter(Boolean));
+
                     const row = document.createElement('div');
-                    row.className = 'grid grid-cols-1 sm:grid-cols-5 items-center gap-2 border-b border-gray-100 pb-2 mb-2';
+                    row.className = 'grid grid-cols-1 sm:grid-cols-12 items-center gap-2 border-b border-gray-100 pb-2 mb-2';
+
+                    const statusBadge = document.createElement('span');
+                    statusBadge.className = 'sm:col-span-1 px-2 py-1 text-xs font-bold rounded-md text-white text-center bg-green-600';
+                    statusBadge.textContent = 'AGUARDANDO';
 
                     const nameInput = document.createElement('input');
                     nameInput.type = 'text';
                     nameInput.value = name;
                     nameInput.placeholder = 'Nome da rádio';
-                    nameInput.className = 'col-span-2 px-2 py-1 border border-gray-300 rounded-md text-sm';
+                    nameInput.className = 'sm:col-span-3 px-2 py-1 border border-gray-300 rounded-md text-sm';
+
+                    const programInput = document.createElement('input');
+                    programInput.type = 'text';
+                    programInput.value = program;
+                    programInput.placeholder = 'Nome do programa';
+                    programInput.className = 'sm:col-span-3 px-2 py-1 border border-gray-300 rounded-md text-sm';
+
+                    const siteInput = document.createElement('input');
+                    siteInput.type = 'url';
+                    siteInput.value = site;
+                    siteInput.placeholder = 'Site onde está a stream';
+                    siteInput.className = 'sm:col-span-3 px-2 py-1 border border-gray-300 rounded-md text-sm';
 
                     const urlInput = document.createElement('input');
                     urlInput.type = 'url';
                     urlInput.value = url;
-                    urlInput.placeholder = 'URL do stream';
-                    urlInput.className = 'col-span-2 px-2 py-1 border border-gray-300 rounded-md text-sm';
+                    urlInput.placeholder = 'URL do stream (opcional)';
+                    urlInput.className = 'sm:col-span-3 px-2 py-1 border border-gray-300 rounded-md text-sm';
 
                     const inputStart = document.createElement('input');
                     inputStart.type = 'time';
                     inputStart.value = startTime;
-                    inputStart.className = 'px-2 py-1 border border-gray-300 rounded-md text-sm';
+                    inputStart.className = 'sm:col-span-1 px-2 py-1 border border-gray-300 rounded-md text-sm';
 
                     const dash = document.createElement('span');
-                    dash.className = 'text-xs text-gray-600 text-center';
+                    dash.className = 'sm:col-span-1 text-xs text-gray-600 text-center';
                     dash.textContent = '-';
 
                     const inputEnd = document.createElement('input');
                     inputEnd.type = 'time';
                     inputEnd.value = endTime;
-                    inputEnd.className = 'px-2 py-1 border border-gray-300 rounded-md text-sm';
+                    inputEnd.className = 'sm:col-span-1 px-2 py-1 border border-gray-300 rounded-md text-sm';
+
+                    // Container de dias da semana (horizontal)
+                    const daysContainer = document.createElement('div');
+                    daysContainer.className = 'sm:col-span-12 flex items-center flex-wrap gap-2';
+                    const dayInputs = {};
+                    weekdayAbbr.forEach((abbr) => {
+                        const label = document.createElement('label');
+                        label.className = 'flex items-center gap-1 text-xs text-gray-700';
+                        const cb = document.createElement('input');
+                        cb.type = 'checkbox';
+                        cb.checked = selectedDays.has(abbr);
+                        cb.className = 'h-4 w-4';
+                        label.appendChild(cb);
+                        const span = document.createElement('span');
+                        span.textContent = abbr;
+                        label.appendChild(span);
+                        daysContainer.appendChild(label);
+                        dayInputs[abbr] = cb;
+                    });
+
+                    const updateStatus = () => {
+                        const todayIdx = new Date().getDay();
+                        const map = {0:'dom',1:'seg',2:'ter',3:'qua',4:'qui',5:'sex',6:'sab'};
+                        const todayAbbr = map[todayIdx];
+                        const hasUrl = Boolean((urlInput.value || '').trim());
+                        const start = (inputStart.value || '').trim();
+                        const end = (inputEnd.value || '').trim();
+                        const isSelectedToday = dayInputs[todayAbbr] ? dayInputs[todayAbbr].checked : false;
+                        const nowHHMM = new Date().toTimeString().slice(0,5);
+                        const inWindow = start && end ? (start <= nowHHMM && nowHHMM <= end) : false;
+                        if (!hasUrl) {
+                            statusBadge.textContent = 'OFF';
+                            statusBadge.className = 'sm:col-span-1 px-2 py-1 text-xs font-bold rounded-md text-white text-center bg-red-600 animate-blinking-bell';
+                            return;
+                        }
+                        if (isSelectedToday && inWindow) {
+                            statusBadge.textContent = 'NO AR';
+                            statusBadge.className = 'sm:col-span-1 px-2 py-1 text-xs font-bold rounded-md text-white text-center bg-blue-600';
+                        } else {
+                            statusBadge.textContent = 'AGUARDANDO';
+                            statusBadge.className = 'sm:col-span-1 px-2 py-1 text-xs font-bold rounded-md text-white text-center bg-green-600';
+                        }
+                    };
+
+                    const tryAutoFetchStream = async () => {
+                        const site = (siteInput.value || '').trim();
+                        if (!site || (urlInput.value || '').trim()) return;
+                        try {
+                            const resp = await fetch(site, { method: 'GET' });
+                            const html = await resp.text();
+                            const rx = /(https?:\/\/[^\s"']+\.(m3u8|mp3|aac))/ig;
+                            let m; let found = '';
+                            while ((m = rx.exec(html)) && !found) { found = m[1]; }
+                            if (found) {
+                                urlInput.value = found;
+                                persist();
+                            }
+                        } catch (e) { /* CORS ou falha; ignorar */ }
+                    };
+
+                    let originalLine = line;
+                    let lastIndex = idx;
 
                     const persist = () => {
                         const n = (nameInput.value || '').trim();
+                        const p = (programInput.value || '').trim();
+                        const s = (siteInput.value || '').trim();
                         const u = (urlInput.value || '').trim();
                         const segments = [];
                         if (n) segments.push(n);
+                        if (p) segments.push(p);
+                        if (s) segments.push(s);
                         if (u) segments.push(u);
                         if (inputStart.value && inputEnd.value) {
                             segments.push(`${inputStart.value} - ${inputEnd.value}`);
                         } else if (inputStart.value) {
                             segments.push(inputStart.value);
                         }
+                        const selected = weekdayAbbr.filter(d => dayInputs[d]?.checked);
+                        if (selected.length > 0) {
+                            segments.push(selected.join(' '));
+                        }
                         const newLine = segments.join(' | ');
-                        lines[idx] = newLine;
-                        srcEl.value = lines.join('\n');
+
+                        const currentLines = (srcEl.value || '').split('\n').map(l => l.trim()).filter(l => l.length > 0);
+
+                        // Selecionar a ocorrência correta entre possíveis duplicatas
+                        if (originalLine) {
+                            const originalTrim = originalLine.trim();
+                            const occurrenceRank = lines.slice(0, idx).filter(l => (l || '').trim() === originalTrim).length;
+                            const candidates = [];
+                            for (let i = 0; i < currentLines.length; i++) {
+                                if (currentLines[i] === originalTrim) candidates.push(i);
+                            }
+                            const foundIndex = candidates.length > occurrenceRank ? candidates[occurrenceRank] : -1;
+                            if (foundIndex !== -1) {
+                                lastIndex = foundIndex;
+                            }
+                        }
+
+                        if (lastIndex < 0 || lastIndex >= currentLines.length) {
+                            lastIndex = idx < currentLines.length ? idx : (currentLines.length - 1);
+                        }
+
+                        currentLines[lastIndex] = newLine;
+                        srcEl.value = currentLines.join('\n');
+                        originalLine = newLine;
                         const event = new Event('change');
                         srcEl.dispatchEvent(event);
                     };
 
-                    nameInput.addEventListener('change', persist);
-                    urlInput.addEventListener('change', persist);
-                    inputStart.addEventListener('change', persist);
-                    inputEnd.addEventListener('change', persist);
+                    nameInput.addEventListener('change', () => { persist(); updateStatus(); });
+                    programInput.addEventListener('change', () => { persist(); updateStatus(); });
+                    siteInput.addEventListener('change', () => { persist(); tryAutoFetchStream(); updateStatus(); });
+                    urlInput.addEventListener('change', () => { persist(); updateStatus(); });
+                    inputStart.addEventListener('change', () => { persist(); updateStatus(); });
+                    inputEnd.addEventListener('change', () => { persist(); updateStatus(); });
+                    weekdayAbbr.forEach(d => dayInputs[d].addEventListener('change', () => { persist(); updateStatus(); }));
 
+                    row.appendChild(statusBadge);
                     row.appendChild(nameInput);
+                    row.appendChild(programInput);
+                    row.appendChild(siteInput);
                     row.appendChild(urlInput);
                     row.appendChild(inputStart);
                     row.appendChild(dash);
                     row.appendChild(inputEnd);
+                    row.appendChild(daysContainer);
+                    updateStatus();
                     listEl.appendChild(row);
                 });
 
                 // Linha extra vazia para novo cadastro de rádio
                 const newRow = document.createElement('div');
-                newRow.className = 'grid grid-cols-1 sm:grid-cols-5 items-center gap-2 border-b border-gray-100 pb-2 mb-2';
+                newRow.className = 'grid grid-cols-1 sm:grid-cols-12 items-center gap-2 border-b border-gray-100 pb-2 mb-2';
 
                 const newNameInput = document.createElement('input');
                 newNameInput.type = 'text';
                 newNameInput.placeholder = 'Nome da rádio';
-                newNameInput.className = 'col-span-2 px-2 py-1 border border-gray-300 rounded-md text-sm';
+                newNameInput.className = 'sm:col-span-3 px-2 py-1 border border-gray-300 rounded-md text-sm';
+
+                const newProgramInput = document.createElement('input');
+                newProgramInput.type = 'text';
+                newProgramInput.placeholder = 'Nome do programa';
+                newProgramInput.className = 'sm:col-span-3 px-2 py-1 border border-gray-300 rounded-md text-sm';
+
+                const newSiteInput = document.createElement('input');
+                newSiteInput.type = 'url';
+                newSiteInput.placeholder = 'Site onde está a stream';
+                newSiteInput.className = 'sm:col-span-3 px-2 py-1 border border-gray-300 rounded-md text-sm';
 
                 const newUrlInput = document.createElement('input');
                 newUrlInput.type = 'url';
                 newUrlInput.placeholder = 'URL do stream';
-                newUrlInput.className = 'col-span-2 px-2 py-1 border border-gray-300 rounded-md text-sm';
+                newUrlInput.className = 'sm:col-span-3 px-2 py-1 border border-gray-300 rounded-md text-sm';
 
                 const newInputStart = document.createElement('input');
                 newInputStart.type = 'time';
-                newInputStart.className = 'px-2 py-1 border border-gray-300 rounded-md text-sm';
+                newInputStart.className = 'sm:col-span-1 px-2 py-1 border border-gray-300 rounded-md text-sm';
 
                 const newDash = document.createElement('span');
-                newDash.className = 'text-xs text-gray-600 text-center';
+                newDash.className = 'sm:col-span-1 text-xs text-gray-600 text-center';
                 newDash.textContent = '-';
 
                 const newInputEnd = document.createElement('input');
                 newInputEnd.type = 'time';
-                newInputEnd.className = 'px-2 py-1 border border-gray-300 rounded-md text-sm';
+                newInputEnd.className = 'sm:col-span-1 px-2 py-1 border border-gray-300 rounded-md text-sm';
+
+                // Dias da semana para nova linha
+                const newDaysContainer = document.createElement('div');
+                newDaysContainer.className = 'sm:col-span-3 flex items-center justify-between gap-1';
+                const newDayInputs = {};
+                const weekdayAbbrNew = ['seg','ter','qua','qui','sex','sab','dom'];
+                weekdayAbbrNew.forEach((abbr) => {
+                    const label = document.createElement('label');
+                    label.className = 'flex items-center gap-1 text-xs text-gray-700';
+                    const cb = document.createElement('input');
+                    cb.type = 'checkbox';
+                    cb.className = 'h-4 w-4';
+                    label.appendChild(cb);
+                    const span = document.createElement('span');
+                    span.textContent = abbr;
+                    label.appendChild(span);
+                    newDaysContainer.appendChild(label);
+                    newDayInputs[abbr] = cb;
+                });
 
                 const persistNew = () => {
                     const n = (newNameInput.value || '').trim();
+                    const p = (newProgramInput.value || '').trim();
+                    const s = (newSiteInput.value || '').trim();
                     const u = (newUrlInput.value || '').trim();
                     const segments = [];
                     if (n) segments.push(n);
+                    if (p) segments.push(p);
+                    if (s) segments.push(s);
                     if (u) segments.push(u);
                     if (newInputStart.value && newInputEnd.value) {
                         segments.push(`${newInputStart.value} - ${newInputEnd.value}`);
                     } else if (newInputStart.value) {
                         segments.push(newInputStart.value);
                     }
+                    const selected = weekdayAbbrNew.filter(d => newDayInputs[d]?.checked);
+                    if (selected.length > 0) {
+                        segments.push(selected.join(' '));
+                    }
                     const newLine = segments.join(' | ');
-                    if (!newLine) return; // não persiste se todos campos estiverem vazios
+                    if (!newLine.trim()) return; // não persiste se todos campos estiverem vazios
                     const currLines = (srcEl.value || '').split('\n').map(l => l.trim()).filter(l => l.length > 0);
                     currLines.push(newLine);
                     srcEl.value = currLines.join('\n');
                     const event = new Event('change');
                     srcEl.dispatchEvent(event);
+                    // re-render apenas quando adiciona nova linha, para exibir o novo cadastro
+                    if (typeof renderRadioTimesList === 'function') renderRadioTimesList();
+
+                    // limpar campos após adicionar
+                    newNameInput.value = '';
+                    newProgramInput.value = '';
+                    newSiteInput.value = '';
+                    newUrlInput.value = '';
+                    newInputStart.value = '';
+                    newInputEnd.value = '';
+                    weekdayAbbrNew.forEach(d => { if (newDayInputs[d]) newDayInputs[d].checked = false; });
                 };
 
                 newNameInput.addEventListener('change', persistNew);
+                newProgramInput.addEventListener('change', persistNew);
+                newSiteInput.addEventListener('change', persistNew);
                 newUrlInput.addEventListener('change', persistNew);
                 newInputStart.addEventListener('change', persistNew);
                 newInputEnd.addEventListener('change', persistNew);
+                weekdayAbbrNew.forEach(d => newDayInputs[d].addEventListener('change', persistNew));
 
                 newRow.appendChild(newNameInput);
+                newRow.appendChild(newProgramInput);
+                newRow.appendChild(newSiteInput);
                 newRow.appendChild(newUrlInput);
                 newRow.appendChild(newInputStart);
                 newRow.appendChild(newDash);
                 newRow.appendChild(newInputEnd);
+                newRow.appendChild(newDaysContainer);
                 listEl.appendChild(newRow);
             } catch (error) {
                 console.error('Erro ao renderizar horários das rádios:', error);
             }
         }
 
+        async function renderGlobalTvSourcesPage() { try { const settingsRef = doc(db, "artifacts", appId, "public/data/settings", "global"); const docSnap = await getDoc(settingsRef); if (docSnap.exists()) { const settings = docSnap.data(); const tvEl = document.getElementById('tvSources'); if (tvEl) tvEl.value = settings.tvSources || ''; } if (typeof renderTvIntervalsList === 'function') renderTvIntervalsList(); } catch (error) { console.error("Erro ao carregar as fontes de TV:", error); } }
+
+        function renderTvIntervalsList() { try { const listEl = document.getElementById('tvIntervalsList'); const srcEl = document.getElementById('tvSources'); if (!listEl || !srcEl) return; const lines = (srcEl.value || '').split('\n').map(l => l.trim()).filter(l => l.length > 0); listEl.innerHTML = ''; lines.forEach((line, idx) => { const parts = line.split('|').map(p => p.trim()); const name = parts[0] || `Programa ${idx+1}`; const url = parts[1] || ''; const timeRaw = parts[2] || ''; const match = timeRaw.match(/^(\d{2}:\d{2})(\s*-\s*)(\d{2}:\d{2})$/); const startTime = match ? match[1] : (timeRaw || '').split('-')[0]?.trim() || ''; const endTime = match ? match[3] : (timeRaw || '').split('-')[1]?.trim() || ''; const weekdayAbbr = ['seg','ter','qua','qui','sex','sab','dom']; const daysTokensCombined = parts.slice(3).join(' ').toLowerCase(); const selectedDays = new Set(daysTokensCombined.split(/\s+/).filter(Boolean)); const row = document.createElement('div'); row.className = 'grid grid-cols-1 sm:grid-cols-12 items-center gap-2 border-b border-gray-100 pb-2 mb-2'; const nameInput = document.createElement('input'); nameInput.type = 'text'; nameInput.value = name; nameInput.placeholder = 'Nome do programa'; nameInput.className = 'sm:col-span-3 px-2 py-1 border border-gray-300 rounded-md text-sm'; const urlInput = document.createElement('input'); urlInput.type = 'url'; urlInput.value = url; urlInput.placeholder = 'URL da transmissão'; urlInput.className = 'sm:col-span-3 px-2 py-1 border border-gray-300 rounded-md text-sm'; const inputStart = document.createElement('input'); inputStart.type = 'time'; inputStart.value = startTime; inputStart.className = 'sm:col-span-1 px-2 py-1 border border-gray-300 rounded-md text-sm'; const dash = document.createElement('span'); dash.className = 'sm:col-span-1 text-xs text-gray-600 text-center'; dash.textContent = '-'; const inputEnd = document.createElement('input'); inputEnd.type = 'time'; inputEnd.value = endTime; inputEnd.className = 'sm:col-span-1 px-2 py-1 border border-gray-300 rounded-md text-sm'; const daysContainer = document.createElement('div'); daysContainer.className = 'sm:col-span-3 flex items-center justify-between gap-1'; const dayInputs = {}; weekdayAbbr.forEach((abbr) => { const label = document.createElement('label'); label.className = 'flex items-center gap-1 text-xs text-gray-700'; const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = selectedDays.has(abbr); cb.className = 'h-4 w-4'; label.appendChild(cb); const span = document.createElement('span'); span.textContent = abbr; label.appendChild(span); daysContainer.appendChild(label); dayInputs[abbr] = cb; }); const persist = () => { const n = (nameInput.value || '').trim(); const u = (urlInput.value || '').trim(); const segments = []; if (n) segments.push(n); if (u) segments.push(u); if (inputStart.value && inputEnd.value) { segments.push(`${inputStart.value} - ${inputEnd.value}`); } else if (inputStart.value) { segments.push(inputStart.value); } const selected = weekdayAbbr.filter(d => dayInputs[d]?.checked); if (selected.length > 0) { segments.push(selected.join(' ')); } const newLine = segments.join(' | '); lines[idx] = newLine; srcEl.value = lines.join('\n'); const event = new Event('change'); srcEl.dispatchEvent(event); }; nameInput.addEventListener('change', persist); urlInput.addEventListener('change', persist); inputStart.addEventListener('change', persist); inputEnd.addEventListener('change', persist); weekdayAbbr.forEach(d => dayInputs[d].addEventListener('change', persist)); row.appendChild(nameInput); row.appendChild(urlInput); row.appendChild(inputStart); row.appendChild(dash); row.appendChild(inputEnd); row.appendChild(daysContainer); listEl.appendChild(row); }); const newRow = document.createElement('div'); newRow.className = 'grid grid-cols-1 sm:grid-cols-12 items-center gap-2 border-b border-gray-100 pb-2 mb-2'; const newNameInput = document.createElement('input'); newNameInput.type = 'text'; newNameInput.placeholder = 'Nome do programa'; newNameInput.className = 'sm:col-span-3 px-2 py-1 border border-gray-300 rounded-md text-sm'; const newUrlInput = document.createElement('input'); newUrlInput.type = 'url'; newUrlInput.placeholder = 'URL da transmissão'; newUrlInput.className = 'sm:col-span-3 px-2 py-1 border border-gray-300 rounded-md text-sm'; const newInputStart = document.createElement('input'); newInputStart.type = 'time'; newInputStart.className = 'sm:col-span-1 px-2 py-1 border border-gray-300 rounded-md text-sm'; const newDash = document.createElement('span'); newDash.className = 'sm:col-span-1 text-xs text-gray-600 text-center'; newDash.textContent = '-'; const newInputEnd = document.createElement('input'); newInputEnd.type = 'time'; newInputEnd.className = 'sm:col-span-1 px-2 py-1 border border-gray-300 rounded-md text-sm'; const newDaysContainer = document.createElement('div'); newDaysContainer.className = 'sm:col-span-3 flex items-center justify-between gap-1'; const newDayInputs = {}; const weekdayAbbrNew = ['seg','ter','qua','qui','sex','sab','dom']; weekdayAbbrNew.forEach((abbr) => { const label = document.createElement('label'); label.className = 'flex items-center gap-1 text-xs text-gray-700'; const cb = document.createElement('input'); cb.type = 'checkbox'; cb.className = 'h-4 w-4'; label.appendChild(cb); const span = document.createElement('span'); span.textContent = abbr; label.appendChild(span); newDaysContainer.appendChild(label); newDayInputs[abbr] = cb; }); const persistNew = () => { const segments = []; const n = (newNameInput.value || '').trim(); const u = (newUrlInput.value || '').trim(); if (n) segments.push(n); if (u) segments.push(u); if (newInputStart.value && newInputEnd.value) { segments.push(`${newInputStart.value} - ${newInputEnd.value}`); } else if (newInputStart.value) { segments.push(newInputStart.value); } const selected = weekdayAbbrNew.filter(d => newDayInputs[d]?.checked); if (selected.length > 0) { segments.push(selected.join(' ')); } const newLine = segments.join(' | '); if (!newLine) return; const currLines = (srcEl.value || '').split('\n').map(l => l.trim()).filter(l => l.length > 0); currLines.push(newLine); srcEl.value = currLines.join('\n'); const event = new Event('change'); srcEl.dispatchEvent(event); newNameInput.value = ''; newUrlInput.value = ''; newInputStart.value = ''; newInputEnd.value = ''; weekdayAbbrNew.forEach(d => { if (newDayInputs[d]) newDayInputs[d].checked = false; }); }; newNameInput.addEventListener('change', persistNew); newUrlInput.addEventListener('change', persistNew); newInputStart.addEventListener('change', persistNew); newInputEnd.addEventListener('change', persistNew); weekdayAbbrNew.forEach(d => newDayInputs[d].addEventListener('change', persistNew)); newRow.appendChild(newNameInput); newRow.appendChild(newUrlInput); newRow.appendChild(newInputStart); newRow.appendChild(newDash); newRow.appendChild(newInputEnd); newRow.appendChild(newDaysContainer); listEl.appendChild(newRow); } catch (error) { console.error('Erro ao renderizar horários de TV:', error); } }
+
         function cleanAndSaveTextarea(e) {
             const textarea = e.target;
             const lines = textarea.value.split('\n')
                 .map(line => line.trim())
                 .filter(line => line.length > 0);
-            const uniqueLines = [...new Set(lines)];
-            const cleanedValue = uniqueLines.join('\n');
+            // Para radioSources, NÃO fazer deduplicação automática para não perder linhas aparentemente iguais
+            const shouldDedupe = textarea.id !== 'radioSources';
+            const cleanedValue = (shouldDedupe ? [...new Set(lines)] : lines).join('\n');
             textarea.value = cleanedValue;
             return cleanedValue;
         }
@@ -1756,6 +2448,56 @@
             } catch (error) {
                 console.error("Erro ao guardar a fonte global:", error);
             }
+        }
+
+        // Visualização lado a lado: IDs — Nomes dos canais do YouTube
+        function renderYouTubeChannelsPreview() {
+            try {
+                const preview = document.getElementById('youtubeChannelsPreview');
+                const idsEl = document.getElementById('youtubeChannels');
+                const namesEl = document.getElementById('youtubeChannelNames');
+                if (!preview || !idsEl || !namesEl) return;
+                const ids = (idsEl.value || '').split('\n').map(s => s.trim()).filter(Boolean);
+                const names = (namesEl.value || '').split('\n').map(s => s.trim());
+                preview.innerHTML = '';
+
+                // Cabeçalho
+                const header = document.createElement('div');
+                header.className = 'grid grid-cols-2 gap-4 text-xs font-semibold text-gray-300';
+                const hId = document.createElement('span');
+                hId.textContent = 'ID do Canal';
+                const hNm = document.createElement('span');
+                hNm.textContent = 'Nome do Canal';
+                header.appendChild(hId);
+                header.appendChild(hNm);
+                preview.appendChild(header);
+
+                const max = Math.max(ids.length, names.length);
+                for (let i = 0; i < max; i++) {
+                    const id = ids[i] || '';
+                    const nm = names[i] || '';
+                    const row = document.createElement('div');
+                    row.className = 'grid grid-cols-2 gap-4';
+                    const idBadge = document.createElement('span');
+                    idBadge.className = 'inline-block px-3 py-1 rounded-md bg-gray-700 text-gray-200 text-sm break-all';
+                    idBadge.textContent = id;
+                    const nameTxt = document.createElement('span');
+                    nameTxt.className = 'inline-block text-sm text-gray-100';
+                    nameTxt.textContent = nm;
+                    row.appendChild(idBadge);
+                    row.appendChild(nameTxt);
+                    preview.appendChild(row);
+                }
+            } catch (e) { /* silencioso */ }
+        }
+
+        // Hook: após carregar fontes globais, atualizar a visualização
+        if (typeof renderGlobalSourcesPage === 'function') {
+            const _renderGlobalSourcesPage = renderGlobalSourcesPage;
+            renderGlobalSourcesPage = async function() {
+                await _renderGlobalSourcesPage.apply(this, arguments);
+                renderYouTubeChannelsPreview();
+            };
         }
 
         function setupNotificationListener() {
@@ -1846,6 +2588,15 @@
                 `<span class="flex-shrink-0 text-xs font-semibold bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full">${kw}</span>`
             ).join('');
 
+            // Direto vs Indireto: considera Direto se alguma palavra-chave aparece no título ou descrição
+            const direct = (() => {
+                try {
+                    const allText = `${article.title || ''} ${article.description || ''}`.toLowerCase();
+                    return keywordsArray.some(kw => typeof kw === 'string' && allText.includes(kw.toLowerCase()));
+                } catch (_) { return false; }
+            })();
+            const directnessHTML = `<span class="text-xs font-semibold ${direct ? 'text-orange-600 bg-orange-100' : 'text-gray-600 bg-gray-100'} px-2 py-1 rounded-full">${direct ? 'Direto' : 'Indireto'}</span>`;
+
             let aiInsightsHTML = '';
             if (article.ai && (article.ai.entities?.length > 0 || article.ai.categories?.length > 0)) {
                 const entityColors = { PERSON: 'bg-blue-100 text-blue-800', LOCATION: 'bg-green-100 text-green-800', ORGANIZATION: 'bg-purple-100 text-purple-800', EVENT: 'bg-yellow-100 text-yellow-800', WORK_OF_ART: 'bg-pink-100 text-pink-800', CONSUMER_GOOD: 'bg-indigo-100 text-indigo-800' };
@@ -1859,7 +2610,7 @@
                 translationHTML = `<span title="Traduzido do ${article.translationInfo.originalLanguage.toUpperCase()}" class="mr-2">🌐</span>`;
             }
 
-            alertEl.innerHTML = `                <div class="alert-body-clickable">                    <div class="flex justify-between items-start">                        <h4 class="text-lg font-bold text-gray-800 pr-2">${article.title}</h4>                        <div class="flex items-center gap-2 flex-shrink-0">                            <div class="flex flex-col items-end gap-1">${keywordsHTML}</div>                            <div class="sentiment-container relative">${getSentimentHTML(sentimentScore)}${sentimentMenuHTML}</div>                        </div>                    </div>                    <p class="text-sm text-gray-600 mt-2 line-clamp-2">${article.description || 'Descrição não disponível.'}</p>                </div>                ${aiInsightsHTML}                <div class="text-xs text-gray-500 mt-3 flex justify-between items-center">                    <span>${translationHTML}Fonte: ${article.source.name} | Publicado: ${formattedDate}</span>                    <div>                        <a href="${article.url}" target="_blank" rel="noopener noreferrer" class="text-indigo-600 hover:underline font-semibold">Ler no site original →</a>                        ${deleteButtonHTML}                    </div>                </div>`;
+            alertEl.innerHTML = `                <div class="alert-body-clickable">                    <div class="flex justify-between items-start">                        <h4 class="text-lg font-bold text-gray-800 pr-2">${article.title}</h4>                        <div class="flex items-center gap-2 flex-shrink-0">                            <div class="flex flex-col items-end gap-1">${keywordsHTML}</div>                            ${directnessHTML}                            <div class="sentiment-container relative">${getSentimentHTML(sentimentScore)}${sentimentMenuHTML}</div>                        </div>                    </div>                    <p class="text-sm text-gray-600 mt-2 line-clamp-2">${article.description || 'Descrição não disponível.'}</p>                </div>                ${aiInsightsHTML}                <div class="text-xs text-gray-500 mt-3 flex justify-between items-center">                    <span>${translationHTML}Fonte: ${getDisplaySourceName(article)} | Publicado: ${formattedDate}</span>                    <div>                        <a href="${article.url}" target="_blank" rel="noopener noreferrer" class="text-indigo-600 hover:underline font-semibold">Ler no site original →</a>                        ${deleteButtonHTML}                    </div>                </div>`;
             container.appendChild(alertEl);
         }
 
@@ -1919,6 +2670,13 @@
             const keywords = keywordsSnapshot.docs.map(doc => doc.data().word);
             if (reportKeywordFilterContainer) {
                 reportKeywordFilterContainer.innerHTML = '';
+                // Adiciona opção 'Todos' inicialmente marcada
+                const allId = 'kw-filter-all';
+                const allEl = document.createElement('div');
+                allEl.className = 'flex items-center';
+                allEl.innerHTML = `<input type="checkbox" id="${allId}" value="Todos" class="report-kw-checkbox h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" checked><label for="${allId}" class="ml-2 block text-sm text-gray-900">Todos</label>`;
+                reportKeywordFilterContainer.appendChild(allEl);
+                // Renderiza demais palavras‑chave
                 keywords.forEach(kw => {
                     const id = `kw-filter-${kw.replace(/\s+/g, '-')}`;
                     const filterEl = document.createElement('div');
@@ -1930,25 +2688,51 @@
             const updateCharts = () => {
                 const startDate = startDateInput && startDateInput.value ? new Date(startDateInput.value) : null;
                 const endDate = endDateInput && endDateInput.value ? new Date(endDateInput.value) : null;
-                const selectedKeywords = reportKeywordFilterContainer ? Array.from(reportKeywordFilterContainer.querySelectorAll('.report-kw-checkbox:checked')).map(cb => cb.value) : [];
+                let selectedKeywords = reportKeywordFilterContainer ? Array.from(reportKeywordFilterContainer.querySelectorAll('.report-kw-checkbox:checked')).map(cb => cb.value).filter(v => v !== 'Todos') : [];
                 if (startDate) startDate.setHours(0, 0, 0, 0);
                 if (endDate) endDate.setHours(23, 59, 59, 999);
                 const filteredArticles = allCompanyArticles.filter(article => {
                     const pubDate = article.publishedAt.toDate();
                     const dateMatch = (!startDate || pubDate >= startDate) && (!endDate || pubDate <= endDate);
+                    if (!selectedKeywords || selectedKeywords.length === 0) {
+                        // Sem palavras‑chave: aplica apenas filtro por período
+                        return dateMatch;
+                    }
                     const articleKeywords = article.keywords || [article.keyword];
-                    const keywordMatch = (selectedKeywords.length === 0 || selectedKeywords.some(sk => articleKeywords.includes(sk)));
+                    const keywordMatch = selectedKeywords.some(sk => articleKeywords.includes(sk));
                     return dateMatch && keywordMatch;
                 });
-                const keywordsToDisplay = selectedKeywords.length > 0 ? selectedKeywords : keywords;
+                const keywordsToDisplay = (!selectedKeywords || selectedKeywords.length === 0) ? ['Todos'] : selectedKeywords;
                 renderSourceChart(filteredArticles, keywordsToDisplay);
                 renderDateChart(filteredArticles, keywordsToDisplay);
                 renderSentimentChart(filteredArticles, keywordsToDisplay);
                 renderChannelChart(filteredArticles, keywordsToDisplay);
+                renderDirectnessChart(filteredArticles, keywordsToDisplay);
             };
             if (startDateInput) startDateInput.addEventListener('change', updateCharts);
             if (endDateInput) endDateInput.addEventListener('change', updateCharts);
-            if (reportKeywordFilterContainer) reportKeywordFilterContainer.addEventListener('change', updateCharts);
+            if (reportKeywordFilterContainer) reportKeywordFilterContainer.addEventListener('change', (e) => {
+                const target = e.target;
+                if (!target || !target.classList.contains('report-kw-checkbox')) { updateCharts(); return; }
+                const isAll = target.value === 'Todos';
+                if (isAll) {
+                    const nonAllCheckboxes = Array.from(reportKeywordFilterContainer.querySelectorAll('.report-kw-checkbox')).filter(cb => cb.value !== 'Todos');
+                    if (target.checked) {
+                        // Ao marcar 'Todos', marcar todas as demais palavras‑chave
+                        nonAllCheckboxes.forEach(cb => { cb.checked = true; });
+                    } else {
+                        // Ao desmarcar 'Todos', desmarcar todas as demais palavras‑chave
+                        nonAllCheckboxes.forEach(cb => { cb.checked = false; });
+                    }
+                } else {
+                    // Ajusta o estado de 'Todos' conforme seleção das específicas
+                    const allCb = reportKeywordFilterContainer.querySelector('.report-kw-checkbox[value="Todos"]');
+                    const nonAllCheckboxes = Array.from(reportKeywordFilterContainer.querySelectorAll('.report-kw-checkbox')).filter(cb => cb.value !== 'Todos');
+                    const allChecked = nonAllCheckboxes.every(cb => cb.checked);
+                    if (allCb) allCb.checked = allChecked;
+                }
+                updateCharts();
+            });
             updateCharts();
         }
 
@@ -1973,40 +2757,40 @@
         }
         function renderSourceChart(articles, selectedKeywords) {
             const datasets = [];
-            if (selectedKeywords.length === 0) { if (sourceChartInstance) sourceChartInstance.destroy(); return; }
-            const allSources = [...new Set(articles.map(a => a.source.name))].sort();
+            const allSources = [...new Set(articles.map(a => getDisplaySourceName(a)))].sort();
             selectedKeywords.forEach((keyword, index) => {
-                const sourceCounts = allSources.map(source => articles.filter(a => (a.keywords || [a.keyword]).includes(keyword) && a.source.name === source).length);
-                datasets.push({ label: keyword, data: sourceCounts, borderColor: chartColors[index % chartColors.length], borderWidth: 2, fill: false });
+                const isTodos = keyword === 'Todos';
+                const sourceCounts = allSources.map(source => articles.filter(a => (isTodos || (a.keywords || [a.keyword]).includes(keyword)) && getDisplaySourceName(a) === source).length);
+                datasets.push({ label: isTodos ? 'Todos' : keyword, data: sourceCounts, borderColor: chartColors[index % chartColors.length], borderWidth: 2, fill: false });
             });
             sourceChartInstance = createChart('source-chart', sourceChartInstance, 'line', { labels: allSources, datasets });
         }
         function renderChannelChart(articles, selectedKeywords) {
             const datasets = [];
-            if (selectedKeywords.length === 0) { if (channelChartInstance) channelChartInstance.destroy(); return; };
-            const allChannels = ['YouTube', 'Sites', 'Revistas', 'Rádios'];
+            const allChannels = ['YouTube', 'Sites', 'Revistas', 'Rádios', 'TV'];
             selectedKeywords.forEach((keyword, index) => {
-                const channelCounts = allChannels.map(channel => articles.filter(a => (a.keywords || [a.keyword]).includes(keyword) && getChannelCategory(a.source.name) === channel).length);
-                datasets.push({ label: keyword, data: channelCounts, borderColor: chartColors[index % chartColors.length], borderWidth: 2, fill: false });
+                const isTodos = keyword === 'Todos';
+                const channelCounts = allChannels.map(channel => articles.filter(a => (isTodos || (a.keywords || [a.keyword]).includes(keyword)) && ((a.channel || getChannelCategory(a.source?.name)) === channel)).length);
+                datasets.push({ label: isTodos ? 'Todos' : keyword, data: channelCounts, borderColor: chartColors[index % chartColors.length], borderWidth: 2, fill: false });
             });
             channelChartInstance = createChart('channel-chart', channelChartInstance, 'line', { labels: allChannels, datasets });
         }
         function renderDateChart(articles, selectedKeywords) {
             const datasets = [];
-            if (selectedKeywords.length === 0) { if (dateChartInstance) dateChartInstance.destroy(); return; };
             const allDates = [...new Set(articles.map(a => a.publishedAt.toDate().toLocaleDateString('pt-BR')))].sort((a, b) => new Date(a.split('/').reverse().join('-')) - new Date(b.split('/').reverse().join('-')));
             selectedKeywords.forEach((keyword, index) => {
-                const dateCounts = allDates.map(date => articles.filter(a => (a.keywords || [a.keyword]).includes(keyword) && a.publishedAt.toDate().toLocaleDateString('pt-BR') === date).length);
-                datasets.push({ label: keyword, data: dateCounts, borderColor: chartColors[index % chartColors.length], borderWidth: 2, fill: false, tension: 0.1 });
+                const isTodos = keyword === 'Todos';
+                const dateCounts = allDates.map(date => articles.filter(a => ((isTodos || (a.keywords || [a.keyword]).includes(keyword)) && a.publishedAt.toDate().toLocaleDateString('pt-BR') === date)).length);
+                datasets.push({ label: isTodos ? 'Todos' : keyword, data: dateCounts, borderColor: chartColors[index % chartColors.length], borderWidth: 2, fill: false, tension: 0.1 });
             });
             dateChartInstance = createChart('date-chart', dateChartInstance, 'line', { labels: allDates, datasets });
         }
         function renderSentimentChart(articles, selectedKeywords) {
             const datasets = [];
-            if (selectedKeywords.length === 0) { if (sentimentChartInstance) sentimentChartInstance.destroy(); return; };
             const allSentiments = ['Positivo', 'Neutro', 'Negativo'];
             selectedKeywords.forEach((keyword, index) => {
-                const keywordArticles = articles.filter(a => (a.keywords || [a.keyword]).includes(keyword));
+                const isTodos = keyword === 'Todos';
+                const keywordArticles = isTodos ? articles : articles.filter(a => (a.keywords || [a.keyword]).includes(keyword));
                 const sentimentCounts = { positive: 0, neutral: 0, negative: 0 };
                 keywordArticles.forEach(article => {
                     const score = article.ai?.sentiment?.score ?? article.sentiment?.score ?? 0;
@@ -2016,10 +2800,28 @@
                 });
                 const totalSentiments = sentimentCounts.positive + sentimentCounts.neutral + sentimentCounts.negative;
                 const dataInPercentage = totalSentiments > 0 ? [(sentimentCounts.positive / totalSentiments) * 100, (sentimentCounts.neutral / totalSentiments) * 100, (sentimentCounts.negative / totalSentiments) * 100] : [0, 0, 0];
-                datasets.push({ label: keyword, data: dataInPercentage, borderColor: chartColors[index % chartColors.length], borderWidth: 2, fill: false });
+                datasets.push({ label: isTodos ? 'Todos' : keyword, data: dataInPercentage, borderColor: chartColors[index % chartColors.length], borderWidth: 2, fill: false });
             });
             const sentimentChartOptions = { scales: { y: { ticks: { callback: function (value) { return value + '%'; } }, min: 0, max: 100 } }, plugins: { tooltip: { callbacks: { label: function (context) { let label = context.dataset.label || ''; if (label) { label += ': '; } if (context.parsed.y !== null) { label += context.parsed.y.toFixed(2) + '%'; } return label; } } } } };
             sentimentChartInstance = createChart('sentiment-chart', sentimentChartInstance, 'line', { labels: allSentiments, datasets }, sentimentChartOptions);
+        }
+        function renderDirectnessChart(articles, selectedKeywords) {
+            const labels = ['Direto', 'Indireto'];
+            const datasets = [];
+            selectedKeywords.forEach((keyword, index) => {
+                const isTodos = keyword === 'Todos';
+                const keywordArticles = isTodos ? articles : articles.filter(a => (a.keywords || [a.keyword]).includes(keyword));
+                let directCount = 0, indirectCount = 0;
+                keywordArticles.forEach(article => {
+                    const title = (article.title || '').toLowerCase();
+                    const desc = (article.description || '').toLowerCase();
+                    const kws = (article.keywords || [article.keyword]).map(k => (k || '').toLowerCase());
+                    const direct = kws.some(k => k && (title.includes(k) || desc.includes(k)));
+                    if (direct) directCount++; else indirectCount++;
+                });
+                datasets.push({ label: isTodos ? 'Todos' : keyword, data: [directCount, indirectCount], backgroundColor: chartColors[index % chartColors.length] });
+            });
+            directnessChartInstance = createChart('directness-chart', directnessChartInstance, 'bar', { labels, datasets }, { plugins: { legend: { position: 'bottom' } } });
         }
 
         async function setupSearchPage() { if (!currentUser) return; if (searchInput) searchInput.value = ''; if (searchResults) searchResults.innerHTML = '<p class="text-gray-500">A carregar todos os artigos para pesquisa...</p>'; try { const q = query(collection(db, "artifacts", appId, "users", currentUser.companyId, "articles"), orderBy("publishedAt", "desc")); const articlesSnapshot = await getDocs(q); allCompanyArticles = articlesSnapshot.docs.map(d => ({ ...d.data(), id: d.id })); if (searchResults) searchResults.innerHTML = `<p class="text-gray-500">Pronto para pesquisar em ${allCompanyArticles.length} artigos. Digite um termo ou utilize os filtros.</p>`; setupFilters(); } catch (error) { console.error("Erro ao buscar artigos para pesquisa:", error); if (searchResults) searchResults.innerHTML = '<p class="text-red-500">Não foi possível carregar os artigos para pesquisa.</p>'; } }
@@ -2037,7 +2839,7 @@
             }
             const sourceFilter = document.getElementById('search-source-filter');
             if (sourceFilter) {
-                const sources = [...new Set(allCompanyArticles.map(a => a.source.name))].sort();
+                const sources = [...new Set(allCompanyArticles.map(a => getDisplaySourceName(a)))].sort();
                 sourceFilter.innerHTML = '<option value="">Todos</option>';
                 sources.forEach(source => {
                     const option = document.createElement('option');
@@ -2069,8 +2871,8 @@
             }
             let filteredArticles = allCompanyArticles;
             if (keywordFilter) { filteredArticles = filteredArticles.filter(a => (a.keywords || [a.keyword]).includes(keywordFilter)); }
-            if (sourceFilterValue) { filteredArticles = filteredArticles.filter(a => a.source.name === sourceFilterValue); }
-            if (channelFilterValue) { filteredArticles = filteredArticles.filter(a => getChannelCategory(a.source.name) === channelFilterValue); }
+            if (sourceFilterValue) { filteredArticles = filteredArticles.filter(a => getDisplaySourceName(a) === sourceFilterValue); }
+            if (channelFilterValue) { filteredArticles = filteredArticles.filter(a => (a.channel || getChannelCategory(a.source?.name)) === channelFilterValue); }
             if (startDateValue) { const startDate = new Date(startDateValue); startDate.setHours(0, 0, 0, 0); filteredArticles = filteredArticles.filter(a => a.publishedAt.toDate() >= startDate); }
             if (endDateValue) { const endDate = new Date(endDateValue); endDate.setHours(23, 59, 59, 999); filteredArticles = filteredArticles.filter(a => a.publishedAt.toDate() <= endDate); }
             if (sentimentFilterValue) {
@@ -2166,12 +2968,10 @@
             
             const fullContent = article.content || article.description || 'Conteúdo completo não disponível.';
             const initialParagraphs = fullContent.split('\n').filter(p => p.trim() !== '').map(p => `<p class="mb-4">${p}</p>`).join('');
-            detailContentEl.innerHTML = initialParagraphs;
-
-            const looksTruncated = (article.content && /\[\+\d+\s*chars\]/i.test(article.content)) || (fullContent && fullContent.length < 600);
-            if (looksTruncated && article.url) {
+            // Sempre tentar carregar o conteúdo completo da notícia via /extract-article quando houver URL
+            detailContentEl.innerHTML = '<p class="text-gray-500">A carregar conteúdo completo da notícia...</p>';
+            if (article.url) {
                 try {
-                    detailContentEl.innerHTML = '<p class="text-gray-500">A carregar conteúdo completo da notícia...</p>';
                     const resp = await fetch('/extract-article', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -2188,6 +2988,8 @@
                     console.error('Falha ao extrair conteúdo completo:', e);
                     detailContentEl.innerHTML = initialParagraphs;
                 }
+            } else {
+                detailContentEl.innerHTML = initialParagraphs;
             }
 
             const companyLogo = document.querySelector('#header-logo-container img');
@@ -2200,11 +3002,41 @@
             if (originalLinkEl) {
                 originalLinkEl.href = article.url;
                 originalLinkEl.textContent = article.url;
+
+                // Botão para transferir arquivo completo da notícia
+                let downloadBtn = document.getElementById('download-full-btn');
+                if (!downloadBtn) {
+                    downloadBtn = document.createElement('button');
+                    downloadBtn.id = 'download-full-btn';
+                    downloadBtn.className = 'ml-3 inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50';
+                    downloadBtn.textContent = 'Transferir arquivo completo';
+                    originalLinkEl.insertAdjacentElement('afterend', downloadBtn);
+                }
+                downloadBtn.onclick = () => {
+                    try {
+                        const safeTitle = (article.title || 'noticia').replace(/[^\w\-]+/g, '_').slice(0, 80);
+                        const pubDateStr = new Date(article.publishedAt.seconds ? article.publishedAt.toDate() : article.publishedAt).toLocaleDateString('pt-BR');
+                        const detailContentEl = document.getElementById('detail-content');
+                        const fileHtml = `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>${article.title || ''}</title></head><body><h1>${article.title || ''}</h1>${detailContentEl ? detailContentEl.innerHTML : ''}<hr><p>Fonte: ${getDisplaySourceName(article)} | Publicado: ${pubDateStr} | Link original: ${article.url || ''}</p></body></html>`;
+                        const blob = new Blob([fileHtml], { type: 'text/html;charset=utf-8' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `${safeTitle}.html`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        setTimeout(() => URL.revokeObjectURL(url), 1000);
+                    } catch (e) {
+                        console.error('Falha ao gerar arquivo da notícia:', e);
+                        showAlert('Falha ao gerar o arquivo completo da notícia.', 'error');
+                    }
+                };
             }
 
             const createMetaItem = (label, value) => `<div class="flex flex-col"><span class="font-semibold text-gray-800">${label}</span><span class="text-gray-600">${value || 'N/A'}</span></div>`;
 
-            reportMetaGrid.innerHTML += createMetaItem('Veículo', article.source.name);
+            reportMetaGrid.innerHTML += createMetaItem('Fonte', getDisplaySourceName(article));
             reportMetaGrid.innerHTML += createMetaItem('Data da Publicação', pubDate.toLocaleDateString('pt-BR'));
 
             if (article.author) {
@@ -2250,8 +3082,12 @@
             if (pendingAlertsListener) pendingAlertsListener();
             const q = query(collection(db, "artifacts", appId, "public/data/pendingAlerts"), orderBy("publishedAt", "desc"));
             pendingAlertsListener = onSnapshot(q, (snapshot) => {
-                renderPendingAlerts(snapshot.docs);
-                const pendingCount = snapshot.docs.length;
+                let docs = snapshot.docs;
+                if (currentUser && currentUser.isRestrictedGlobal && Array.isArray(currentUser.allowedCompanies) && currentUser.allowedCompanies.length > 0) {
+                    docs = docs.filter(d => currentUser.allowedCompanies.includes(d.data().companyId));
+                }
+                renderPendingAlerts(docs);
+                const pendingCount = docs.length;
                 if (btnPendingAlerts && btnPendingAlerts.querySelector('#pending-alerts-badge')) {
                     btnPendingAlerts.querySelector('#pending-alerts-badge').textContent = pendingCount;
                     btnPendingAlerts.querySelector('#pending-alerts-badge').classList.toggle('hidden', pendingCount === 0);
@@ -2294,13 +3130,15 @@
 
                 console.log('[Diagnóstico] Empresas ativas:', activeCompaniesCount, 'Total palavras‑chave:', totalKeywords, 'Empresas sem palavras‑chave:', companiesMissingKeywords);
                 console.log('[Diagnóstico] Chaves globais:', keysStatus);
-                showAlert(`Diagnóstico: ${activeCompaniesCount} empresa(s) ativa(s), ${totalKeywords} palavra(s)‑chave no total. ${companiesMissingKeywords.length ? 'Sem keywords em: ' + companiesMissingKeywords.join(', ') : 'Todas com keywords.'}`, 'success');
+                // [Oculto] Diagnóstico desativado — não exibir alertas ao usuário
+                // showAlert(`Diagnóstico: ${activeCompaniesCount} empresa(s) ativa(s), ${totalKeywords} palavra(s)‑chave no total. ${companiesMissingKeywords.length ? 'Sem keywords em: ' + companiesMissingKeywords.join(', ') : 'Todas com keywords.'}`, 'success');
 
                 // Rodar robô manual
-                const manualFetch = httpsCallable(functions, 'manualFetch');
+                const manualFetch = httpsCallable(functions, 'manualFetch', { timeout: 540000 });
                 const result = await manualFetch({ appId });
                 const totalSaved = (result?.data?.totalSaved) || 0;
-                showAlert(`Robô manual executado: ${totalSaved} alertas novos enviados para a fila em artifacts/${appId}/public/data/pendingAlerts.`, 'success');
+                // [Oculto] Mensagem de robô manual desativada
+                // showAlert(`Robô manual executado: ${totalSaved} alertas novos enviados para a fila em artifacts/${appId}/public/data/pendingAlerts.`, 'success');
 
                 // Abrir Fila de Aprovação e confirmar listener
                 updateView('super-admin-queue');
@@ -2309,10 +3147,12 @@
                 // Logar amostra de pendentes
                 const pendingSnap = await getDocs(collection(db, "artifacts", appId, "public/data/pendingAlerts"));
                 const sample = pendingSnap.docs.slice(0,3).map(d => ({ id: d.id, title: d.data().title, companyId: d.data().companyId }));
-                console.log('[Diagnóstico] Total na coleção pendingAlerts:', pendingSnap.size, 'Exemplos:', sample);
+                // [Oculto] Log de diagnóstico desativado
+                // console.log('[Diagnóstico] Total na coleção pendingAlerts:', pendingSnap.size, 'Exemplos:', sample);
             } catch (e) {
                 console.error('Erro no diagnóstico/robô manual:', e);
-                showAlert(`Erro no diagnóstico/robô: ${e.message || e}`, 'error');
+                // [Oculto] Alerta de erro desativado para diagnóstico/robô manual
+                // showAlert(`Erro no diagnóstico/robô: ${e.message || e}`, 'error');
             }
         }
 
@@ -2334,14 +3174,43 @@
             const alertEl = target.closest('.fade-in');
             if (!alertEl) return;
             const alertId = alertEl.dataset.id;
+            const companyId = alertEl.dataset.companyId;
+            if (currentUser && currentUser.isRestrictedGlobal && companyId && Array.isArray(currentUser.allowedCompanies) && currentUser.allowedCompanies.length > 0 && !currentUser.allowedCompanies.includes(companyId)) {
+                showAlert('Sem permissão para agir neste alerta.', 'error');
+                return;
+            }
             if (target.classList.contains('approve-alert-btn')) {
                 const approveAlert = httpsCallable(functions, 'approveAlert');
-                try { await approveAlert({ appId, alertId }); showAlert('Alerta aprovado e enviado para a empresa com sucesso!', 'success'); }
-                catch (error) { console.error("Erro ao aprovar alerta:", error); showAlert(`Erro ao aprovar alerta: ${error.message}`, 'error'); }
+                try {
+                    await approveAlert({ appId, alertId });
+                    showAlert('Alerta aprovado e enviado para a empresa com sucesso!', 'success');
+                    // Remover imediatamente o card aprovado da lista
+                    if (alertEl && alertEl.parentElement) {
+                        alertEl.remove();
+                        if (pendingAlertsList && pendingAlertsList.children.length === 0) {
+                            pendingAlertsList.innerHTML = '<p class="text-gray-500">Nenhum alerta pendente para aprovação.</p>';
+                        }
+                    }
+                } catch (error) {
+                    console.error("Erro ao aprovar alerta:", error);
+                    showAlert(`Erro ao aprovar alerta: ${error.message}`, 'error');
+                }
             } else if (target.classList.contains('reject-alert-btn')) {
                 const rejectAlert = httpsCallable(functions, 'rejectAlert');
-                try { await rejectAlert({ appId, alertId }); showAlert('Alerta rejeitado com sucesso!', 'success'); }
-                catch (error) { console.error("Erro ao rejeitar alerta:", error); showAlert(`Erro ao rejeitar alerta: ${error.message}`, 'error'); }
+                try {
+                    await rejectAlert({ appId, alertId });
+                    showAlert('Alerta rejeitado com sucesso!', 'success');
+                    // Remover imediatamente o card rejeitado da lista
+                    if (alertEl && alertEl.parentElement) {
+                        alertEl.remove();
+                        if (pendingAlertsList && pendingAlertsList.children.length === 0) {
+                            pendingAlertsList.innerHTML = '<p class="text-gray-500">Nenhum alerta pendente para aprovação.</p>';
+                        }
+                    }
+                } catch (error) {
+                    console.error("Erro ao rejeitar alerta:", error);
+                    showAlert(`Erro ao rejeitar alerta: ${error.message}`, 'error');
+                }
             }
         }
 
@@ -2355,8 +3224,8 @@
             const companyLabel = alert.companyName || alert.companyId || '(sem empresa)';
             const kwArray = Array.isArray(alert.keywords) ? alert.keywords.filter(Boolean) : [];
             const keywordsString = kwArray.length ? kwArray.join(', ') : (alert.keyword || '(sem keywords)');
-            const sourceName = (alert.source && alert.source.name) ? alert.source.name : '-';
-            alertEl.innerHTML = `<div class="flex justify-between items-start"><h4 class="text-lg font-bold text-gray-800 pr-2">${alert.title}</h4><span class="flex-shrink-0 text-xs font-semibold bg-gray-100 text-gray-800 px-2 py-1 rounded-full">${companyLabel} - ${keywordsString}</span></div><p class="text-sm text-gray-600 mt-2">${alert.description || 'Descrição não disponível.'}</p><div class="text-xs text-gray-500 mt-3 flex justify-between items-center"><span>Fonte: ${sourceName} | Publicado: ${formattedDate}</span><div class="flex gap-2"><button class="approve-alert-btn bg-green-500 text-white px-3 py-1 rounded-md text-sm hover:bg-green-600">Aprovar</button><button class="reject-alert-btn bg-red-500 text-white px-3 py-1 rounded-md text-sm hover:bg-red-600">Rejeitar</button></div></div>`;
+            const sourceName = getDisplaySourceName(alert);
+            alertEl.innerHTML = `<div class="flex justify-between items-start"><h4 class="text-lg font-bold text-gray-800 pr-2">${alert.title}</h4><span class="flex-shrink-0 text-xs font-semibold bg-gray-100 text-gray-800 px-2 py-1 rounded-full">${companyLabel} - ${keywordsString}</span></div><p class="text-sm text-gray-600 mt-2">${alert.description || 'Descrição não disponível.'}</p><div class="text-xs text-gray-500 mt-3 flex justify-between items-center"><span>Fonte: ${getDisplaySourceName(alert)} | Publicado: ${formattedDate}</span><div class="flex gap-2"><a href="${alert.url}" target="_blank" rel="noopener noreferrer" class="text-indigo-600 hover:underline">Abrir artigo</a><button class="approve-alert-btn bg-green-500 text-white px-3 py-1 rounded-md text-sm hover:bg-green-600">Aprovar</button><button class="reject-alert-btn bg-red-500 text-white px-3 py-1 rounded-md text-sm hover:bg-red-600">Rejeitar</button></div></div>`;
             container.appendChild(alertEl);
         }
 
@@ -2369,7 +3238,11 @@
             const companiesSnapshot = await getDocs(query(collection(db, "artifacts", appId, "public/data/companies"), where("status", "==", "active")));
             companiesSnapshot.forEach(doc => {
                 const option = document.createElement('option');
-                option.value = doc.id;
+                const companyId = doc.id;
+                if (currentUser && currentUser.isRestrictedGlobal && Array.isArray(currentUser.allowedCompanies) && currentUser.allowedCompanies.length > 0 && !currentUser.allowedCompanies.includes(companyId)) {
+                    return; // pular empresas não permitidas
+                }
+                option.value = companyId;
                 option.textContent = doc.data().name;
                 companySelect.appendChild(option);
             });
@@ -2404,25 +3277,29 @@
 
         async function handleManualAlertSubmit(e) {
             e.preventDefault();
-            const companyId = document.getElementById('manual-alert-company').value;
-            const title = document.getElementById('manual-alert-title').value;
-            const description = document.getElementById('manual-alert-desc').value;
             const url = document.getElementById('manual-alert-url').value;
-            const source = document.getElementById('manual-alert-source').value;
-            const selectedKeywords = Array.from(document.getElementById('manual-alert-keyword').selectedOptions).map(opt => opt.value);
-
-            if (!companyId || selectedKeywords.length === 0) {
-                showAlert('Por favor, selecione uma empresa e pelo menos uma palavra-chave.', 'error');
+            // Determinar empresa a partir do formulário, com fallback para contexto do usuário/super admin
+            const companySelectEl = document.getElementById('manual-alert-company');
+            const selectedCompanyId = companySelectEl ? companySelectEl.value : '';
+            const companyId = selectedCompanyId || (
+                (currentUser && currentUser.companyId) ||
+                ((currentUser && currentUser.isSuperAdmin && selectedCompanyForManagement && selectedCompanyForManagement.id) ? selectedCompanyForManagement.id : null)
+            );
+            if (!companyId) {
+                showAlert('Selecione a empresa no formulário de alerta manual.', 'error');
+                return;
+            }
+            if (!url) {
+                showAlert('Informe a URL do artigo.', 'error');
                 return;
             }
             try {
                 const manualAddAlert = httpsCallable(functions, 'manualAddAlert');
-                await manualAddAlert({ appId, companyId, title, description, url, source, keywords: selectedKeywords });
-                showAlert('Alerta manual adicionado com sucesso!', 'success');
+                await manualAddAlert({ appId, companyId, url });
+                showAlert('Alerta manual enviado para a fila de aprovação!', 'success');
                 if (manualAlertForm) manualAlertForm.reset();
-                populateManualAlertKeywords();
             } catch (error) {
-                console.error("Erro ao adicionar alerta manual:", error);
+                console.error('Erro ao adicionar alerta manual:', error);
                 showAlert(`Erro: ${error.message}`, 'error');
             }
         }
@@ -2431,8 +3308,12 @@
             if (deletionRequestsListener) deletionRequestsListener();
             const q = query(collection(db, "artifacts", appId, "public/data/deletionRequests"), orderBy("requestedAt", "desc"));
             deletionRequestsListener = onSnapshot(q, (snapshot) => {
-                renderDeletionRequests(snapshot.docs);
-                const pendingCount = snapshot.docs.filter(doc => doc.data().status === 'pending').length;
+                let docs = snapshot.docs;
+                if (currentUser && currentUser.isRestrictedGlobal && Array.isArray(currentUser.allowedCompanies) && currentUser.allowedCompanies.length > 0) {
+                    docs = docs.filter(d => currentUser.allowedCompanies.includes(d.data().companyId));
+                }
+                renderDeletionRequests(docs);
+                const pendingCount = docs.filter(doc => doc.data().status === 'pending').length;
                 if (deletionRequestsBadge) {
                     deletionRequestsBadge.textContent = pendingCount;
                     deletionRequestsBadge.classList.toggle('hidden', pendingCount === 0);
@@ -2448,7 +3329,7 @@
         function renderDeletionRequests(docs) {
             if (!deletionRequestsList) return;
             deletionRequestsList.innerHTML = '';
-            if (docs.empty) {
+            if (!docs || docs.length === 0) {
                 deletionRequestsList.innerHTML = '<p class="text-gray-500">Nenhum pedido de exclusão encontrado.</p>';
                 return;
             }
@@ -2456,6 +3337,7 @@
                 const request = doc.data();
                 const reqEl = document.createElement('div');
                 reqEl.className = 'bg-white p-4 rounded-lg shadow';
+                reqEl.dataset.companyId = request.companyId;
                 const statusColor = request.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : (request.status === 'approved' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800');
                 let buttonsHTML = '';
                 if (request.status === 'pending') {
@@ -2466,9 +3348,135 @@
             });
         }
 
+        async function renderActivityPage() {
+            const tbody = document.getElementById('activity-table-body');
+            if (!tbody) return;
+            tbody.innerHTML = '<tr><td colspan="8" class="px-6 py-4 text-sm text-gray-500">Carregando atividade...</td></tr>';
+            try {
+                // Empresas ativas
+                const companiesSnap = await getDocs(query(collection(db, "artifacts", appId, "public/data/companies"), where("status", "==", "active")));
+                let companies = companiesSnap.docs.map(doc => ({ id: doc.id, name: doc.data().name || doc.id }));
+                if (currentUser && currentUser.isRestrictedGlobal && Array.isArray(currentUser.allowedCompanies) && currentUser.allowedCompanies.length > 0) {
+                    companies = companies.filter(c => currentUser.allowedCompanies.includes(c.id));
+                }
+
+                // Mapa de contagens por empresa
+                const countsByCompany = {};
+                companies.forEach(c => {
+                    countsByCompany[c.id] = { Sites: 0, YouTube: 0, Revistas: 0, Rádio: 0, TV: 0, totalApprove: 0, pendingDeletion: 0, name: c.name };
+                });
+
+                // Alertas pendentes
+                const pendingSnap = await getDocs(collection(db, "artifacts", appId, "public/data/pendingAlerts"));
+                pendingSnap.forEach(doc => {
+                    const alert = doc.data();
+                    const cid = alert.companyId;
+                    if (!cid || !countsByCompany[cid]) return;
+                    const channelRaw = alert.channel || getChannelCategory(alert.source?.name);
+                    const channelNorm = channelRaw === 'Rádios' ? 'Rádio' : channelRaw;
+                    const channel = ['Sites', 'YouTube', 'Revistas', 'Rádio', 'TV'].includes(channelNorm) ? channelNorm : 'Sites';
+                    countsByCompany[cid][channel] += 1;
+                    countsByCompany[cid].totalApprove += 1;
+                });
+
+                // Pedidos de exclusão pendentes
+                const delSnap = await getDocs(collection(db, "artifacts", appId, "public/data/deletionRequests"));
+                delSnap.forEach(doc => {
+                    const req = doc.data();
+                    const cid = req.companyId;
+                    if (!cid || !countsByCompany[cid]) return;
+                    if (req.status === 'pending') countsByCompany[cid].pendingDeletion += 1;
+                });
+
+                // Renderização da tabela
+                tbody.innerHTML = '';
+                if (companies.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="8" class="px-6 py-4 text-sm text-gray-500">Nenhuma empresa ativa encontrada.</td></tr>';
+                    return;
+                }
+                companies.sort((a, b) => a.name.localeCompare(b.name));
+                companies.forEach(c => {
+                    const cnt = countsByCompany[c.id] || { Sites: 0, YouTube: 0, Revistas: 0, Rádio: 0, TV: 0, totalApprove: 0, pendingDeletion: 0 };
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td class="px-6 py-4 text-sm text-gray-700 font-medium">${c.name}</td>
+                        <td class="px-6 py-4 text-sm text-gray-700">${cnt.Sites}</td>
+                        <td class="px-6 py-4 text-sm text-gray-700">${cnt.YouTube}</td>
+                        <td class="px-6 py-4 text-sm text-gray-700">${cnt.Revistas}</td>
+                        <td class="px-6 py-4 text-sm text-gray-700">${cnt.Rádio}</td>
+                        <td class="px-6 py-4 text-sm text-gray-700">${cnt.TV}</td>
+                        <td class="px-6 py-4 text-sm text-gray-700">${cnt.totalApprove}</td>
+                        <td class="px-6 py-4 text-sm text-gray-700">${cnt.pendingDeletion}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+                // Linha de totais
+                const totals = Object.values(countsByCompany).reduce((acc, v) => {
+                    acc.Sites += v.Sites;
+                    acc.YouTube += v.YouTube;
+                    acc.Revistas += v.Revistas;
+                    acc.Rádio += v.Rádio;
+                    acc.TV += v.TV;
+                    acc.totalApprove += v.totalApprove;
+                    acc.pendingDeletion += v.pendingDeletion;
+                    return acc;
+                }, { Sites: 0, YouTube: 0, Revistas: 0, Rádio: 0, TV: 0, totalApprove: 0, pendingDeletion: 0 });
+                const trTotal = document.createElement('tr');
+                trTotal.innerHTML = `
+                    <td class="px-6 py-4 text-sm text-gray-800 font-semibold">Total</td>
+                    <td class="px-6 py-4 text-sm text-gray-800 font-semibold">${totals.Sites}</td>
+                    <td class="px-6 py-4 text-sm text-gray-800 font-semibold">${totals.YouTube}</td>
+                    <td class="px-6 py-4 text-sm text-gray-800 font-semibold">${totals.Revistas}</td>
+                    <td class="px-6 py-4 text-sm text-gray-800 font-semibold">${totals.Rádio}</td>
+                    <td class="px-6 py-4 text-sm text-gray-800 font-semibold">${totals.TV}</td>
+                    <td class="px-6 py-4 text-sm text-gray-800 font-semibold">${totals.totalApprove}</td>
+                    <td class="px-6 py-4 text-sm text-gray-800 font-semibold">${totals.pendingDeletion}</td>
+                `;
+                tbody.appendChild(trTotal);
+
+            } catch (e) {
+                console.error('Erro ao renderizar atividade:', e);
+                tbody.innerHTML = `<tr><td colspan="8" class="px-6 py-4 text-sm text-red-600">Erro ao carregar atividade.</td></tr>`;
+            }
+        }
+
+        function setupActivityListeners() {
+            try {
+                if (activityCompaniesListener) activityCompaniesListener();
+                const qComp = query(collection(db, "artifacts", appId, "public/data/companies"), where("status", "==", "active"));
+                activityCompaniesListener = onSnapshot(qComp, () => {
+                    const isActive = !!activityPage && activityPage.classList.contains('active');
+                    if (isActive && typeof renderActivityPage === 'function') renderActivityPage();
+                });
+            } catch (e) { console.error('Erro listener empresas atividade:', e); }
+            try {
+                if (activityPendingListener) activityPendingListener();
+                const qPend = query(collection(db, "artifacts", appId, "public/data/pendingAlerts"), orderBy("publishedAt", "desc"));
+                activityPendingListener = onSnapshot(qPend, () => {
+                    const isActive = !!activityPage && activityPage.classList.contains('active');
+                    if (isActive && typeof renderActivityPage === 'function') renderActivityPage();
+                });
+            } catch (e) { console.error('Erro listener pendingAlerts atividade:', e); }
+            try {
+                if (activityDeletionListener) activityDeletionListener();
+                const qDel = query(collection(db, "artifacts", appId, "public/data/deletionRequests"), orderBy("requestedAt", "desc"));
+                activityDeletionListener = onSnapshot(qDel, () => {
+                    const isActive = !!activityPage && activityPage.classList.contains('active');
+                    if (isActive && typeof renderActivityPage === 'function') renderActivityPage();
+                });
+            } catch (e) { console.error('Erro listener deletionRequests atividade:', e); }
+        }
+
         async function handleDeletionRequestAction(e) {
             const target = e.target.closest('button');
             if (!target) return;
+            const reqEl = target.closest('.bg-white');
+            const companyId = reqEl ? reqEl.dataset.companyId : null;
+            if (currentUser && currentUser.isRestrictedGlobal && companyId && Array.isArray(currentUser.allowedCompanies) && currentUser.allowedCompanies.length > 0 && !currentUser.allowedCompanies.includes(companyId)) {
+                showAlert('Sem permissão para agir neste pedido.', 'error');
+                return;
+            }
             const requestId = target.dataset.id;
             const approve = target.classList.contains('approve-request-btn');
             try {
@@ -2588,8 +3596,8 @@
                 const topVehicle = data.topVehicle || null;
                 if (!Object.keys(channelCounts).length && articles.length) {
                     articles.forEach(a => {
-                        const ch = getChannelCategory(a?.source?.name || '');
-                        channelCounts[ch] = (channelCounts[ch] || 0) + 1;
+                        const ch = (a.channel || getChannelCategory(a?.source?.name || ''));
+                channelCounts[ch] = (channelCounts[ch] || 0) + 1;
                         const veh = (a?.source?.name || 'Desconhecido');
                         vehicleCounts[veh] = (vehicleCounts[veh] || 0) + 1;
                         const pubDate = a?.publishedAt ? new Date(a.publishedAt) : null;
@@ -2609,7 +3617,7 @@
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
                             <div class="p-3 bg-white rounded shadow"><div class="text-sm text-gray-500">TOTAL DE NOTÍCIAS</div><div class="text-2xl font-bold">${total}</div></div>
                             <div class="p-3 bg-white rounded shadow"><div class="text-sm text-gray-500">Mídia com maior número de notícias</div><div class="text-lg font-semibold">${topCh}</div></div>
-                            <div class="p-3 bg-white rounded shadow"><div class="text-sm text-gray-500">Veículo com maior número de notícias</div><div class="text-lg font-semibold">${topVeh}</div></div>
+                            <div class="p-3 bg-white rounded shadow"><div class="text-sm text-gray-500">Fonte com maior número de notícias</div><div class="text-lg font-semibold">${topVeh}</div></div>
                         </div>
                     `;
                 }
@@ -2668,6 +3676,7 @@
             navRelatorio = document.getElementById('nav-relatorio');
             navMapa = document.getElementById('nav-mapa');
             navPesquisa = document.getElementById('nav-pesquisa');
+            navAtividade = document.getElementById('nav-atividade');
             navSuperAdmin = document.getElementById('nav-super-admin');
             navLogout = document.getElementById('nav-logout');
             navConfiguracoesAdmin = document.getElementById('nav-configuracoes-admin');
@@ -2676,6 +3685,7 @@
             dashboardPage = document.getElementById('dashboard-page');
             mapPage = document.getElementById('map-page');
             searchPage = document.getElementById('search-page');
+            activityPage = document.getElementById('activity-page');
             superAdminPage = document.getElementById('super-admin-page');
             companyKeywordAdminPage = document.getElementById('company-keyword-admin-page');
             companySettingsAdminPage = document.getElementById('company-settings-admin-page');
@@ -2699,6 +3709,7 @@
             searchResults = document.getElementById('search-results');
             companyForm = document.getElementById('company-form');
             companyList = document.getElementById('company-list');
+            companySearchInput = document.getElementById('company-search-input');
             backToSuperAdminKwBtn = document.getElementById('back-to-super-admin-kw');
             backToSuperAdminSettingsBtn = document.getElementById('back-to-super-admin-settings');
             backToSuperAdminUsersBtn = document.getElementById('back-to-super-admin-users');
@@ -2748,7 +3759,9 @@
          rssFrequencyInput = document.getElementById('rssFrequencyMinutes');
          gnewsFrequencyInput = document.getElementById('gnewsFrequencyHours');
          radioSourcesInput = document.getElementById('radioSources');
+         tvSourcesInput = document.getElementById('tvSources');
          youtubeChannelsInput = document.getElementById('youtubeChannels');
+        let youtubeChannelNamesInput = document.getElementById('youtubeChannelNames');
 youtubeChannelsFrequencyInput = document.getElementById('youtubeChannelsFrequencyMinutes');
 youtubeFrequencyInput = document.getElementById('youtubeFrequencyHours');
 youtubeFrequencyTimeInput = document.getElementById('youtubeFrequencyTime');
@@ -2757,14 +3770,17 @@ youtubeFrequencyTimeInput = document.getElementById('youtubeFrequencyTime');
             globalKeysPage = document.getElementById('global-keys-page');
             globalSourcesPage = document.getElementById('global-sources-page');
             globalRadioSourcesPage = document.getElementById('global-radio-sources-page');
+            globalTvSourcesPage = document.getElementById('global-tv-sources-page');
             btnChangePassword = document.getElementById('btn-change-password');
             btnGlobalKeys = document.getElementById('btn-global-keys');
             btnNewsSources = document.getElementById('btn-news-sources');
             btnRadioSources = document.getElementById('btn-radio-sources');
+            btnTvSources = document.getElementById('btn-tv-sources');
             backToAdminConfig1 = document.getElementById('back-to-admin-config-1');
             backToAdminConfig2 = document.getElementById('back-to-admin-config-2');
             backToAdminConfig3 = document.getElementById('back-to-admin-config-3');
             backToAdminConfig5 = document.getElementById('back-to-admin-config-5');
+            backToAdminConfig7 = document.getElementById('back-to-admin-config-7');
             showAllAlertsBtn = document.getElementById('show-all-alerts-btn');
             deletionAccessToggle = document.getElementById('deletion-access-toggle');
             justificationModal = document.getElementById('justification-modal');
@@ -2793,8 +3809,14 @@ youtubeFrequencyTimeInput = document.getElementById('youtubeFrequencyTime');
             confirmDeleteKeywordBtn = document.getElementById('confirm-delete-keyword-btn');
             cancelDeleteKeywordBtn = document.getElementById('cancel-delete-keyword-btn');
             keywordToDeleteNameEl = document.getElementById('keyword-to-delete-name');
+            transferKeywordModal = document.getElementById('transfer-keyword-modal');
+            transferCompanySelect = document.getElementById('transfer-company-select');
+            confirmTransferKeywordBtn = document.getElementById('confirm-transfer-keyword-btn');
+            cancelTransferKeywordBtn = document.getElementById('cancel-transfer-keyword-btn');
+            keywordToTransferNameEl = document.getElementById('keyword-to-transfer-name');
             globalLogoPage = document.getElementById('global-logo-page');
             btnGlobalLogo = document.getElementById('btn-global-logo');
+
             backToAdminConfig4 = document.getElementById('back-to-admin-config-4');
             globalLogoUpload = document.getElementById('global-logo-upload');
             globalLogoArea = document.getElementById('global-logo-area');
@@ -2846,7 +3868,8 @@ youtubeFrequencyTimeInput = document.getElementById('youtubeFrequencyTime');
                             currentUser = null;
                             updateView('login');
                         }
-                        if (!window.__ranDiagnostics) { window.__ranDiagnostics = true; runDiagnosticsAndManual(); }
+                        // Executar diagnóstico/robô somente para Super Admin, evitando abrir a Fila em páginas de empresas
+                        if (!window.__ranDiagnostics && (currentUser && currentUser.isSuperAdmin)) { window.__ranDiagnostics = true; runDiagnosticsAndManual(); }
                     } else {
                         currentUser = null;
                         updateView('login');
@@ -2867,6 +3890,7 @@ youtubeFrequencyTimeInput = document.getElementById('youtubeFrequencyTime');
             if (navRelatorio) navRelatorio.addEventListener('click', (e) => { e.preventDefault(); updateView('report'); });
             if (navMapa) navMapa.addEventListener('click', (e) => { e.preventDefault(); updateView('map'); });
             if (navPesquisa) navPesquisa.addEventListener('click', (e) => { e.preventDefault(); updateView('search'); });
+            if (navAtividade) navAtividade.addEventListener('click', (e) => { e.preventDefault(); updateView('activity'); });
             if (navSuperAdmin) navSuperAdmin.addEventListener('click', (e) => { e.preventDefault(); updateView('super-admin'); });
             if (navConfiguracoesAdmin) navConfiguracoesAdmin.addEventListener('click', (e) => { e.preventDefault(); updateView('configuracoes-admin'); });
             if (navLogout) navLogout.addEventListener('click', (e) => { e.preventDefault(); handleLogout(); });
@@ -2905,8 +3929,19 @@ youtubeFrequencyTimeInput = document.getElementById('youtubeFrequencyTime');
                     .then(() => showAlert('Frequência do GNews guardada!', 'success'))
                     .catch((error) => console.error('Erro ao guardar a frequência do GNews:', error));
             });
-            if (radioSourcesInput) radioSourcesInput.addEventListener('change', (e) => { handleGlobalSourceChange(e); if (typeof renderRadioTimesList === 'function') renderRadioTimesList(); });
-            if (youtubeChannelsInput) youtubeChannelsInput.addEventListener('change', handleGlobalSourceChange);
+            if (radioSourcesInput) radioSourcesInput.addEventListener('change', (e) => { handleGlobalSourceChange(e); });
+            // salvar enquanto digita (debounce)
+            let __radioSourcesDebounceTimer;
+            if (radioSourcesInput) radioSourcesInput.addEventListener('input', () => {
+                clearTimeout(__radioSourcesDebounceTimer);
+                __radioSourcesDebounceTimer = setTimeout(() => {
+                    const ev = new Event('change');
+                    radioSourcesInput.dispatchEvent(ev);
+                }, 800);
+            });
+            if (youtubeChannelsInput) { youtubeChannelsInput.addEventListener('change', handleGlobalSourceChange); youtubeChannelsInput.addEventListener('input', () => { if (typeof renderYouTubeChannelsPreview === 'function') renderYouTubeChannelsPreview(); }); }
+            if (youtubeChannelNamesInput) { youtubeChannelNamesInput.addEventListener('change', handleGlobalSourceChange); youtubeChannelNamesInput.addEventListener('input', () => { if (typeof renderYouTubeChannelsPreview === 'function') renderYouTubeChannelsPreview(); }); }
+            { const el = document.getElementById('tvSources'); if (el) el.addEventListener('change', (e) => { handleGlobalSourceChange(e); if (typeof renderTvIntervalsList === 'function') renderTvIntervalsList(); }); }
 if (youtubeChannelsFrequencyInput) youtubeChannelsFrequencyInput.addEventListener('change', (e) => {
                 const settingsRef = doc(db, "artifacts", appId, "public/data/settings", "global");
                 const value = e.target.value;
@@ -2936,7 +3971,9 @@ if (youtubeFrequencyInput) youtubeFrequencyInput.addEventListener('change', (e) 
             if (keywordForm) keywordForm.addEventListener('submit', handleKeywordSubmit);
             if (adminKeywordList) adminKeywordList.addEventListener('click', handleKeywordActions);
             if (confirmDeleteKeywordBtn) confirmDeleteKeywordBtn.addEventListener('click', handleConfirmDeleteKeyword);
-            if (cancelDeleteKeywordBtn) cancelDeleteKeywordBtn.addEventListener('click', () => { if (confirmDeleteKeywordModal) confirmDeleteKeywordModal.classList.add('hidden') });
+        if (cancelDeleteKeywordBtn) cancelDeleteKeywordBtn.addEventListener('click', () => { if (confirmDeleteKeywordModal) confirmDeleteKeywordModal.classList.add('hidden') });
+        if (confirmTransferKeywordBtn) confirmTransferKeywordBtn.addEventListener('click', handleConfirmTransferKeyword);
+        if (cancelTransferKeywordBtn) cancelTransferKeywordBtn.addEventListener('click', () => { if (transferKeywordModal) transferKeywordModal.classList.add('hidden') });
             if (userForm) userForm.addEventListener('submit', handleUserSubmit);
             if (adminUserList) adminUserList.addEventListener('click', handleUserActions);
             if (searchInput) searchInput.addEventListener('input', handleSearch);
@@ -2967,12 +4004,50 @@ if (youtubeFrequencyInput) youtubeFrequencyInput.addEventListener('change', (e) 
             if (btnGlobalKeys) btnGlobalKeys.addEventListener('click', () => updateView('global-keys'));
             if (btnNewsSources) btnNewsSources.addEventListener('click', () => updateView('global-sources'));
             if (btnRadioSources) btnRadioSources.addEventListener('click', () => updateView('global-radio-sources'));
+           if (btnTvSources) btnTvSources.addEventListener('click', () => updateView('global-tv-sources'));
             if (btnGlobalLogo) btnGlobalLogo.addEventListener('click', () => updateView('global-logo'));
+
             if (backToAdminConfig1) backToAdminConfig1.addEventListener('click', () => updateView('configuracoes-admin'));
             if (backToAdminConfig2) backToAdminConfig2.addEventListener('click', () => updateView('configuracoes-admin'));
             if (backToAdminConfig3) backToAdminConfig3.addEventListener('click', () => updateView('configuracoes-admin'));
             if (backToAdminConfig4) backToAdminConfig4.addEventListener('click', () => updateView('configuracoes-admin'));
             if (backToAdminConfig5) backToAdminConfig5.addEventListener('click', () => updateView('configuracoes-admin'));
+            const btnUsuarioAdmin = document.getElementById('btn-usuario-admin');
+            const usuarioAdminPage = document.getElementById('usuario-admin-page');
+            const backToAdminConfig6 = document.getElementById('back-to-admin-config-6');
+            if (btnUsuarioAdmin) btnUsuarioAdmin.addEventListener('click', () => updateView('usuario-admin'));
+            if (backToAdminConfig6) backToAdminConfig6.addEventListener('click', () => updateView('configuracoes-admin'));
+            const usuarioAdminForm = document.getElementById('usuario-admin-form');
+            if (usuarioAdminForm) usuarioAdminForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const usernameEl = document.getElementById('usuario-admin-username');
+                const passwordEl = document.getElementById('usuario-admin-password');
+                const listEl = document.getElementById('usuario-admin-companies-list');
+                if (!usernameEl || !passwordEl || !listEl) return;
+                const username = usernameEl.value.trim();
+                const password = passwordEl.value.trim();
+                const allowedCompanies = Array.from(listEl.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value).filter(Boolean);
+                if (!username || !password) { showAlert('Usuário e palavra-passe são obrigatórios.', 'error'); return; }
+                if (allowedCompanies.length === 0) { showAlert('Selecione ao menos uma empresa ativa.', 'error'); return; }
+                try {
+                    const existingQ = query(collection(db, "artifacts", appId, "public/data/restrictedUsers"), where("username", "==", username));
+                    const existingSnap = await getDocs(existingQ);
+                    if (!existingSnap.empty) { showAlert('Este usuário restrito já existe.', 'error'); return; }
+                    await addDoc(collection(db, "artifacts", appId, "public/data/restrictedUsers"), { username, password, allowedCompanies });
+                    showAlert('Usuário restrito criado com sucesso!', 'success');
+                    usuarioAdminForm.reset();
+                    Array.from(listEl.querySelectorAll('input[type="checkbox"]')).forEach(cb => cb.checked = false);
+                    renderRestrictedUsers();
+                } catch (error) {
+                    console.error('Erro ao criar usuário restrito:', error);
+                    showAlert('Erro ao criar usuário restrito.', 'error');
+                }
+            });
+            const restrictedUserList = document.getElementById('restricted-user-list');
+             if (restrictedUserList) {
+                 restrictedUserList.addEventListener('click', handleRestrictedUserActions);
+                 restrictedUserList.addEventListener('change', handleRestrictedUserActions);
+             }
             if (logoUploadInput) logoUploadInput.addEventListener('change', handleLogoUpload);
             if (globalLogoUpload) globalLogoUpload.addEventListener('change', handleGlobalLogoUpload);
             if (btnManualAlert) btnManualAlert.addEventListener('click', () => updateView('manual-alert'));
@@ -3033,7 +4108,9 @@ if (youtubeFrequencyInput) youtubeFrequencyInput.addEventListener('change', (e) 
 
                 try {
                     const getKeywordReport = httpsCallable(functions, 'getCompanyKeywordReport');
-                    const result = await getKeywordReport({ appId, companyId });
+                    const startDate = reportStartDateInput?.value || null;
+                    const endDate = reportEndDateInput?.value || null;
+                    const result = await getKeywordReport({ appId, companyId, startDate, endDate });
                     const keywordsData = result.data;
 
 
