@@ -256,7 +256,7 @@
         <div id="global-alert" class="mb-6"></div>
 
         <section id="login-page" class="page-section active fade-in">
-            <div class="w-full max-w-none mx-auto bg-gray-50 p-4 sm:p-8 rounded-lg shadow-lg mt-10 relative">
+            <div class="max-w-md mx-auto bg-gray-50 p-4 sm:p-8 rounded-lg shadow-lg mt-10 relative">
                 <div id="login-logo-container" class="absolute top-4 right-4 h-12 w-auto"></div>
                 <h1 class="text-2xl sm:text-3xl font-bold text-center text-gray-800">Bem-Vindo</h1>
                 <p class="text-center text-gray-500 mt-2 mb-6">Informe os seus dados de acesso</p>
@@ -2237,21 +2237,16 @@ let keywordToTransferInfo = null;
                         const p = (programInput.value || '').trim();
                         const s = (siteInput.value || '').trim();
                         const u = (urlInput.value || '').trim();
-                        const segments = [];
-                        if (n) segments.push(n);
-                        if (p) segments.push(p);
-                        if (s) segments.push(s);
-                        if (u) segments.push(u);
-                        if (inputStart.value && inputEnd.value) {
-                            segments.push(`${inputStart.value} - ${inputEnd.value}`);
-                        } else if (inputStart.value) {
-                            segments.push(inputStart.value);
-                        }
+
+                        // Posições fixas: name | program | site | url | HH:MM - HH:MM | dias
+                        const timeToken = (inputStart.value && inputEnd.value)
+                            ? `${inputStart.value} - ${inputEnd.value}`
+                            : (inputStart.value || '');
                         const selected = weekdayAbbr.filter(d => dayInputs[d]?.checked);
-                        if (selected.length > 0) {
-                            segments.push(selected.join(' '));
-                        }
-                        const newLine = segments.join(' | ');
+                        const daysToken = selected.length > 0 ? selected.join(' ') : '';
+
+                        const tokens = [n, p, s, u, timeToken, daysToken];
+                        const newLine = tokens.join(' | ');
 
                         const currentLines = (srcEl.value || '').split('\n').map(l => l.trim()).filter(l => l.length > 0);
 
@@ -2361,22 +2356,20 @@ let keywordToTransferInfo = null;
                     const p = (newProgramInput.value || '').trim();
                     const s = (newSiteInput.value || '').trim();
                     const u = (newUrlInput.value || '').trim();
-                    const segments = [];
-                    if (n) segments.push(n);
-                    if (p) segments.push(p);
-                    if (s) segments.push(s);
-                    if (u) segments.push(u);
-                    if (newInputStart.value && newInputEnd.value) {
-                        segments.push(`${newInputStart.value} - ${newInputEnd.value}`);
-                    } else if (newInputStart.value) {
-                        segments.push(newInputStart.value);
-                    }
+
+                    // Posições fixas: name | program | site | url | HH:MM - HH:MM | dias
+                    const timeToken = (newInputStart.value && newInputEnd.value)
+                        ? `${newInputStart.value} - ${newInputEnd.value}`
+                        : (newInputStart.value || '');
                     const selected = weekdayAbbrNew.filter(d => newDayInputs[d]?.checked);
-                    if (selected.length > 0) {
-                        segments.push(selected.join(' '));
-                    }
-                    const newLine = segments.join(' | ');
-                    if (!newLine.trim()) return; // não persiste se todos campos estiverem vazios
+                    const daysToken = selected.length > 0 ? selected.join(' ') : '';
+
+                    const tokens = [n, p, s, u, timeToken, daysToken];
+                    const newLine = tokens.join(' | ');
+
+                    // não persiste se todos campos estiverem vazios
+                    if (!tokens.some(t => (t || '').trim().length > 0)) return;
+
                     const currLines = (srcEl.value || '').split('\n').map(l => l.trim()).filter(l => l.length > 0);
                     currLines.push(newLine);
                     srcEl.value = currLines.join('\n');

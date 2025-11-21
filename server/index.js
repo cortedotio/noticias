@@ -395,19 +395,80 @@ async function diagnoseSourceNames(appId) {
   return { companies: companiesSnap.size, articlesTotal, articlesInvalid, pendingTotal, pendingInvalid, sampleArticles, samplePending };
 }
 
-// Helper to parse radio sources "Name | URL | HH:MM - HH:MM"
+// Helper to parse radio sources "name | program | site | url | HH:MM - HH:MM | seg ter ..."
 function parseRadioSources(str = '') {
   const lines = String(str).split(/\n+/).map(l => l.trim()).filter(Boolean);
   const entries = [];
+
+  const isTime = (s = '') => /^(\d{2}:\d{2})(?:\s*-\s*(\d{2}:\d{2}))?$/.test(String(s).trim());
+  const isLikelyStreamUrl = (s = '') => {
+    const u = String(s || '');
+    if (!/^https?:\/\//i.test(u)) return false;
+    return /\.m3u8(\b|$)|\.mp3(\b|$)|\.aac(\b|$)|\.ogg(\b|$)|icecast|shoutcast|\/stream|\/live/i.test(u);
+  };
+  const isWebsite = (s = '') => {
+    const u = String(s || '');
+    return /^https?:\/\//i.test(u) && !isLikelyStreamUrl(u);
+  };
+
   for (const line of lines) {
     const parts = line.split('|').map(s => s.trim());
     const name = parts[0] || '';
-    const url = parts[1] || '';
-    const timePart = parts[2] || '';
+    let program = '';
+    let site = '';
+    let url = '';
+    let timeRaw = '';
+    let daysTokens = '';
+
+    // Prefer fixed positions if present
+    if (parts.length >= 5 && isTime(parts[4])) {
+      program = parts[1] || '';
+      site = parts[2] || '';
+      url = parts[3] || '';
+      timeRaw = parts[4] || '';
+      daysTokens = (parts[5] || '').toLowerCase();
+    } else {
+      // Backward compatibility: try to infer positions
+      const p1 = parts[1] || '';
+      const p2 = parts[2] || '';
+      const p3 = parts[3] || '';
+      const p4 = parts[4] || '';
+      if (isTime(p2)) {
+        // name | url | time | days?
+        url = p1 || '';
+        timeRaw = p2 || '';
+        daysTokens = (parts.slice(3).join(' ') || '').toLowerCase();
+      } else if (isTime(p3)) {
+        // name | program | url | time | days?
+        program = p1 || '';
+        url = p2 || '';
+        timeRaw = p3 || '';
+        daysTokens = (parts.slice(4).join(' ') || '').toLowerCase();
+      } else if (isWebsite(p2) || isLikelyStreamUrl(p2)) {
+        // name | program | site/url | ...
+        program = p1 || '';
+        if (isWebsite(p2)) site = p2; else url = p2;
+        if (isTime(p3)) {
+          timeRaw = p3;
+          daysTokens = (parts.slice(4).join(' ') || '').toLowerCase();
+        }
+      } else {
+        // name | program
+        program = p1 || '';
+      }
+    }
+
     let start = null, end = null;
-    const m = timePart.match(/(\d{2}:\d{2})\s*-\s*(\d{2}:\d{2})/);
+    const m = String(timeRaw || '').match(/(\d{2}:\d{2})\s*-\s*(\d{2}:\d{2})/);
     if (m) { start = m[1]; end = m[2]; }
-    if (name || url) { entries.push({ name, url, start, end }); }
+
+    const weekdayAbbr = ['seg','ter','qua','qui','sex','sab','dom'];
+    const selectedDays = new Set(String(daysTokens || '').split(/\s+/).filter(t => weekdayAbbr.includes(t)));
+    const days = Array.from(selectedDays);
+
+    if (name || url || site) {
+      entries.push({ name, program, site, url, start, end, days });
+    }
   }
   return entries;
 }
