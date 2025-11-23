@@ -561,6 +561,25 @@
                             (Cloud Vision)</label>
                         <input type="text" id="apiKeyVision"
                             class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                        <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div class="flex items-center">
+                                <input type="checkbox" id="visionEnabled" class="mr-2">
+                                <label for="visionEnabled" class="text-sm text-gray-700">Ativar Cloud Vision</label>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="checkbox" id="visionRelevantOnly" class="mr-2">
+                                <label for="visionRelevantOnly" class="text-sm text-gray-700">Somente imagens relevantes</label>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="checkbox" id="visionLogoDetection" class="mr-2">
+                                <label for="visionLogoDetection" class="text-sm text-gray-700">Detectar logótipos</label>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="checkbox" id="visionOcrText" class="mr-2">
+                                <label for="visionOcrText" class="text-sm text-gray-700">OCR de texto em imagens</label>
+                            </div>
+                        </div>
+                        <p class="mt-2 text-xs text-gray-500">Configure como o Cloud Vision será usado no robô: habilitar/desabilitar, aplicar apenas a imagens relevantes, e escolher entre detecção de logótipos e OCR de texto.</p>
                     </div>
                     <div class="bg-gray-100 p-3 rounded-md">
                         <label for="apiKeyVideoIntelligence" class="block text-sm font-medium text-gray-700 mb-1">Chave
@@ -2030,8 +2049,8 @@ let keywordToTransferInfo = null;
         async function renderCompanySettingsAdminPage() { if (!selectedCompanyForManagement || !companySettingsAdminTitle) return; companySettingsAdminTitle.textContent = `Opções para: ${selectedCompanyForManagement.name}`; try { const settingsRef = doc(db, "artifacts", appId, "public/data/settings", selectedCompanyForManagement.id); const docSnap = await getDoc(settingsRef); if (docSnap.exists()) { const settings = docSnap.data(); if (reportAccessToggle) reportAccessToggle.checked = settings.reportAccess !== false; if (mapAccessToggle) mapAccessToggle.checked = settings.mapAccess !== false; if (fetchOnlyNewToggle) fetchOnlyNewToggle.checked = settings.fetchOnlyNew === true; if (deletionAccessToggle) deletionAccessToggle.checked = settings.canRequestDeletion === true; if (document.querySelector(`input[name="news-scope"][value="${settings.searchScope || 'br'}"]`)) document.querySelector(`input[name="news-scope"][value="${settings.searchScope || 'br'}"]`).checked = true; if (stateSelect) stateSelect.value = settings.searchState || ''; } else { if (reportAccessToggle) reportAccessToggle.checked = true; if (mapAccessToggle) mapAccessToggle.checked = true; if (fetchOnlyNewToggle) fetchOnlyNewToggle.checked = false; if (deletionAccessToggle) deletionAccessToggle.checked = false; if (document.querySelector('input[name="news-scope"][value="br"]')) document.querySelector('input[name="news-scope"][value="br"]').checked = true; if (stateSelect) stateSelect.value = ''; } handleScopeChange(); } catch (error) { console.error("Erro ao renderizar as configurações:", error); } }
         async function handleSettingsChange(e) { if (!selectedCompanyForManagement) return; const settingsRef = doc(db, "artifacts", appId, "public/data/settings", selectedCompanyForManagement.id); let key, value; switch (e.target.id) { case 'report-access-toggle': key = 'reportAccess'; value = e.target.checked; break; case 'map-access-toggle': key = 'mapAccess'; value = e.target.checked; break; case 'fetch-only-new-toggle': key = 'fetchOnlyNew'; value = e.target.checked; break; case 'deletion-access-toggle': key = 'canRequestDeletion'; value = e.target.checked; break; case 'state-select': key = 'searchState'; value = e.target.value; break; default: if (e.target.name === 'news-scope') { key = 'searchScope'; value = e.target.value; } else { return; } } try { await setDoc(settingsRef, { [key]: value }, { merge: true }); showAlert('Opção guardada!', 'success'); } catch (error) { console.error("Erro ao guardar a configuração:", error); } }
         function handleScopeChange() { if (!stateSelectContainer || !document.querySelector('input[name="news-scope"]:checked')) return; const selectedScope = document.querySelector('input[name="news-scope"]:checked').value; stateSelectContainer.classList.toggle('hidden', selectedScope !== 'state'); }
-        async function renderGlobalKeysPage() { try { const settingsRef = doc(db, "artifacts", appId, "public/data/settings", "global"); const docSnap = await getDoc(settingsRef); if (docSnap.exists()) { const settings = docSnap.data(); if (apiKeyNewsApiInput) apiKeyNewsApiInput.value = settings.apiKeyNewsApi || ''; if (apiKeyFirebaseNewsInput) apiKeyFirebaseNewsInput.value = settings.apiKeyFirebaseNews || ''; if (typeof apiKeyGoogleMapsInput !== 'undefined' && apiKeyGoogleMapsInput) apiKeyGoogleMapsInput.value = settings.apiKeyGoogleMaps || ''; if (apiKeyGNewsInput1) apiKeyGNewsInput1.value = settings.apiKeyGNews1 || ''; if (apiKeyGNewsInput2) apiKeyGNewsInput2.value = settings.apiKeyGNews2 || ''; if (apiKeyGNewsInput3) apiKeyGNewsInput3.value = settings.apiKeyGNews3 || ''; if (apiKeyGNewsInput4) apiKeyGNewsInput4.value = settings.apiKeyGNews4 || ''; if (apiKeyYoutubeInput) apiKeyYoutubeInput.value = settings.apiKeyYoutube || ''; if (apiKeyBloggerInput) apiKeyBloggerInput.value = settings.apiKeyBlogger || ''; if (apiKeyVisionInput) apiKeyVisionInput.value = settings.apiKeyVision || ''; if (apiKeyVideoIntelligenceInput) apiKeyVideoIntelligenceInput.value = settings.apiKeyVideoIntelligence || ''; } } catch (error) { console.error("Erro ao carregar as chaves de API globais:", error); } }
-        async function handleGlobalKeyChange(e) { const settingsRef = doc(db, "artifacts", appId, "public/data/settings", "global"); const key = e.target.id; const value = e.target.value; try { await setDoc(settingsRef, { [key]: value }, { merge: true }); showAlert('Chave de API guardada!', 'success'); } catch (error) { console.error("Erro ao guardar a chave de API global:", error); } }
+        async function renderGlobalKeysPage() { try { const settingsRef = doc(db, "artifacts", appId, "public/data/settings", "global"); const docSnap = await getDoc(settingsRef); if (docSnap.exists()) { const settings = docSnap.data(); if (apiKeyNewsApiInput) apiKeyNewsApiInput.value = settings.apiKeyNewsApi || ''; if (apiKeyFirebaseNewsInput) apiKeyFirebaseNewsInput.value = settings.apiKeyFirebaseNews || ''; if (typeof apiKeyGoogleMapsInput !== 'undefined' && apiKeyGoogleMapsInput) apiKeyGoogleMapsInput.value = settings.apiKeyGoogleMaps || ''; if (apiKeyGNewsInput1) apiKeyGNewsInput1.value = settings.apiKeyGNews1 || ''; if (apiKeyGNewsInput2) apiKeyGNewsInput2.value = settings.apiKeyGNews2 || ''; if (apiKeyGNewsInput3) apiKeyGNewsInput3.value = settings.apiKeyGNews3 || ''; if (apiKeyGNewsInput4) apiKeyGNewsInput4.value = settings.apiKeyGNews4 || ''; if (apiKeyYoutubeInput) apiKeyYoutubeInput.value = settings.apiKeyYoutube || ''; if (apiKeyBloggerInput) apiKeyBloggerInput.value = settings.apiKeyBlogger || ''; if (apiKeyVisionInput) apiKeyVisionInput.value = settings.apiKeyVision || ''; if (typeof visionEnabledToggle !== 'undefined' && visionEnabledToggle) visionEnabledToggle.checked = settings.visionEnabled === true; if (typeof visionRelevantOnlyToggle !== 'undefined' && visionRelevantOnlyToggle) visionRelevantOnlyToggle.checked = settings.visionRelevantOnly === true; if (typeof visionLogoDetectionToggle !== 'undefined' && visionLogoDetectionToggle) visionLogoDetectionToggle.checked = settings.visionLogoDetection !== false; if (typeof visionOcrTextToggle !== 'undefined' && visionOcrTextToggle) visionOcrTextToggle.checked = settings.visionOcrText !== false; if (apiKeyVideoIntelligenceInput) apiKeyVideoIntelligenceInput.value = settings.apiKeyVideoIntelligence || ''; } } catch (error) { console.error("Erro ao carregar as chaves de API globais:", error); } }
+        async function handleGlobalKeyChange(e) { const settingsRef = doc(db, "artifacts", appId, "public/data/settings", "global"); const key = e.target.id; const value = (e.target.type === 'checkbox') ? e.target.checked : e.target.value; try { await setDoc(settingsRef, { [key]: value }, { merge: true }); showAlert('Opção guardada!', 'success'); } catch (error) { console.error("Erro ao guardar a chave/opção global:", error); } }
         async function renderGlobalSourcesPage() { try { const settingsRef = doc(db, "artifacts", appId, "public/data/settings", "global"); const docSnap = await getDoc(settingsRef); if (docSnap.exists()) { const settings = docSnap.data(); if (bloggerIdInput) bloggerIdInput.value = settings.bloggerId || ''; if (rssUrlInput) rssUrlInput.value = settings.rssUrl || ''; if (youtubeChannelsInput) youtubeChannelsInput.value = settings.youtubeChannels || ''; if (youtubeChannelNamesInput) youtubeChannelNamesInput.value = settings.youtubeChannelNames || ''; if (youtubeChannelsFrequencyInput) youtubeChannelsFrequencyInput.value = settings.youtubeChannelsFrequencyMinutes || ''; if (youtubeFrequencyInput) youtubeFrequencyInput.value = settings.youtubeFrequencyHours || ''; if (youtubeFrequencyTimeInput) youtubeFrequencyTimeInput.value = settings.youtubeFrequencyTime || ''; if (typeof rssFrequencyInput !== 'undefined' && rssFrequencyInput) rssFrequencyInput.value = settings.rssFrequencyMinutes || ''; if (typeof gnewsFrequencyInput !== 'undefined' && gnewsFrequencyInput) gnewsFrequencyInput.value = settings.gnewsFrequencyHours || ''; } } catch (error) { console.error("Erro ao carregar as fontes globais:", error); } }
         async function renderGlobalRadioSourcesPage() { try { const settingsRef = doc(db, "artifacts", appId, "public/data/settings", "global"); const docSnap = await getDoc(settingsRef); if (docSnap.exists()) { const settings = docSnap.data(); if (radioSourcesInput) radioSourcesInput.value = settings.radioSources || ''; }
         if (typeof renderRadioTimesList === 'function') renderRadioTimesList();
@@ -3692,6 +3711,10 @@ let keywordToTransferInfo = null;
             apiKeyYoutubeInput = document.getElementById('apiKeyYoutube');
             apiKeyBloggerInput = document.getElementById('apiKeyBlogger');
             apiKeyVisionInput = document.getElementById('apiKeyVision');
+            const visionEnabledToggle = document.getElementById('visionEnabled');
+            const visionRelevantOnlyToggle = document.getElementById('visionRelevantOnly');
+            const visionLogoDetectionToggle = document.getElementById('visionLogoDetection');
+            const visionOcrTextToggle = document.getElementById('visionOcrText');
             apiKeyVideoIntelligenceInput = document.getElementById('apiKeyVideoIntelligence');
             bloggerIdInput = document.getElementById('bloggerId');
         rssUrlInput = document.getElementById('rssUrl');
@@ -3854,7 +3877,11 @@ youtubeFrequencyTimeInput = document.getElementById('youtubeFrequencyTime');
             if (apiKeyYoutubeInput) apiKeyYoutubeInput.addEventListener('change', handleGlobalKeyChange);
             if (apiKeyBloggerInput) apiKeyBloggerInput.addEventListener('change', handleGlobalKeyChange);
             if (apiKeyVisionInput) apiKeyVisionInput.addEventListener('change', handleGlobalKeyChange);
-            if (apiKeyVideoIntelligenceInput) apiKeyVideoIntelligenceInput.addEventListener('change', handleGlobalKeyChange);
+if (visionEnabledToggle) visionEnabledToggle.addEventListener('change', handleGlobalKeyChange);
+if (visionRelevantOnlyToggle) visionRelevantOnlyToggle.addEventListener('change', handleGlobalKeyChange);
+if (visionLogoDetectionToggle) visionLogoDetectionToggle.addEventListener('change', handleGlobalKeyChange);
+if (visionOcrTextToggle) visionOcrTextToggle.addEventListener('change', handleGlobalKeyChange);
+if (apiKeyVideoIntelligenceInput) apiKeyVideoIntelligenceInput.addEventListener('change', handleGlobalKeyChange);
             if (bloggerIdInput) bloggerIdInput.addEventListener('change', handleGlobalSourceChange);
             if (rssUrlInput) rssUrlInput.addEventListener('change', handleGlobalSourceChange);
             if (rssFrequencyInput) rssFrequencyInput.addEventListener('change', (e) => {
@@ -3903,22 +3930,48 @@ youtubeFrequencyTimeInput = document.getElementById('youtubeFrequencyTime');
             { const el = document.getElementById('tvSources'); if (el) el.addEventListener('change', (e) => { handleGlobalSourceChange(e); if (typeof renderTvIntervalsList === 'function') renderTvIntervalsList(); }); }
 if (youtubeChannelsFrequencyInput) youtubeChannelsFrequencyInput.addEventListener('change', (e) => {
                 const settingsRef = doc(db, "artifacts", appId, "public/data/settings", "global");
-                const value = e.target.value;
+                const raw = (e.target.value || '').toString().trim();
+                const value = Number(raw);
+                if (raw === '' || isNaN(value) || value <= 0) {
+                    if (typeof e.target.dataset.lastValue !== 'undefined') {
+                        e.target.value = e.target.dataset.lastValue;
+                    }
+                    showAlert('Valor inválido. Mantida a última frequência dos canais do YouTube.', 'error');
+                    return;
+                }
+                e.target.dataset.lastValue = String(value);
                 setDoc(settingsRef, { youtubeChannelsFrequencyMinutes: value }, { merge: true })
                     .then(() => showAlert('Frequência dos canais do YouTube guardada!', 'success'))
                     .catch((error) => console.error('Erro ao guardar a frequência dos canais do YouTube:', error));
             });
 if (youtubeFrequencyInput) youtubeFrequencyInput.addEventListener('change', (e) => {
                 const settingsRef = doc(db, "artifacts", appId, "public/data/settings", "global");
-                const value = e.target.value;
+                const raw = (e.target.value || '').toString().trim();
+                const value = Number(raw);
+                if (raw === '' || isNaN(value) || value <= 0) {
+                    if (typeof e.target.dataset.lastValue !== 'undefined') {
+                        e.target.value = e.target.dataset.lastValue;
+                    }
+                    showAlert('Valor inválido. Mantida a última frequência do YouTube.', 'error');
+                    return;
+                }
+                e.target.dataset.lastValue = String(value);
                 setDoc(settingsRef, { youtubeFrequencyHours: value }, { merge: true })
                     .then(() => showAlert('Frequência do YouTube guardada!', 'success'))
                     .catch((error) => console.error('Erro ao guardar a frequência do YouTube:', error));
             });
             if (youtubeFrequencyTimeInput) youtubeFrequencyTimeInput.addEventListener('change', (e) => {
                 const settingsRef = doc(db, "artifacts", appId, "public/data/settings", "global");
-                const value = e.target.value;
-                setDoc(settingsRef, { youtubeFrequencyTime: value }, { merge: true })
+                const raw = (e.target.value || '').toString().trim();
+                if (raw && !/^\d{2}:\d{2}$/.test(raw)) {
+                    if (typeof e.target.dataset.lastValue !== 'undefined') {
+                        e.target.value = e.target.dataset.lastValue;
+                    }
+                    showAlert('Horário inválido. Use o formato HH:MM.', 'error');
+                    return;
+                }
+                e.target.dataset.lastValue = raw;
+                setDoc(settingsRef, { youtubeFrequencyTime: raw }, { merge: true })
                     .then(() => showAlert('Horário da busca do YouTube guardado!', 'success'))
                     .catch((error) => console.error('Erro ao guardar o horário do YouTube:', error));
             });

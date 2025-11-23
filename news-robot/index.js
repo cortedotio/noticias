@@ -15,6 +15,7 @@ const { TranslationServiceClient } = require('@google-cloud/translate');
 const { ImageAnnotatorClient } = require('@google-cloud/vision');
 const { VideoIntelligenceServiceClient } = require('@google-cloud/video-intelligence');
 const { Client } = require("@googlemaps/google-maps-services-js");
+const crypto = require('crypto');
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -158,33 +159,56 @@ async function geocodeLocation(locationName, apiKey) {
 }
 
 async function detectAndTranslate(text) {
-    if (!text || text.length < 20) {
-        return { originalText: text, translatedText: text, languageCode: 'pt', translated: false };
+    // Normalizar o texto para evitar chamadas desnecessárias por diferenças triviais
+    const normalize = (s) => (s || '').replace(/<[^>]+>/g, ' ').replace(/&nbsp;|&amp;|&quot;|&#39;/g, ' ').replace(/\s+/g, ' ').trim();
+    const originalText = text || '';
+    const normalizedText = normalize(originalText);
+    if (!normalizedText || normalizedText.length < 20) {
+        return { originalText, translatedText: originalText, languageCode: 'pt', translated: false };
     }
-    const request = {
-        parent: `projects/${GOOGLE_PROJECT_ID}/locations/global`,
-        content: text,
-        mimeType: 'text/plain',
-    };
+
+    // Cache de tradução: chave por SHA-256 do texto normalizado
+    const hash = crypto.createHash('sha256').update(normalizedText).digest('hex');
+    const cacheRef = db.doc(`artifacts/${APP_ID}/public/data/translationCache/${hash}`);
     try {
-        const [response] = await translationClient.detectLanguage(request);
-        const detectedLanguage = response.languages[0];
-        if (detectedLanguage.languageCode.toLowerCase() !== 'pt') {
-            const translateRequest = {
-                parent: `projects/${GOOGLE_PROJECT_ID}/locations/global`,
-                contents: [text],
-                mimeType: 'text/plain',
-                sourceLanguageCode: detectedLanguage.languageCode,
-                targetLanguageCode: 'pt',
-            };
-            const [translateResponse] = await translationClient.translateText(translateRequest);
-            const translation = translateResponse.translations[0];
-            return { originalText: text, translatedText: translation.translatedText, languageCode: detectedLanguage.languageCode, translated: true };
+        const cacheSnap = await cacheRef.get();
+        if (cacheSnap.exists) {
+            const c = cacheSnap.data();
+            const lang = (c.languageCode || 'und').toLowerCase();
+            const translated = lang !== 'pt';
+            return { originalText, translatedText: c.translatedText || originalText, languageCode: c.languageCode || 'und', translated };
         }
-        return { originalText: text, translatedText: text, languageCode: 'pt', translated: false };
+    } catch (e) {
+        functions.logger.warn('Falha ao ler cache de tradução:', e.message);
+    }
+
+    const parent = `projects/${GOOGLE_PROJECT_ID}/locations/global`;
+    const detectRequest = { parent, content: normalizedText, mimeType: 'text/plain' };
+
+    try {
+        const [detectResponse] = await translationClient.detectLanguage(detectRequest);
+        const detectedLanguage = detectResponse.languages[0];
+        const language = (detectedLanguage && detectedLanguage.languageCode) ? detectedLanguage.languageCode.toLowerCase() : 'und';
+        if (language === 'pt') {
+            // Cache como português para evitar redetecção
+            try { await cacheRef.set({ translatedText: originalText, languageCode: 'pt', createdAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true }); } catch {}
+            return { originalText, translatedText: originalText, languageCode: 'pt', translated: false };
+        }
+        const translateRequest = {
+            parent,
+            contents: [normalizedText],
+            mimeType: 'text/plain',
+            sourceLanguageCode: detectedLanguage.languageCode,
+            targetLanguageCode: 'pt',
+        };
+        const [translateResponse] = await translationClient.translateText(translateRequest);
+        const translation = (translateResponse.translations && translateResponse.translations[0]) ? translateResponse.translations[0].translatedText : originalText;
+        // Salvar no cache
+        try { await cacheRef.set({ translatedText: translation, languageCode: detectedLanguage.languageCode, createdAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true }); } catch {}
+        return { originalText, translatedText: translation, languageCode: detectedLanguage.languageCode, translated: true };
     } catch (error) {
-        functions.logger.error("Erro na API de Tradução:", error.message);
-        return { originalText: text, translatedText: text, languageCode: 'und', translated: false };
+        functions.logger.error('Erro na API de Tradução:', error.message);
+        return { originalText, translatedText: originalText, languageCode: 'und', translated: false };
     }
 }
 
@@ -237,12 +261,41 @@ async function analyzeArticleWithAI(article, settings) {
         }
     }
     
-    if (article.image && settings.apiKeyVision) {
+    // Gate do Vision AI com configuração global e filtro de relevância
+    const visionEnabled = settings.visionEnabled === true;
+    const logoEnabled = settings.visionLogoDetection === true;
+    const ocrEnabled = settings.visionOcrText === true;
+    const relevantOnly = settings.visionRelevantOnly === true;
+
+    const isRelevantImage = (url) => {
         try {
-            const [logoResult] = await visionClient.logoDetection(article.image);
-            visionData.logos = logoResult.logoAnnotations.map(logo => ({ description: logo.description, score: logo.score }));
-            const [textResult] = await visionClient.textDetection(article.image);
-            visionData.ocrText = textResult.fullTextAnnotation ? textResult.fullTextAnnotation.text.replace(/\n/g, ' ') : '';
+            const u = (url || '').toLowerCase();
+            const allowedExt = /(\.jpg|\.jpeg|\.png|\.webp)(\?|$)/i;
+            if (!allowedExt.test(u)) return false;
+            const badPatterns = ['logo', 'icon', 'placeholder', 'sprite', 'default', 'banner', 'favicon'];
+            if (badPatterns.some(p => u.includes(p))) return false;
+            const sizeParamMatch = u.match(/[?&](w|width|h|height)=(\d+)/);
+            if (sizeParamMatch && Number(sizeParamMatch[2]) < 64) return false;
+            return true;
+        } catch {
+            return false;
+        }
+    };
+
+    if (article.image && settings.apiKeyVision && visionEnabled) {
+        try {
+            if (!relevantOnly || isRelevantImage(article.image)) {
+                if (logoEnabled) {
+                    const [logoResult] = await visionClient.logoDetection(article.image);
+                    visionData.logos = logoResult.logoAnnotations.map(logo => ({ description: logo.description, score: logo.score }));
+                }
+                if (ocrEnabled) {
+                    const [textResult] = await visionClient.textDetection(article.image);
+                    visionData.ocrText = textResult.fullTextAnnotation ? textResult.fullTextAnnotation.text.replace(/\n/g, ' ') : '';
+                }
+            } else {
+                functions.logger.info(`Imagem filtrada por relevância: ${article.image}`);
+            }
         } catch (err) {
             functions.logger.warn(`Vision AI error para imagem ${article.image}:`, err.message);
         }
