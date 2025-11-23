@@ -3900,6 +3900,15 @@ if (apiKeyVideoIntelligenceInput) apiKeyVideoIntelligenceInput.addEventListener(
                     .then(() => showAlert('Frequência de RSS guardada!', 'success'))
                     .catch((error) => console.error('Erro ao guardar a frequência de RSS:', error));
             });
+// salvar enquanto digita (debounce)
+let __rssFrequencyDebounceTimer;
+if (rssFrequencyInput) rssFrequencyInput.addEventListener('input', () => {
+                clearTimeout(__rssFrequencyDebounceTimer);
+                __rssFrequencyDebounceTimer = setTimeout(() => {
+                    const ev = new Event('change');
+                    rssFrequencyInput.dispatchEvent(ev);
+                }, 800);
+            });
             if (gnewsFrequencyInput) gnewsFrequencyInput.addEventListener('change', (e) => {
                 const settingsRef = doc(db, "artifacts", appId, "public/data/settings", "global");
                 const value = (e.target.value || '').toString().trim();
@@ -3914,6 +3923,15 @@ if (apiKeyVideoIntelligenceInput) apiKeyVideoIntelligenceInput.addEventListener(
                 setDoc(settingsRef, { gnewsFrequencyHours: Number(value) }, { merge: true })
                     .then(() => showAlert('Frequência do GNews guardada!', 'success'))
                     .catch((error) => console.error('Erro ao guardar a frequência do GNews:', error));
+            });
+// salvar enquanto digita (debounce)
+let __gnewsFrequencyDebounceTimer;
+if (gnewsFrequencyInput) gnewsFrequencyInput.addEventListener('input', () => {
+                clearTimeout(__gnewsFrequencyDebounceTimer);
+                __gnewsFrequencyDebounceTimer = setTimeout(() => {
+                    const ev = new Event('change');
+                    gnewsFrequencyInput.dispatchEvent(ev);
+                }, 800);
             });
             if (radioSourcesInput) radioSourcesInput.addEventListener('change', (e) => { handleGlobalSourceChange(e); });
             // salvar enquanto digita (debounce)
@@ -3944,6 +3962,15 @@ if (youtubeChannelsFrequencyInput) youtubeChannelsFrequencyInput.addEventListene
                     .then(() => showAlert('Frequência dos canais do YouTube guardada!', 'success'))
                     .catch((error) => console.error('Erro ao guardar a frequência dos canais do YouTube:', error));
             });
+// salvar enquanto digita (debounce)
+let __ytChannelsFrequencyDebounceTimer;
+if (youtubeChannelsFrequencyInput) youtubeChannelsFrequencyInput.addEventListener('input', () => {
+                clearTimeout(__ytChannelsFrequencyDebounceTimer);
+                __ytChannelsFrequencyDebounceTimer = setTimeout(() => {
+                    const ev = new Event('change');
+                    youtubeChannelsFrequencyInput.dispatchEvent(ev);
+                }, 800);
+            });
 if (youtubeFrequencyInput) youtubeFrequencyInput.addEventListener('change', (e) => {
                 const settingsRef = doc(db, "artifacts", appId, "public/data/settings", "global");
                 const raw = (e.target.value || '').toString().trim();
@@ -3959,6 +3986,15 @@ if (youtubeFrequencyInput) youtubeFrequencyInput.addEventListener('change', (e) 
                 setDoc(settingsRef, { youtubeFrequencyHours: value }, { merge: true })
                     .then(() => showAlert('Frequência do YouTube guardada!', 'success'))
                     .catch((error) => console.error('Erro ao guardar a frequência do YouTube:', error));
+            });
+// salvar enquanto digita (debounce)
+let __ytSearchFrequencyDebounceTimer;
+if (youtubeFrequencyInput) youtubeFrequencyInput.addEventListener('input', () => {
+                clearTimeout(__ytSearchFrequencyDebounceTimer);
+                __ytSearchFrequencyDebounceTimer = setTimeout(() => {
+                    const ev = new Event('change');
+                    youtubeFrequencyInput.dispatchEvent(ev);
+                }, 800);
             });
             if (youtubeFrequencyTimeInput) youtubeFrequencyTimeInput.addEventListener('change', (e) => {
                 const settingsRef = doc(db, "artifacts", appId, "public/data/settings", "global");
