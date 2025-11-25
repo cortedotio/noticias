@@ -138,6 +138,21 @@
             display: block;
         }
 
+        .media-menu {
+            display: none;
+            position: absolute;
+            z-index: 10;
+            right: 0;
+            background-color: white;
+            border-radius: 0.375rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            border: 1px solid #e5e7eb;
+        }
+
+        .media-container:hover .media-menu {
+            display: block;
+        }
+
         #report-keyword-filter-container,
         #manual-alert-keyword {
             height: 100px;
@@ -788,6 +803,16 @@
                             <select id="state-select" class="w-full p-2 border border-gray-300 rounded-md"></select>
                         </div>
                     </div>
+                    <div>
+                        <h4 class="text-lg font-semibold mb-2">Captura de Notícias</h4>
+                        <div id="capture-channels-container" class="space-y-2">
+                            <div class="flex items-center"><input type="checkbox" class="capture-channel h-4 w-4 text-indigo-600 border-gray-300 rounded" id="capture-sites" value="Sites"><label class="ml-2 block text-sm text-gray-900" for="capture-sites">Sites</label></div>
+                            <div class="flex items-center"><input type="checkbox" class="capture-channel h-4 w-4 text-indigo-600 border-gray-300 rounded" id="capture-youtube" value="YouTube"><label class="ml-2 block text-sm text-gray-900" for="capture-youtube">YouTube</label></div>
+                            <div class="flex items-center"><input type="checkbox" class="capture-channel h-4 w-4 text-indigo-600 border-gray-300 rounded" id="capture-revistas" value="Revistas"><label class="ml-2 block text-sm text-gray-900" for="capture-revistas">Revistas</label></div>
+                            <div class="flex items-center"><input type="checkbox" class="capture-channel h-4 w-4 text-indigo-600 border-gray-300 rounded" id="capture-radios" value="Rádios"><label class="ml-2 block text-sm text-gray-900" for="capture-radios">Rádios</label></div>
+                            <div class="flex items-center"><input type="checkbox" class="capture-channel h-4 w-4 text-indigo-600 border-gray-300 rounded" id="capture-tv" value="TV"><label class="ml-2 block text-sm text-gray-900" for="capture-tv">TV</label></div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
@@ -842,6 +867,12 @@
                         <h3 class="text-xl font-semibold mb-4 text-center">Direta/Indireta</h3>
                         <div class="relative h-[420px]">
                             <canvas id="directness-chart" class="w-full h-full"></canvas>
+                        </div>
+                    </div>
+                    <div class="p-4 border rounded-lg">
+                        <h3 class="text-xl font-semibold mb-4 text-center">Espontânea/Provocada</h3>
+                        <div class="relative h-[420px]">
+                            <canvas id="media-type-chart" class="w-full h-full"></canvas>
                         </div>
                     </div>
                 </div>
@@ -1362,7 +1393,8 @@
 
         const appId = firebaseConfig.projectId;
         let currentUser = null, clockInterval = null, selectedCompanyForManagement = null, allCompanyArticles = [], companyIdToDelete = null, articleToDeleteInfo = null;
-        let sourceChartInstance = null, dateChartInstance = null, sentimentChartInstance = null, directnessChartInstance = null, channelChartInstance = null, companySummaryChartInstance = null, keywordTotalChartInstance = null, keywordSentimentChartInstance = null, criticalChannelChartInstance = null, criticalSpaceChartInstance = null, criticalSpaceQualChartInstance = null, criticalVehicleChartInstance = null, criticalValuationChartInstance = null, criticalDateChartInstance = null;
+        let companyCaptureChannels = null;
+        let sourceChartInstance = null, dateChartInstance = null, sentimentChartInstance = null, directnessChartInstance = null, channelChartInstance = null, mediaTypeChartInstance = null, companySummaryChartInstance = null, keywordTotalChartInstance = null, keywordSentimentChartInstance = null, criticalChannelChartInstance = null, criticalSpaceChartInstance = null, criticalSpaceQualChartInstance = null, criticalVehicleChartInstance = null, criticalValuationChartInstance = null, criticalDateChartInstance = null;
         let superAdminCredentials = { user: 'ulysses', pass: 'adminqwert' };
         let notificationListener = null, companiesListener = null, deletionRequestsListener = null, pendingAlertsListener = null, activityCompaniesListener = null, activityPendingListener = null, activityDeletionListener = null;
         let keywordToDeleteInfo = null;
@@ -1631,6 +1663,7 @@ let keywordToTransferInfo = null;
 
         async function handleLogoUpload(e) { const file = e.target.files[0]; if (!file) return; const companyId = currentUser.isSuperAdmin ? selectedCompanyForManagement.id : currentUser.companyId; if (!companyId) return; const reader = new FileReader(); reader.onloadend = async () => { try { const settingsRef = doc(db, "artifacts", appId, "public", "data", "settings", companyId); await setDoc(settingsRef, { logo: reader.result }, { merge: true }); loadAndDisplayLogo(); showAlert('Logótipo atualizado com sucesso!'); } catch (error) { console.error("Erro ao guardar o logótipo:", error); showAlert("Erro ao guardar o logótipo.", "error"); } }; reader.readAsDataURL(file); }
         async function loadAndDisplayLogo() { const companyId = currentUser ? currentUser.companyId : null; if (!companyId) { if (headerLogoContainer) headerLogoContainer.innerHTML = ''; if (loginLogoContainer) loginLogoContainer.innerHTML = ''; return; } const settingsRef = doc(db, "artifacts", appId, "public", "data", "settings", companyId); try { const docSnap = await getDoc(settingsRef); const logoData = docSnap.exists() ? docSnap.data().logo : null; const logoHtml = logoData ? `<img src="${logoData}" alt="Logótipo da Empresa" class="h-full w-auto object-contain">` : ''; if (headerLogoContainer) headerLogoContainer.innerHTML = logoHtml; if (loginLogoContainer) loginLogoContainer.innerHTML = logoHtml; } catch (error) { console.error("Erro ao carregar o logótipo:", error); } }
+        async function loadCompanyCaptureChannels(companyId) { try { const settingsRef = doc(db, "artifacts", appId, "public", "data", "settings", companyId); const docSnap = await getDoc(settingsRef); const caps = docSnap.exists() ? docSnap.data().captureChannels : null; companyCaptureChannels = Array.isArray(caps) && caps.length > 0 ? caps : ['Sites','YouTube','Revistas','Rádios','TV']; } catch (error) { console.error("Erro ao carregar canais de captura:", error); companyCaptureChannels = ['Sites','YouTube','Revistas','Rádios','TV']; } }
         async function handleGlobalLogoUpload(e) { const file = e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onloadend = async () => { try { const settingsRef = doc(db, "artifacts", appId, "public", "data", "settings", "global"); await setDoc(settingsRef, { appLogo: reader.result }, { merge: true }); loadAndDisplayGlobalLogo(); showAlert('Logótipo global atualizado com sucesso!'); } catch (error) { console.error("Erro ao guardar o logótipo global:", error); showAlert("Erro ao guardar o logótipo global.", "error"); } }; reader.readAsDataURL(file); }
         async function loadAndDisplayGlobalLogo() {
             const settingsRef = doc(db, "artifacts", appId, "public", "data", "settings", "global");
@@ -1657,6 +1690,7 @@ let keywordToTransferInfo = null;
             if (companyName.toLowerCase() === 'newsclip' && user.toLowerCase() === superAdminCredentials.user && pass === superAdminCredentials.pass) {
                 currentUser = { username: 'Ulysses', isSuperAdmin: true, isRestrictedGlobal: false, allowedCompanies: [], companyId: 'super', companyName: 'Super Admin' };
                 setStorage('clipping_currentUser', currentUser);
+                companyCaptureChannels = ['Sites','YouTube','Revistas','Rádios','TV'];
                 updateView('dashboard');
                 return;
             }
@@ -1671,6 +1705,7 @@ let keywordToTransferInfo = null;
                         const allowedCompanies = Array.isArray(ru.allowedCompanies) ? ru.allowedCompanies.filter(Boolean) : [];
                         currentUser = { username: user, isSuperAdmin: true, isRestrictedGlobal: true, allowedCompanies, companyId: 'super', companyName: 'Super Admin (Restrito)' };
                         setStorage('clipping_currentUser', currentUser);
+                        companyCaptureChannels = ['Sites','YouTube','Revistas','Rádios','TV'];
                         updateView('dashboard');
                         return;
                     }
@@ -1702,6 +1737,7 @@ let keywordToTransferInfo = null;
                     const canAccessMap = settingsDoc.exists() ? settingsDoc.data().mapAccess !== false : true;
                     currentUser = { username: user, companyId: company.id, companyName: company.name, isSuperAdmin: false, canRequestDeletion, canAccessReport, canAccessMap };
                     setStorage('clipping_currentUser', currentUser);
+                    await loadCompanyCaptureChannels(company.id);
                     updateView('dashboard');
                 } else {
                     showAlert('Usuário ou palavra-passe inválidos para esta empresa.', 'error');
@@ -2045,8 +2081,8 @@ let keywordToTransferInfo = null;
             }
         }
 
-        async function renderCompanySettingsAdminPage() { if (!selectedCompanyForManagement || !companySettingsAdminTitle) return; companySettingsAdminTitle.textContent = `Opções para: ${selectedCompanyForManagement.name}`; try { const settingsRef = doc(db, "artifacts", appId, "public", "data", "settings", selectedCompanyForManagement.id); const docSnap = await getDoc(settingsRef); if (docSnap.exists()) { const settings = docSnap.data(); if (reportAccessToggle) reportAccessToggle.checked = settings.reportAccess !== false; if (mapAccessToggle) mapAccessToggle.checked = settings.mapAccess !== false; if (fetchOnlyNewToggle) fetchOnlyNewToggle.checked = settings.fetchOnlyNew === true; if (deletionAccessToggle) deletionAccessToggle.checked = settings.canRequestDeletion === true; if (document.querySelector(`input[name="news-scope"][value="${settings.searchScope || 'br'}"]`)) document.querySelector(`input[name="news-scope"][value="${settings.searchScope || 'br'}"]`).checked = true; if (stateSelect) stateSelect.value = settings.searchState || ''; } else { if (reportAccessToggle) reportAccessToggle.checked = true; if (mapAccessToggle) mapAccessToggle.checked = true; if (fetchOnlyNewToggle) fetchOnlyNewToggle.checked = false; if (deletionAccessToggle) deletionAccessToggle.checked = false; if (document.querySelector('input[name="news-scope"][value="br"]')) document.querySelector('input[name="news-scope"][value="br"]').checked = true; if (stateSelect) stateSelect.value = ''; } handleScopeChange(); } catch (error) { console.error("Erro ao renderizar as configurações:", error); } }
-        async function handleSettingsChange(e) { if (!selectedCompanyForManagement) return; const settingsRef = doc(db, "artifacts", appId, "public", "data", "settings", selectedCompanyForManagement.id); let key, value; switch (e.target.id) { case 'report-access-toggle': key = 'reportAccess'; value = e.target.checked; break; case 'map-access-toggle': key = 'mapAccess'; value = e.target.checked; break; case 'fetch-only-new-toggle': key = 'fetchOnlyNew'; value = e.target.checked; break; case 'deletion-access-toggle': key = 'canRequestDeletion'; value = e.target.checked; break; case 'state-select': key = 'searchState'; value = e.target.value; break; default: if (e.target.name === 'news-scope') { key = 'searchScope'; value = e.target.value; } else { return; } } try { await setDoc(settingsRef, { [key]: value }, { merge: true }); showAlert('Opção guardada!', 'success'); } catch (error) { console.error("Erro ao guardar a configuração:", error); } }
+        async function renderCompanySettingsAdminPage() { if (!selectedCompanyForManagement || !companySettingsAdminTitle) return; companySettingsAdminTitle.textContent = `Opções para: ${selectedCompanyForManagement.name}`; try { const settingsRef = doc(db, "artifacts", appId, "public", "data", "settings", selectedCompanyForManagement.id); const docSnap = await getDoc(settingsRef); const defaultChannels = ['Sites','YouTube','Revistas','Rádios','TV']; if (docSnap.exists()) { const settings = docSnap.data(); if (reportAccessToggle) reportAccessToggle.checked = settings.reportAccess !== false; if (mapAccessToggle) mapAccessToggle.checked = settings.mapAccess !== false; if (fetchOnlyNewToggle) fetchOnlyNewToggle.checked = settings.fetchOnlyNew === true; if (deletionAccessToggle) deletionAccessToggle.checked = settings.canRequestDeletion === true; if (document.querySelector(`input[name="news-scope"][value="${settings.searchScope || 'br'}"]`)) document.querySelector(`input[name="news-scope"][value="${settings.searchScope || 'br'}"]`).checked = true; if (stateSelect) stateSelect.value = settings.searchState || ''; const channels = Array.isArray(settings.captureChannels) && settings.captureChannels.length > 0 ? settings.captureChannels : defaultChannels; const chBoxes = document.querySelectorAll('#capture-channels-container .capture-channel'); chBoxes.forEach(cb => { cb.checked = channels.includes(cb.value); }); } else { if (reportAccessToggle) reportAccessToggle.checked = true; if (mapAccessToggle) mapAccessToggle.checked = true; if (fetchOnlyNewToggle) fetchOnlyNewToggle.checked = false; if (deletionAccessToggle) deletionAccessToggle.checked = false; if (document.querySelector('input[name="news-scope"][value="br"]')) document.querySelector('input[name="news-scope"][value="br"]').checked = true; if (stateSelect) stateSelect.value = ''; const chBoxes = document.querySelectorAll('#capture-channels-container .capture-channel'); chBoxes.forEach(cb => { cb.checked = true; }); } handleScopeChange(); } catch (error) { console.error("Erro ao renderizar as configurações:", error); } }
+        async function handleSettingsChange(e) { if (!selectedCompanyForManagement) return; const settingsRef = doc(db, "artifacts", appId, "public", "data", "settings", selectedCompanyForManagement.id); let key, value; const defaultChannels = ['Sites','YouTube','Revistas','Rádios','TV']; const target = e.target; if (target && target.classList && target.classList.contains('capture-channel')) { key = 'captureChannels'; value = Array.from(document.querySelectorAll('#capture-channels-container .capture-channel:checked')).map(cb => cb.value); if (!value || value.length === 0) value = defaultChannels; } else { switch (e.target.id) { case 'report-access-toggle': key = 'reportAccess'; value = e.target.checked; break; case 'map-access-toggle': key = 'mapAccess'; value = e.target.checked; break; case 'fetch-only-new-toggle': key = 'fetchOnlyNew'; value = e.target.checked; break; case 'deletion-access-toggle': key = 'canRequestDeletion'; value = e.target.checked; break; case 'state-select': key = 'searchState'; value = e.target.value; break; default: if (e.target.name === 'news-scope') { key = 'searchScope'; value = e.target.value; } else { return; } } } try { await setDoc(settingsRef, { [key]: value }, { merge: true }); showAlert('Opção guardada!', 'success'); } catch (error) { console.error("Erro ao guardar a configuração:", error); } }
         function handleScopeChange() { if (!stateSelectContainer || !document.querySelector('input[name="news-scope"]:checked')) return; const selectedScope = document.querySelector('input[name="news-scope"]:checked').value; stateSelectContainer.classList.toggle('hidden', selectedScope !== 'state'); }
         async function renderGlobalKeysPage() { try { const settingsRef = doc(db, "artifacts", appId, "public", "data", "settings", "global"); const docSnap = await getDoc(settingsRef); if (docSnap.exists()) { const settings = docSnap.data(); if (apiKeyNewsApiInput) apiKeyNewsApiInput.value = settings.apiKeyNewsApi || ''; if (apiKeyFirebaseNewsInput) apiKeyFirebaseNewsInput.value = settings.apiKeyFirebaseNews || ''; if (typeof apiKeyGoogleMapsInput !== 'undefined' && apiKeyGoogleMapsInput) apiKeyGoogleMapsInput.value = settings.apiKeyGoogleMaps || ''; if (apiKeyGNewsInput1) apiKeyGNewsInput1.value = settings.apiKeyGNews1 || ''; if (apiKeyGNewsInput2) apiKeyGNewsInput2.value = settings.apiKeyGNews2 || ''; if (apiKeyGNewsInput3) apiKeyGNewsInput3.value = settings.apiKeyGNews3 || ''; if (apiKeyGNewsInput4) apiKeyGNewsInput4.value = settings.apiKeyGNews4 || ''; if (apiKeyYoutubeInput) apiKeyYoutubeInput.value = settings.apiKeyYoutube || ''; if (apiKeyBloggerInput) apiKeyBloggerInput.value = settings.apiKeyBlogger || ''; if (apiKeyVisionInput) apiKeyVisionInput.value = settings.apiKeyVision || ''; if (typeof visionEnabledToggle !== 'undefined' && visionEnabledToggle) visionEnabledToggle.checked = settings.visionEnabled === true; if (typeof visionRelevantOnlyToggle !== 'undefined' && visionRelevantOnlyToggle) visionRelevantOnlyToggle.checked = settings.visionRelevantOnly === true; if (typeof visionLogoDetectionToggle !== 'undefined' && visionLogoDetectionToggle) visionLogoDetectionToggle.checked = settings.visionLogoDetection !== false; if (typeof visionOcrTextToggle !== 'undefined' && visionOcrTextToggle) visionOcrTextToggle.checked = settings.visionOcrText !== false; if (apiKeyVideoIntelligenceInput) apiKeyVideoIntelligenceInput.value = settings.apiKeyVideoIntelligence || ''; } } catch (error) { console.error("Erro ao carregar as chaves de API globais:", error); } }
         async function handleGlobalKeyChange(e) { const settingsRef = doc(db, "artifacts", appId, "public", "data", "settings", "global"); const key = e.target.id; const value = (e.target.type === 'checkbox') ? e.target.checked : e.target.value; try { await setDoc(settingsRef, { [key]: value }, { merge: true }); showAlert('Opção guardada!', 'success'); } catch (error) { console.error("Erro ao guardar a chave/opção global:", error); } }
@@ -2594,6 +2630,10 @@ let keywordToTransferInfo = null;
             })();
             const directnessHTML = `<span class="text-xs font-semibold ${direct ? 'text-orange-600 bg-orange-100' : 'text-gray-600 bg-gray-100'} px-2 py-1 rounded-full">${direct ? 'Direto' : 'Indireto'}</span>`;
 
+            const mediaTypeValue = (() => { const raw = article.mediaType; if (raw && /provocada/i.test(raw)) return 'Provocada'; return 'Espontânea'; })();
+            const getMediaTypeHTML = (mt) => { const isProv = mt === 'Provocada'; const color = isProv ? 'amber' : 'teal'; return `<button class="media-btn text-xs font-semibold text-${color}-600 bg-${color}-100 px-2 py-1 rounded-full">${mt}</button>`; };
+            const mediaTypeMenuHTML = `                <div class="media-menu p-1 space-y-1">                    <button data-media-type="Espontânea" class="media-option w-full text-left text-xs px-2 py-1 rounded hover:bg-gray-100">Espontânea</button>                    <button data-media-type="Provocada" class="media-option w-full text-left text-xs px-2 py-1 rounded hover:bg-gray-100">Provocada</button>                </div>`;
+
             let aiInsightsHTML = '';
             if (article.ai && (article.ai.entities?.length > 0 || article.ai.categories?.length > 0)) {
                 const entityColors = { PERSON: 'bg-blue-100 text-blue-800', LOCATION: 'bg-green-100 text-green-800', ORGANIZATION: 'bg-purple-100 text-purple-800', EVENT: 'bg-yellow-100 text-yellow-800', WORK_OF_ART: 'bg-pink-100 text-pink-800', CONSUMER_GOOD: 'bg-indigo-100 text-indigo-800' };
@@ -2607,7 +2647,7 @@ let keywordToTransferInfo = null;
                 translationHTML = `<span title="Traduzido do ${article.translationInfo.originalLanguage.toUpperCase()}" class="mr-2">🌐</span>`;
             }
 
-            alertEl.innerHTML = `                <div class="alert-body-clickable">                    <div class="flex justify-between items-start">                        <h4 class="text-lg font-bold text-gray-800 pr-2">${article.title}</h4>                        <div class="flex items-center gap-2 flex-shrink-0">                            <div class="flex flex-col items-end gap-1">${keywordsHTML}</div>                            ${directnessHTML}                            <div class="sentiment-container relative">${getSentimentHTML(sentimentScore)}${sentimentMenuHTML}</div>                        </div>                    </div>                    <p class="text-sm text-gray-600 mt-2 line-clamp-2">${article.description || 'Descrição não disponível.'}</p>                </div>                ${aiInsightsHTML}                <div class="text-xs text-gray-500 mt-3 flex justify-between items-center">                    <span>${translationHTML}Fonte: ${getDisplaySourceName(article)} | Publicado: ${formattedDate}</span>                    <div>                        <a href="${article.url}" target="_blank" rel="noopener noreferrer" class="text-indigo-600 hover:underline font-semibold">Ler no site original →</a>                        ${deleteButtonHTML}                    </div>                </div>`;
+            alertEl.innerHTML = `                <div class="alert-body-clickable">                    <div class="flex justify-between items-start">                        <h4 class="text-lg font-bold text-gray-800 pr-2">${article.title}</h4>                        <div class="flex items-center gap-2 flex-shrink-0">                            <div class="flex flex-col items-end gap-1">${keywordsHTML}</div>                            ${directnessHTML}                            <div class="media-container relative">${getMediaTypeHTML(mediaTypeValue)}${mediaTypeMenuHTML}</div>                            <div class="sentiment-container relative">${getSentimentHTML(sentimentScore)}${sentimentMenuHTML}</div>                        </div>                    </div>                    <p class="text-sm text-gray-600 mt-2 line-clamp-2">${article.description || 'Descrição não disponível.'}</p>                </div>                ${aiInsightsHTML}                <div class="text-xs text-gray-500 mt-3 flex justify-between items-center">                    <span>${translationHTML}Fonte: ${getDisplaySourceName(article)} | Publicado: ${formattedDate}</span>                    <div>                        <a href="${article.url}" target="_blank" rel="noopener noreferrer" class="text-indigo-600 hover:underline font-semibold">Ler no site original →</a>                        ${deleteButtonHTML}                    </div>                </div>`;
             container.appendChild(alertEl);
         }
 
@@ -2633,6 +2673,26 @@ let keywordToTransferInfo = null;
             } catch (error) {
                 console.error("Erro ao atualizar o sentimento:", error);
                 showAlert("Erro ao atualizar o sentimento.", "error");
+            }
+        }
+
+        async function handleMediaTypeChange(e) {
+            const newType = e.target.dataset.mediaType;
+            const alertEl = e.target.closest('.fade-in');
+            const articleId = alertEl?.dataset.id;
+            if (!articleId || !currentUser || !newType) return;
+            try {
+                const articleRef = doc(db, "artifacts", appId, "users", currentUser.companyId, "articles", articleId);
+                await updateDoc(articleRef, { mediaType: newType });
+                const mediaContainer = alertEl.querySelector('.media-container');
+                const newButtonHTML = getMediaTypeHTML(newType);
+                const oldBtn = mediaContainer.querySelector('.media-btn');
+                if (oldBtn) { oldBtn.outerHTML = newButtonHTML; }
+                const found = allCompanyArticles.find(a => a.id === articleId);
+                if (found) found.mediaType = newType;
+            } catch (error) {
+                console.error("Erro ao atualizar o tipo de mídia:", error);
+                showAlert("Erro ao atualizar o tipo de mídia.", "error");
             }
         }
 
@@ -2688,7 +2748,9 @@ let keywordToTransferInfo = null;
                 let selectedKeywords = reportKeywordFilterContainer ? Array.from(reportKeywordFilterContainer.querySelectorAll('.report-kw-checkbox:checked')).map(cb => cb.value).filter(v => v !== 'Todos') : [];
                 if (startDate) startDate.setHours(0, 0, 0, 0);
                 if (endDate) endDate.setHours(23, 59, 59, 999);
-                const filteredArticles = allCompanyArticles.filter(article => {
+                const allowedChannels = (typeof companyCaptureChannels !== 'undefined' && companyCaptureChannels && companyCaptureChannels.length > 0) ? companyCaptureChannels : ['Sites','YouTube','Revistas','Rádios','TV'];
+                let filteredArticles = allCompanyArticles.filter(a => allowedChannels.includes(a.channel || getChannelCategory(a.source?.name)));
+                filteredArticles = filteredArticles.filter(article => {
                     const pubDate = article.publishedAt.toDate();
                     const dateMatch = (!startDate || pubDate >= startDate) && (!endDate || pubDate <= endDate);
                     if (!selectedKeywords || selectedKeywords.length === 0) {
@@ -2705,6 +2767,7 @@ let keywordToTransferInfo = null;
                 renderSentimentChart(filteredArticles, keywordsToDisplay);
                 renderChannelChart(filteredArticles, keywordsToDisplay);
                 renderDirectnessChart(filteredArticles, keywordsToDisplay);
+                renderMediaTypeChart(filteredArticles, keywordsToDisplay);
             };
             if (startDateInput) startDateInput.addEventListener('change', updateCharts);
             if (endDateInput) endDateInput.addEventListener('change', updateCharts);
@@ -2770,7 +2833,7 @@ let keywordToTransferInfo = null;
                 const channelCounts = allChannels.map(channel => articles.filter(a => (isTodos || (a.keywords || [a.keyword]).includes(keyword)) && ((a.channel || getChannelCategory(a.source?.name)) === channel)).length);
                 datasets.push({ label: isTodos ? 'Todos' : keyword, data: channelCounts, borderColor: chartColors[index % chartColors.length], borderWidth: 2, fill: false });
             });
-            channelChartInstance = createChart('channel-chart', channelChartInstance, 'line', { labels: allChannels, datasets });
+            channelChartInstance = createChart('channel-chart', channelChartInstance, 'bar', { labels: allChannels, datasets }, { scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } } });
         }
         function renderDateChart(articles, selectedKeywords) {
             const datasets = [];
@@ -2818,7 +2881,22 @@ let keywordToTransferInfo = null;
                 });
                 datasets.push({ label: isTodos ? 'Todos' : keyword, data: [directCount, indirectCount], backgroundColor: chartColors[index % chartColors.length] });
             });
-            directnessChartInstance = createChart('directness-chart', directnessChartInstance, 'bar', { labels, datasets }, { plugins: { legend: { position: 'bottom' } } });
+            directnessChartInstance = createChart('directness-chart', directnessChartInstance, 'bar', { labels, datasets }, { scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } }, plugins: { legend: { position: 'bottom' } } });
+        }
+        function renderMediaTypeChart(articles, selectedKeywords) {
+            const labels = ['Espontânea', 'Provocada'];
+            const datasets = [];
+            selectedKeywords.forEach((keyword, index) => {
+                const isTodos = keyword === 'Todos';
+                const keywordArticles = isTodos ? articles : articles.filter(a => (a.keywords || [a.keyword]).includes(keyword));
+                let espontanea = 0, provocada = 0;
+                keywordArticles.forEach(article => {
+                    const raw = article.mediaType;
+                    if (raw && /provocada/i.test(raw)) provocada++; else espontanea++;
+                });
+                datasets.push({ label: isTodos ? 'Todos' : keyword, data: [espontanea, provocada], backgroundColor: chartColors[index % chartColors.length] });
+            });
+            mediaTypeChartInstance = createChart('media-type-chart', mediaTypeChartInstance, 'bar', { labels, datasets }, { scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } }, plugins: { legend: { position: 'bottom' } } });
         }
 
         async function setupSearchPage() { if (!currentUser) return; if (searchInput) searchInput.value = ''; if (searchResults) searchResults.innerHTML = '<p class="text-gray-500">A carregar todos os artigos para pesquisa...</p>'; try { const q = query(collection(db, "artifacts", appId, "users", currentUser.companyId, "articles"), orderBy("publishedAt", "desc")); const articlesSnapshot = await getDocs(q); allCompanyArticles = articlesSnapshot.docs.map(d => ({ ...d.data(), id: d.id })); if (searchResults) searchResults.innerHTML = `<p class="text-gray-500">Pronto para pesquisar em ${allCompanyArticles.length} artigos. Digite um termo ou utilize os filtros.</p>`; setupFilters(); } catch (error) { console.error("Erro ao buscar artigos para pesquisa:", error); if (searchResults) searchResults.innerHTML = '<p class="text-red-500">Não foi possível carregar os artigos para pesquisa.</p>'; } }
@@ -2866,7 +2944,8 @@ let keywordToTransferInfo = null;
                 searchResults.innerHTML = `<p class="text-gray-500">Digite algo para começar a pesquisar ou use os filtros.</p>`;
                 return;
             }
-            let filteredArticles = allCompanyArticles;
+            const allowedChannels = (typeof companyCaptureChannels !== 'undefined' && companyCaptureChannels && companyCaptureChannels.length > 0) ? companyCaptureChannels : ['Sites','YouTube','Revistas','Rádios','TV'];
+            let filteredArticles = allCompanyArticles.filter(a => allowedChannels.includes(a.channel || getChannelCategory(a.source?.name)));
             if (keywordFilter) { filteredArticles = filteredArticles.filter(a => (a.keywords || [a.keyword]).includes(keywordFilter)); }
             if (sourceFilterValue) { filteredArticles = filteredArticles.filter(a => getDisplaySourceName(a) === sourceFilterValue); }
             if (channelFilterValue) { filteredArticles = filteredArticles.filter(a => (a.channel || getChannelCategory(a.source?.name)) === channelFilterValue); }
@@ -2913,6 +2992,7 @@ let keywordToTransferInfo = null;
             const target = e.target;
             if (!target) return;
             if (target.closest('.sentiment-option')) { handleSentimentChange(e); return; }
+            if (target.closest('.media-option')) { handleMediaTypeChange(e); return; }
             if (target.closest('.request-delete-btn')) {
                 const alertEl = target.closest('.fade-in');
                 if (!alertEl) return;
@@ -3045,6 +3125,20 @@ let keywordToTransferInfo = null;
             if (sentimentScore > 0.25) { sentimentText = 'Positivo'; }
             else if (sentimentScore < -0.25) { sentimentText = 'Negativo'; }
             reportMetaGrid.innerHTML += createMetaItem('Sentimento', sentimentText);
+
+            // Badges: Direta/Indireta
+            const titleLower = (article.title || '').toLowerCase();
+            const descLower = (article.description || '').toLowerCase();
+            const kwsLower = (article.keywords || [article.keyword]).map(k => (k || '').toLowerCase());
+            const isDirect = kwsLower.some(k => k && (titleLower.includes(k) || descLower.includes(k)));
+            const directBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${isDirect ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">${isDirect ? 'Direta' : 'Indireta'}</span>`;
+            reportMetaGrid.innerHTML += `<div class="flex flex-col"><span class="font-semibold text-gray-800">Direta/Indireta</span><span>${directBadge}</span></div>`;
+
+            // Badges: Tipo de Mídia
+            const mediaRaw = article.mediaType;
+            const isProvocada = mediaRaw && /provocada/i.test(mediaRaw);
+            const mediaBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${isProvocada ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'}">${isProvocada ? 'Provocada' : 'Espontânea'}</span>`;
+            reportMetaGrid.innerHTML += `<div class="flex flex-col"><span class="font-semibold text-gray-800">Tipo de Mídia</span><span>${mediaBadge}</span></div>`;
 
             const keywordsText = (article.keywords || []).join(', ');
             reportMetaGrid.innerHTML += createMetaItem('Palavras-Chave', keywordsText);
@@ -3739,6 +3833,7 @@ let keywordToTransferInfo = null;
             reportKeywordFilterContainer = document.getElementById('report-keyword-filter-container');
             stateSelectContainer = document.getElementById('state-select-container');
             stateSelect = document.getElementById('state-select');
+            captureChannelsContainer = document.getElementById('capture-channels-container');
             changePasswordForm = document.getElementById('change-password-form');
             apiKeyNewsApiInput = document.getElementById('apiKeyNewsApi');
             apiKeyFirebaseNewsInput = document.getElementById('apiKeyFirebaseNews');
@@ -3867,6 +3962,7 @@ youtubeFrequencyTimeInput = document.getElementById('youtubeFrequencyTime');
                         const savedUser = getStorage('clipping_currentUser', null);
                         if (savedUser) {
                             currentUser = savedUser;
+                            if (currentUser && !currentUser.isSuperAdmin && currentUser.companyId) { try { await loadCompanyCaptureChannels(currentUser.companyId); } catch (e) { console.warn('loadCompanyCaptureChannels failed', e); } } else { companyCaptureChannels = ['Sites','YouTube','Revistas','Rádios','TV']; }
                             updateView('dashboard');
                         } else {
                             currentUser = null;
@@ -4055,6 +4151,7 @@ if (youtubeFrequencyInput) youtubeFrequencyInput.addEventListener('input', () =>
             if (fetchOnlyNewToggle) fetchOnlyNewToggle.addEventListener('change', handleSettingsChange);
             if (deletionAccessToggle) deletionAccessToggle.addEventListener('change', handleSettingsChange);
             if (stateSelect) stateSelect.addEventListener('change', handleSettingsChange);
+            if (captureChannelsContainer) captureChannelsContainer.addEventListener('change', handleSettingsChange);
             if (keywordForm) keywordForm.addEventListener('submit', handleKeywordSubmit);
             if (adminKeywordList) adminKeywordList.addEventListener('click', handleKeywordActions);
             if (confirmDeleteKeywordBtn) confirmDeleteKeywordBtn.addEventListener('click', handleConfirmDeleteKeyword);
