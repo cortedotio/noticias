@@ -2826,14 +2826,21 @@ let keywordToTransferInfo = null;
             sourceChartInstance = createChart('source-chart', sourceChartInstance, 'line', { labels: allSources, datasets });
         }
         function renderChannelChart(articles, selectedKeywords) {
-            const datasets = [];
             const allChannels = ['YouTube', 'Sites', 'Revistas', 'Rádios', 'TV'];
-            selectedKeywords.forEach((keyword, index) => {
-                const isTodos = keyword === 'Todos';
-                const channelCounts = allChannels.map(channel => articles.filter(a => (isTodos || (a.keywords || [a.keyword]).includes(keyword)) && ((a.channel || getChannelCategory(a.source?.name)) === channel)).length);
-                datasets.push({ label: isTodos ? 'Todos' : keyword, data: channelCounts, borderColor: chartColors[index % chartColors.length], borderWidth: 2, fill: false });
+            const hasTodos = selectedKeywords && selectedKeywords.includes('Todos');
+            const selectedList = (selectedKeywords || []).filter(k => k !== 'Todos');
+            const keywordsToPlot = hasTodos || selectedList.length === 0
+                ? Array.from(new Set(articles.flatMap(a => (a.keywords || [a.keyword])).filter(Boolean)))
+                : selectedList;
+            const datasets = keywordsToPlot.map((keyword, index) => {
+                const counts = allChannels.map(channel => articles.filter(a => {
+                    const ch = (a.channel || getChannelCategory(a.source?.name));
+                    const kws = a.keywords || [a.keyword];
+                    return ch === channel && kws && kws.includes(keyword);
+                }).length);
+                return { label: keyword, data: counts, borderColor: chartColors[index % chartColors.length], borderWidth: 2, fill: false, tension: 0.3 };
             });
-            channelChartInstance = createChart('channel-chart', channelChartInstance, 'bar', { labels: allChannels, datasets }, { scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } } });
+            channelChartInstance = createChart('channel-chart', channelChartInstance, 'line', { labels: allChannels, datasets }, { plugins: { legend: { position: 'bottom' } } });
         }
         function renderDateChart(articles, selectedKeywords) {
             const datasets = [];
@@ -2866,9 +2873,10 @@ let keywordToTransferInfo = null;
             sentimentChartInstance = createChart('sentiment-chart', sentimentChartInstance, 'line', { labels: allSentiments, datasets }, sentimentChartOptions);
         }
         function renderDirectnessChart(articles, selectedKeywords) {
-            const labels = ['Direto', 'Indireto'];
-            const datasets = [];
-            selectedKeywords.forEach((keyword, index) => {
+            const labels = (selectedKeywords && selectedKeywords.length) ? selectedKeywords : ['Todos'];
+            const directData = [];
+            const indirectData = [];
+            labels.forEach((keyword) => {
                 const isTodos = keyword === 'Todos';
                 const keywordArticles = isTodos ? articles : articles.filter(a => (a.keywords || [a.keyword]).includes(keyword));
                 let directCount = 0, indirectCount = 0;
@@ -2879,14 +2887,20 @@ let keywordToTransferInfo = null;
                     const direct = kws.some(k => k && (title.includes(k) || desc.includes(k)));
                     if (direct) directCount++; else indirectCount++;
                 });
-                datasets.push({ label: isTodos ? 'Todos' : keyword, data: [directCount, indirectCount], backgroundColor: chartColors[index % chartColors.length] });
+                directData.push(directCount);
+                indirectData.push(indirectCount);
             });
+            const datasets = [
+                { label: 'Direto', data: directData, backgroundColor: chartColors[0], stack: 'total' },
+                { label: 'Indireto', data: indirectData, backgroundColor: chartColors[1], stack: 'total' }
+            ];
             directnessChartInstance = createChart('directness-chart', directnessChartInstance, 'bar', { labels, datasets }, { scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } }, plugins: { legend: { position: 'bottom' } } });
         }
         function renderMediaTypeChart(articles, selectedKeywords) {
-            const labels = ['Espontânea', 'Provocada'];
-            const datasets = [];
-            selectedKeywords.forEach((keyword, index) => {
+            const labels = (selectedKeywords && selectedKeywords.length) ? selectedKeywords : ['Todos'];
+            const espontaneaData = [];
+            const provocadaData = [];
+            labels.forEach((keyword) => {
                 const isTodos = keyword === 'Todos';
                 const keywordArticles = isTodos ? articles : articles.filter(a => (a.keywords || [a.keyword]).includes(keyword));
                 let espontanea = 0, provocada = 0;
@@ -2894,8 +2908,13 @@ let keywordToTransferInfo = null;
                     const raw = article.mediaType;
                     if (raw && /provocada/i.test(raw)) provocada++; else espontanea++;
                 });
-                datasets.push({ label: isTodos ? 'Todos' : keyword, data: [espontanea, provocada], backgroundColor: chartColors[index % chartColors.length] });
+                espontaneaData.push(espontanea);
+                provocadaData.push(provocada);
             });
+            const datasets = [
+                { label: 'Espontânea', data: espontaneaData, backgroundColor: chartColors[2], stack: 'total' },
+                { label: 'Provocada', data: provocadaData, backgroundColor: chartColors[3], stack: 'total' }
+            ];
             mediaTypeChartInstance = createChart('media-type-chart', mediaTypeChartInstance, 'bar', { labels, datasets }, { scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } }, plugins: { legend: { position: 'bottom' } } });
         }
 
