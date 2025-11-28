@@ -373,6 +373,9 @@ async function fetchAllNews() {
         const companyName = companyDoc.data().name;
         const companySettingsDoc = await db.doc(`artifacts/${APP_ID}/public/data/settings/${companyId}`).get();
         const fetchOnlyNew = companySettingsDoc.exists && companySettingsDoc.data().fetchOnlyNew === true;
+        const captureChannels = (companySettingsDoc.exists && Array.isArray(companySettingsDoc.data().captureChannels) && companySettingsDoc.data().captureChannels.length > 0)
+            ? companySettingsDoc.data().captureChannels
+            : ['Sites','YouTube','Revistas','Rádios','TV'];
         const existingUrls = new Set();
         const articlesQuery = db.collection(`artifacts/${APP_ID}/users/${companyId}/articles`).select('url');
         const pendingQuery = db.collection(`artifacts/${APP_ID}/public/data/pendingAlerts`).where('companyId', '==', companyId).select('url');
@@ -383,7 +386,7 @@ async function fetchAllNews() {
         const keywordsSnapshot = await db.collection(`artifacts/${APP_ID}/users/${companyId}/keywords`).get();
         if (!keywordsSnapshot.empty) {
             const keywordsList = keywordsSnapshot.docs.map(doc => doc.data().word);
-            allCompaniesData.push({ companyId, companyName, keywordsList, fetchOnlyNew, existingUrls });
+            allCompaniesData.push({ companyId, companyName, keywordsList, fetchOnlyNew, captureChannels, existingUrls });
         }
     }
 
@@ -415,6 +418,16 @@ async function fetchAllNews() {
             }
         }
 
+        // Determinar categoria de canal a partir do nome da fonte
+        const sourceName = normalizedArticle?.source?.name || normalizedArticle?.sourceName || '';
+        const channelCategory = getChannelCategory(sourceName);
+        // Checar se canal está permitido para a empresa
+        const enabledChannels = Array.isArray(company.captureChannels) ? company.captureChannels : [];
+        const channelEnabled = enabledChannels.length === 0 || enabledChannels.includes(channelCategory);
+        if (!channelEnabled) {
+            return; // pular artigo se canal não permitido
+        }
+
         const articleData = {
             ...normalizedArticle,
             keywords: finalMatchedKeywords,
@@ -424,7 +437,8 @@ async function fetchAllNews() {
             ai: aiData,
             sentiment: { score: aiData.sentiment.score, magnitude: aiData.sentiment.magnitude },
             translationInfo: { translated: translatedTitle.translated || translatedDesc.translated, originalLanguage: translatedTitle.languageCode },
-            geolocation: geolocation
+            geolocation: geolocation,
+            channel: channelCategory
         };
 
         const pendingAlertRef = db.collection(`artifacts/${APP_ID}/public/data/pendingAlerts`).doc();
@@ -1143,6 +1157,19 @@ exports.manualAddAlert = regionalFunctions.https.onCall(async (data, context) =>
     const articleForMatch = { title, description };
     const matchedKeywords = findMatchingKeywords(articleForMatch, companyKeywords);
 
+    // Gating de canal: verificar se empresa permite este canal
+    let captureChannels = [];
+    try {
+        const settingsDoc = await db.doc(`artifacts/${appId}/public/data/settings/${companyId}`).get();
+        captureChannels = settingsDoc.exists ? (settingsDoc.data()?.captureChannels || []) : [];
+    } catch (e) {
+        functions.logger.warn("Falha ao carregar configurações da empresa:", String(e));
+    }
+    const channelEnabled = captureChannels.length === 0 || captureChannels.includes(channelValue);
+    if (!channelEnabled) {
+        return { success: true, skipped: true, reason: 'channel_disabled', channel: channelValue };
+    }
+
     // Enviar para fila de aprovação com o link do artigo
     const alertData = {
         title: title || url,
@@ -1255,6 +1282,89 @@ exports.generateSuperAdminReport = regionalFunctions.https.onCall(async (data, c
     }
     functions.logger.info("Relatório geral gerado com sucesso.");
     return reportData;
+});
+
+exports.generateCriticalReport = regionalFunctions.https.onCall(async (data, context) => {
+    const { appId, companyId, startDate, endDate } = data || {};
+    if (!appId || !companyId) {
+        throw new functions.https.HttpsError("invalid-argument", "O ID da aplicação e da empresa são necessários.");
+    }
+    functions.logger.info("Iniciando geração do relatório de análise crítica...", { appId, companyId, startDate, endDate });
+
+    // Converter datas para limites diários
+    let start = null;
+    let end = null;
+    try {
+        if (startDate) {
+            const sd = new Date(startDate);
+            if (!isNaN(sd)) { sd.setHours(0,0,0,0); start = sd; }
+        }
+        if (endDate) {
+            const ed = new Date(endDate);
+            if (!isNaN(ed)) { ed.setHours(23,59,59,999); end = ed; }
+        }
+    } catch (e) {
+        functions.logger.warn("Datas de relatório inválidas recebidas para generateCriticalReport:", { startDate, endDate, error: String(e) });
+    }
+
+    // Buscar artigos aprovados da empresa
+    const articlesSnap = await db.collection(`artifacts/${appId}/users/${companyId}/articles`).get();
+
+    const articles = [];
+    const channelCounts = {};
+    const vehicleCounts = {};
+    const valuation = {};
+    const dateCounts = {};
+    const keywordCounts = {};
+
+    for (const doc of articlesSnap.docs) {
+        const a = doc.data();
+        // Resolver a data do artigo
+        let d = null;
+        try {
+            if (a.publishedAt && typeof a.publishedAt.toDate === 'function') {
+                d = a.publishedAt.toDate();
+            } else if (a.approvedAt && typeof a.approvedAt.toDate === 'function') {
+                d = a.approvedAt.toDate();
+            }
+        } catch (_) {}
+        // Aplicar filtro de período (se fornecido)
+        if (start && d && d < start) continue;
+        if (end && d && d > end) continue;
+
+        articles.push(a);
+
+        const ch = (a.channel || (a.source?.name ? getChannelCategory(a.source.name) : 'Outros'));
+        channelCounts[ch] = (channelCounts[ch] || 0) + 1;
+
+        const veh = (a.source?.name || 'Desconhecido');
+        vehicleCounts[veh] = (vehicleCounts[veh] || 0) + 1;
+
+        if (d) {
+            const key = d.toISOString().slice(0,10);
+            dateCounts[key] = (dateCounts[key] || 0) + 1;
+        }
+
+        const val = (a?.sentiment?.label || a?.valuation || 'Neutro');
+        valuation[val] = (valuation[val] || 0) + 1;
+
+        if (Array.isArray(a.keywords)) {
+            a.keywords.forEach(k => {
+                if (typeof k === 'string' && k.trim()) {
+                    const kk = k.trim();
+                    keywordCounts[kk] = (keywordCounts[kk] || 0) + 1;
+                }
+            });
+        }
+    }
+
+    const topChannel = Object.keys(channelCounts).length ? Object.keys(channelCounts).reduce((a, b) => channelCounts[a] > channelCounts[b] ? a : b) : null;
+    const topVehicle = Object.keys(vehicleCounts).length ? Object.keys(vehicleCounts).reduce((a, b) => vehicleCounts[a] > vehicleCounts[b] ? a : b) : null;
+    const totalAlerts = articles.length;
+
+    functions.logger.info("Relatório de análise crítica gerado com sucesso.", { totalAlerts });
+    // spaceCounts e spaceQualCounts podem ser adicionados futuramente se os campos existirem nos artigos
+    return { articles, channelCounts, vehicleCounts, valuation, dateCounts, keywordCounts, topChannel, topVehicle, totalAlerts };
 });
 
 

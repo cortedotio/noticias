@@ -568,7 +568,10 @@ async function loadCompaniesKeywords(appId) {
     const companyName = doc.data()?.name || '';
     const kwsSnap = await firestore.collection(`artifacts/${appId}/users/${companyId}/keywords`).get();
     const keywords = kwsSnap.docs.map(d => (d.data().word || '').toLowerCase()).filter(Boolean);
-    companies.push({ companyId, companyName, keywords });
+    // Load captureChannels from company settings (defaults to empty -> treated as all enabled)
+    const settingsDoc = await firestore.doc(`artifacts/${appId}/public/data/settings/${companyId}`).get();
+    const captureChannels = settingsDoc.exists ? (settingsDoc.data()?.captureChannels || []) : [];
+    companies.push({ companyId, companyName, keywords, captureChannels });
   }
   return companies;
 }
@@ -579,6 +582,12 @@ function findMatches(text, keywords) {
 }
 
 async function enqueuePendingAlert(appId, company, entry, segmentUrl, transcription) {
+  // Channel gating: only enqueue if 'Rádios' is enabled for this company.
+  const enabledChannels = Array.isArray(company.captureChannels) ? company.captureChannels : [];
+  const radioEnabled = enabledChannels.length === 0 || enabledChannels.includes('Rádios');
+  if (!radioEnabled) {
+    return; // Skip creating pending alert when radio is disabled in company settings
+  }
   const alertData = {
     title: `${entry.name || 'Rádio'} — Captura de Rádio`,
     description: transcription || '',
@@ -589,7 +598,7 @@ async function enqueuePendingAlert(appId, company, entry, segmentUrl, transcript
     companyId: company.companyId,
     companyName: company.companyName,
     status: 'pending',
-    channel: 'radio'
+    channel: 'Rádios'
   };
   await firestore.collection(`artifacts/${appId}/public/data/pendingAlerts`).add(alertData);
 }

@@ -1369,7 +1369,7 @@
         const useFunctionsEmu = isLocal && params.get('functions') === 'true';
         const useFirestoreEmu = isLocal && params.get('firestore') === 'true';
         if (useFunctionsEmu) {
-            try { connectFunctionsEmulator(functions, '127.0.0.1', 5002); } catch (e) { console.warn('Falha ao conectar ao Functions Emulator:', e); }
+            try { connectFunctionsEmulator(functions, '127.0.0.1', 5003); } catch (e) { console.warn('Falha ao conectar ao Functions Emulator:', e); }
         }
         if (useFirestoreEmu) {
             try { connectFirestoreEmulator(db, '127.0.0.1', 8080); } catch (e) { console.warn('Falha ao conectar ao Firestore Emulator:', e); }
@@ -1626,7 +1626,8 @@ let keywordToTransferInfo = null;
                     mapMarkers.push(marker);
 
                     marker.addListener('mouseover', () => {
-                        infoWindow.setContent(`                        <div class="font-sans p-1">                            <p class="font-bold text-sm">${article.title}</p>                            <p class="text-xs text-gray-500">${getDisplaySourceName(article)}</p>                        </div>                        `);
+                        const safeInfoTitle = (() => { try { return /[ÃÂâ]/.test(article.title) ? decodeURIComponent(escape(article.title)) : article.title; } catch(_) { return article.title; } })();
+                infoWindow.setContent(`                        <div class="font-sans p-1">                            <p class="font-bold text-sm">${safeInfoTitle}</p>                            <p class="text-xs text-gray-500">${getDisplaySourceName(article)}</p>                        </div>                        `);
                         infoWindow.open({
                             anchor: marker,
                             map: mapInstance,
@@ -3338,7 +3339,9 @@ let keywordToTransferInfo = null;
             const kwArray = Array.isArray(alert.keywords) ? alert.keywords.filter(Boolean) : [];
             const keywordsString = kwArray.length ? kwArray.join(', ') : (alert.keyword || '(sem keywords)');
             const sourceName = getDisplaySourceName(alert);
-            alertEl.innerHTML = `<div class="flex justify-between items-start"><h4 class="text-lg font-bold text-gray-800 pr-2">${alert.title}</h4><span class="flex-shrink-0 text-xs font-semibold bg-gray-100 text-gray-800 px-2 py-1 rounded-full">${companyLabel} - ${keywordsString}</span></div><p class="text-sm text-gray-600 mt-2">${alert.description || 'Descrição não disponível.'}</p><div class="text-xs text-gray-500 mt-3 flex justify-between items-center"><span>Fonte: ${getDisplaySourceName(alert)} | Publicado: ${formattedDate}</span><div class="flex gap-2"><a href="${alert.url}" target="_blank" rel="noopener noreferrer" class="text-indigo-600 hover:underline">Abrir artigo</a><button class="approve-alert-btn bg-green-500 text-white px-3 py-1 rounded-md text-sm hover:bg-green-600">Aprovar</button><button class="reject-alert-btn bg-red-500 text-white px-3 py-1 rounded-md text-sm hover:bg-red-600">Rejeitar</button></div></div>`;
+            const safeTitle = (() => { try { return /[ÃÂâ]/.test(alert.title) ? decodeURIComponent(escape(alert.title)) : alert.title; } catch(_) { return alert.title; } })();
+            const safeDesc = (() => { const d = alert.description || 'Descrição não disponível.'; try { return /[ÃÂâ]/.test(d) ? decodeURIComponent(escape(d)) : d; } catch(_) { return d; } })();
+            alertEl.innerHTML = `<div class="flex justify-between items-start"><h4 class="text-lg font-bold text-gray-800 pr-2">${safeTitle}</h4><span class="flex-shrink-0 text-xs font-semibold bg-gray-100 text-gray-800 px-2 py-1 rounded-full">${companyLabel} - ${keywordsString}</span></div><p class="text-sm text-gray-600 mt-2">${safeDesc}</p><div class="text-xs text-gray-500 mt-3 flex justify-between items-center"><span>Fonte: ${getDisplaySourceName(alert)} | Publicado: ${formattedDate}</span><div class="flex gap-2"><a href="${alert.url}" target="_blank" rel="noopener noreferrer" class="text-indigo-600 hover:underline">Abrir artigo</a><button class="approve-alert-btn bg-green-500 text-white px-3 py-1 rounded-md text-sm hover:bg-green-600">Aprovar</button><button class="reject-alert-btn bg-red-500 text-white px-3 py-1 rounded-md text-sm hover:bg-red-600">Rejeitar</button></div></div>`;
             container.appendChild(alertEl);
         }
 
