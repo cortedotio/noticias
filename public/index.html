@@ -665,9 +665,24 @@
                         <p class="mt-2 text-xs text-gray-500">Ex.: 6 horas. O robô só buscará no YouTube quando o tempo configurado tiver passado desde a última execução.</p>
                         <div class="mt-3">
                             <label for="youtubeFrequencyTime" class="block text-sm font-medium text-gray-700 mb-1">Horário desejado para realizar a busca (HH:MM)</label>
-                            <input type="time" id="youtubeFrequencyTime" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="08:00">
+<input type="time" id="youtubeFrequencyTime" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="08:00">
                             <p class="mt-2 text-xs text-gray-500">Opcional: se definido, a busca gated por frequência só ocorrerá no horário desejado do dia.</p>
                         </div>
+                    </div>
+
+                    <div class="bg-gray-100 p-3 rounded-md">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Janela permitida para buscar notícias</label>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label for="fetchWindowStart" class="block text-sm font-medium text-gray-700 mb-1">Janela permitida para buscar notícias (início)</label>
+                                <input type="time" id="fetchWindowStart" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="08:00">
+                            </div>
+                            <div>
+                                <label for="fetchWindowEnd" class="block text-sm font-medium text-gray-700 mb-1">Janela permitida para buscar notícias (fim)</label>
+                                <input type="time" id="fetchWindowEnd" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="18:00">
+                            </div>
+                        </div>
+                        <p class="mt-2 text-xs text-gray-500">Se definidos, o robô só poderá buscar notícias dentro desta janela diária.</p>
                     </div>
                 </div>
             </div>
@@ -2116,6 +2131,10 @@ let keywordToTransferInfo = null;
                     }
                     const ytDesiredTimeEl = document.getElementById('youtubeFrequencyTime');
                     if (ytDesiredTimeEl) ytDesiredTimeEl.value = settings.youtubeFrequencyTime || '';
+                    const fetchWindowStartEl = document.getElementById('fetchWindowStart');
+                    const fetchWindowEndEl = document.getElementById('fetchWindowEnd');
+                    if (fetchWindowStartEl) fetchWindowStartEl.value = settings.fetchWindowStart || '';
+                    if (fetchWindowEndEl) fetchWindowEndEl.value = settings.fetchWindowEnd || '';
                     const rssFreqEl = document.getElementById('rssFrequencyMinutes');
                     if (rssFreqEl) {
                         rssFreqEl.value = settings.rssFrequencyMinutes || '';
@@ -3913,6 +3932,9 @@ let keywordToTransferInfo = null;
 youtubeChannelsFrequencyInput = document.getElementById('youtubeChannelsFrequencyMinutes');
 youtubeFrequencyInput = document.getElementById('youtubeFrequencyHours');
 youtubeFrequencyTimeInput = document.getElementById('youtubeFrequencyTime');
+let fetchWindowStartInput, fetchWindowEndInput;
+fetchWindowStartInput = document.getElementById('fetchWindowStart');
+fetchWindowEndInput = document.getElementById('fetchWindowEnd');
             fetchOnlyNewToggle = document.getElementById('fetch-only-new-toggle');
             changePasswordPage = document.getElementById('change-password-page');
             globalKeysPage = document.getElementById('global-keys-page');
@@ -4194,6 +4216,55 @@ if (youtubeFrequencyInput) youtubeFrequencyInput.addEventListener('input', () =>
                 setDoc(settingsRef, { youtubeFrequencyTime: raw }, { merge: true })
                     .then(() => showAlert('Horário da busca do YouTube guardado!', 'success'))
                     .catch((error) => console.error('Erro ao guardar o horário do YouTube:', error));
+            });
+            // Janela permitida para buscar notícias (início)
+            if (fetchWindowStartInput) fetchWindowStartInput.addEventListener('change', (e) => {
+                const settingsRef = doc(db, "artifacts", appId, "public", "data", "settings", "global");
+                const raw = (e.target.value || '').toString().trim();
+                if (raw && !/^\d{2}:\d{2}$/.test(raw)) {
+                    if (typeof e.target.dataset.lastValue !== 'undefined') {
+                        e.target.value = e.target.dataset.lastValue;
+                    }
+                    showAlert('Horário inválido. Use o formato HH:MM.', 'error');
+                    return;
+                }
+                e.target.dataset.lastValue = raw;
+                setDoc(settingsRef, { fetchWindowStart: raw }, { merge: true })
+                    .then(() => showAlert('Janela de busca (início) guardada!', 'success'))
+                    .catch((error) => console.error('Erro ao guardar janela (início):', error));
+            });
+            // Janela permitida para buscar notícias (fim)
+            if (fetchWindowEndInput) fetchWindowEndInput.addEventListener('change', (e) => {
+                const settingsRef = doc(db, "artifacts", appId, "public", "data", "settings", "global");
+                const raw = (e.target.value || '').toString().trim();
+                if (raw && !/^\d{2}:\d{2}$/.test(raw)) {
+                    if (typeof e.target.dataset.lastValue !== 'undefined') {
+                        e.target.value = e.target.dataset.lastValue;
+                    }
+                    showAlert('Horário inválido. Use o formato HH:MM.', 'error');
+                    return;
+                }
+                e.target.dataset.lastValue = raw;
+                setDoc(settingsRef, { fetchWindowEnd: raw }, { merge: true })
+                    .then(() => showAlert('Janela de busca (fim) guardada!', 'success'))
+                    .catch((error) => console.error('Erro ao guardar janela (fim):', error));
+            });
+            // Debounce enquanto digita
+            let __fetchWindowStartDebounceTimer;
+            if (fetchWindowStartInput) fetchWindowStartInput.addEventListener('input', () => {
+                clearTimeout(__fetchWindowStartDebounceTimer);
+                __fetchWindowStartDebounceTimer = setTimeout(() => {
+                    const ev = new Event('change');
+                    fetchWindowStartInput.dispatchEvent(ev);
+                }, 800);
+            });
+            let __fetchWindowEndDebounceTimer;
+            if (fetchWindowEndInput) fetchWindowEndInput.addEventListener('input', () => {
+                clearTimeout(__fetchWindowEndDebounceTimer);
+                __fetchWindowEndDebounceTimer = setTimeout(() => {
+                    const ev = new Event('change');
+                    fetchWindowEndInput.dispatchEvent(ev);
+                }, 800);
             });
             if (reportAccessToggle) reportAccessToggle.addEventListener('change', handleSettingsChange);
             if (mapAccessToggle) mapAccessToggle.addEventListener('change', handleSettingsChange);
