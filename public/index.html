@@ -44,6 +44,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <!-- CHAVE DA API DO GOOGLE MAPS -->
+    <script>window.initMap = window.initMap || function(){ try { /* stub para evitar erro antes da definição real */ } catch(e){} };</script>
     <script async defer
         src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBlgBbnbhALORtuoTwy6xjjUqtoMI4wlL8&callback=initMap"></script>
 
@@ -2670,7 +2671,14 @@ let keywordToTransferInfo = null;
                 translationHTML = `<span title="Traduzido do ${article.translationInfo.originalLanguage.toUpperCase()}" class="mr-2">🌐</span>`;
             }
 
-            alertEl.innerHTML = `                <div class="alert-body-clickable">                    <div class="flex justify-between items-start">                        <h4 class="text-lg font-bold text-gray-800 pr-2">${article.title}</h4>                        <div class="flex items-center gap-2 flex-shrink-0">                            <div class="flex flex-col items-end gap-1">${keywordsHTML}</div>                            ${directnessHTML}                            <div class="media-container relative">${getMediaTypeHTML(mediaTypeValue)}${mediaTypeMenuHTML}</div>                            <div class="sentiment-container relative">${getSentimentHTML(sentimentScore)}${sentimentMenuHTML}</div>                        </div>                    </div>                    <p class="text-sm text-gray-600 mt-2 line-clamp-2">${article.description || 'Descrição não disponível.'}</p>                </div>                ${aiInsightsHTML}                <div class="text-xs text-gray-500 mt-3 flex justify-between items-center">                    <span>${translationHTML}Fonte: ${getDisplaySourceName(article)} | Publicado: ${formattedDate}</span>                    <div>                        <a href="${article.url}" target="_blank" rel="noopener noreferrer" class="text-indigo-600 hover:underline font-semibold">Ler no site original →</a>                        ${deleteButtonHTML}                    </div>                </div>`;
+            const isRadio = (article.channel === 'Rádios') || (typeof article.url === 'string' && /(\.mp3|\.m4a|\.aac|\.wav|\.ogg)(\?|$)/i.test(article.url));
+const audioTypeMatch = (article.url || '').match(/\.(mp3|m4a|aac|wav|ogg)(\?|$)/i);
+const audioType = audioTypeMatch ? audioTypeMatch[1].toLowerCase() : 'mp3';
+const mimeMap = { mp3: 'audio/mpeg', m4a: 'audio/mp4', aac: 'audio/aac', wav: 'audio/wav', ogg: 'audio/ogg' };
+const audioMime = mimeMap[audioType] || 'audio/mpeg';
+const audioSrc = article.segmentUrl || article.url;
+const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-3\"><source src=\"${audioSrc}\" type=\"${audioMime}\">Seu navegador não suporta áudio.</audio>` : '';
+alertEl.innerHTML = `                <div class="alert-body-clickable">                    <div class="flex justify-between items-start">                        <h4 class="text-lg font-bold text-gray-800 pr-2">${article.title}</h4>                        <div class="flex items-center gap-2 flex-shrink-0">                            <div class="flex flex-col items-end gap-1">${keywordsHTML}</div>                            ${directnessHTML}                            <div class="media-container relative">${getMediaTypeHTML(mediaTypeValue)}${mediaTypeMenuHTML}</div>                            <div class="sentiment-container relative">${getSentimentHTML(sentimentScore)}${sentimentMenuHTML}</div>                        </div>                    </div>                    <p class="text-sm text-gray-600 mt-2 line-clamp-2">${article.description || 'Descrição não disponível.'}</p>                </div>                ${audioHtml}                ${aiInsightsHTML}                <div class="text-xs text-gray-500 mt-3 flex justify-between items-center">                    <span>${translationHTML}Fonte: ${getDisplaySourceName(article)} | Publicado: ${formattedDate}</span>                    <div>                        <a href="${article.url}" target="_blank" rel="noopener noreferrer" class="text-indigo-600 hover:underline font-semibold">Ler no site original →</a>                        ${deleteButtonHTML}                    </div>                </div>`;
             container.appendChild(alertEl);
         }
 
@@ -3360,7 +3368,14 @@ let keywordToTransferInfo = null;
             const sourceName = getDisplaySourceName(alert);
             const safeTitle = (() => { try { return /[ÃÂâ]/.test(alert.title) ? decodeURIComponent(escape(alert.title)) : alert.title; } catch(_) { return alert.title; } })();
             const safeDesc = (() => { const d = alert.description || 'Descrição não disponível.'; try { return /[ÃÂâ]/.test(d) ? decodeURIComponent(escape(d)) : d; } catch(_) { return d; } })();
-            alertEl.innerHTML = `<div class="flex justify-between items-start"><h4 class="text-lg font-bold text-gray-800 pr-2">${safeTitle}</h4><span class="flex-shrink-0 text-xs font-semibold bg-gray-100 text-gray-800 px-2 py-1 rounded-full">${companyLabel} - ${keywordsString}</span></div><p class="text-sm text-gray-600 mt-2">${safeDesc}</p><div class="text-xs text-gray-500 mt-3 flex justify-between items-center"><span>Fonte: ${getDisplaySourceName(alert)} | Publicado: ${formattedDate}</span><div class="flex gap-2"><a href="${alert.url}" target="_blank" rel="noopener noreferrer" class="text-indigo-600 hover:underline">Abrir artigo</a><button class="approve-alert-btn bg-green-500 text-white px-3 py-1 rounded-md text-sm hover:bg-green-600">Aprovar</button><button class="reject-alert-btn bg-red-500 text-white px-3 py-1 rounded-md text-sm hover:bg-red-600">Rejeitar</button></div></div>`;
+            const isRadio = alert.channel === 'Rádios' || (typeof alert.url === 'string' && /\.(mp3|m4a|aac|wav|ogg)(\?|$)/i.test(alert.url));
+            const audioTypeMatch = (alert.url || '').match(/\.(mp3|m4a|aac|wav|ogg)(\?|$)/i);
+            const audioType = audioTypeMatch ? audioTypeMatch[1].toLowerCase() : 'mp3';
+            const mimeMap = { mp3: 'audio/mpeg', m4a: 'audio/mp4', aac: 'audio/aac', wav: 'audio/wav', ogg: 'audio/ogg' };
+            const audioMime = mimeMap[audioType] || 'audio/mpeg';
+            const audioSrc = alert.segmentUrl || alert.url;
+            const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-3\"><source src=\"${audioSrc}\" type=\"${audioMime}\">Seu navegador não suporta áudio.</audio>` : '';
+            alertEl.innerHTML = `<div class="flex justify-between items-start"><h4 class="text-lg font-bold text-gray-800 pr-2">${safeTitle}</h4><span class="flex-shrink-0 text-xs font-semibold bg-gray-100 text-gray-800 px-2 py-1 rounded-full">${companyLabel} - ${keywordsString}</span></div><p class="text-sm text-gray-600 mt-2">${safeDesc}</p>${audioHtml}<div class="text-xs text-gray-500 mt-3 flex justify-between items-center"><span>Fonte: ${getDisplaySourceName(alert)} | Publicado: ${formattedDate}</span><div class="flex gap-2"><a href="${alert.url}" target="_blank" rel="noopener noreferrer" class="text-indigo-600 hover:underline">Abrir artigo</a><button class="approve-alert-btn bg-green-500 text-white px-3 py-1 rounded-md text-sm hover:bg-green-600">Aprovar</button><button class="reject-alert-btn bg-red-500 text-white px-3 py-1 rounded-md text-sm hover:bg-red-600">Rejeitar</button></div></div>`;
             container.appendChild(alertEl);
         }
 
