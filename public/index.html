@@ -41,7 +41,7 @@
         }
       })();
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
     <!-- CHAVE DA API DO GOOGLE MAPS -->
     <script>window.initMap = window.initMap || function(){ try { /* stub para evitar erro antes da definição real */ } catch(e){} };</script>
@@ -3357,18 +3357,72 @@ alertEl.innerHTML = `                <div class="alert-body-clickable">         
 
             const createMetaItem = (label, value) => `<div class="flex flex-col"><span class="font-semibold text-gray-800">${label}</span><span class="text-gray-600">${value || 'N/A'}</span></div>`;
 
-            reportMetaGrid.innerHTML += createMetaItem('Fonte', getDisplaySourceName(article));
+            // Ordem solicitada
             reportMetaGrid.innerHTML += createMetaItem('Data da Publicação', pubDate.toLocaleDateString('pt-BR'));
-
+            reportMetaGrid.innerHTML += createMetaItem('Fonte', getDisplaySourceName(article));
             if (article.author) {
                 reportMetaGrid.innerHTML += createMetaItem('Autor', article.author);
             }
+
+            const keywordsText = (article.keywords || []).join(', ');
+            reportMetaGrid.innerHTML += createMetaItem('Palavras-Chave', keywordsText);
+
+            // Análises por palavra‑chave (detalhe) logo após “Palavras‑Chave”
+            (function () {
+                const detailSection = document.getElementById('article-detail-page');
+                if (detailSection) { detailSection.dataset.id = article.id; }
+                const sanitizeKey = s => String(s).toLowerCase().trim().replace(/[.#$\[\]/]/g, '_').replace(/\s+/g, '_');
+                const allTextLower = `${article.title || ''} ${article.description || ''}`.toLowerCase();
+                const mediaInit = (() => { const raw = article.mediaType; return raw && /provocada/i.test(raw) ? 'Provocada' : 'Espontânea'; })();
+                const baseSentiment = article.ai?.sentiment?.score ?? article.sentiment?.score ?? 0;
+                if (detailSection) detailSection._kwAna = {};
+                const kwList = (article.keywords && article.keywords.length > 0) ? article.keywords : [article.keyword].filter(Boolean);
+                if (!kwList || kwList.length === 0) return;
+                const kwHTMLDetail = kwList.map(kw => {
+                    const sk = sanitizeKey(kw);
+                    const isDirectKw = allTextLower.includes(String(kw).toLowerCase());
+                    const directBtnClass = isDirectKw ? 'text-orange-600 bg-orange-100' : 'text-gray-600 bg-gray-100';
+                    const mediaColor = mediaInit === 'Provocada' ? 'text-amber-600 bg-amber-100' : 'text-teal-600 bg-teal-100';
+                    let emoji = '😐', color = 'gray', text = 'Neutro';
+                    if (baseSentiment > 0.25) { emoji = '😊'; color = 'green'; text = 'Positivo'; }
+                    else if (baseSentiment < -0.25) { emoji = '😠'; color = 'red'; text = 'Negativo'; }
+                    if (detailSection) detailSection._kwAna[sk] = { word: kw, sentiment: baseSentiment, mediaType: mediaInit, direct: isDirectKw };
+                    return `
+                    <div class="keyword-analysis-row flex items-center gap-2" data-keyword="${sk}">
+                      <span class="flex-shrink-0 text-xs font-semibold bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full">${kw}</span>
+                      <div class="keyword-directness-container directness-container relative">
+                        <button class="keyword-directness-btn text-xs font-semibold ${directBtnClass} px-2 py-1 rounded-full">${isDirectKw ? 'Direto' : 'Indireto'}</button>
+                        <div class="directness-menu p-1 space-y-1">
+                          <button data-directness="true" data-keyword="${sk}" data-word="${kw}" class="directness-option w-full text-left text-xs px-2 py-1 rounded hover:bg-gray-100">Direto</button>
+                          <button data-directness="false" data-keyword="${sk}" data-word="${kw}" class="directness-option w-full text-left text-xs px-2 py-1 rounded hover:bg-gray-100">Indireto</button>
+                        </div>
+                      </div>
+                      <div class="keyword-media-container media-container relative">
+                        <button class="media-btn text-xs font-semibold ${mediaColor} px-2 py-1 rounded-full">${mediaInit}</button>
+                        <div class="keyword-media-menu media-menu p-1 space-y-1">
+                          <button data-media-type="Espontânea" data-keyword="${sk}" data-word="${kw}" class="keyword-media-option w-full text-left text-xs px-2 py-1 rounded hover:bg-gray-100">Espontânea</button>
+                          <button data-media-type="Provocada" data-keyword="${sk}" data-word="${kw}" class="keyword-media-option w-full text-left text-left text-xs px-2 py-1 rounded hover:bg-gray-100">Provocada</button>
+                        </div>
+                      </div>
+                      <div class="keyword-sentiment-container sentiment-container relative">
+                        <button class="keyword-sentiment-btn text-xs font-semibold text-${color}-600 bg-${color}-100 px-2 py-1 rounded-full">${emoji} ${text}</button>
+                        <div class="keyword-sentiment-menu sentiment-menu p-1 space-y-1">
+                          <button data-sentiment="0.5" data-keyword="${sk}" data-word="${kw}" class="keyword-sentiment-option w-full text-left text-xs px-2 py-1 rounded hover:bg-gray-100">😊 Positivo</button>
+                          <button data-sentiment="0.0" data-keyword="${sk}" data-word="${kw}" class="keyword-sentiment-option w-full text-left text-xs px-2 py-1 rounded hover:bg-gray-100">😐 Neutro</button>
+                          <button data-sentiment="-0.5" data-keyword="${sk}" data-word="${kw}" class="keyword-sentiment-option w-full text-left text-xs px-2 py-1 rounded hover:bg-gray-100">😠 Negativo</button>
+                        </div>
+                      </div>
+                    </div>`;
+                }).join('');
+                const fullRow = `<div class=\"md:col-span-4 col-span-2\"><div id=\"detail-keyword-analyses\" class=\"flex flex-col gap-2\">${kwHTMLDetail}</div></div>`;
+                reportMetaGrid.innerHTML += fullRow;
+            })();
 
             const sentimentScore = article.ai?.sentiment?.score ?? article.sentiment?.score ?? 0;
             let sentimentText = 'Neutro';
             if (sentimentScore > 0.25) { sentimentText = 'Positivo'; }
             else if (sentimentScore < -0.25) { sentimentText = 'Negativo'; }
-            reportMetaGrid.innerHTML += createMetaItem('Sentimento', sentimentText);
+            const sentimentHTML = createMetaItem('Sentimento', sentimentText);
 
             // Badges: Direta/Indireta
             const titleLower = (article.title || '').toLowerCase();
@@ -3383,9 +3437,11 @@ alertEl.innerHTML = `                <div class="alert-body-clickable">         
             const isProvocada = mediaRaw && /provocada/i.test(mediaRaw);
             const mediaBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${isProvocada ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'}">${isProvocada ? 'Provocada' : 'Espontânea'}</span>`;
             reportMetaGrid.innerHTML += `<div class="flex flex-col"><span class="font-semibold text-gray-800">Tipo de Mídia</span><span>${mediaBadge}</span></div>`;
+            reportMetaGrid.innerHTML += sentimentHTML;
 
-            const keywordsText = (article.keywords || []).join(', ');
-            reportMetaGrid.innerHTML += createMetaItem('Palavras-Chave', keywordsText);
+            if (article.author) {
+                reportMetaGrid.innerHTML += createMetaItem('Autor', article.author);
+            }
 
             let aiInsightsHTML = '';
             if (article.ai) {
