@@ -1459,7 +1459,7 @@
         const appId = firebaseConfig.projectId;
         let currentUser = null, clockInterval = null, selectedCompanyForManagement = null, allCompanyArticles = [], companyIdToDelete = null, articleToDeleteInfo = null;
         let companyCaptureChannels = null;
-        let sourceChartInstance = null, dateChartInstance = null, sentimentChartInstance = null, directnessChartInstance = null, channelChartInstance = null, mediaTypeChartInstance = null, companySummaryChartInstance = null, keywordTotalChartInstance = null, keywordSentimentChartInstance = null, criticalChannelChartInstance = null, criticalSpaceChartInstance = null, criticalSpaceQualChartInstance = null, criticalVehicleChartInstance = null, criticalValuationChartInstance = null, criticalDateChartInstance = null;
+        let sourceChartInstance = null, dateChartInstance = null, sentimentChartInstance = null, directnessChartInstance = null, channelChartInstance = null, mediaTypeChartInstance = null, companySummaryChartInstance = null, keywordTotalChartInstance = null, keywordSentimentChartInstance = null, criticalChannelChartInstance = null, criticalSpaceChartInstance = null, criticalSpaceQualChartInstance = null, criticalVehicleChartInstance = null, criticalValuationChartInstance = null, criticalDateChartInstance = null, criticalSpontaneityChartInstance = null;
         let superAdminCredentials = { user: 'ulysses', pass: 'adminqwert' };
         let notificationListener = null, companiesListener = null, deletionRequestsListener = null, pendingAlertsListener = null, activityCompaniesListener = null, activityPendingListener = null, activityDeletionListener = null;
         let keywordToDeleteInfo = null;
@@ -4064,7 +4064,6 @@ alertEl.innerHTML = `                <div class="alert-body-clickable">         
                 const articles = Array.isArray(data.articles) ? data.articles : (Array.isArray(data) ? data : []);
                 const channelCounts = data.channelCounts || {};
                 const spaceCounts = data.spaceCounts || {};
-                const spaceQualCounts = data.spaceQualCounts || {};
                 const mentionedEntities = data.mentionedEntities || {};
                 const vehicleCounts = data.vehicleCounts || {};
                 const valuation = data.valuation || {};
@@ -4103,31 +4102,31 @@ alertEl.innerHTML = `                <div class="alert-body-clickable">         
                 }
                 const channelLabels = Object.keys(channelCounts);
                 const channelValues = channelLabels.map(k => channelCounts[k]);
-                criticalChannelChartInstance = createChart('critical-channel-chart', criticalChannelChartInstance, 'bar', { labels: channelLabels, datasets: [{ label: 'Distribuição por mídia', data: channelValues, backgroundColor: '#4F46E5' }] }, { plugins: { legend: { display: false } } });
+                criticalChannelChartInstance = createChart('critical-channel-chart', criticalChannelChartInstance, 'bar', { labels: channelLabels, datasets: [{ label: 'Distribuição por mídia', data: channelValues, backgroundColor: '#4F46E5', borderRadius: 6, borderSkipped: false }] }, { plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(context) { return context.dataset.label + ': ' + context.parsed.y; } } } }, scales: { x: { grid: { display: false } }, y: { beginAtZero: true, grid: { display: true } } } });
                 const spaceLabels = Object.keys(spaceCounts);
                 const spaceValues = spaceLabels.map(k => spaceCounts[k]);
                 if (spaceLabels.length) {
-                    criticalSpaceChartInstance = createChart('critical-space-chart', criticalSpaceChartInstance, 'bar', { labels: spaceLabels, datasets: [{ label: 'Tipo de texto', data: spaceValues, backgroundColor: '#10B981' }] }, { plugins: { legend: { display: false } } });
+                    criticalSpaceChartInstance = createChart('critical-space-chart', criticalSpaceChartInstance, 'bar', { labels: spaceLabels, datasets: [{ label: 'Tipo de texto', data: spaceValues, backgroundColor: '#10B981', borderRadius: 6, borderSkipped: false }] }, { plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(context) { return context.dataset.label + ': ' + context.parsed.y; } } } }, scales: { x: { grid: { display: false } }, y: { beginAtZero: true, grid: { display: true } } } });
                 }
-                const spaceQualLabels = Object.keys(spaceQualCounts);
-                const spaceQualValues = spaceQualLabels.map(k => spaceQualCounts[k]);
+                const spaceQualLabels = Object.keys(spaceCounts);
+                const spaceQualValues = spaceQualLabels.map(k => spaceCounts[k]);
                 if (spaceQualLabels.length) {
-                    criticalSpaceQualChartInstance = createChart('critical-space-qual-chart', criticalSpaceQualChartInstance, 'bar', { labels: spaceQualLabels, datasets: [{ label: 'Direta/Indireta', data: spaceQualValues, backgroundColor: '#F59E0B' }] }, { plugins: { legend: { display: false } } });
+                    criticalSpaceQualChartInstance = createChart('critical-space-qual-chart', criticalSpaceQualChartInstance, 'bar', { labels: spaceQualLabels, datasets: [{ label: 'Direta/Indireta', data: spaceQualValues, backgroundColor: '#F59E0B', borderRadius: 6, borderSkipped: false }] }, { plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(context) { return context.label + ': ' + context.parsed.y + ' alertas'; } } } }, scales: { x: { grid: { display: false } }, y: { beginAtZero: true, grid: { display: true } } } });
                 }
                 const spontaneityLabels = Object.keys(spontaneityCounts);
                 const spontaneityValues = spontaneityLabels.map(k => spontaneityCounts[k]);
                 if (spontaneityLabels.length) {
-                    criticalSpontaneityChartInstance = createChart('critical-spontaneity-chart', criticalSpontaneityChartInstance, 'bar', { labels: spontaneityLabels, datasets: [{ label: 'Mídia Provocada/Espontânea', data: spontaneityValues, backgroundColor: '#8B5CF6' }] }, { plugins: { legend: { display: false } } });
+                    criticalSpontaneityChartInstance = createChart('critical-spontaneity-chart', criticalSpontaneityChartInstance, 'bar', { labels: spontaneityLabels, datasets: [{ label: 'Mídia Provocada/Espontânea', data: spontaneityValues, backgroundColor: '#8B5CF6', borderRadius: 6, borderSkipped: false }] }, { plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(context) { return context.label + ': ' + context.parsed.y + ' artigos'; } } } }, scales: { x: { grid: { display: false } }, y: { beginAtZero: true, grid: { display: true } } } });
                 }
                 const vehicleLabels = Object.keys(vehicleCounts).slice(0,10);
                 const vehicleValues = vehicleLabels.map(k => vehicleCounts[k]);
                 if (vehicleLabels.length) {
-                    criticalVehicleChartInstance = createChart('critical-vehicle-chart', criticalVehicleChartInstance, 'bar', { labels: vehicleLabels, datasets: [{ label: 'Veículos (top 10)', data: vehicleValues, backgroundColor: '#EF4444' }] }, { plugins: { legend: { display: false } }, indexAxis: 'y' });
+                    criticalVehicleChartInstance = createChart('critical-vehicle-chart', criticalVehicleChartInstance, 'bar', { labels: vehicleLabels, datasets: [{ label: 'Veículos (top 10)', data: vehicleValues, backgroundColor: '#EC4899', borderRadius: 6, borderSkipped: false }] }, { plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(context) { return context.dataset.label + ': ' + context.parsed.y; } } } }, scales: { x: { grid: { display: false } }, y: { beginAtZero: true, grid: { display: true } } }, indexAxis: 'y' });
                 }
                 const valuationLabels = Object.keys(valuation);
                 const valuationValues = valuationLabels.map(k => valuation[k]);
                 if (valuationLabels.length) {
-                    criticalValuationChartInstance = createChart('critical-valuation-chart', criticalValuationChartInstance, 'bar', { labels: valuationLabels, datasets: [{ label: 'Análise qualitativa', data: valuationValues, backgroundColor: ['#22C55E','#F59E0B','#EF4444','#6366F1','#0EA5E9'] }] }, { plugins: { legend: { display: false } } });
+                    criticalValuationChartInstance = createChart('critical-valuation-chart', criticalValuationChartInstance, 'bar', { labels: valuationLabels, datasets: [{ label: 'Análise qualitativa', data: valuationValues, backgroundColor: ['#22C55E','#F59E0B','#EF4444','#6366F1','#0EA5E9'], borderRadius: 6, borderSkipped: false }] }, { plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(context) { return context.label + ': ' + context.parsed.y + ' artigos'; } } } }, scales: { x: { grid: { display: false } }, y: { beginAtZero: true, grid: { display: true } } } });
                 }
                 const dateLabels = Object.keys(dateCounts).sort();
                 const dateValues = dateLabels.map(k => dateCounts[k]);

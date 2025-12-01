@@ -978,6 +978,8 @@ async function checkTvSources() {
 // Agendar verificação de TV a cada 1 minuto
 if (!BACKFILL_RUN && !DIAGNOSE_RUN) {
   setInterval(checkTvSources, 60 * 1000);
+  // Agendar captação de TV a cada 2 minutos
+  setInterval(checkAndCaptureTv, 2 * 60 * 1000);
 }
 
 // Endpoint: Testar Agora uma fonte de TV
