@@ -1162,11 +1162,15 @@
                     <canvas id="critical-space-qual-chart" class="w-full h-full"></canvas>
                 </div>
                 <div class="p-4 bg-white rounded-lg shadow-lg h-[420px]">
+                    <h3 class="text-xl font-semibold mb-4 text-center">Mídia Provocada/Espontânea</h3>
+                    <canvas id="critical-spontaneity-chart" class="w-full h-full"></canvas>
+                </div>
+                <div class="p-4 bg-white rounded-lg shadow-lg h-[420px]">
                     <h3 class="text-xl font-semibold mb-4 text-center">Notícias por Fonte</h3>
                     <canvas id="critical-vehicle-chart" class="w-full h-full"></canvas>
                 </div>
                 <div class="p-4 bg-white rounded-lg shadow-lg h-[420px]">
-                    <h3 class="text-xl font-semibold mb-4 text-center">Análise qualitativa das matérias</h3>
+                    <h3 class="text-xl font-semibold mb-4 text-center">Gráfico de Sentimento</h3>
                     <canvas id="critical-valuation-chart" class="w-full h-full"></canvas>
                 </div>
                 <div class="p-4 bg-white rounded-lg shadow-lg h-[420px] lg:col-span-2">
@@ -1176,6 +1180,33 @@
                 <div class="p-4 bg-white rounded-lg shadow-lg h-[420px] lg:col-span-2">
                     <h3 class="text-xl font-semibold mb-4 text-center">Assunto (Nuvem de Palavras)</h3>
                     <div id="critical-wordcloud" class="w-full h-full overflow-auto flex flex-wrap items-start content-start gap-2"></div>
+                </div>
+                <div class="p-4 bg-white rounded-lg shadow-lg min-h-[300px] lg:col-span-2">
+                    <h3 class="text-xl font-semibold mb-4 text-center">Espaço ocupado na mídia</h3>
+                    <div id="critical-media-space" class="grid grid-cols-2 gap-4 text-center">
+                        <div class="p-4 bg-blue-50 rounded-lg">
+                            <h4 class="text-lg font-medium text-blue-700">Tempo em TV</h4>
+                            <p id="tv-time" class="text-2xl font-bold text-blue-900">0 min</p>
+                        </div>
+                        <div class="p-4 bg-green-50 rounded-lg">
+                            <h4 class="text-lg font-medium text-green-700">Tempo em Rádio</h4>
+                            <p id="radio-time" class="text-2xl font-bold text-green-900">0 min</p>
+                        </div>
+                        <div class="p-4 bg-purple-50 rounded-lg">
+                            <h4 class="text-lg font-medium text-purple-700">Tamanho Web</h4>
+                            <p id="web-size" class="text-2xl font-bold text-purple-900">0 cm</p>
+                        </div>
+                        <div class="p-4 bg-red-50 rounded-lg">
+                            <h4 class="text-lg font-medium text-red-700">Tempo YouTube</h4>
+                            <p id="youtube-time" class="text-2xl font-bold text-red-900">0 min</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-4 bg-white rounded-lg shadow-lg min-h-[300px] lg:col-span-2">
+                    <h3 class="text-xl font-semibold mb-4 text-center">Análise de Sentimento por Tipo de Mídia</h3>
+                    <div id="critical-sentiment-by-channel" class="w-full h-[300px]">
+                        <canvas id="sentiment-by-channel-chart"></canvas>
+                    </div>
                 </div>
                 <div class="p-4 bg-white rounded-lg shadow-lg min-h-[300px] sm:min-h-[400px] lg:col-span-2">
                     <h3 class="text-xl font-semibold mb-4 text-center">Mapa de Notícias</h3>
@@ -3021,18 +3052,40 @@ alertEl.innerHTML = `                <div class="alert-body-clickable">         
             const allChannels = ['YouTube', 'Sites', 'Revistas', 'Rádios', 'TV'];
             const hasTodos = selectedKeywords && selectedKeywords.includes('Todos');
             const selectedList = (selectedKeywords || []).filter(k => k !== 'Todos');
-            const keywordsToPlot = hasTodos || selectedList.length === 0
-                ? Array.from(new Set(articles.flatMap(a => (a.keywords || [a.keyword])).filter(Boolean)))
-                : selectedList;
-            const datasets = keywordsToPlot.map((keyword, index) => {
-                const counts = allChannels.map(channel => articles.filter(a => {
-                    const ch = (a.channel || getChannelCategory(a.source?.name));
-                    const kws = a.keywords || [a.keyword];
-                    return ch === channel && kws && kws.includes(keyword);
-                }).length);
-                return { label: keyword, data: counts, borderColor: chartColors[index % chartColors.length], borderWidth: 2, fill: false, tension: 0.3 };
-            });
-            channelChartInstance = createChart('channel-chart', channelChartInstance, 'line', { labels: allChannels, datasets }, { plugins: { legend: { position: 'bottom' } } });
+            
+            // Quando "Todos" está selecionado, consolidar dados por canal sem distinção por palavra-chave
+            if (hasTodos || selectedList.length === 0) {
+                const totalCounts = allChannels.map(channel => 
+                    articles.filter(a => {
+                        const ch = (a.channel || getChannelCategory(a.source?.name));
+                        return ch === channel;
+                    }).length
+                );
+                
+                const datasets = [{
+                    label: 'Total',
+                    data: totalCounts,
+                    borderColor: chartColors[0],
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.3
+                }];
+                
+                channelChartInstance = createChart('channel-chart', channelChartInstance, 'line', { labels: allChannels, datasets }, { plugins: { legend: { position: 'bottom' } } });
+            } else {
+                // Quando palavras-chave específicas estão selecionadas, mostrar dados por palavra-chave
+                const keywordsToPlot = selectedList;
+                const datasets = keywordsToPlot.map((keyword, index) => {
+                    const counts = allChannels.map(channel => articles.filter(a => {
+                        const ch = (a.channel || getChannelCategory(a.source?.name));
+                        const kws = a.keywords || [a.keyword];
+                        return ch === channel && kws && kws.includes(keyword);
+                    }).length);
+                    return { label: keyword, data: counts, borderColor: chartColors[index % chartColors.length], borderWidth: 2, fill: false, tension: 0.3 };
+                });
+                
+                channelChartInstance = createChart('channel-chart', channelChartInstance, 'line', { labels: allChannels, datasets }, { plugins: { legend: { position: 'bottom' } } });
+            }
         }
         function renderDateChart(articles, selectedKeywords) {
             const datasets = [];
@@ -4012,10 +4065,13 @@ alertEl.innerHTML = `                <div class="alert-body-clickable">         
                 const channelCounts = data.channelCounts || {};
                 const spaceCounts = data.spaceCounts || {};
                 const spaceQualCounts = data.spaceQualCounts || {};
+                const mentionedEntities = data.mentionedEntities || {};
                 const vehicleCounts = data.vehicleCounts || {};
                 const valuation = data.valuation || {};
                 const dateCounts = data.dateCounts || {};
                 const keywordCounts = data.keywordCounts || {};
+                const spontaneityCounts = data.spontaneityCounts || {};
+                const mediaSpace = data.mediaSpace || {};
                 const topChannel = data.topChannel || null;
                 const topVehicle = data.topVehicle || null;
                 if (!Object.keys(channelCounts).length && articles.length) {
@@ -4058,6 +4114,11 @@ alertEl.innerHTML = `                <div class="alert-body-clickable">         
                 if (spaceQualLabels.length) {
                     criticalSpaceQualChartInstance = createChart('critical-space-qual-chart', criticalSpaceQualChartInstance, 'bar', { labels: spaceQualLabels, datasets: [{ label: 'Direta/Indireta', data: spaceQualValues, backgroundColor: '#F59E0B' }] }, { plugins: { legend: { display: false } } });
                 }
+                const spontaneityLabels = Object.keys(spontaneityCounts);
+                const spontaneityValues = spontaneityLabels.map(k => spontaneityCounts[k]);
+                if (spontaneityLabels.length) {
+                    criticalSpontaneityChartInstance = createChart('critical-spontaneity-chart', criticalSpontaneityChartInstance, 'bar', { labels: spontaneityLabels, datasets: [{ label: 'Mídia Provocada/Espontânea', data: spontaneityValues, backgroundColor: '#8B5CF6' }] }, { plugins: { legend: { display: false } } });
+                }
                 const vehicleLabels = Object.keys(vehicleCounts).slice(0,10);
                 const vehicleValues = vehicleLabels.map(k => vehicleCounts[k]);
                 if (vehicleLabels.length) {
@@ -4066,7 +4127,7 @@ alertEl.innerHTML = `                <div class="alert-body-clickable">         
                 const valuationLabels = Object.keys(valuation);
                 const valuationValues = valuationLabels.map(k => valuation[k]);
                 if (valuationLabels.length) {
-                    criticalValuationChartInstance = createChart('critical-valuation-chart', criticalValuationChartInstance, 'pie', { labels: valuationLabels, datasets: [{ data: valuationValues, backgroundColor: ['#22C55E','#F59E0B','#EF4444','#6366F1','#0EA5E9'] }] }, {});
+                    criticalValuationChartInstance = createChart('critical-valuation-chart', criticalValuationChartInstance, 'bar', { labels: valuationLabels, datasets: [{ label: 'Análise qualitativa', data: valuationValues, backgroundColor: ['#22C55E','#F59E0B','#EF4444','#6366F1','#0EA5E9'] }] }, { plugins: { legend: { display: false } } });
                 }
                 const dateLabels = Object.keys(dateCounts).sort();
                 const dateValues = dateLabels.map(k => dateCounts[k]);
@@ -4085,6 +4146,32 @@ alertEl.innerHTML = `                <div class="alert-body-clickable">         
                         span.style.fontSize = `${0.75 + weight * 0.25}rem`;
                         wordcloudEl.appendChild(span);
                     });
+                }
+                
+                // Atualizar espaço ocupado na mídia
+                const mediaSpaceEl = document.getElementById('critical-media-space');
+                if (mediaSpaceEl) {
+                    const { tvTime = 0, radioTime = 0, webSize = 0, youtubeTime = 0 } = mediaSpace;
+                    mediaSpaceEl.innerHTML = `
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div class="p-4 bg-white rounded-lg shadow">
+                                <div class="text-sm text-gray-500 mb-1">Tempo em TV</div>
+                                <div class="text-xl font-bold text-blue-600">${tvTime.toFixed(1)} min</div>
+                            </div>
+                            <div class="p-4 bg-white rounded-lg shadow">
+                                <div class="text-sm text-gray-500 mb-1">Tempo em Rádio</div>
+                                <div class="text-xl font-bold text-green-600">${radioTime.toFixed(1)} min</div>
+                            </div>
+                            <div class="p-4 bg-white rounded-lg shadow">
+                                <div class="text-sm text-gray-500 mb-1">Tamanho Web</div>
+                                <div class="text-xl font-bold text-purple-600">${webSize.toFixed(1)} cm</div>
+                            </div>
+                            <div class="p-4 bg-white rounded-lg shadow">
+                                <div class="text-sm text-gray-500 mb-1">Tempo YouTube</div>
+                                <div class="text-xl font-bold text-red-600">${youtubeTime.toFixed(1)} min</div>
+                            </div>
+                        </div>
+                    `;
                 }
             } catch (error) {
                 console.error('Erro ao gerar relatório crítico:', error);

@@ -1316,6 +1316,22 @@ exports.generateCriticalReport = regionalFunctions.https.onCall(async (data, con
     const valuation = {};
     const dateCounts = {};
     const keywordCounts = {};
+    const spaceCounts = {};
+    const mentionedEntities = {};
+    const spontaneityCounts = {};
+    const mediaSpace = {
+        tvTime: 0,
+        radioTime: 0,
+        webSize: 0,
+        youtubeTime: 0
+    };
+    const sentimentByChannel = {
+        TV: { positive: 0, neutral: 0, negative: 0 },
+        Rádio: { positive: 0, neutral: 0, negative: 0 },
+        Web: { positive: 0, neutral: 0, negative: 0 },
+        YouTube: { positive: 0, neutral: 0, negative: 0 },
+        Outros: { positive: 0, neutral: 0, negative: 0 }
+    };
 
     for (const doc of articlesSnap.docs) {
         const a = doc.data();
@@ -1356,6 +1372,48 @@ exports.generateCriticalReport = regionalFunctions.https.onCall(async (data, con
                 }
             });
         }
+
+        // Contar tipos de texto (space)
+        const textType = a?.textType || a?.space || 'MATÉRIA';
+        spaceCounts[textType] = (spaceCounts[textType] || 0) + 1;
+
+        // Contar entidades mencionadas
+        if (Array.isArray(a.ai?.entities)) {
+            a.ai.entities.forEach(entity => {
+                if (entity.name && entity.salience > 0.01) {
+                    mentionedEntities[entity.name] = (mentionedEntities[entity.name] || 0) + 1;
+                }
+            });
+        }
+
+        // Contar Provocada/Espontânea (default para Espontânea se não especificado)
+        const spontaneity = a?.spontaneity || 'Espontânea';
+        spontaneityCounts[spontaneity] = (spontaneityCounts[spontaneity] || 0) + 1;
+
+        // Calcular espaço ocupado na mídia
+        const channel = a.channel || (a.source?.name ? getChannelCategory(a.source.name) : 'Outros');
+        if (channel === 'TV') {
+            // TV: assumir 1 minuto por matéria (valor padrão)
+            mediaSpace.tvTime += 1;
+        } else if (channel === 'Rádio') {
+            // Rádio: assumir 30 segundos por matéria (0.5 minutos)
+            mediaSpace.radioTime += 0.5;
+        } else if (channel === 'Web') {
+            // Web: assumir 10cm por matéria (tamanho aproximado)
+            mediaSpace.webSize += 10;
+        } else if (channel === 'YouTube') {
+            // YouTube: assumir 2 minutos por vídeo
+            mediaSpace.youtubeTime += 2;
+        }
+
+        // Calcular sentimento por canal
+        const sentimentScore = a.sentiment?.score ?? 0;
+        let sentimentLabel = 'neutral';
+        if (sentimentScore > 0.2) sentimentLabel = 'positive';
+        else if (sentimentScore < -0.2) sentimentLabel = 'negative';
+        
+        const channelCategory = channel in sentimentByChannel ? channel : 'Outros';
+        sentimentByChannel[channelCategory][sentimentLabel] += 1;
     }
 
     const topChannel = Object.keys(channelCounts).length ? Object.keys(channelCounts).reduce((a, b) => channelCounts[a] > channelCounts[b] ? a : b) : null;
@@ -1363,8 +1421,17 @@ exports.generateCriticalReport = regionalFunctions.https.onCall(async (data, con
     const totalAlerts = articles.length;
 
     functions.logger.info("Relatório de análise crítica gerado com sucesso.", { totalAlerts });
-    // spaceCounts e spaceQualCounts podem ser adicionados futuramente se os campos existirem nos artigos
-    return { articles, channelCounts, vehicleCounts, valuation, dateCounts, keywordCounts, topChannel, topVehicle, totalAlerts };
+    
+    // Filtrar e ordenar as entidades mencionadas por frequência
+    const topMentionedEntities = Object.entries(mentionedEntities)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 50)
+        .reduce((obj, [key, value]) => {
+            obj[key] = value;
+            return obj;
+        }, {});
+    
+    return { articles, channelCounts, vehicleCounts, valuation, dateCounts, keywordCounts, spaceCounts, spontaneityCounts, mentionedEntities: topMentionedEntities, mediaSpace, sentimentByChannel, topChannel, topVehicle, totalAlerts };
 });
 
 
