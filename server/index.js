@@ -488,6 +488,8 @@ function isWithinWindow(startHHMM, endHHMM, date = new Date()) {
 }
 
 const lastCaptureByRadio = new Map();
+const lastCheckByRadioId = new Map();
+const radioUrlHistory = new Map(); // Histórico de URLs válidas por rádio
 const speechClient = new SpeechClient();
 
 async function runCapture(url, name, durationSec, outFile) {
@@ -581,6 +583,296 @@ function findMatches(text, keywords) {
   return keywords.filter(kw => lower.includes(String(kw).toLowerCase()));
 }
 
+// Função para descobrir URLs de stream em páginas web
+async function discoverRadioStreams(siteUrl) {
+  try {
+    console.log(`[Radio Discovery] Procurando streams em: ${siteUrl}`);
+    
+    const headers = {
+      'User-Agent': 'Mozilla/5.0 (AuroraRadioMonitor/1.0; +http://radio-discovery)',
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      'Accept-Language': 'pt-BR,pt;q=0.9,en;q=0.8'
+    };
+    
+    const response = await fetch(siteUrl, { 
+      headers,
+      timeout: 15000,
+      redirect: 'follow'
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    
+    const html = await response.text();
+    const discoveredUrls = new Set();
+    
+    // Padrões comuns de URLs de stream
+    const streamPatterns = [
+      /\.m3u8(?:\b|$)/i,
+      /\.mp3(?:\b|$)/i,
+      /\.aac(?:\b|$)/i,
+      /\.ogg(?:\b|$)/i,
+      /icecast/i,
+      /shoutcast/i,
+      /\/stream\//i,
+      /\/live\//i,
+      /\/listen\./i,
+      /\/player\./i,
+      /playlist\.m3u/i
+    ];
+    
+    // Extrair todas as URLs da página
+    const urlRegex = /https?:\/\/[^\s"'<>]+/gi;
+    let match;
+    
+    while ((match = urlRegex.exec(html)) !== null) {
+      const url = match[0];
+      
+      // Verificar se é uma URL de stream
+      const isStream = streamPatterns.some(pattern => pattern.test(url));
+      if (isStream) {
+        discoveredUrls.add(url);
+      }
+    }
+    
+    // Também procurar em elementos específicos como iframes, scripts, etc.
+    const iframeRegex = /<iframe[^>]+src=["']([^"']+)["']/gi;
+    while ((match = iframeRegex.exec(html)) !== null) {
+      const url = match[1];
+      if (url.startsWith('http')) {
+        discoveredUrls.add(url);
+      }
+    }
+    
+    // Testar cada URL descoberta para verificar se é realmente um stream
+    const validStreams = [];
+    for (const url of discoveredUrls) {
+      try {
+        const result = await testRadioStream(url);
+        if (result.online && result.isAudio) {
+          validStreams.push({
+            url,
+            contentType: result.contentType,
+            discoveredFrom: siteUrl
+          });
+        }
+      } catch (e) {
+        // Ignorar falhas em testes individuais
+      }
+    }
+    
+    console.log(`[Radio Discovery] Encontrados ${validStreams.length} streams válidos em ${siteUrl}`);
+    return validStreams;
+    
+  } catch (e) {
+    console.error(`[Radio Discovery] Erro ao descobrir streams em ${siteUrl}:`, e.message || e);
+    return [];
+  }
+}
+
+// Função para testar streams de rádio
+async function testRadioStream(url) {
+  try {
+    const headers = { 
+      'User-Agent': 'Mozilla/5.0 (AuroraRadioMonitor)',
+      'Icy-MetaData': '1',
+      'Accept': 'audio/*'
+    };
+    
+    // Tentar HEAD primeiro para verificar disponibilidade
+    const headResp = await fetch(url, { method: 'HEAD', headers, timeout: 10000 });
+    if (headResp.ok) {
+      const ct = headResp.headers.get('content-type') || '';
+      const isAudio = /audio|mpeg|mp3|aac|ogg|wav|stream/i.test(ct);
+      return { 
+        online: true, 
+        error: null,
+        contentType: ct,
+        isAudio: isAudio
+      };
+    }
+    
+    // Se HEAD falhar, tentar GET com timeout curto
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    
+    const getResp = await fetch(url, { 
+      method: 'GET', 
+      headers,
+      signal: controller.signal
+    });
+    
+    clearTimeout(timeoutId);
+    
+    if (getResp.ok) {
+      const ct = getResp.headers.get('content-type') || '';
+      const isAudio = /audio|mpeg|mp3|aac|ogg|wav|stream/i.test(ct);
+      
+      // Ler um pouco do conteúdo para verificar se é áudio
+      const buffer = await getResp.arrayBuffer();
+      const hasAudioData = buffer.byteLength > 100; // Pelo menos 100 bytes
+      
+      return { 
+        online: true, 
+        error: null,
+        contentType: ct,
+        isAudio: isAudio && hasAudioData
+      };
+    }
+    
+    return { 
+      online: false, 
+      error: `HTTP ${getResp.status}`,
+      contentType: getResp.headers.get('content-type') || ''
+    };
+    
+  } catch (e) {
+    return { 
+      online: false, 
+      error: String(e.message || e),
+      contentType: ''
+    };
+  }
+}
+
+// Sistema de atualização automática de URLs de rádio
+async function autoUpdateRadioUrls() {
+  try {
+    const APP_ID = process.env.APP_ID || 'noticias-6e952';
+    const settingsRef = firestore.doc(`artifacts/${APP_ID}/public/data/settings/global`);
+    const settingsDoc = await settingsRef.get();
+    const settings = settingsDoc.exists ? settingsDoc.data() : {};
+    
+    const radioEntries = parseRadioSources(settings.radioSources || '');
+    if (radioEntries.length === 0) return;
+    
+    console.log(`[Radio Auto-Update] Verificando ${radioEntries.length} rádios para atualização automática...`);
+    
+    let updatedCount = 0;
+    const newEntries = [];
+    
+    for (const entry of radioEntries) {
+      const radioId = `${entry.name}|${entry.program}`;
+      const currentUrl = entry.url || '';
+      
+      // Se já tem URL válida e está funcionando, manter
+      if (currentUrl) {
+        try {
+          const result = await testRadioStream(currentUrl);
+          if (result.online && result.isAudio) {
+            // URL atual está funcionando, manter
+            radioUrlHistory.set(radioId, currentUrl);
+            newEntries.push(entry);
+            continue;
+          }
+        } catch (e) {
+          // URL atual falhou, tentar descobrir nova
+        }
+      }
+      
+      // Tentar descobrir nova URL a partir do site
+      if (entry.site) {
+        try {
+          const discoveredStreams = await discoverRadioStreams(entry.site);
+          if (discoveredStreams.length > 0) {
+            // Usar o primeiro stream válido encontrado
+            const newUrl = discoveredStreams[0].url;
+            const updatedEntry = { ...entry, url: newUrl };
+            
+            console.log(`[Radio Auto-Update] ✅ ${entry.name} - URL atualizada: ${newUrl}`);
+            radioUrlHistory.set(radioId, newUrl);
+            newEntries.push(updatedEntry);
+            updatedCount++;
+            continue;
+          }
+        } catch (e) {
+          console.error(`[Radio Auto-Update] Erro ao descobrir streams para ${entry.name}:`, e.message || e);
+        }
+      }
+      
+      // Se não conseguiu atualizar, manter entrada original
+      newEntries.push(entry);
+    }
+    
+    // Atualizar configurações se houver mudanças
+    if (updatedCount > 0) {
+      const newRadioSources = newEntries.map(entry => {
+        const parts = [
+          entry.name,
+          entry.program || '',
+          entry.site || '',
+          entry.url || '',
+          entry.start && entry.end ? `${entry.start}-${entry.end}` : '',
+          entry.days ? entry.days.join(' ') : ''
+        ].filter(p => p);
+        return parts.join('|');
+      }).join('\n');
+      
+      await settingsRef.update({ 
+        radioSources: newRadioSources,
+        radioLastAutoUpdate: new Date().toISOString()
+      });
+      
+      console.log(`[Radio Auto-Update] ✅ ${updatedCount} URLs atualizadas automaticamente`);
+    } else {
+      console.log('[Radio Auto-Update] Nenhuma atualização necessária');
+    }
+    
+  } catch (e) {
+    console.error('[Radio Auto-Update] Erro no sistema de atualização:', e.message || e);
+  }
+}
+
+// Sistema de verificação automática de streams de rádio
+async function checkRadioStreams() {
+  try {
+    const APP_ID = process.env.APP_ID || 'noticias-6e952';
+    const settingsRef = firestore.doc(`artifacts/${APP_ID}/public/data/settings/global`);
+    const settingsDoc = await settingsRef.get();
+    const settings = settingsDoc.exists ? settingsDoc.data() : {};
+    
+    const radioEntries = parseRadioSources(settings.radioSources || '');
+    if (radioEntries.length === 0) return;
+    
+    console.log(`[Radio Monitor] Verificando ${radioEntries.length} streams de rádio...`);
+    
+    for (const entry of radioEntries) {
+      if (!entry.url) continue;
+      
+      const radioId = `${entry.name}|${entry.url}`;
+      const lastCheck = lastCheckByRadioId.get(radioId) || 0;
+      
+      // Verificar a cada 30 minutos (evitar sobrecarga)
+      if (Date.now() - lastCheck < 30 * 60 * 1000) continue;
+      
+      try {
+        const result = await testRadioStream(entry.url);
+        
+        // Log do status
+        if (result.online && result.isAudio) {
+          console.log(`[Radio Monitor] ✅ ${entry.name} - ONLINE (${result.contentType})`);
+        } else if (result.online && !result.isAudio) {
+          console.log(`[Radio Monitor] ⚠️ ${entry.name} - ONLINE mas não parece áudio (${result.contentType})`);
+        } else {
+          console.log(`[Radio Monitor] ❌ ${entry.name} - OFFLINE: ${result.error}`);
+        }
+        
+        // Atualizar status no Firestore (se necessário)
+        // Você pode armazenar o status em uma coleção separada se quiser
+        
+      } catch (e) {
+        console.error(`[Radio Monitor] Erro ao verificar ${entry.name}:`, e.message || e);
+      }
+      
+      lastCheckByRadioId.set(radioId, Date.now());
+    }
+    
+  } catch (e) {
+    console.error('[Radio Monitor] Erro no sistema de verificação:', e.message || e);
+  }
+}
+
 async function enqueuePendingAlert(appId, company, entry, segmentUrl, transcription) {
   // Channel gating: only enqueue if 'Rádios' is enabled for this company.
   const enabledChannels = Array.isArray(company.captureChannels) ? company.captureChannels : [];
@@ -651,6 +943,19 @@ async function checkAndCaptureRadios() {
 // Iniciar agendador (checa a cada 1 minuto)
 if (!BACKFILL_RUN && !DIAGNOSE_RUN) {
   setInterval(checkAndCaptureRadios, 60 * 1000);
+  // Intervalo para verificação automática de streams de rádio (a cada 30 minutos)
+setInterval(() => {
+  checkRadioStreams().catch(e => {
+    console.error('Erro na verificação de streams:', e.message || e);
+  });
+}, 30 * 60 * 1000); // A cada 30 minutos
+
+// Intervalo para atualização automática de URLs de rádio (a cada 6 horas)
+setInterval(() => {
+  autoUpdateRadioUrls().catch(e => {
+    console.error('Erro na atualização automática de URLs:', e.message || e);
+  });
+}, 6 * 60 * 60 * 1000); // A cada 6 horas
 }
 
 const PORT = Number(process.env.PORT) || 6068;
@@ -1013,6 +1318,54 @@ app.post('/tv/test-now', async (req, res) => {
   } catch (e) {
     console.error('/tv/test-now error', e);
     res.status(500).json({ ok: false, error: String(e.message || e) });
+  }
+});
+
+// Endpoint para testar manualmente streams de rádio
+app.get('/radio/test-now', async (req, res) => {
+  try {
+    const url = req.query.url;
+    if (!url) {
+      return res.status(400).json({ error: 'URL parameter required' });
+    }
+    const result = await testRadioStream(url);
+    res.json(result);
+  } catch (e) {
+    res.status(500).json({ error: String(e.message || e) });
+  }
+});
+
+// Endpoint para verificar todos os streams de rádio configurados
+app.get('/radio/check-all', async (req, res) => {
+  try {
+    await checkRadioStreams();
+    res.json({ message: 'Verificação de rádios iniciada' });
+  } catch (e) {
+    res.status(500).json({ error: String(e.message || e) });
+  }
+});
+
+// Endpoint para atualizar automaticamente URLs de rádio
+app.get('/radio/auto-update', async (req, res) => {
+  try {
+    await autoUpdateRadioUrls();
+    res.json({ message: 'Atualização automática de URLs iniciada' });
+  } catch (e) {
+    res.status(500).json({ error: String(e.message || e) });
+  }
+});
+
+// Endpoint para descobrir streams a partir de um site
+app.get('/radio/discover', async (req, res) => {
+  try {
+    const siteUrl = req.query.url;
+    if (!siteUrl) {
+      return res.status(400).json({ error: 'URL parameter required' });
+    }
+    const streams = await discoverRadioStreams(siteUrl);
+    res.json({ discoveredStreams: streams });
+  } catch (e) {
+    res.status(500).json({ error: String(e.message || e) });
   }
 });
 
