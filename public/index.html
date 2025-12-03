@@ -707,7 +707,7 @@
         <section id="global-radio-sources-page" class="page-section fade-in">
             <button id="back-to-admin-config-5"
                 class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar</button>
-            <h2 class="text-2xl sm:text-3xl font-bold mb-6">Fontes de Rádio Globais</h2>
+            <h2 class="text-xl sm:text-2xl font-bold mb-4">Fontes de Rádio Globais</h2>
             <div class="w-full max-w-none bg-white p-4 sm:p-6 rounded-lg shadow-lg">
                 <div class="bg-gray-50 p-3 rounded-md">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Campos por rádio</label>
@@ -724,11 +724,21 @@
                 class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar</button>
             <h2 class="text-2xl sm:text-3xl font-bold mb-6">Fontes de TV Globais</h2>
             <div class="w-full max-w-none bg-white p-4 sm:p-6 rounded-lg shadow-lg">
-                <div class="bg-gray-50 p-3 rounded-md">
+                <div class="bg-gray-50 p-3 rounded-md mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Campos por TV</label>
                     <p class="text-xs text-gray-500 mb-2">Edite o nome da emissora, o URL do stream de TV e o horário de monitoramento (início e fim). Sempre haverá um campo vazio extra no final para adicionar a próxima fonte de TV.</p>
                     <textarea id="tvSources" class="hidden"></textarea>
                     <div id="tvIntervalsList" class="space-y-2 max-h-96 overflow-auto border border-gray-200 rounded-md p-2 w-full overflow-x-auto"></div>
+                </div>
+                
+                <div class="bg-gray-50 p-3 rounded-md">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Status das TVs</label>
+                    <div class="flex flex-wrap gap-2">
+                        <button id="btn-status-aguardando" class="status-btn bg-yellow-500 text-white px-3 py-1 rounded-md text-sm hover:bg-yellow-600" data-status="aguardando">Aguardando</button>
+                        <button id="btn-status-off" class="status-btn bg-red-500 text-white px-3 py-1 rounded-md text-sm hover:bg-red-600" data-status="off">OFF</button>
+                        <button id="btn-status-noar" class="status-btn bg-green-500 text-white px-3 py-1 rounded-md text-sm hover:bg-green-600" data-status="noar">NO AR</button>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-2">Clique em um status para filtrar as TVs por situação atual.</p>
                 </div>
             </div>
         </section>
@@ -2291,7 +2301,7 @@ let keywordToTransferInfo = null;
                     const selectedDays = new Set(daysTokensCombined.split(/\s+/).filter(Boolean));
 
                     const row = document.createElement('div');
-                    row.className = 'grid grid-cols-1 sm:grid-cols-12 items-center gap-2 border-b border-gray-100 pb-2 mb-2';
+            row.className = 'tv-source-row grid grid-cols-1 sm:grid-cols-13 items-center gap-2 border-b border-gray-100 pb-2 mb-2';
 
                     const statusBadge = document.createElement('span');
                     statusBadge.className = 'sm:col-span-1 px-2 py-1 text-xs font-bold rounded-md text-white text-center bg-green-600';
@@ -2592,7 +2602,43 @@ let keywordToTransferInfo = null;
 
         async function renderGlobalTvSourcesPage() { try { const settingsRef = doc(db, "artifacts", appId, "public/data/settings", "global"); const docSnap = await getDoc(settingsRef); if (docSnap.exists()) { const settings = docSnap.data(); const tvEl = document.getElementById('tvSources'); if (tvEl) tvEl.value = settings.tvSources || ''; } if (typeof renderTvIntervalsList === 'function') renderTvIntervalsList(); } catch (error) { console.error("Erro ao carregar as fontes de TV:", error); } }
 
-        function renderTvIntervalsList() { try { const listEl = document.getElementById('tvIntervalsList'); const srcEl = document.getElementById('tvSources'); if (!listEl || !srcEl) return; const lines = (srcEl.value || '').split('\n').map(l => l.trim()).filter(l => l.length > 0); listEl.innerHTML = ''; lines.forEach((line, idx) => { const parts = line.split('|').map(p => p.trim()); const tvName = parts[0] || `TV ${idx+1}`; const programName = parts[1] || ''; const tvSite = parts[2] || ''; const url = parts[3] || ''; const timeRaw = parts[4] || ''; const match = timeRaw.match(/^(\d{2}:\d{2})(\s*-\s*)(\d{2}:\d{2})$/); const startTime = match ? match[1] : (timeRaw || '').split('-')[0]?.trim() || ''; const endTime = match ? match[3] : (timeRaw || '').split('-')[1]?.trim() || ''; const weekdayAbbr = ['seg','ter','qua','qui','sex','sab','dom']; const daysTokensCombined = parts.slice(5).join(' ').toLowerCase(); const selectedDays = new Set(daysTokensCombined.split(/\s+/).filter(Boolean)); const row = document.createElement('div'); row.className = 'grid grid-cols-1 sm:grid-cols-12 items-center gap-2 border-b border-gray-100 pb-2 mb-2'; const tvNameInput = document.createElement('input'); tvNameInput.type = 'text'; tvNameInput.value = tvName; tvNameInput.placeholder = 'Nome da TV'; tvNameInput.className = 'sm:col-span-2 px-2 py-1 border border-gray-300 rounded-md text-sm'; const programNameInput = document.createElement('input'); programNameInput.type = 'text'; programNameInput.value = programName; programNameInput.placeholder = 'Nome do Programa'; programNameInput.className = 'sm:col-span-2 px-2 py-1 border border-gray-300 rounded-md text-sm'; const tvSiteInput = document.createElement('input'); tvSiteInput.type = 'url'; tvSiteInput.value = tvSite; tvSiteInput.placeholder = 'Site da TV'; tvSiteInput.className = 'sm:col-span-2 px-2 py-1 border border-gray-300 rounded-md text-sm'; const urlInput = document.createElement('input'); urlInput.type = 'url'; urlInput.value = url; urlInput.placeholder = 'URL do Stream'; urlInput.className = 'sm:col-span-2 px-2 py-1 border border-gray-300 rounded-md text-sm'; const inputStart = document.createElement('input'); inputStart.type = 'time'; inputStart.value = startTime; inputStart.className = 'sm:col-span-1 px-2 py-1 border border-gray-300 rounded-md text-sm'; const dash = document.createElement('span'); dash.className = 'sm:col-span-1 text-xs text-gray-600 text-center'; dash.textContent = '-'; const inputEnd = document.createElement('input'); inputEnd.type = 'time'; inputEnd.value = endTime; inputEnd.className = 'sm:col-span-1 px-2 py-1 border border-gray-300 rounded-md text-sm'; const daysContainer = document.createElement('div'); daysContainer.className = 'sm:col-span-3 flex items-center justify-between gap-1'; const dayInputs = {}; weekdayAbbr.forEach((abbr) => { const label = document.createElement('label'); label.className = 'flex items-center gap-1 text-xs text-gray-700'; const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = selectedDays.has(abbr); cb.className = 'h-4 w-4'; label.appendChild(cb); const span = document.createElement('span'); span.textContent = abbr; label.appendChild(span); daysContainer.appendChild(label); dayInputs[abbr] = cb; }); const persist = () => { const tv = (tvNameInput.value || '').trim(); const program = (programNameInput.value || '').trim(); const site = (tvSiteInput.value || '').trim(); const u = (urlInput.value || '').trim(); const segments = []; if (tv) segments.push(tv); if (program) segments.push(program); if (site) segments.push(site); if (u) segments.push(u); if (inputStart.value && inputEnd.value) { segments.push(`${inputStart.value} - ${inputEnd.value}`); } else if (inputStart.value) { segments.push(inputStart.value); } const selected = weekdayAbbr.filter(d => dayInputs[d]?.checked); if (selected.length > 0) { segments.push(selected.join(' ')); } const newLine = segments.join(' | ');
+        function filterTvSourcesByStatus(status) {
+            const listEl = document.getElementById('tvIntervalsList');
+            if (!listEl) return;
+            
+            // Reset all status buttons
+            document.querySelectorAll('.status-btn').forEach(btn => {
+                btn.classList.remove('bg-yellow-600', 'bg-red-600', 'bg-green-600');
+                btn.classList.add('bg-yellow-500', 'bg-red-500', 'bg-green-500');
+            });
+            
+            // Highlight selected status button
+            const selectedBtn = document.querySelector(`[data-status="${status}"]`);
+            if (selectedBtn) {
+                selectedBtn.classList.remove('bg-yellow-500', 'bg-red-500', 'bg-green-500');
+                selectedBtn.classList.add(status === 'aguardando' ? 'bg-yellow-600' : 
+                                       status === 'off' ? 'bg-red-600' : 'bg-green-600');
+            }
+            
+            // Show all rows if no filter
+            const rows = listEl.querySelectorAll('.tv-source-row');
+            rows.forEach(row => {
+                row.style.display = 'block';
+            });
+            
+            // For now, just show a message as we need to implement actual status tracking
+            showAlert(`Filtro aplicado: ${status.toUpperCase()}`, 'info');
+        }
+
+        function renderTvIntervalsList() { try { const listEl = document.getElementById('tvIntervalsList'); const srcEl = document.getElementById('tvSources'); if (!listEl || !srcEl) return; const lines = (srcEl.value || '').split('\n').map(l => l.trim()).filter(l => l.length > 0); listEl.innerHTML = ''; lines.forEach((line, idx) => { const parts = line.split('|').map(p => p.trim()); const tvName = parts[0] || `TV ${idx+1}`; const programName = parts[1] || ''; const tvSite = parts[2] || ''; const url = parts[3] || ''; const timeRaw = parts[4] || ''; const match = timeRaw.match(/^(\d{2}:\d{2})(\s*-\s*)(\d{2}:\d{2})$/); const startTime = match ? match[1] : (timeRaw || '').split('-')[0]?.trim() || ''; const endTime = match ? match[3] : (timeRaw || '').split('-')[1]?.trim() || ''; const weekdayAbbr = ['seg','ter','qua','qui','sex','sab','dom']; const daysTokensCombined = parts.slice(5).join(' ').toLowerCase(); const selectedDays = new Set(daysTokensCombined.split(/\s+/).filter(Boolean)); const row = document.createElement('div');
+            row.className = 'tv-source-row grid grid-cols-1 sm:grid-cols-13 items-center gap-2 border-b border-gray-100 pb-2 mb-2';
+            
+            // Badge de status automático (seguindo o padrão das fontes de rádio)
+            const statusBadge = document.createElement('span');
+            statusBadge.className = 'sm:col-span-1 px-2 py-1 text-xs font-bold rounded-md text-white text-center bg-green-600';
+            statusBadge.textContent = 'AGUARDANDO';
+            
+            const tvNameInput = document.createElement('input'); tvNameInput.type = 'text'; tvNameInput.value = tvName; tvNameInput.placeholder = 'Nome da TV'; tvNameInput.className = 'sm:col-span-2 px-2 py-1 border border-gray-300 rounded-md text-sm'; const programNameInput = document.createElement('input'); programNameInput.type = 'text'; programNameInput.value = programName; programNameInput.placeholder = 'Nome do Programa'; programNameInput.className = 'sm:col-span-2 px-2 py-1 border border-gray-300 rounded-md text-sm'; const tvSiteInput = document.createElement('input'); tvSiteInput.type = 'url'; tvSiteInput.value = tvSite; tvSiteInput.placeholder = 'Site da TV'; tvSiteInput.className = 'sm:col-span-2 px-2 py-1 border border-gray-300 rounded-md text-sm'; const urlInput = document.createElement('input'); urlInput.type = 'url'; urlInput.value = url; urlInput.placeholder = 'URL do Stream'; urlInput.className = 'sm:col-span-2 px-2 py-1 border border-gray-300 rounded-md text-sm'; const inputStart = document.createElement('input'); inputStart.type = 'time'; inputStart.value = startTime; inputStart.className = 'sm:col-span-1 px-2 py-1 border border-gray-300 rounded-md text-sm'; const dash = document.createElement('span'); dash.className = 'sm:col-span-1 text-xs text-gray-600 text-center'; dash.textContent = '-'; const inputEnd = document.createElement('input'); inputEnd.type = 'time'; inputEnd.value = endTime; inputEnd.className = 'sm:col-span-1 px-2 py-1 border border-gray-300 rounded-md text-sm'; const daysContainer = document.createElement('div'); daysContainer.className = 'sm:col-span-3 flex items-center justify-between gap-1'; const dayInputs = {}; weekdayAbbr.forEach((abbr) => { const label = document.createElement('label'); label.className = 'flex items-center gap-1 text-xs text-gray-700'; const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = selectedDays.has(abbr); cb.className = 'h-4 w-4'; label.appendChild(cb); const span = document.createElement('span'); span.textContent = abbr; label.appendChild(span); daysContainer.appendChild(label); dayInputs[abbr] = cb; }); const persist = () => { const tv = (tvNameInput.value || '').trim(); const program = (programNameInput.value || '').trim(); const site = (tvSiteInput.value || '').trim(); const u = (urlInput.value || '').trim(); const segments = []; if (tv) segments.push(tv); if (program) segments.push(program); if (site) segments.push(site); if (u) segments.push(u); if (inputStart.value && inputEnd.value) { segments.push(`${inputStart.value} - ${inputEnd.value}`); } else if (inputStart.value) { segments.push(inputStart.value); } const selected = weekdayAbbr.filter(d => dayInputs[d]?.checked); if (selected.length > 0) { segments.push(selected.join(' ')); } const newLine = segments.join(' | ');
                 
                 // Se a linha ficou vazia (todos os campos foram apagados), remover a linha
                 if (!newLine.trim()) {
@@ -2601,7 +2647,59 @@ let keywordToTransferInfo = null;
                     lines[idx] = newLine;
                 }
                 
-                srcEl.value = lines.join('\n'); const event = new Event('change'); srcEl.dispatchEvent(event); }; tvNameInput.addEventListener('change', persist); programNameInput.addEventListener('change', persist); tvSiteInput.addEventListener('change', persist); urlInput.addEventListener('change', persist); inputStart.addEventListener('change', persist); inputEnd.addEventListener('change', persist); weekdayAbbr.forEach(d => dayInputs[d].addEventListener('change', persist)); row.appendChild(tvNameInput); row.appendChild(programNameInput); row.appendChild(tvSiteInput); row.appendChild(urlInput); row.appendChild(inputStart); row.appendChild(dash); row.appendChild(inputEnd); row.appendChild(daysContainer); listEl.appendChild(row); }); const newRow = document.createElement('div'); newRow.className = 'grid grid-cols-1 sm:grid-cols-12 items-center gap-2 border-b border-gray-100 pb-2 mb-2'; const newTvNameInput = document.createElement('input'); newTvNameInput.type = 'text'; newTvNameInput.placeholder = 'Nome da TV'; newTvNameInput.className = 'sm:col-span-2 px-2 py-1 border border-gray-300 rounded-md text-sm'; const newProgramNameInput = document.createElement('input'); newProgramNameInput.type = 'text'; newProgramNameInput.placeholder = 'Nome do Programa'; newProgramNameInput.className = 'sm:col-span-2 px-2 py-1 border border-gray-300 rounded-md text-sm'; const newTvSiteInput = document.createElement('input'); newTvSiteInput.type = 'url'; newTvSiteInput.placeholder = 'Site da TV'; newTvSiteInput.className = 'sm:col-span-2 px-2 py-1 border border-gray-300 rounded-md text-sm'; const newUrlInput = document.createElement('input'); newUrlInput.type = 'url'; newUrlInput.placeholder = 'URL do Stream'; newUrlInput.className = 'sm:col-span-2 px-2 py-1 border border-gray-300 rounded-md text-sm'; const newInputStart = document.createElement('input'); newInputStart.type = 'time'; newInputStart.className = 'sm:col-span-1 px-2 py-1 border border-gray-300 rounded-md text-sm'; const newDash = document.createElement('span'); newDash.className = 'sm:col-span-1 text-xs text-gray-600 text-center'; newDash.textContent = '-'; const newInputEnd = document.createElement('input'); newInputEnd.type = 'time'; newInputEnd.className = 'sm:col-span-1 px-2 py-1 border border-gray-300 rounded-md text-sm'; const newDaysContainer = document.createElement('div'); newDaysContainer.className = 'sm:col-span-3 flex items-center justify-between gap-1'; const newDayInputs = {}; const weekdayAbbrNew = ['seg','ter','qua','qui','sex','sab','dom']; weekdayAbbrNew.forEach((abbr) => { const label = document.createElement('label'); label.className = 'flex items-center gap-1 text-xs text-gray-700'; const cb = document.createElement('input'); cb.type = 'checkbox'; cb.className = 'h-4 w-4'; label.appendChild(cb); const span = document.createElement('span'); span.textContent = abbr; label.appendChild(span); newDaysContainer.appendChild(label); newDayInputs[abbr] = cb; }); const persistNew = () => { const segments = []; const tv = (newTvNameInput.value || '').trim(); const program = (newProgramNameInput.value || '').trim(); const site = (newTvSiteInput.value || '').trim(); const u = (newUrlInput.value || '').trim(); if (tv) segments.push(tv); if (program) segments.push(program); if (site) segments.push(site); if (u) segments.push(u); if (newInputStart.value && newInputEnd.value) { segments.push(`${newInputStart.value} - ${newInputEnd.value}`); } else if (newInputStart.value) { segments.push(newInputStart.value); } const selected = weekdayAbbrNew.filter(d => newDayInputs[d]?.checked); if (selected.length > 0) { segments.push(selected.join(' ')); } const newLine = segments.join(' | '); if (!newLine) return; const currLines = (srcEl.value || '').split('\n').map(l => l.trim()).filter(l => l.length > 0); currLines.push(newLine); srcEl.value = currLines.join('\n'); const event = new Event('change'); srcEl.dispatchEvent(event); newTvNameInput.value = ''; newProgramNameInput.value = ''; newTvSiteInput.value = ''; newUrlInput.value = ''; newInputStart.value = ''; newInputEnd.value = ''; weekdayAbbrNew.forEach(d => { if (newDayInputs[d]) newDayInputs[d].checked = false; }); }; newTvNameInput.addEventListener('change', persistNew); newProgramNameInput.addEventListener('change', persistNew); newTvSiteInput.addEventListener('change', persistNew); newUrlInput.addEventListener('change', persistNew); newInputStart.addEventListener('change', persistNew); newInputEnd.addEventListener('change', persistNew); weekdayAbbrNew.forEach(d => newDayInputs[d].addEventListener('change', persistNew)); newRow.appendChild(newTvNameInput); newRow.appendChild(newProgramNameInput); newRow.appendChild(newTvSiteInput); newRow.appendChild(newUrlInput); newRow.appendChild(newInputStart); newRow.appendChild(newDash); newRow.appendChild(newInputEnd); newRow.appendChild(newDaysContainer); listEl.appendChild(newRow); } catch (error) { console.error('Erro ao renderizar horários de TV:', error); } }
+                srcEl.value = lines.join('\n'); const event = new Event('change'); srcEl.dispatchEvent(event); }; tvNameInput.addEventListener('change', persist); programNameInput.addEventListener('change', persist); tvSiteInput.addEventListener('change', persist); urlInput.addEventListener('change', persist); inputStart.addEventListener('change', persist); inputEnd.addEventListener('change', persist); weekdayAbbr.forEach(d => dayInputs[d].addEventListener('change', persist));
+            row.appendChild(statusBadge);
+            row.appendChild(tvNameInput); row.appendChild(programNameInput); row.appendChild(tvSiteInput); row.appendChild(urlInput); row.appendChild(inputStart); row.appendChild(dash); row.appendChild(inputEnd); row.appendChild(daysContainer); listEl.appendChild(row); 
+            
+            // Função para atualizar o status automaticamente (padrão das fontes de rádio)
+            const updateStatus = () => {
+                const now = new Date();
+                const currentTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+                const currentDay = ['dom','seg','ter','qua','qui','sex','sab'][now.getDay()];
+                
+                const hasUrl = urlInput.value.trim().length > 0;
+                const hasTime = inputStart.value && inputEnd.value;
+                const hasDays = weekdayAbbr.some(d => dayInputs[d]?.checked);
+                
+                let status = 'AGUARDANDO';
+                let bgColor = 'bg-green-600';
+                
+                if (!hasUrl) {
+                    status = 'OFF';
+                    bgColor = 'bg-red-600';
+                } else if (hasTime && hasDays) {
+                    const isWithinTime = currentTime >= inputStart.value && currentTime <= inputEnd.value;
+                    const isCorrectDay = dayInputs[currentDay]?.checked;
+                    
+                    if (isWithinTime && isCorrectDay) {
+                        status = 'NO AR';
+                        bgColor = 'bg-blue-600';
+                    } else {
+                        status = 'AGUARDANDO';
+                        bgColor = 'bg-green-600';
+                    }
+                } else if (hasUrl) {
+                    status = 'NO AR';
+                    bgColor = 'bg-blue-600';
+                }
+                
+                statusBadge.textContent = status;
+                statusBadge.className = `sm:col-span-1 px-2 py-1 text-xs font-bold rounded-md text-white text-center ${bgColor}`;
+            };
+            
+            // Atualizar status inicial e configurar intervalos
+            updateStatus();
+            setInterval(updateStatus, 60000); // Atualizar a cada minuto
+            
+            // Adicionar event listeners para atualizar status quando campos mudarem
+            tvNameInput.addEventListener('change', () => { persist(); updateStatus(); });
+            programNameInput.addEventListener('change', () => { persist(); updateStatus(); });
+            tvSiteInput.addEventListener('change', () => { persist(); updateStatus(); });
+            urlInput.addEventListener('change', () => { persist(); updateStatus(); });
+            inputStart.addEventListener('change', () => { persist(); updateStatus(); });
+            inputEnd.addEventListener('change', () => { persist(); updateStatus(); });
+            weekdayAbbr.forEach(d => dayInputs[d].addEventListener('change', () => { persist(); updateStatus(); }));
+            }); const newRow = document.createElement('div'); newRow.className = 'grid grid-cols-1 sm:grid-cols-12 items-center gap-2 border-b border-gray-100 pb-2 mb-2'; const newTvNameInput = document.createElement('input'); newTvNameInput.type = 'text'; newTvNameInput.placeholder = 'Nome da TV'; newTvNameInput.className = 'sm:col-span-2 px-2 py-1 border border-gray-300 rounded-md text-sm'; const newProgramNameInput = document.createElement('input'); newProgramNameInput.type = 'text'; newProgramNameInput.placeholder = 'Nome do Programa'; newProgramNameInput.className = 'sm:col-span-2 px-2 py-1 border border-gray-300 rounded-md text-sm'; const newTvSiteInput = document.createElement('input'); newTvSiteInput.type = 'url'; newTvSiteInput.placeholder = 'Site da TV'; newTvSiteInput.className = 'sm:col-span-2 px-2 py-1 border border-gray-300 rounded-md text-sm'; const newUrlInput = document.createElement('input'); newUrlInput.type = 'url'; newUrlInput.placeholder = 'URL do Stream'; newUrlInput.className = 'sm:col-span-2 px-2 py-1 border border-gray-300 rounded-md text-sm'; const newInputStart = document.createElement('input'); newInputStart.type = 'time'; newInputStart.className = 'sm:col-span-1 px-2 py-1 border border-gray-300 rounded-md text-sm'; const newDash = document.createElement('span'); newDash.className = 'sm:col-span-1 text-xs text-gray-600 text-center'; newDash.textContent = '-'; const newInputEnd = document.createElement('input'); newInputEnd.type = 'time'; newInputEnd.className = 'sm:col-span-1 px-2 py-1 border border-gray-300 rounded-md text-sm'; const newDaysContainer = document.createElement('div'); newDaysContainer.className = 'sm:col-span-3 flex items-center justify-between gap-1'; const newDayInputs = {}; const weekdayAbbrNew = ['seg','ter','qua','qui','sex','sab','dom']; weekdayAbbrNew.forEach((abbr) => { const label = document.createElement('label'); label.className = 'flex items-center gap-1 text-xs text-gray-700'; const cb = document.createElement('input'); cb.type = 'checkbox'; cb.className = 'h-4 w-4'; label.appendChild(cb); const span = document.createElement('span'); span.textContent = abbr; label.appendChild(span); newDaysContainer.appendChild(label); newDayInputs[abbr] = cb; }); const persistNew = () => { const segments = []; const tv = (newTvNameInput.value || '').trim(); const program = (newProgramNameInput.value || '').trim(); const site = (newTvSiteInput.value || '').trim(); const u = (newUrlInput.value || '').trim(); if (tv) segments.push(tv); if (program) segments.push(program); if (site) segments.push(site); if (u) segments.push(u); if (newInputStart.value && newInputEnd.value) { segments.push(`${newInputStart.value} - ${newInputEnd.value}`); } else if (newInputStart.value) { segments.push(newInputStart.value); } const selected = weekdayAbbrNew.filter(d => newDayInputs[d]?.checked); if (selected.length > 0) { segments.push(selected.join(' ')); } const newLine = segments.join(' | '); if (!newLine) return; const currLines = (srcEl.value || '').split('\n').map(l => l.trim()).filter(l => l.length > 0); currLines.push(newLine); srcEl.value = currLines.join('\n'); const event = new Event('change'); srcEl.dispatchEvent(event); newTvNameInput.value = ''; newProgramNameInput.value = ''; newTvSiteInput.value = ''; newUrlInput.value = ''; newInputStart.value = ''; newInputEnd.value = ''; weekdayAbbrNew.forEach(d => { if (newDayInputs[d]) newDayInputs[d].checked = false; }); }; newTvNameInput.addEventListener('change', persistNew); newProgramNameInput.addEventListener('change', persistNew); newTvSiteInput.addEventListener('change', persistNew); newUrlInput.addEventListener('change', persistNew); newInputStart.addEventListener('change', persistNew); newInputEnd.addEventListener('change', persistNew); weekdayAbbrNew.forEach(d => newDayInputs[d].addEventListener('change', persistNew)); newRow.appendChild(newTvNameInput); newRow.appendChild(newProgramNameInput); newRow.appendChild(newTvSiteInput); newRow.appendChild(newUrlInput); newRow.appendChild(newInputStart); newRow.appendChild(newDash); newRow.appendChild(newInputEnd); newRow.appendChild(newDaysContainer); listEl.appendChild(newRow); } catch (error) { console.error('Erro ao renderizar horários de TV:', error); } }
 
         function cleanAndSaveTextarea(e) {
             const textarea = e.target;
@@ -3468,28 +3566,9 @@ alertEl.innerHTML = `                <div class="alert-body-clickable">         
                     return `
                     <div class="keyword-analysis-row flex items-center gap-2" data-keyword="${sk}">
                       <span class="flex-shrink-0 text-xs font-semibold bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full">${kw}</span>
-                      <div class="keyword-directness-container directness-container relative">
-                        <button class="keyword-directness-btn text-xs font-semibold ${directBtnClass} px-2 py-1 rounded-full">${isDirectKw ? 'Direto' : 'Indireto'}</button>
-                        <div class="directness-menu p-1 space-y-1">
-                          <button data-directness="true" data-keyword="${sk}" data-word="${kw}" class="directness-option w-full text-left text-xs px-2 py-1 rounded hover:bg-gray-100">Direto</button>
-                          <button data-directness="false" data-keyword="${sk}" data-word="${kw}" class="directness-option w-full text-left text-xs px-2 py-1 rounded hover:bg-gray-100">Indireto</button>
-                        </div>
-                      </div>
-                      <div class="keyword-media-container media-container relative">
-                        <button class="media-btn text-xs font-semibold ${mediaColor} px-2 py-1 rounded-full">${mediaInit}</button>
-                        <div class="keyword-media-menu media-menu p-1 space-y-1">
-                          <button data-media-type="Espontânea" data-keyword="${sk}" data-word="${kw}" class="keyword-media-option w-full text-left text-xs px-2 py-1 rounded hover:bg-gray-100">Espontânea</button>
-                          <button data-media-type="Provocada" data-keyword="${sk}" data-word="${kw}" class="keyword-media-option w-full text-left text-left text-xs px-2 py-1 rounded hover:bg-gray-100">Provocada</button>
-                        </div>
-                      </div>
-                      <div class="keyword-sentiment-container sentiment-container relative">
-                        <button class="keyword-sentiment-btn text-xs font-semibold text-${color}-600 bg-${color}-100 px-2 py-1 rounded-full">${emoji} ${text}</button>
-                        <div class="keyword-sentiment-menu sentiment-menu p-1 space-y-1">
-                          <button data-sentiment="0.5" data-keyword="${sk}" data-word="${kw}" class="keyword-sentiment-option w-full text-left text-xs px-2 py-1 rounded hover:bg-gray-100">😊 Positivo</button>
-                          <button data-sentiment="0.0" data-keyword="${sk}" data-word="${kw}" class="keyword-sentiment-option w-full text-left text-xs px-2 py-1 rounded hover:bg-gray-100">😐 Neutro</button>
-                          <button data-sentiment="-0.5" data-keyword="${sk}" data-word="${kw}" class="keyword-sentiment-option w-full text-left text-xs px-2 py-1 rounded hover:bg-gray-100">😠 Negativo</button>
-                        </div>
-                      </div>
+                      <span class="keyword-directness-btn text-xs font-semibold ${directBtnClass} px-2 py-1 rounded-full">${isDirectKw ? 'Direto' : 'Indireto'}</span>
+                      <span class="media-btn text-xs font-semibold ${mediaColor} px-2 py-1 rounded-full">${mediaInit}</span>
+                      <span class="keyword-sentiment-btn text-xs font-semibold text-${color}-600 bg-${color}-100 px-2 py-1 rounded-full">${emoji} ${text}</span>
                     </div>`;
                 }).join('');
                 const fullRow = `<div class=\"md:col-span-4 col-span-2\"><div id=\"detail-keyword-analyses\" class=\"flex flex-col gap-2\">${kwHTMLDetail}</div></div>`;
@@ -4688,6 +4767,14 @@ if (youtubeFrequencyInput) youtubeFrequencyInput.addEventListener('input', () =>
             if (btnNewsSources) btnNewsSources.addEventListener('click', () => updateView('global-sources'));
             if (btnRadioSources) btnRadioSources.addEventListener('click', () => updateView('global-radio-sources'));
            if (btnTvSources) btnTvSources.addEventListener('click', () => updateView('global-tv-sources'));
+
+        // Event listeners para os botões de status das TVs
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('status-btn')) {
+                const status = e.target.dataset.status;
+                filterTvSourcesByStatus(status);
+            }
+        });
             if (btnGlobalLogo) btnGlobalLogo.addEventListener('click', () => updateView('global-logo'));
 
             if (backToAdminConfig1) backToAdminConfig1.addEventListener('click', () => updateView('configuracoes-admin'));
