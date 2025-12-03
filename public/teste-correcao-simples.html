@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Correção de Artigos</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px; 
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        button { 
+            padding: 15px 30px; 
+            font-size: 16px; 
+            cursor: pointer; 
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            margin: 10px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+        .loading { color: #007bff; }
+        .info { color: #17a2b8; }
+        #result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            background: #f8f9fa;
+        }
+        .progress {
+            margin: 20px 0;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: #28a745;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🛠️ Teste de Correção de Artigos</h1>
+        <p>Teste a função de correção de artigos do Firebase Functions:</p>
+        
+        <button id="test-fix-btn" onclick="testFixArticles()">🚀 Testar Correção de Artigos</button>
+        <button id="test-fix-existing-btn" onclick="testFixExistingArticles()">🔧 Testar Correção de Artigos Existentes</button>
+        
+        <div class="progress" id="progress" style="display: none;">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+            <div id="progress-text">0%</div>
+        </div>
+        
+        <div id="result"></div>
+        
+        <div style="margin-top: 30px; padding: 15px; background: #fff3cd; border-radius: 5px; border-left: 4px solid #ffc107;">
+            <h4>📋 Regras de Correção:</h4>
+            <ul>
+                <li><strong>YouTube:</strong> Fonte → "Canal", Autor → "Redação*"</li>
+                <li><strong>Outras fontes:</strong> Fonte → domínio da URL (ex: g1.globo.com)</li>
+                <li><strong>Artigos sem fonte:</strong> Serão identificados e corrigidos</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Configuração do Firebase (será carregada dinamicamente)
+        let functions;
+        let appId = 'test-app-' + Date.now();
+        
+        // Função para carregar configuração do Firebase
+        async function loadFirebaseConfig() {
+            try {
+                // Tentar carregar configuração do projeto
+                const response = await fetch('/firebase-config.json');
+                if (!response.ok) {
+                    throw new Error('Configuração não encontrada');
+                }
+                const config = await response.json();
+                
+                // Inicializar Firebase
+                if (typeof firebase !== 'undefined') {
+                    firebase.initializeApp(config);
+                    functions = firebase.functions();
+                    
+                    // Para desenvolvimento, usar emulador se disponível
+                    try {
+                        functions.useFunctionsEmulator('http://localhost:5001');
+                        console.log('Usando emulador de funções');
+                    } catch (e) {
+                        console.log('Emulador não disponível, usando produção');
+                    }
+                    
+                    return true;
+                } else {
+                    throw new Error('Firebase SDK não carregado');
+                }
+            } catch (error) {
+                console.error('Erro ao carregar configuração do Firebase:', error);
+                return false;
+            }
+        }
+        
+        // Função para mostrar progresso
+        function showProgress(percent, text) {
+            const progressDiv = document.getElementById('progress');
+            const progressFill = document.getElementById('progress-fill');
+            const progressText = document.getElementById('progress-text');
+            
+            progressDiv.style.display = 'block';
+            progressFill.style.width = percent + '%';
+            progressText.textContent = text || (percent + '%');
+        }
+        
+        // Função para esconder progresso
+        function hideProgress() {
+            document.getElementById('progress').style.display = 'none';
+        }
+        
+        // Função para mostrar resultado
+        function showResult(message, type = 'info') {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = `<p class="${type}">${message}</p>`;
+        }
+        
+        // Função para testar fixAllCompaniesArticles
+        async function testFixArticles() {
+            const btn = document.getElementById('test-fix-btn');
+            const originalText = btn.textContent;
+            
+            if (!functions) {
+                const configLoaded = await loadFirebaseConfig();
+                if (!configLoaded) {
+                    showResult('❌ Erro: Não foi possível carregar a configuração do Firebase', 'error');
+                    return;
+                }
+            }
+            
+            if (!confirm('⚠️ Tem certeza que deseja testar a correção de TODOS os artigos das empresas?')) {
+                return;
+            }
+            
+            btn.disabled = true;
+            btn.textContent = '🔄 Corrigindo...';
+            showResult('🚀 Iniciando correção de todos os artigos...', 'loading');
+            showProgress(10, 'Preparando...');
+            
+            try {
+                const fixAllCompaniesArticles = functions.httpsCallable('fixAllCompaniesArticles', { 
+                    timeout: 600000 // 10 minutos
+                });
+                
+                showProgress(20, 'Chamando função...');
+                const result = await fixAllCompaniesArticles({ appId });
+                
+                showProgress(100, 'Concluído!');
+                
+                const data = result.data;
+                let message = `✅ Correção concluída com sucesso!\\n`;
+                message += `📊 Total de artigos processados: ${data.totalProcessed || 0}\\n`;
+                message += `✏️ Total de artigos corrigidos: ${data.totalFixed || 0}\\n`;
+                message += `⏱️ Tempo de execução: ${data.duration || 'N/A'}\\n`;
+                
+                if (data.companies && data.companies.length > 0) {
+                    message += `\\n📋 Empresas processadas: ${data.companies.length}\\n`;
+                    data.companies.forEach(company => {
+                        message += `  • ${company.name}: ${company.articlesProcessed || 0} artigos, ${company.articlesFixed || 0} corrigidos\\n`;
+                    });
+                }
+                
+                showResult(message, 'success');
+                
+            } catch (error) {
+                console.error('Erro ao corrigir artigos:', error);
+                showResult(`❌ Erro ao corrigir artigos: ${error.message}`, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = originalText;
+                hideProgress();
+            }
+        }
+        
+        // Função para testar fixExistingArticles
+        async function testFixExistingArticles() {
+            const btn = document.getElementById('test-fix-existing-btn');
+            const originalText = btn.textContent;
+            
+            if (!functions) {
+                const configLoaded = await loadFirebaseConfig();
+                if (!configLoaded) {
+                    showResult('❌ Erro: Não foi possível carregar a configuração do Firebase', 'error');
+                    return;
+                }
+            }
+            
+            if (!confirm('⚠️ Tem certeza que deseja testar a correção de artigos existentes?')) {
+                return;
+            }
+            
+            btn.disabled = true;
+            btn.textContent = '🔄 Corrigindo...';
+            showResult('🚀 Iniciando correção de artigos existentes...', 'loading');
+            showProgress(10, 'Preparando...');
+            
+            try {
+                const fixExistingArticles = functions.httpsCallable('fixExistingArticles', { 
+                    timeout: 600000 // 10 minutos
+                });
+                
+                showProgress(20, 'Chamando função...');
+                const result = await fixExistingArticles({ appId });
+                
+                showProgress(100, 'Concluído!');
+                
+                const data = result.data;
+                let message = `✅ Correção concluída com sucesso!\\n`;
+                message += `📊 Total de artigos processados: ${data.totalProcessed || 0}\\n`;
+                message += `✏️ Total de artigos corrigidos: ${data.totalFixed || 0}\\n`;
+                
+                showResult(message, 'success');
+                
+            } catch (error) {
+                console.error('Erro ao corrigir artigos:', error);
+                showResult(`❌ Erro ao corrigir artigos: ${error.message}`, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = originalText;
+                hideProgress();
+            }
+        }
+        
+        // Carregar configuração ao carregar a página
+        window.addEventListener('load', async () => {
+            console.log('📝 Página de teste carregada');
+            showResult('📡 Aguardando comando...', 'info');
+        });
+    </script>
+</body>
+</html>

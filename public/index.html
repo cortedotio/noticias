@@ -485,6 +485,11 @@
                     class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow">
                     <h3 class="text-lg sm:text-xl font-semibold">Fontes de TV</h3>
                 </button>
+                <!-- Novo botão Corrigir Artigos -->
+                <button id="btn-fix-articles"
+                    class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow">
+                    <h3 class="text-lg sm:text-xl font-semibold">Corrigir Artigos</h3>
+                </button>
             </div>
         </section>
         <!-- Nova página Usuario-Admin -->
@@ -4567,6 +4572,7 @@ fetchWindowEndInput = document.getElementById('fetchWindowEnd');
             btnNewsSources = document.getElementById('btn-news-sources');
             btnRadioSources = document.getElementById('btn-radio-sources');
             btnTvSources = document.getElementById('btn-tv-sources');
+            btnFixArticles = document.getElementById('btn-fix-articles');
             backToAdminConfig1 = document.getElementById('back-to-admin-config-1');
             backToAdminConfig2 = document.getElementById('back-to-admin-config-2');
             backToAdminConfig3 = document.getElementById('back-to-admin-config-3');
@@ -4932,7 +4938,8 @@ if (youtubeFrequencyInput) youtubeFrequencyInput.addEventListener('input', () =>
             if (btnGlobalKeys) btnGlobalKeys.addEventListener('click', () => updateView('global-keys'));
             if (btnNewsSources) btnNewsSources.addEventListener('click', () => updateView('global-sources'));
             if (btnRadioSources) btnRadioSources.addEventListener('click', () => updateView('global-radio-sources'));
-           if (btnTvSources) btnTvSources.addEventListener('click', () => updateView('global-tv-sources'));
+        if (btnTvSources) btnTvSources.addEventListener('click', () => updateView('global-tv-sources'));
+        if (btnFixArticles) btnFixArticles.addEventListener('click', fixAllArticles);
 
         // Event listeners para os botões de status das TVs
         document.addEventListener('click', function(e) {
@@ -5084,6 +5091,32 @@ if (youtubeFrequencyInput) youtubeFrequencyInput.addEventListener('input', () =>
                 mapInstance = e.detail;
             });
         });
+
+        // Função para corrigir todos os artigos
+        async function fixAllArticles() {
+            if (!confirm('Tem certeza que deseja corrigir os nomes das fontes e canais de todos os artigos? Esta operação pode demorar alguns minutos.')) {
+                return;
+            }
+
+            const btnFixArticles = document.getElementById('btn-fix-articles');
+            const originalText = btnFixArticles.innerHTML;
+            btnFixArticles.innerHTML = '<h3 class="text-lg sm:text-xl font-semibold">Corrigindo...</h3>';
+            btnFixArticles.disabled = true;
+
+            try {
+                // Chamar a função fixAllCompaniesArticles do Firebase Functions
+                const fixAllCompaniesArticles = httpsCallable(functions, 'fixAllCompaniesArticles', { timeout: 600000 });
+                const result = await fixAllCompaniesArticles({ appId });
+                
+                showAlert(`Correção concluída com sucesso! ${result.data.totalFixed || 0} artigos foram corrigidos.`, 'success');
+            } catch (error) {
+                console.error("Erro ao corrigir artigos:", error);
+                showAlert(`Erro ao corrigir artigos: ${error.message}`, 'error');
+            } finally {
+                btnFixArticles.innerHTML = originalText;
+                btnFixArticles.disabled = false;
+            }
+        }
     </script>
 </body>
 

@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Executar Correção de Artigos - Cliente</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .container {
+            max-width: 800px;
+            margin: 20px;
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+        .warning-box {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: left;
+        }
+        .warning-box h3 {
+            color: #856404;
+            margin-top: 0;
+        }
+        .warning-box ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .warning-box li {
+            margin: 5px 0;
+            color: #856404;
+        }
+        button { 
+            padding: 18px 36px; 
+            font-size: 18px; 
+            cursor: pointer; 
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            margin: 15px;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+            transition: all 0.3s ease;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .success { 
+            color: #28a745; 
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: left;
+        }
+        .error { 
+            color: #dc3545; 
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: left;
+        }
+        .loading { 
+            color: #007bff; 
+            background: #cce5ff;
+            border: 1px solid #b8daff;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .stat-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #007bff;
+        }
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #007bff;
+        }
+        .stat-label {
+            color: #666;
+            margin-top: 5px;
+        }
+        #result {
+            margin-top: 30px;
+        }
+        .progress {
+            margin: 30px 0;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #007bff, #0056b3);
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+        .progress-text {
+            text-align: center;
+            color: #666;
+            margin-top: 10px;
+        }
+        .loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #007bff;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🛠️ Correção de Artigos</h1>
+        <p class="subtitle">Execute a correção automática de fontes e autores nos artigos capturados</p>
+        
+        <div class="warning-box">
+            <h3>⚠️ Importante:</h3>
+            <ul>
+                <li>Esta operação irá corrigir os nomes das fontes e autores em TODOS os artigos</li>
+                <li>YouTube: Fonte será alterada para "Canal", Autor para "Redação*"</li>
+                <li>Outras fontes: Fonte será alterada para o domínio da URL</li>
+                <li>O processo pode levar vários minutos dependendo da quantidade de artigos</li>
+            </ul>
+        </div>
+        
+        <button id="fix-all-btn" onclick="executarCorrecaoTodasEmpresas()">
+            🚀 Corrigir Todos os Artigos (Todas Empresas)
+        </button>
+        
+        <button id="fix-existing-btn" onclick="executarCorrecaoArtigosExistentes()">
+            🔧 Corrigir Artigos Existentes
+        </button>
+        
+        <div class="progress" id="progress" style="display: none;">
+            <div class="loading-spinner"></div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+            <div class="progress-text" id="progress-text">Iniciando...</div>
+        </div>
+        
+        <div id="result"></div>
+        
+        <div class="stats" id="stats" style="display: none;">
+            <div class="stat-card">
+                <div class="stat-number" id="stat-processed">0</div>
+                <div class="stat-label">Artigos Processados</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="stat-fixed">0</div>
+                <div class="stat-label">Artigos Corrigidos</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="stat-companies">0</div>
+                <div class="stat-label">Empresas Processadas</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="stat-duration">0s</div>
+                <div class="stat-label">Tempo de Execução</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-functions-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+
+    <script>
+        // Configuração do Firebase (do arquivo index.html)
+        const firebaseConfig = { 
+            apiKey: "AIzaSyDC4vQ3PiAAy0WYIrLUTKZGb6WejSVdLrE", 
+            authDomain: "noticias-6e952.firebaseapp.com", 
+            projectId: "noticias-6e952", 
+            storageBucket: "noticias-6e952.appspot.com", 
+            messagingSenderId: "788555331572", 
+            appId: "1:788555331572:web:328cc3967fad0155352ba1" 
+        };
+        
+        let functions;
+        let appId = 'correcao-artigos-' + Date.now();
+        
+        // Inicializar Firebase
+        function inicializarFirebase() {
+            try {
+                const app = firebase.initializeApp(firebaseConfig);
+                functions = firebase.functions();
+                
+                // Tentar usar emulador se disponível
+                try {
+                    functions.useFunctionsEmulator('http://localhost:5001');
+                    console.log('✅ Usando emulador de funções');
+                } catch (e) {
+                    console.log('📡 Usando Firebase produção');
+                }
+                
+                return true;
+            } catch (error) {
+                console.error('❌ Erro ao inicializar Firebase:', error);
+                mostrarResultado('Erro ao inicializar Firebase: ' + error.message, 'error');
+                return false;
+            }
+        }
+        
+        // Funções de interface
+        function mostrarProgresso(mostrar = true) {
+            document.getElementById('progress').style.display = mostrar ? 'block' : 'none';
+        }
+        
+        function atualizarProgresso(porcentagem, texto) {
+            document.getElementById('progress-fill').style.width = porcentagem + '%';
+            document.getElementById('progress-text').textContent = texto || porcentagem + '%';
+        }
+        
+        function mostrarResultado(mensagem, tipo = 'info') {
+            document.getElementById('result').innerHTML = `<div class="${tipo}">${mensagem}</div>`;
+        }
+        
+        function mostrarEstatisticas(dados) {
+            document.getElementById('stat-processed').textContent = dados.totalProcessed || 0;
+            document.getElementById('stat-fixed').textContent = dados.totalFixed || 0;
+            document.getElementById('stat-companies').textContent = dados.companies ? dados.companies.length : 0;
+            document.getElementById('stat-duration').textContent = dados.duration || '0s';
+            document.getElementById('stats').style.display = 'grid';
+        }
+        
+        function desabilitarBotoes(desabilitar = true) {
+            document.getElementById('fix-all-btn').disabled = desabilitar;
+            document.getElementById('fix-existing-btn').disabled = desabilitar;
+        }
+        
+        // Função principal para corrigir todas as empresas
+        async function executarCorrecaoTodasEmpresas() {
+            if (!functions && !inicializarFirebase()) {
+                return;
+            }
+            
+            if (!confirm('⚠️ Tem certeza que deseja corrigir TODOS os artigos de TODAS as empresas?\n\nEsta operação pode levar vários minutos.')) {
+                return;
+            }
+            
+            desabilitarBotoes(true);
+            mostrarProgresso(true);
+            atualizarProgresso(10, 'Preparando correção...');
+            
+            try {
+                const fixAllCompaniesArticles = functions.httpsCallable('fixAllCompaniesArticles', { 
+                    timeout: 600000 // 10 minutos
+                });
+                
+                atualizarProgresso(20, 'Chamando função do Firebase...');
+                
+                const resultado = await fixAllCompaniesArticles({ appId });
+                
+                atualizarProgresso(100, 'Correção concluída!');
+                
+                const dados = resultado.data;
+                
+                // Mostrar estatísticas
+                mostrarEstatisticas(dados);
+                
+                // Criar mensagem detalhada
+                let mensagem = `✅ <strong>Correção concluída com sucesso!</strong><br><br>`;
+                mensagem += `📊 <strong>Resumo da operação:</strong><br>`;
+                mensagem += `• Total de artigos processados: <strong>${dados.totalProcessed || 0}</strong><br>`;
+                mensagem += `• Total de artigos corrigidos: <strong>${dados.totalFixed || 0}</strong><br>`;
+                mensagem += `• Tempo de execução: <strong>${dados.duration || 'N/A'}</strong><br>`;
+                
+                if (dados.companies && dados.companies.length > 0) {
+                    mensagem += `<br>📋 <strong>Empresas processadas:</strong> ${dados.companies.length}<br>`;
+                    mensagem += '<div style="max-height: 200px; overflow-y: auto; text-align: left; margin-top: 10px;">';
+                    dados.companies.forEach(empresa => {
+                        mensagem += `• <strong>${empresa.name}</strong>: ${empresa.articlesProcessed || 0} artigos, ${empresa.articlesFixed || 0} corrigidos<br>`;
+                    });
+                    mensagem += '</div>';
+                }
+                
+                if (dados.errors && dados.errors.length > 0) {
+                    mensagem += `<br>⚠️ <strong>Erros encontrados:</strong> ${dados.errors.length}<br>`;
+                }
+                
+                mostrarResultado(mensagem, 'success');
+                
+            } catch (erro) {
+                console.error('❌ Erro ao corrigir artigos:', erro);
+                let mensagemErro = `❌ <strong>Erro ao corrigir artigos:</strong><br>`;
+                
+                if (erro.message) {
+                    mensagemErro += erro.message;
+                } else if (erro.details) {
+                    mensagemErro += erro.details;
+                } else {
+                    mensagemErro += 'Erro desconhecido. Verifique o console para mais detalhes.';
+                }
+                
+                mostrarResultado(mensagemErro, 'error');
+            } finally {
+                desabilitarBotoes(false);
+                setTimeout(() => {
+                    mostrarProgresso(false);
+                }, 2000);
+            }
+        }
+        
+        // Função para corrigir artigos existentes
+        async function executarCorrecaoArtigosExistentes() {
+            if (!functions && !inicializarFirebase()) {
+                return;
+            }
+            
+            if (!confirm('⚠️ Tem certeza que deseja corrigir artigos existentes?')) {
+                return;
+            }
+            
+            desabilitarBotoes(true);
+            mostrarProgresso(true);
+            atualizarProgresso(10, 'Preparando correção...');
+            
+            try {
+                const fixExistingArticles = functions.httpsCallable('fixExistingArticles', { 
+                    timeout: 600000 // 10 minutos
+                });
+                
+                atualizarProgresso(20, 'Chamando função do Firebase...');
+                
+                const resultado = await fixExistingArticles({ appId });
+                
+                atualizarProgresso(100, 'Correção concluída!');
+                
+                const dados = resultado.data;
+                
+                // Mostrar estatísticas
+                mostrarEstatisticas(dados);
+                
+                let mensagem = `✅ <strong>Correção concluída com sucesso!</strong><br><br>`;
+                mensagem += `📊 <strong>Resumo:</strong><br>`;
+                mensagem += `• Total de artigos processados: <strong>${dados.totalProcessed || 0}</strong><br>`;
+                mensagem += `• Total de artigos corrigidos: <strong>${dados.totalFixed || 0}</strong><br>`;
+                
+                mostrarResultado(mensagem, 'success');
+                
+            } catch (erro) {
+                console.error('❌ Erro ao corrigir artigos:', erro);
+                let mensagemErro = `❌ <strong>Erro ao corrigir artigos:</strong><br>`;
+                mensagemErro += erro.message || erro.details || 'Erro desconhecido';
+                mostrarResultado(mensagemErro, 'error');
+            } finally {
+                desabilitarBotoes(false);
+                setTimeout(() => {
+                    mostrarProgresso(false);
+                }, 2000);
+            }
+        }
+        
+        // Inicializar ao carregar a página
+        window.addEventListener('load', () => {
+            console.log('📝 Página de correção carregada');
+            mostrarResultado('📡 Sistema pronto. Escolha uma opção acima para iniciar a correção.', 'info');
+        });
+    </script>
+</body>
+</html>
