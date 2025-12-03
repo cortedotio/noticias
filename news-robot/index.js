@@ -236,7 +236,7 @@ function normalizeArticle(article, sourceApi) {
                 })();
                 return { title: article.title, description: (article.contentSnippet || article.content || "").replace(/<[^>]*>?/gm, ''), url: article.link, image: article.enclosure?.url || null, publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.isoDate)), source: { name: friendlySourceName, url: sourceUrl }, author: article.creator || null, };
             }
-            case 'youtube': return { title: article.snippet.title, description: article.snippet.description, url: `https://www.youtube.com/watch?v=${article.id.videoId}`, image: article.snippet.thumbnails.high.url || null, publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.snippet.publishedAt)), source: { name: 'YouTube', url: `https://www.youtube.com/channel/${article.snippet.channelId}` }, author: article.snippet.channelTitle || null, videoId: article.id.videoId };
+            case 'youtube': return { title: article.snippet.title, description: article.snippet.description, url: `https://www.youtube.com/watch?v=${article.id.videoId}`, image: article.snippet.thumbnails.high.url || null, publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.snippet.publishedAt)), source: { name: 'Canal', url: `https://www.youtube.com/channel/${article.snippet.channelId}` }, author: article.snippet.channelTitle || 'Redação*', videoId: article.id.videoId };
             default: return null;
         }
     } catch (e) {
@@ -1444,6 +1444,299 @@ exports.generateCriticalReport = regionalFunctions.https.onCall(async (data, con
         }, {});
     
     return { articles, channelCounts, vehicleCounts, valuation, dateCounts, keywordCounts, spaceCounts, spontaneityCounts, mentionedEntities: topMentionedEntities, mediaSpace, sentimentByChannel, topChannel, topVehicle, totalAlerts };
+});
+
+// Função auxiliar para extrair domínio da URL
+function extractDomainFromUrl(url) {
+    try {
+        const urlObj = new URL(url);
+        let hostname = urlObj.hostname;
+        // Remover www. se existir
+        hostname = hostname.replace(/^www\./, '');
+        return hostname;
+    } catch (error) {
+        functions.logger.error(`Erro ao extrair domínio da URL ${url}:`, error.message);
+        return null;
+    }
+}
+
+// Função para corrigir fontes e canais dos artigos existentes
+exports.fixExistingArticles = functions.runWith({ timeoutSeconds: 540, memory: '1GB' }).https.onCall(async (data, context) => {
+    // Verificar autenticação
+    if (!context.auth) {
+        throw new functions.https.HttpsError('unauthenticated', 'Usuário não autenticado');
+    }
+
+    const { companyId } = data;
+    let processedCount = 0;
+    let updatedCount = 0;
+    let errorsCount = 0;
+
+    try {
+        functions.logger.info(`[FixArticles] Iniciando correção de artigos para empresa: ${companyId}`);
+
+        // Buscar todos os artigos da empresa
+        const articlesRef = db.collection(`artifacts/${APP_ID}/public/data/pendingAlerts`);
+        let query = articlesRef.where('companyId', '==', companyId);
+        
+        const snapshot = await query.get();
+        functions.logger.info(`[FixArticles] Encontrados ${snapshot.docs.length} artigos para processar`);
+
+        // Processar em lotes para evitar sobrecarga
+        const batch = db.batch();
+        const batchSize = 500;
+        let currentBatchSize = 0;
+
+        for (const doc of snapshot.docs) {
+            processedCount++;
+            const article = doc.data();
+            let needsUpdate = false;
+            const updates = {};
+
+            try {
+                // Verificar se é YouTube (canal)
+                if (article.channel === 'YouTube' || (article.source && article.source.name === 'YouTube')) {
+                    // Corrigir canal YouTube
+                    if (article.source && article.source.name !== 'Canal') {
+                        updates['source.name'] = 'Canal';
+                        needsUpdate = true;
+                    }
+
+                    // Corrigir autor do YouTube
+                    if (!article.author || article.author === '' || article.author === 'YouTube') {
+                        updates['author'] = 'Redação*';
+                        needsUpdate = true;
+                    }
+                } else {
+                    // Para outras fontes, usar domínio da URL
+                    if (article.url) {
+                        const domain = extractDomainFromUrl(article.url);
+                        if (domain && article.source && article.source.name) {
+                            // Verificar se o nome atual não é igual ao domínio
+                            if (article.source.name !== domain) {
+                                updates['source.name'] = domain;
+                                needsUpdate = true;
+                            }
+                        }
+                    }
+                }
+
+                // Aplicar atualizações se necessário
+                if (needsUpdate) {
+                    batch.update(doc.ref, updates);
+                    currentBatchSize++;
+                    updatedCount++;
+
+                    // Commit do lote quando atingir o limite
+                    if (currentBatchSize >= batchSize) {
+                        await batch.commit();
+                        functions.logger.info(`[FixArticles] Lote de ${currentBatchSize} artigos processado`);
+                        currentBatchSize = 0;
+                    }
+                }
+
+            } catch (error) {
+                errorsCount++;
+                functions.logger.error(`[FixArticles] Erro ao processar artigo ${doc.id}:`, error.message);
+            }
+
+            // Log progresso a cada 100 artigos
+            if (processedCount % 100 === 0) {
+                functions.logger.info(`[FixArticles] Progresso: ${processedCount}/${snapshot.docs.length} processados, ${updatedCount} atualizados`);
+            }
+        }
+
+        // Commit do lote final
+        if (currentBatchSize > 0) {
+            await batch.commit();
+            functions.logger.info(`[FixArticles] Lote final de ${currentBatchSize} artigos processado`);
+        }
+
+        functions.logger.info(`[FixArticles] Concluído! Total: ${processedCount}, Atualizados: ${updatedCount}, Erros: ${errorsCount}`);
+
+        return {
+            success: true,
+            processed: processedCount,
+            updated: updatedCount,
+            errors: errorsCount,
+            message: `Correção concluída: ${updatedCount} artigos atualizados de ${processedCount} processados`
+        };
+
+    } catch (error) {
+        functions.logger.error('[FixArticles] Erro geral:', error.message);
+        throw new functions.https.HttpsError('internal', `Erro ao corrigir artigos: ${error.message}`);
+    }
+});
+
+// Função para corrigir todas as empresas (chama a função individual para cada empresa)
+// Função auxiliar para verificar e gerenciar lock de execução
+async function checkAndSetLock(lockName, maxDuration = 30 * 60 * 1000) { // 30 minutos
+    const lockRef = db.collection(`artifacts/${APP_ID}/public/data/locks`).doc(lockName);
+    const lock = await lockRef.get();
+    
+    if (lock.exists) {
+        const lockData = lock.data();
+        const timeDiff = Date.now() - lockData.timestamp;
+        
+        // Se o lock tem menos de 30 minutos, considerar como ativo
+        if (timeDiff < maxDuration) {
+            return { locked: true, message: lockData.message };
+        }
+        
+        // Se passou de 30 minutos, remover o lock antigo
+        await lockRef.delete();
+    }
+    
+    // Criar novo lock
+    await lockRef.set({
+        timestamp: Date.now(),
+        message: 'Processo em execução',
+        startedAt: new Date().toISOString()
+    });
+    
+    return { locked: false };
+}
+
+// Função para remover lock
+async function releaseLock(lockName) {
+    const lockRef = db.collection(`artifacts/${APP_ID}/public/data/locks`).doc(lockName);
+    await lockRef.delete();
+}
+
+// Função para verificar status da correção
+exports.checkFixStatus = functions.https.onCall(async (data, context) => {
+    // Verificar autenticação
+    if (!context.auth) {
+        throw new functions.https.HttpsError('unauthenticated', 'Usuário não autenticado');
+    }
+
+    try {
+        const lockRef = db.collection(`artifacts/${APP_ID}/public/data/locks`).doc('fixArticlesLock');
+        const lock = await lockRef.get();
+        
+        if (lock.exists) {
+            const lockData = lock.data();
+            const timeDiff = Date.now() - lockData.timestamp;
+            const minutesRunning = Math.floor(timeDiff / 60000);
+            
+            return {
+                running: true,
+                startedAt: lockData.startedAt,
+                minutesRunning: minutesRunning,
+                message: lockData.message
+            };
+        } else {
+            return {
+                running: false,
+                message: 'Nenhuma correção em andamento'
+            };
+        }
+    } catch (error) {
+        functions.logger.error('[CheckFixStatus] Erro:', error.message);
+        throw new functions.https.HttpsError('internal', `Erro ao verificar status: ${error.message}`);
+    }
+});
+
+// Função para liberar lock manualmente (em caso de falha)
+exports.releaseFixLock = functions.https.onCall(async (data, context) => {
+    // Verificar autenticação
+    if (!context.auth) {
+        throw new functions.https.HttpsError('unauthenticated', 'Usuário não autenticado');
+    }
+
+    try {
+        await releaseLock('fixArticlesLock');
+        functions.logger.info('[ReleaseFixLock] Lock liberado manualmente');
+        
+        return {
+            success: true,
+            message: 'Lock liberado com sucesso'
+        };
+    } catch (error) {
+        functions.logger.error('[ReleaseFixLock] Erro:', error.message);
+        throw new functions.https.HttpsError('internal', `Erro ao liberar lock: ${error.message}`);
+    }
+});
+
+exports.fixAllCompaniesArticles = functions.runWith({ timeoutSeconds: 540, memory: '1GB' }).https.onCall(async (data, context) => {
+    // Verificar autenticação
+    if (!context.auth) {
+        throw new functions.https.HttpsError('unauthenticated', 'Usuário não autenticado');
+    }
+
+    const lockName = 'fixArticlesLock';
+    
+    try {
+        // Verificar se já existe execução em andamento
+        const lockCheck = await checkAndSetLock(lockName);
+        if (lockCheck.locked) {
+            throw new functions.https.HttpsError('already-exists', `Já existe uma correção em andamento. ${lockCheck.message}`);
+        }
+
+        functions.logger.info('[FixAllArticles] Iniciando correção para todas as empresas');
+
+        // Buscar todas as empresas
+        const companiesRef = db.collection(`artifacts/${APP_ID}/public/data/companies`);
+        const companiesSnapshot = await companiesRef.get();
+
+        const results = [];
+        let totalProcessed = 0;
+        let totalUpdated = 0;
+
+        // Processar cada empresa
+        for (const companyDoc of companiesSnapshot.docs) {
+            const company = companyDoc.data();
+            functions.logger.info(`[FixAllArticles] Processando empresa: ${company.companyName} (${company.companyId})`);
+
+            try {
+                // Chamar a função de correção para esta empresa
+                const result = await exports.fixExistingArticles({ companyId: company.companyId }, context);
+                results.push({
+                    companyId: company.companyId,
+                    companyName: company.companyName,
+                    ...result
+                });
+
+                totalProcessed += result.processed;
+                totalUpdated += result.updated;
+
+            } catch (error) {
+                functions.logger.error(`[FixAllArticles] Erro ao processar empresa ${company.companyName}:`, error.message);
+                results.push({
+                    companyId: company.companyId,
+                    companyName: company.companyName,
+                    success: false,
+                    error: error.message
+                });
+            }
+        }
+
+        functions.logger.info(`[FixAllArticles] Concluído! Total geral: ${totalProcessed} processados, ${totalUpdated} atualizados`);
+
+        // Liberar lock
+        await releaseLock(lockName);
+
+        return {
+            success: true,
+            totalCompanies: companiesSnapshot.docs.length,
+            totalProcessed: totalProcessed,
+            totalUpdated: totalUpdated,
+            results: results,
+            message: `Correção geral concluída: ${totalUpdated} artigos atualizados em ${companiesSnapshot.docs.length} empresas`,
+            timestamp: new Date().toISOString()
+        };
+
+    } catch (error) {
+        functions.logger.error('[FixAllArticles] Erro geral:', error.message);
+        // Liberar lock em caso de erro
+        await releaseLock(lockName).catch(err => functions.logger.error('Erro ao liberar lock:', err.message));
+        
+        if (error.code === 'already-exists') {
+            throw error; // Re-throw o erro de lock existente
+        }
+        
+        throw new functions.https.HttpsError('internal', `Erro ao corrigir artigos de todas as empresas: ${error.message}`);
+    }
 });
 
 
