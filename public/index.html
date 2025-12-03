@@ -370,7 +370,7 @@
                     <!-- Novo botão Monitoramento de Mídia -->
                     <button id="btn-media-monitoring"
                         class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow">
-                        <h3 class="text-lg sm:text-xl font-semibold text-gray-700">MONITORAMENTO DE MÍDIA</h3>
+                        <h3 class="text-lg sm:text-xl font-semibold text-gray-700">Monitoramento de mídia</h3>
                     </button>
                 </div>
                 <div class="mt-6 p-4 bg-blue-100 border-l-4 border-blue-500 text-blue-800 rounded-md text-left">
@@ -1294,7 +1294,8 @@
         <!-- Nova página Monitoramento de Mídia -->
         <section id="media-monitoring-page" class="page-section fade-in">
             <button id="back-to-admin-config-7" class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar</button>
-            <h2 class="text-2xl sm:text-3xl font-bold mb-6 text-blue-600">RELATÓRIO DE MONITORAMENTO DE MÍDIA</h2>
+            <h2 class="text-2xl sm:text-3xl font-bold mb-2 text-blue-600">Relatório de monitoramento de mídia</h2>
+            <p class="text-gray-600 mb-6">Relatório das últimas 24 horas</p>
             
             <div class="bg-white p-4 sm:p-6 rounded-lg shadow-lg mb-6">
                 <h3 class="text-lg sm:text-xl font-semibold mb-4">Selecionar Empresa</h3>
@@ -1494,8 +1495,8 @@
         });
 
         const appId = firebaseConfig.projectId;
-        let currentUser = null, clockInterval = null, selectedCompanyForManagement = null, allCompanyArticles = [], companyIdToDelete = null, articleToDeleteInfo = null;
-        let companyCaptureChannels = null;
+        let currentUser = null, clockInterval = null, selectedCompanyForManagement = null, allCompanyArticles = [], companyIdToDelete = null, articleToDeleteInfo = null, mediaMonitoringPage = null;
+let companyCaptureChannels = null;
         let sourceChartInstance = null, dateChartInstance = null, sentimentChartInstance = null, directnessChartInstance = null, channelChartInstance = null, mediaTypeChartInstance = null, companySummaryChartInstance = null, keywordTotalChartInstance = null, keywordSentimentChartInstance = null, criticalChannelChartInstance = null, criticalSpaceChartInstance = null, criticalSpaceQualChartInstance = null, criticalVehicleChartInstance = null, criticalValuationChartInstance = null, criticalDateChartInstance = null, criticalSpontaneityChartInstance = null;
         let superAdminCredentials = { user: 'ulysses', pass: 'adminqwert' };
         let notificationListener = null, companiesListener = null, deletionRequestsListener = null, pendingAlertsListener = null, activityCompaniesListener = null, activityPendingListener = null, activityDeletionListener = null;
@@ -4610,6 +4611,7 @@ fetchWindowEndInput = document.getElementById('fetchWindowEnd');
             criticalEndDateInput = document.getElementById('critical-end-date');
             criticalGenerateBtn = document.getElementById('critical-generate-btn');
             criticalSummary = document.getElementById('critical-summary');
+            mediaMonitoringPage = document.getElementById('media-monitoring-page');
 
             const states = { "AC": "Acre", "AL": "Alagoas", "AP": "Amapá", "AM": "Amazonas", "BA": "Bahia", "CE": "Ceará", "DF": "Distrito Federal", "ES": "Espírito Santo", "GO": "Goiás", "MA": "Maranhão", "MT": "Mato Grosso", "MS": "Mato Grosso do Sul", "MG": "Minas Gerais", "PA": "Pará", "PB": "Paraíba", "PR": "Paraná", "PE": "Pernambuco", "PI": "Piauí", "RJ": "Rio de Janeiro", "RN": "Rio Grande do Norte", "RS": "Rio Grande do Sul", "RO": "Rondônia", "RR": "Roraima", "SC": "Santa Catarina", "SP": "São Paulo", "SE": "Sergipe", "TO": "Tocantins" };
             for (const [uf, name] of Object.entries(states)) {
