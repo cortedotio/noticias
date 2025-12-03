@@ -4655,6 +4655,34 @@ fetchWindowEndInput = document.getElementById('fetchWindowEnd');
                 }
             }
 
+            // Função para corrigir todos os artigos
+            async function fixAllArticles() {
+                if (!confirm('Tem certeza que deseja corrigir os nomes das fontes e canais de todos os artigos? Esta operação pode demorar alguns minutos.')) {
+                    return;
+                }
+
+                const btnFixArticles = document.getElementById('btn-fix-articles');
+                const originalText = btnFixArticles.innerHTML;
+                btnFixArticles.innerHTML = '<h3 class="text-lg sm:text-xl font-semibold">Corrigindo...</h3>';
+                btnFixArticles.disabled = true;
+
+                try {
+                    // Chamar a função fixAllCompaniesArticles do Firebase Functions
+                    const fixAllCompaniesArticles = httpsCallable(functions, 'fixAllCompaniesArticles', { timeout: 600000 });
+                    const result = await fixAllCompaniesArticles({ appId });
+                    
+                    showAlert(`Correção concluída com sucesso! ${result.data.totalFixed || 0} artigos foram corrigidos.`, 'success');
+                } catch (error) {
+                    console.error("Erro ao corrigir artigos:", error);
+                    showAlert(`Erro ao corrigir artigos: ${error.message}`, 'error');
+                } finally {
+                    btnFixArticles.innerHTML = originalText;
+                    btnFixArticles.disabled = false;
+                }
+            }
+
+            if (btnFixArticles) btnFixArticles.addEventListener('click', fixAllArticles);
+
             (async () => {
                 onAuthStateChanged(auth, async (user) => {
                     if (user) {
@@ -4939,7 +4967,6 @@ if (youtubeFrequencyInput) youtubeFrequencyInput.addEventListener('input', () =>
             if (btnNewsSources) btnNewsSources.addEventListener('click', () => updateView('global-sources'));
             if (btnRadioSources) btnRadioSources.addEventListener('click', () => updateView('global-radio-sources'));
         if (btnTvSources) btnTvSources.addEventListener('click', () => updateView('global-tv-sources'));
-        if (btnFixArticles) btnFixArticles.addEventListener('click', fixAllArticles);
 
         // Event listeners para os botões de status das TVs
         document.addEventListener('click', function(e) {
@@ -5092,31 +5119,7 @@ if (youtubeFrequencyInput) youtubeFrequencyInput.addEventListener('input', () =>
             });
         });
 
-        // Função para corrigir todos os artigos
-        async function fixAllArticles() {
-            if (!confirm('Tem certeza que deseja corrigir os nomes das fontes e canais de todos os artigos? Esta operação pode demorar alguns minutos.')) {
-                return;
-            }
 
-            const btnFixArticles = document.getElementById('btn-fix-articles');
-            const originalText = btnFixArticles.innerHTML;
-            btnFixArticles.innerHTML = '<h3 class="text-lg sm:text-xl font-semibold">Corrigindo...</h3>';
-            btnFixArticles.disabled = true;
-
-            try {
-                // Chamar a função fixAllCompaniesArticles do Firebase Functions
-                const fixAllCompaniesArticles = httpsCallable(functions, 'fixAllCompaniesArticles', { timeout: 600000 });
-                const result = await fixAllCompaniesArticles({ appId });
-                
-                showAlert(`Correção concluída com sucesso! ${result.data.totalFixed || 0} artigos foram corrigidos.`, 'success');
-            } catch (error) {
-                console.error("Erro ao corrigir artigos:", error);
-                showAlert(`Erro ao corrigir artigos: ${error.message}`, 'error');
-            } finally {
-                btnFixArticles.innerHTML = originalText;
-                btnFixArticles.disabled = false;
-            }
-        }
     </script>
 </body>
 
