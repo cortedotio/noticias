@@ -16,6 +16,7 @@ const { ImageAnnotatorClient } = require('@google-cloud/vision');
 const { VideoIntelligenceServiceClient } = require('@google-cloud/video-intelligence');
 const { Client } = require("@googlemaps/google-maps-services-js");
 const crypto = require('crypto');
+const { isWithinWindow } = require('../server/index.js');
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -215,8 +216,12 @@ async function detectAndTranslate(text) {
 function normalizeArticle(article, sourceApi) {
     try {
         switch (sourceApi) {
-            case 'gnews': return { title: article.title, description: article.description, url: article.url, image: article.image || null, publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.publishedAt)), source: { name: article.source.name, url: article.source.url }, author: article.author || null, };
-            case 'newsapi': return { title: article.title, description: article.description, url: article.url, image: article.urlToImage || null, publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.publishedAt)), source: { name: article.source.name, url: null }, author: article.author || null, };
+            case 'gnews': 
+                const domainName = article.source?.url ? new URL(article.source.url).hostname.replace(/^www\./, '') : article.source.name;
+                return { title: article.title, description: article.description, url: article.url, image: article.image || null, publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.publishedAt)), source: { name: domainName, url: article.source.url }, author: article.author || null, };
+            case 'newsapi': 
+                const articleDomain = article.url ? new URL(article.url).hostname.replace(/^www\./, '') : article.source.name;
+                return { title: article.title, description: article.description, url: article.url, image: article.urlToImage || null, publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.publishedAt)), source: { name: articleDomain, url: null }, author: article.author || null, };
             case 'blogger': const blogName = article.blog ? article.blog.name : 'Blogger'; return { title: article.title, description: (article.content || "").replace(/<[^>]*>?/gm, ''), url: article.url, image: null, publishedAt: admin.firestore.Timestamp.fromDate(new Date(article.published)), source: { name: blogName, url: article.url }, author: article.author?.displayName || null, };
             case 'rss': {
                 const rawSourceName = article.feedTitle || (article.link ? new URL(article.link).hostname.replace(/^www\./, '') : 'RSS');
@@ -452,6 +457,13 @@ async function fetchAllNews() {
 
     for (const company of allCompaniesData) {
         functions.logger.info(`--- Processando empresa: ${company.companyName} ---`);
+        
+        // Verificar se está dentro da janela permitida
+        if (!isWithinWindow(settings.newsWindowStart, settings.newsWindowEnd)) {
+            functions.logger.info(`Fora da janela permitida (${settings.newsWindowStart} - ${settings.newsWindowEnd}), pulando empresa ${company.companyName}`);
+            continue;
+        }
+        
         const combinedQuery = company.keywordsList.map(kw => `"${kw}"`).join(" OR ");
         
         if (canRunGNews && settings.apiKeyGNews1) {

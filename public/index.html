@@ -1536,6 +1536,12 @@ let keywordToTransferInfo = null;
                 const srcNameLower = String(item?.source?.name || '').toLowerCase();
                 const urlCandidate = String(item?.source?.url || item?.url || '');
                 const isYouTube = srcNameLower.includes('youtube') || urlCandidate.includes('youtube.com') || urlCandidate.includes('youtu.be');
+                
+                // SEMPRE priorizar o nome da fonte/veículo sobre o autor
+                // Preferir nome normalizado da fonte quando disponível
+                const normalizedName = (item?.source?.displayName ?? item?.source?.name ?? '').toString().trim();
+                if (normalizedName.length > 0) return normalizedName;
+                
                 if (isYouTube) {
                     const channelTitle = (item && (item.author || item.channelTitle || item.source?.channelTitle)) || '';
                     if (channelTitle && channelTitle.trim().length > 0) return channelTitle.trim();
@@ -1548,9 +1554,6 @@ let keywordToTransferInfo = null;
                     } catch {}
                     return 'YouTube';
                 }
-                // Preferir nome normalizado da fonte quando disponível
-                const normalizedName = (item?.source?.displayName ?? item?.source?.name ?? '').toString().trim();
-                if (normalizedName.length > 0) return normalizedName;
                 // Fallback para domínio do URL quando não houver nome
                 let host = '';
                 try {
@@ -1918,13 +1921,16 @@ let keywordToTransferInfo = null;
             }
             if (dashboardTitle) dashboardTitle.textContent = currentUser.isSuperAdmin ? 'Painel Super Admin' : `Notícias do Dia - ${currentUser.companyName}`;
         }
-        async function renderVerticalKeywordList() { if (!currentUser || !dashboardKeywordList) return; try { const q = query(collection(db, "artifacts", appId, "users", currentUser.companyId, "keywords")); const querySnapshot = await getDocs(q); const keywords = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); dashboardKeywordList.innerHTML = ''; const showAllLi = document.createElement('li'); showAllLi.className = 'keyword-filter active bg-indigo-100 text-indigo-800 text-md font-medium px-3 py-2 rounded-md flex justify-between items-center cursor-pointer hover:bg-indigo-200'; showAllLi.dataset.keyword = "all"; showAllLi.innerHTML = `<span>Mostrar Todas</span>`; dashboardKeywordList.appendChild(showAllLi); if (keywords.length === 0) { dashboardKeywordList.insertAdjacentHTML('beforeend', `<p class="text-gray-500 text-sm mt-2">Nenhuma palavra-chave.</p>`); } else { keywords.forEach(kw => { const li = document.createElement('li'); li.className = 'keyword-filter bg-indigo-100 text-indigo-800 text-md font-medium px-3 py-2 rounded-md flex justify-content-between items-center cursor-pointer hover:bg-indigo-200'; li.dataset.keyword = kw.word; li.innerHTML = `<span>${kw.word}</span>`; dashboardKeywordList.appendChild(li); }); } } catch (error) { console.error("Erro ao buscar palavras-chave:", error); } }
+        async function renderVerticalKeywordList() { if (!currentUser || !dashboardKeywordList) return; try { const q = query(collection(db, "artifacts", appId, "users", currentUser.companyId, "keywords")); const querySnapshot = await getDocs(q); const keywords = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); // Ordenar palavras-chave por palavra em ordem alfabética
+                keywords.sort((a, b) => a.word.localeCompare(b.word)); dashboardKeywordList.innerHTML = ''; const showAllLi = document.createElement('li'); showAllLi.className = 'keyword-filter active bg-indigo-100 text-indigo-800 text-md font-medium px-3 py-2 rounded-md flex justify-between items-center cursor-pointer hover:bg-indigo-200'; showAllLi.dataset.keyword = "all"; showAllLi.innerHTML = `<span>Mostrar Todas</span>`; dashboardKeywordList.appendChild(showAllLi); if (keywords.length === 0) { dashboardKeywordList.insertAdjacentHTML('beforeend', `<p class="text-gray-500 text-sm mt-2">Nenhuma palavra-chave.</p>`); } else { keywords.forEach(kw => { const li = document.createElement('li'); li.className = 'keyword-filter bg-indigo-100 text-indigo-800 text-md font-medium px-3 py-2 rounded-md flex justify-content-between items-center cursor-pointer hover:bg-indigo-200'; li.dataset.keyword = kw.word; li.innerHTML = `<span>${kw.word}</span>`; dashboardKeywordList.appendChild(li); }); } } catch (error) { console.error("Erro ao buscar palavras-chave:", error); } }
 
         function setupCompaniesListener() {
             if (companiesListener) companiesListener();
             const companiesQuery = query(collection(db, "artifacts", appId, "public", "data", "companies"));
             companiesListener = onSnapshot(companiesQuery, (querySnapshot) => {
                 const companies = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                // Ordenar empresas por nome em ordem alfabética
+                companies.sort((a, b) => a.name.localeCompare(b.name));
                 if (!companyList) return;
                 companyList.innerHTML = '';
                 companies.forEach(c => {
@@ -2008,7 +2014,7 @@ let keywordToTransferInfo = null;
         async function handleUserActions(e) { if (!selectedCompanyForManagement) return; const id = e.target.dataset.id; if (!id) return; try { if (e.target.classList.contains('edit-user-btn')) { const userDoc = await getDoc(doc(db, "artifacts", appId, "users", selectedCompanyForManagement.id, "users", id)); if (userDoc.exists()) { const user = userDoc.data(); if (userInput) userInput.value = user.username; if (userPasswordInput) userPasswordInput.value = user.password; if (userIdInput) userIdInput.value = id; if (userInput) userInput.focus(); } } if (e.target.classList.contains('delete-user-btn')) { await deleteDoc(doc(db, "artifacts", appId, "users", selectedCompanyForManagement.id, "users", id)); renderUsersForSelectedCompany(); } } catch (error) { console.error("Erro ao lidar com a ação do usuário:", error); } }
 
         async function renderCompanyKeywordAdminPage() { if (!selectedCompanyForManagement || !companyKeywordAdminTitle) return; companyKeywordAdminTitle.textContent = `Gerir Palavras-Chave para: ${selectedCompanyForManagement.name}`; renderKeywordsForSelectedCompany(); }
-        async function renderKeywordsForSelectedCompany() { try { const keywordsRef = collection(db, "artifacts", appId, "users", selectedCompanyForManagement.id, "keywords"); const querySnapshot = await getDocs(keywordsRef); const keywords = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); if (!adminKeywordList) return; adminKeywordList.innerHTML = ''; keywords.forEach(kw => { const li = document.createElement('li'); li.className = 'flex justify-between items-center bg-gray-100 p-2 rounded-md'; li.innerHTML = `<span>${kw.word}</span><div><button data-id="${kw.id}" class="edit-keyword-btn text-blue-500 hover:text-blue-700 mr-2">Editar</button><button data-id="${kw.id}" data-word="${kw.word}" class="transfer-keyword-btn text-indigo-500 hover:text-indigo-700 mr-2">Transferir</button><button data-id="${kw.id}" data-word="${kw.word}" class="delete-keyword-btn text-red-500 hover:text-red-700">Excluir</button></div>`; adminKeywordList.appendChild(li); }); } catch (error) { console.error("Erro ao renderizar palavras-chave:", error); } }
+        async function renderKeywordsForSelectedCompany() { try { const keywordsRef = collection(db, "artifacts", appId, "users", selectedCompanyForManagement.id, "keywords"); const querySnapshot = await getDocs(keywordsRef); const keywords = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); if (!adminKeywordList) return; adminKeywordList.innerHTML = ''; keywords.sort((a, b) => a.word.localeCompare(b.word)); keywords.forEach(kw => { const li = document.createElement('li'); li.className = 'flex justify-between items-center bg-gray-100 p-2 rounded-md'; li.innerHTML = `<span>${kw.word}</span><div><button data-id="${kw.id}" class="edit-keyword-btn text-blue-500 hover:text-blue-700 mr-2">Editar</button><button data-id="${kw.id}" data-word="${kw.word}" class="transfer-keyword-btn text-indigo-500 hover:text-indigo-700 mr-2">Transferir</button><button data-id="${kw.id}" data-word="${kw.word}" class="delete-keyword-btn text-red-500 hover:text-red-700">Excluir</button></div>`; adminKeywordList.appendChild(li); }); } catch (error) { console.error("Erro ao renderizar palavras-chave:", error); } }
         async function handleKeywordSubmit(e) { e.preventDefault(); const word = keywordInput.value.trim(), id = keywordIdInput.value; if (!word || !selectedCompanyForManagement) return; try { const keywordsRef = collection(db, "artifacts", appId, "users", selectedCompanyForManagement.id, "keywords"); if (id) { await updateDoc(doc(db, "artifacts", appId, "users", selectedCompanyForManagement.id, "keywords", id), { word }); } else { await addDoc(keywordsRef, { word }); } if (keywordInput) keywordInput.value = ''; if (keywordIdInput) keywordIdInput.value = ''; renderKeywordsForSelectedCompany(); } catch (error) { console.error("Erro ao guardar a palavra-chave:", error); } }
         async function handleKeywordActions(e) {
             if (!selectedCompanyForManagement) return;
@@ -2056,6 +2062,7 @@ let keywordToTransferInfo = null;
                 const companiesQ = query(collection(db, "artifacts", appId, "public", "data", "companies"), where("status", "==", "active"));
                 const snapshot = await getDocs(companiesQ);
                 const companies = snapshot.docs.map(d => ({ id: d.id, ...(d.data() || {}) }));
+                companies.sort((a, b) => (a.name || a.id).localeCompare(b.name || b.id));
                 companies
                     .filter(c => c.id !== (selectedCompanyForManagement ? selectedCompanyForManagement.id : null))
                     .forEach(c => {
@@ -3108,6 +3115,8 @@ alertEl.innerHTML = `                <div class="alert-body-clickable">         
                 allEl.className = 'flex items-center';
                 allEl.innerHTML = `<input type="checkbox" id="${allId}" value="Todos" class="report-kw-checkbox h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" checked><label for="${allId}" class="ml-2 block text-sm text-gray-900">Todos</label>`;
                 reportKeywordFilterContainer.appendChild(allEl);
+                // Ordenar palavras-chave por nome em ordem alfabética
+                keywords.sort((a, b) => a.localeCompare(b));
                 // Renderiza demais palavras‑chave
                 keywords.forEach(kw => {
                     const id = `kw-filter-${kw.replace(/\s+/g, '-')}`;
@@ -3845,14 +3854,20 @@ alertEl.innerHTML = `                <div class="alert-body-clickable">         
             companySelect.innerHTML = '<option value="">Selecione uma empresa</option>';
             keywordsContainer.innerHTML = '<p class="text-gray-500 text-sm">Selecione uma empresa primeiro</p>';
             const companiesSnapshot = await getDocs(query(collection(db, "artifacts", appId, "public/data/companies"), where("status", "==", "active")));
+            const companies = [];
             companiesSnapshot.forEach(doc => {
-                const option = document.createElement('option');
                 const companyId = doc.id;
                 if (currentUser && currentUser.isRestrictedGlobal && Array.isArray(currentUser.allowedCompanies) && currentUser.allowedCompanies.length > 0 && !currentUser.allowedCompanies.includes(companyId)) {
                     return; // pular empresas não permitidas
                 }
-                option.value = companyId;
-                option.textContent = doc.data().name;
+                companies.push({ id: companyId, name: doc.data().name });
+            });
+            // Ordenar empresas por nome em ordem alfabética
+            companies.sort((a, b) => a.name.localeCompare(b.name));
+            companies.forEach(company => {
+                const option = document.createElement('option');
+                option.value = company.id;
+                option.textContent = company.name;
                 companySelect.appendChild(option);
             });
             if (selectAllCheckbox) {
@@ -3881,8 +3896,13 @@ alertEl.innerHTML = `                <div class="alert-body-clickable">         
                     return;
                 }
                 const fragment = document.createDocumentFragment();
+                const keywords = [];
                 keywordsSnapshot.forEach(doc => {
-                    const word = doc.data().word;
+                    keywords.push(doc.data().word);
+                });
+                // Ordenar palavras-chave por nome em ordem alfabética
+                keywords.sort((a, b) => a.localeCompare(b));
+                keywords.forEach(word => {
                     const row = document.createElement('div');
                     row.className = 'flex items-center gap-2';
                     const box = document.createElement('input');
@@ -4191,11 +4211,17 @@ alertEl.innerHTML = `                <div class="alert-body-clickable">         
                 if (criticalCompanySelect) {
                     criticalCompanySelect.innerHTML = '<option value="">Selecione uma empresa</option>';
                     const companiesSnapshot = await getDocs(query(collection(db, "artifacts", appId, "public/data/companies"), where("status", "==", "active")));
+                    const companies = [];
                     companiesSnapshot.forEach(docSnap => {
                         const data = docSnap.data();
+                        companies.push({ id: docSnap.id, name: data.name || 'Sem nome' });
+                    });
+                    // Ordenar empresas por nome em ordem alfabética
+                    companies.sort((a, b) => a.name.localeCompare(b.name));
+                    companies.forEach(company => {
                         const opt = document.createElement('option');
-                        opt.value = docSnap.id;
-                        opt.textContent = data.name || 'Sem nome';
+                        opt.value = company.id;
+                        opt.textContent = company.name;
                         criticalCompanySelect.appendChild(opt);
                     });
                 }
