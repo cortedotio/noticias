@@ -941,7 +941,7 @@ async function checkAndCaptureRadios() {
 }
 
 // Iniciar agendador (checa a cada 1 minuto)
-if (!BACKFILL_RUN && !DIAGNOSE_RUN) {
+if (!BACKFILL_RUN && !DIAGNOSE_RUN && require.main === module) {
   setInterval(checkAndCaptureRadios, 60 * 1000);
   // Intervalo para verificação automática de streams de rádio (a cada 30 minutos)
 setInterval(() => {
@@ -959,7 +959,7 @@ setInterval(() => {
 }
 
 const PORT = Number(process.env.PORT) || 6068;
-if (!BACKFILL_RUN && !DIAGNOSE_RUN) {
+if (!BACKFILL_RUN && !DIAGNOSE_RUN && require.main === module) {
   app.listen(PORT, () => {
     console.log(`Radio capture server running at http://127.0.0.1:${PORT}/`);
   });
@@ -1281,7 +1281,7 @@ async function checkTvSources() {
 }
 
 // Agendar verificação de TV a cada 1 minuto
-if (!BACKFILL_RUN && !DIAGNOSE_RUN) {
+if (!BACKFILL_RUN && !DIAGNOSE_RUN && require.main === module) {
   setInterval(checkTvSources, 60 * 1000);
   // Agendar captação de TV a cada 2 minutos
   setInterval(checkAndCaptureTv, 2 * 60 * 1000);
