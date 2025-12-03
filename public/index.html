@@ -367,6 +367,11 @@
                         class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow">
                         <h3 class="text-lg sm:text-xl font-semibold text-gray-700">Relatório de Análise Crítica</h3>
                     </button>
+                    <!-- Novo botão Monitoramento de Mídia -->
+                    <button id="btn-media-monitoring"
+                        class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow">
+                        <h3 class="text-lg sm:text-xl font-semibold text-gray-700">MONITORAMENTO DE MÍDIA</h3>
+                    </button>
                 </div>
                 <div class="mt-6 p-4 bg-blue-100 border-l-4 border-blue-500 text-blue-800 rounded-md text-left">
                     <p class="font-bold">Execução Manual do Robô</p>
@@ -1285,6 +1290,28 @@
                 </div>
             </div>
         </section>
+
+        <!-- Nova página Monitoramento de Mídia -->
+        <section id="media-monitoring-page" class="page-section fade-in">
+            <button id="back-to-admin-config-7" class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar</button>
+            <h2 class="text-2xl sm:text-3xl font-bold mb-6 text-blue-600">RELATÓRIO DE MONITORAMENTO DE MÍDIA</h2>
+            
+            <div class="bg-white p-4 sm:p-6 rounded-lg shadow-lg mb-6">
+                <h3 class="text-lg sm:text-xl font-semibold mb-4">Selecionar Empresa</h3>
+                <select id="media-monitoring-company" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                    <option value="">Selecione uma empresa...</option>
+                </select>
+            </div>
+
+            <div id="media-monitoring-report" class="hidden bg-white p-6 rounded-lg shadow-lg">
+                <!-- Conteúdo do relatório será carregado aqui -->
+            </div>
+
+            <div id="media-monitoring-empty" class="hidden bg-white p-8 rounded-lg shadow-lg text-center">
+                <p class="text-gray-600">Selecione uma empresa para gerar o relatório.</p>
+            </div>
+        </section>
+
     </main>
 
     <!-- Modais -->
@@ -1624,6 +1651,7 @@ let keywordToTransferInfo = null;
                 case 'deletion-requests': deletionRequestsPage.classList.add('active'); setupDeletionRequestsListener(); break;
                 case 'super-admin-report': superAdminReportPage.classList.add('active'); renderSuperAdminReport(); break;
                 case 'critical-report': criticalReportPage.classList.add('active'); renderCriticalReportPage(); break;
+                case 'media-monitoring': mediaMonitoringPage.classList.add('active'); renderMediaMonitoringPage(); break;
                 case 'super-admin-queue': pendingAlertsPage.classList.add('active'); setupPendingAlertsListener(); break;
                 case 'article-detail': articleDetailPage.classList.add('active'); break;
                 case 'company-keyword-report': companyKeywordReportPage.classList.add('active'); break;
@@ -3463,6 +3491,9 @@ alertEl.innerHTML = `                <div class="alert-body-clickable">         
             reportDateEl.textContent = `Gerado em: ${new Date().toLocaleDateString('pt-BR')}`;
             detailTitleEl.textContent = article.title;
             
+            // Verificar se estamos no contexto de Relatório de Notícias (não permite edição de análises)
+            const isNewsReport = detailTitleEl.closest('#report-content')?.querySelector('h2')?.textContent === 'Relatório de Notícia';
+            
             const fullContent = article.content || article.description || 'Conteúdo completo não disponível.';
             const initialParagraphs = fullContent.split('\n').filter(p => p.trim() !== '').map(p => `<p class="mb-4">${p}</p>`).join('');
             // Sempre tentar carregar o conteúdo completo da notícia via /extract-article quando houver URL
@@ -4301,6 +4332,94 @@ alertEl.innerHTML = `                <div class="alert-body-clickable">         
             }
         }
 
+        // Função para renderizar a página de Monitoramento de Mídia
+        async function renderMediaMonitoringPage() {
+            const companySelect = document.getElementById('media-monitoring-company-select');
+            const reportContent = document.getElementById('media-monitoring-report-content');
+            const loadingMessage = document.getElementById('media-monitoring-loading');
+            
+            if (!companySelect || !reportContent) return;
+            
+            const companyId = companySelect.value;
+            if (!companyId) {
+                reportContent.innerHTML = '<p class="text-gray-500 text-center py-8">Selecione uma empresa para gerar o relatório.</p>';
+                return;
+            }
+            
+            // Mostrar mensagem de carregamento
+            reportContent.innerHTML = '';
+            if (loadingMessage) loadingMessage.style.display = 'block';
+            
+            try {
+                // Buscar artigos das últimas 24 horas
+                const getArticles = httpsCallable(functions, 'getArticles');
+                const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+                
+                const result = await getArticles({ 
+                    appId, 
+                    companyId, 
+                    startDate: twentyFourHoursAgo,
+                    limit: 1000
+                });
+                
+                const articles = Array.isArray(result.data) ? result.data : [];
+                
+                // Classificar artigos por sentimento
+                const positiveArticles = articles.filter(article => article.sentiment === 'positive');
+                const negativeArticles = articles.filter(article => article.sentiment === 'negative');
+                const neutralArticles = articles.filter(article => !article.sentiment || article.sentiment === 'neutral');
+                
+                // Gerar HTML básico do relatório
+                reportContent.innerHTML = `
+                    <div class="bg-white rounded-lg shadow p-6 mb-6">
+                        <h3 class="text-xl font-bold mb-4 text-blue-800">DESTAQUES RÁPIDOS</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div class="bg-green-50 p-4 rounded-lg border border-green-200">
+                                <div class="text-sm text-green-600 mb-1">Positivas</div>
+                                <div class="text-2xl font-bold text-green-700">${positiveArticles.length}</div>
+                            </div>
+                            <div class="bg-red-50 p-4 rounded-lg border border-red-200">
+                                <div class="text-sm text-red-600 mb-1">Negativas</div>
+                                <div class="text-2xl font-bold text-red-700">${negativeArticles.length}</div>
+                            </div>
+                            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                <div class="text-sm text-gray-600 mb-1">Neutras</div>
+                                <div class="text-2xl font-bold text-gray-700">${neutralArticles.length}</div>
+                            </div>
+                            <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                                <div class="text-sm text-blue-600 mb-1">Total</div>
+                                <div class="text-2xl font-bold text-blue-700">${articles.length}</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <h3 class="text-lg font-bold mb-4 text-blue-800">DISTRIBUIÇÃO POR SENTIMENTO</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="text-center">
+                                <div class="text-3xl font-bold text-green-600">${((positiveArticles.length / articles.length) * 100 || 0).toFixed(1)}%</div>
+                                <div class="text-sm text-gray-600">Positivas</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-3xl font-bold text-red-600">${((negativeArticles.length / articles.length) * 100 || 0).toFixed(1)}%</div>
+                                <div class="text-sm text-gray-600">Negativas</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-3xl font-bold text-gray-600">${((neutralArticles.length / articles.length) * 100 || 0).toFixed(1)}%</div>
+                                <div class="text-sm text-gray-600">Neutras</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+            } catch (error) {
+                console.error('Erro ao carregar monitoramento de mídia:', error);
+                reportContent.innerHTML = '<p class="text-red-600 text-center py-8">Erro ao carregar o relatório. Tente novamente.</p>';
+            } finally {
+                if (loadingMessage) loadingMessage.style.display = 'none';
+            }
+        }
+
         // --- INICIALIZAÇÃO E OUVINTES DE EVENTOS --- 
         document.addEventListener('DOMContentLoaded', () => {
             pageSections = document.querySelectorAll('.page-section');
@@ -4843,6 +4962,10 @@ if (youtubeFrequencyInput) youtubeFrequencyInput.addEventListener('input', () =>
             if (btnDeletionRequests) btnDeletionRequests.addEventListener('click', () => updateView('deletion-requests'));
             if (btnSuperAdminReport) btnSuperAdminReport.addEventListener('click', () => updateView('super-admin-report'));
             if (btnCriticalReport) btnCriticalReport.addEventListener('click', () => updateView('critical-report'));
+            
+            // Event listener para o botão de Monitoramento de Mídia
+            const btnMediaMonitoring = document.getElementById('btn-media-monitoring');
+            if (btnMediaMonitoring) btnMediaMonitoring.addEventListener('click', () => updateView('media-monitoring'));
             if (backToSuperAdminCriticalBtn) backToSuperAdminCriticalBtn.addEventListener('click', () => updateView('super-admin-report'));
             if (criticalGenerateBtn) criticalGenerateBtn.addEventListener('click', handleGenerateCriticalReport);
             if (backToDashboard1) backToDashboard1.addEventListener('click', () => updateView('dashboard'));
