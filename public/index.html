@@ -3566,9 +3566,28 @@ alertEl.innerHTML = `                <div class="alert-body-clickable">         
                     return `
                     <div class="keyword-analysis-row flex items-center gap-2" data-keyword="${sk}">
                       <span class="flex-shrink-0 text-xs font-semibold bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full">${kw}</span>
-                      <span class="keyword-directness-btn text-xs font-semibold ${directBtnClass} px-2 py-1 rounded-full">${isDirectKw ? 'Direto' : 'Indireto'}</span>
-                      <span class="media-btn text-xs font-semibold ${mediaColor} px-2 py-1 rounded-full">${mediaInit}</span>
-                      <span class="keyword-sentiment-btn text-xs font-semibold text-${color}-600 bg-${color}-100 px-2 py-1 rounded-full">${emoji} ${text}</span>
+                      <div class="keyword-directness-container directness-container relative">
+                        <button class="keyword-directness-btn text-xs font-semibold ${directBtnClass} px-2 py-1 rounded-full hover:opacity-80 transition-opacity">${isDirectKw ? 'Direto' : 'Indireto'}</button>
+                        <div class="directness-menu p-1 space-y-1">
+                          <button data-directness="true" data-keyword="${sk}" data-word="${kw}" class="directness-option w-full text-left text-xs px-2 py-1 rounded hover:bg-gray-100">Direto</button>
+                          <button data-directness="false" data-keyword="${sk}" data-word="${kw}" class="directness-option w-full text-left text-xs px-2 py-1 rounded hover:bg-gray-100">Indireto</button>
+                        </div>
+                      </div>
+                      <div class="keyword-media-container media-container relative">
+                        <button class="media-btn text-xs font-semibold ${mediaColor} px-2 py-1 rounded-full hover:opacity-80 transition-opacity">${mediaInit}</button>
+                        <div class="keyword-media-menu media-menu p-1 space-y-1">
+                          <button data-media-type="Espontânea" data-keyword="${sk}" data-word="${kw}" class="keyword-media-option w-full text-left text-xs px-2 py-1 rounded hover:bg-gray-100">Espontânea</button>
+                          <button data-media-type="Provocada" data-keyword="${sk}" data-word="${kw}" class="keyword-media-option w-full text-left text-xs px-2 py-1 rounded hover:bg-gray-100">Provocada</button>
+                        </div>
+                      </div>
+                      <div class="keyword-sentiment-container sentiment-container relative">
+                        <button class="keyword-sentiment-btn text-xs font-semibold text-${color}-600 bg-${color}-100 px-2 py-1 rounded-full hover:opacity-80 transition-opacity">${emoji} ${text}</button>
+                        <div class="keyword-sentiment-menu sentiment-menu p-1 space-y-1">
+                          <button data-sentiment="0.5" data-keyword="${sk}" data-word="${kw}" class="keyword-sentiment-option w-full text-left text-xs px-2 py-1 rounded hover:bg-gray-100">😊 Positivo</button>
+                          <button data-sentiment="0.0" data-keyword="${sk}" data-word="${kw}" class="keyword-sentiment-option w-full text-left text-xs px-2 py-1 rounded hover:bg-gray-100">😐 Neutro</button>
+                          <button data-sentiment="-0.5" data-keyword="${sk}" data-word="${kw}" class="keyword-sentiment-option w-full text-left text-xs px-2 py-1 rounded hover:bg-gray-100">😠 Negativo</button>
+                        </div>
+                      </div>
                     </div>`;
                 }).join('');
                 const fullRow = `<div class=\"md:col-span-4 col-span-2\"><div id=\"detail-keyword-analyses\" class=\"flex flex-col gap-2\">${kwHTMLDetail}</div></div>`;
