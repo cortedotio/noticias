@@ -238,6 +238,19 @@
         }
     </style>
 </head>
+    <style id="media-monitoring-print">
+        @media print {
+            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .page-section { display: none !important; }
+            #media-monitoring-page { display: block !important; }
+            body * { visibility: hidden; }
+            #media-monitoring-report, #media-monitoring-report * { visibility: visible; }
+            #media-monitoring-report { position: absolute; left: 0; top: 0; width: 100%; }
+            .page-break { break-after: page; }
+            #back-to-admin-config-7 { display: none !important; }
+        }
+        @page { margin: 16mm; }
+    </style>
 
 <body class="bg-gray-100 text-gray-800">
 
@@ -1304,14 +1317,17 @@
             
             <div class="bg-white p-4 sm:p-6 rounded-lg shadow-lg mb-6">
                 <h3 class="text-lg sm:text-xl font-semibold mb-4">Selecionar Empresa</h3>
-                <select id="media-monitoring-company" class="w-full px-3 py-2 border border-gray-300 rounded-md">
-                    <option value="">Selecione uma empresa...</option>
-                </select>
+                <div class="flex flex-col sm:flex-row gap-3 items-start sm:items-end">
+                    <select id="media-monitoring-company" class="flex-1 px-3 py-2 border border-gray-300 rounded-md">
+                        <option value="">Selecione uma empresa...</option>
+                    </select>
+                    <button id="media-monitoring-generate" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">Gerar relatório</button>
+                    <button id="media-monitoring-export" class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700">Exportar PDF</button>
+                </div>
+                <div id="media-monitoring-loading" class="hidden mt-3 text-sm text-gray-500">Gerando relatório...</div>
             </div>
 
-            <div id="media-monitoring-report" class="hidden bg-white p-6 rounded-lg shadow-lg">
-                <!-- Conteúdo do relatório será carregado aqui -->
-            </div>
+            <div id="media-monitoring-report" class="hidden bg-white p-6 rounded-lg shadow-lg"></div>
 
             <div id="media-monitoring-empty" class="hidden bg-white p-8 rounded-lg shadow-lg text-center">
                 <p class="text-gray-600">Selecione uma empresa para gerar o relatório.</p>
@@ -4296,14 +4312,26 @@ alertEl.innerHTML = `                <div class="alert-body-clickable">         
                     criticalSpaceChartInstance = createChart('critical-space-chart', criticalSpaceChartInstance, 'bar', { labels: spaceLabels, datasets: [{ label: 'Tipo de texto', data: spaceValues, backgroundColor: '#10B981', borderRadius: 6, borderSkipped: false }] }, { plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(context) { return context.dataset.label + ': ' + context.parsed.y; } } } }, scales: { x: { grid: { display: false } }, y: { beginAtZero: true, grid: { display: true } } } });
                 }
                 const spaceQualLabels = Object.keys(spaceCounts);
-                const spaceQualValues = spaceQualLabels.map(k => spaceCounts[k]);
                 if (spaceQualLabels.length) {
-                    criticalSpaceQualChartInstance = createChart('critical-space-qual-chart', criticalSpaceQualChartInstance, 'bar', { labels: spaceQualLabels, datasets: [{ label: 'Direta/Indireta', data: spaceQualValues, backgroundColor: '#F59E0B', borderRadius: 6, borderSkipped: false }] }, { plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(context) { return context.label + ': ' + context.parsed.y + ' alertas'; } } } }, scales: { x: { grid: { display: false } }, y: { beginAtZero: true, grid: { display: true } } } });
+                    const directCount = (spaceCounts['Direta'] || spaceCounts['direct'] || spaceCounts['Direct'] || spaceCounts['direta'] || 0);
+                    const indirectCount = (spaceCounts['Indireta'] || spaceCounts['indirect'] || spaceCounts['Indirect'] || spaceCounts['indireta'] || 0);
+                    const labelsStack = ['Total'];
+                    const datasetsStack = [
+                        { label: 'Direta', data: [directCount], backgroundColor: '#10B981', stack: 'total', borderRadius: 6, borderSkipped: false },
+                        { label: 'Indireta', data: [indirectCount], backgroundColor: '#F59E0B', stack: 'total', borderRadius: 6, borderSkipped: false }
+                    ];
+                    criticalSpaceQualChartInstance = createChart('critical-space-qual-chart', criticalSpaceQualChartInstance, 'bar', { labels: labelsStack, datasets: datasetsStack }, { plugins: { legend: { position: 'bottom' }, tooltip: { callbacks: { label: function(context) { return context.dataset.label + ': ' + context.parsed.y + ' alertas'; } } } }, scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, beginAtZero: true, grid: { display: true } } } });
                 }
                 const spontaneityLabels = Object.keys(spontaneityCounts);
-                const spontaneityValues = spontaneityLabels.map(k => spontaneityCounts[k]);
                 if (spontaneityLabels.length) {
-                    criticalSpontaneityChartInstance = createChart('critical-spontaneity-chart', criticalSpontaneityChartInstance, 'bar', { labels: spontaneityLabels, datasets: [{ label: 'Mídia Provocada/Espontânea', data: spontaneityValues, backgroundColor: '#8B5CF6', borderRadius: 6, borderSkipped: false }] }, { plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(context) { return context.label + ': ' + context.parsed.y + ' artigos'; } } } }, scales: { x: { grid: { display: false } }, y: { beginAtZero: true, grid: { display: true } } } });
+                    const espontanea = (spontaneityCounts['Espontânea'] || spontaneityCounts['espontanea'] || spontaneityCounts['Espontanea'] || 0);
+                    const provocada = (spontaneityCounts['Provocada'] || spontaneityCounts['provocada'] || 0);
+                    const labelsStack = ['Total'];
+                    const datasetsStack = [
+                        { label: 'Espontânea', data: [espontanea], backgroundColor: '#3B82F6', stack: 'total', borderRadius: 6, borderSkipped: false },
+                        { label: 'Provocada', data: [provocada], backgroundColor: '#EF4444', stack: 'total', borderRadius: 6, borderSkipped: false }
+                    ];
+                    criticalSpontaneityChartInstance = createChart('critical-spontaneity-chart', criticalSpontaneityChartInstance, 'bar', { labels: labelsStack, datasets: datasetsStack }, { plugins: { legend: { position: 'bottom' }, tooltip: { callbacks: { label: function(context) { return context.dataset.label + ': ' + context.parsed.y + ' artigos'; } } } }, scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, beginAtZero: true, grid: { display: true } } } });
                 }
                 const vehicleLabels = Object.keys(vehicleCounts).slice(0,10);
                 const vehicleValues = vehicleLabels.map(k => vehicleCounts[k]);
@@ -4367,90 +4395,193 @@ alertEl.innerHTML = `                <div class="alert-body-clickable">         
 
         // Função para renderizar a página de Monitoramento de Mídia
         async function renderMediaMonitoringPage() {
-            const companySelect = document.getElementById('media-monitoring-company-select');
-            const reportContent = document.getElementById('media-monitoring-report-content');
-            const loadingMessage = document.getElementById('media-monitoring-loading');
-            
-            if (!companySelect || !reportContent) return;
-            
-            const companyId = companySelect.value;
-            if (!companyId) {
-                reportContent.innerHTML = '<p class="text-gray-500 text-center py-8">Selecione uma empresa para gerar o relatório.</p>';
-                return;
-            }
-            
-            // Mostrar mensagem de carregamento
-            reportContent.innerHTML = '';
-            if (loadingMessage) loadingMessage.style.display = 'block';
-            
+            const companySelect = document.getElementById('media-monitoring-company');
+            const generateBtn = document.getElementById('media-monitoring-generate');
+            const exportBtn = document.getElementById('media-monitoring-export');
+            const reportEl = document.getElementById('media-monitoring-report');
+            const emptyEl = document.getElementById('media-monitoring-empty');
+            const loadingEl = document.getElementById('media-monitoring-loading');
+            if (!companySelect || !generateBtn || !reportEl || !emptyEl) return;
+            reportEl.classList.add('hidden');
+            emptyEl.classList.remove('hidden');
+
             try {
-                // Buscar artigos das últimas 24 horas
-                const getArticles = httpsCallable(functions, 'getArticles');
-                const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-                
-                const result = await getArticles({ 
-                    appId, 
-                    companyId, 
-                    startDate: twentyFourHoursAgo,
-                    limit: 1000
-                });
-                
-                const articles = Array.isArray(result.data) ? result.data : [];
-                
-                // Classificar artigos por sentimento
-                const positiveArticles = articles.filter(article => article.sentiment === 'positive');
-                const negativeArticles = articles.filter(article => article.sentiment === 'negative');
-                const neutralArticles = articles.filter(article => !article.sentiment || article.sentiment === 'neutral');
-                
-                // Gerar HTML básico do relatório
-                reportContent.innerHTML = `
-                    <div class="bg-white rounded-lg shadow p-6 mb-6">
-                        <h3 class="text-xl font-bold mb-4 text-blue-800">DESTAQUES RÁPIDOS</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                            <div class="bg-green-50 p-4 rounded-lg border border-green-200">
-                                <div class="text-sm text-green-600 mb-1">Positivas</div>
-                                <div class="text-2xl font-bold text-green-700">${positiveArticles.length}</div>
-                            </div>
-                            <div class="bg-red-50 p-4 rounded-lg border border-red-200">
-                                <div class="text-sm text-red-600 mb-1">Negativas</div>
-                                <div class="text-2xl font-bold text-red-700">${negativeArticles.length}</div>
-                            </div>
-                            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                                <div class="text-sm text-gray-600 mb-1">Neutras</div>
-                                <div class="text-2xl font-bold text-gray-700">${neutralArticles.length}</div>
-                            </div>
-                            <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                                <div class="text-sm text-blue-600 mb-1">Total</div>
-                                <div class="text-2xl font-bold text-blue-700">${articles.length}</div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="bg-white rounded-lg shadow p-6">
-                        <h3 class="text-lg font-bold mb-4 text-blue-800">DISTRIBUIÇÃO POR SENTIMENTO</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div class="text-center">
-                                <div class="text-3xl font-bold text-green-600">${((positiveArticles.length / articles.length) * 100 || 0).toFixed(1)}%</div>
-                                <div class="text-sm text-gray-600">Positivas</div>
-                            </div>
-                            <div class="text-center">
-                                <div class="text-3xl font-bold text-red-600">${((negativeArticles.length / articles.length) * 100 || 0).toFixed(1)}%</div>
-                                <div class="text-sm text-gray-600">Negativas</div>
-                            </div>
-                            <div class="text-center">
-                                <div class="text-3xl font-bold text-gray-600">${((neutralArticles.length / articles.length) * 100 || 0).toFixed(1)}%</div>
-                                <div class="text-sm text-gray-600">Neutras</div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                
-            } catch (error) {
-                console.error('Erro ao carregar monitoramento de mídia:', error);
-                reportContent.innerHTML = '<p class="text-red-600 text-center py-8">Erro ao carregar o relatório. Tente novamente.</p>';
-            } finally {
-                if (loadingMessage) loadingMessage.style.display = 'none';
+                const companiesSnap = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'companies'));
+                companySelect.innerHTML = '<option value="">Selecione uma empresa...</option>';
+                const items = [];
+                companiesSnap.forEach(d => { const c = d.data() || {}; if (c.status === 'active') items.push({ id: d.id, name: c.name || d.id }); });
+                items.sort((a,b)=>String(a.name||'').localeCompare(String(b.name||'')));
+                items.forEach(c => { const opt = document.createElement('option'); opt.value = c.id; opt.textContent = c.name; companySelect.appendChild(opt); });
+            } catch (e) {
+                console.warn('Falha ao carregar empresas ativas', e);
             }
+
+            const run = async () => {
+                const companyId = companySelect.value;
+                if (!companyId) { reportEl.classList.add('hidden'); emptyEl.classList.remove('hidden'); return; }
+                emptyEl.classList.add('hidden'); reportEl.classList.remove('hidden'); reportEl.innerHTML = '';
+                if (loadingEl) loadingEl.classList.remove('hidden');
+                try {
+                    const settingsGlobalRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'global');
+                    const companySettingsRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', companyId);
+                    const companyDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'companies', companyId);
+                    const [globalSettingsSnap, companySettingsSnap, companyDocSnap] = await Promise.all([getDoc(settingsGlobalRef), getDoc(companySettingsRef), getDoc(companyDocRef)]);
+                    const appLogo = globalSettingsSnap.exists() ? (globalSettingsSnap.data().appLogo || '') : '';
+                    const companyLogo = companySettingsSnap.exists() ? (companySettingsSnap.data().logo || '') : '';
+                    const companyName = companyDocSnap.exists() ? (companyDocSnap.data().name || companyId) : companyId;
+                    const callable = httpsCallable(functions, 'getArticles');
+                    const sinceIso = new Date(Date.now() - 24*60*60*1000).toISOString();
+                    const result = await callable({ appId, companyId, startDate: sinceIso, limit: 1000 });
+                    const items = Array.isArray(result.data) ? result.data : [];
+                    const pos = items.filter(a => a.sentiment === 'positive').length;
+                    const neg = items.filter(a => a.sentiment === 'negative').length;
+                    const neu = items.length - pos - neg;
+                    const kCount = new Map();
+                    const vCount = new Map();
+                    items.forEach(a => {
+                        (Array.isArray(a.keywords) ? a.keywords : []).forEach(k => kCount.set(k, (kCount.get(k)||0)+1));
+                        const v = getDisplaySourceName(a) || (a.source?.name || '-');
+                        vCount.set(v, (vCount.get(v)||0)+1);
+                    });
+                    const topKeyword = Array.from(kCount.entries()).sort((a,b)=>b[1]-a[1])[0]?.[0] || '';
+                    const topVehicles = Array.from(vCount.entries()).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([n,c])=>`${n} (${c})`);
+                    const now = new Date();
+                    const edition = now.getHours()<12 ? 'Matutina' : (now.getHours()<18 ? 'Vespertina' : 'Noturna');
+                    const fmtDate = new Intl.DateTimeFormat('pt-BR').format(now);
+                    const headerLogos = `
+                        <div class="flex justify-between items-center">
+                            <div class="h-12 flex items-center">${appLogo ? `<img src="${appLogo}" class="h-12 w-auto">` : ''}</div>
+                            <div class="h-12 flex items-center">${companyLogo ? `<img src="${companyLogo}" class="h-12 w-auto">` : ''}</div>
+                        </div>
+                        <div class="mt-2 text-sm text-gray-700">RELATÓRIO DE MONITORAMENTO DE MÍDIA — ${companyName}</div>
+                        <div class="text-sm text-gray-600">📅 Data: ${fmtDate} | 🕒 Edição: ${edition}</div>`;
+                    const quick = `
+                        <ul class="list-disc pl-5 text-gray-700 space-y-1">
+                            ${topKeyword ? `<li>O tema \"${topKeyword}\" é destaque hoje.</li>` : ''}
+                            <li>${pos} notícia(s) positiva(s), ${neg} negativa(s), ${neu} neutra(s).</li>
+                            ${topVehicles.length ? `<li>Top veículos: ${topVehicles.join(', ')}.</li>` : ''}
+                        </ul>`;
+                    const itemHtml = (a) => {
+                        const cls = a.sentiment==='positive' ? 'text-green-700' : (a.sentiment==='negative' ? 'text-red-700' : 'text-gray-800');
+                        const vehicle = getDisplaySourceName(a) || (a.source?.name || '-');
+                        const link = a.url || a.link || a.source?.url || a.feedLink || '#';
+                        return `
+                            <div class="border rounded-md p-4 mb-4">
+                                <div class="font-semibold ${cls}">[${a.sentiment==='positive'?'🟢 POSITIVA':(a.sentiment==='negative'?'🔴 NEGATIVA':'⚪ NEUTRA')}]  |  📰 VEÍCULO: ${vehicle}</div>
+                                <div class="mt-2 font-bold">${a.title || a.headline || '-'}</div>
+                                <div class="mt-2 text-sm">${a.description || a.summary || ''}</div>
+                                <a href="${link}" target="_blank" rel="noopener" class="mt-2 inline-block text-indigo-600 hover:underline">CLIQUE AQUI PARA LER A MATÉRIA NA ÍNTEGRA</a>
+                            </div>`;
+                    };
+                    const nm = String(companyName||'').toLowerCase();
+                    const institutional = items.filter(a => {
+                        const t = String(a.title||'').toLowerCase();
+                        const d = String(a.description||'').toLowerCase();
+                        const kws = (Array.isArray(a.keywords)?a.keywords:[]).map(k=>String(k).toLowerCase());
+                        return t.includes(nm) || d.includes(nm) || kws.includes(nm);
+                    });
+                    const market = items.filter(a => !institutional.includes(a));
+                    const institutionalHtml = institutional.map(itemHtml).join('');
+                    const marketHtml = market.map(itemHtml).join('');
+                    reportEl.innerHTML = `
+                        <div class="space-y-6">
+                            <div class="border rounded-md p-4">${headerLogos}</div>
+                            <div class="border rounded-md p-4">
+                                <div class="font-bold mb-2">📌 DESTAQUES RÁPIDOS (Resumo Executivo)</div>
+                                ${quick}
+                            </div>
+                            <div class="border rounded-md p-4">
+                                <div class="font-bold mb-2">SEÇÃO 1: INSTITUCIONAL E MARCA</div>
+                                ${institutionalHtml || '<div class="text-gray-500">Sem itens institucionais nas últimas 24 horas.</div>'}
+                            </div>
+                            <div class="border rounded-md p-4">
+                                <div class="font-bold mb-2">SEÇÃO 2: SETOR E CONCORRÊNCIA</div>
+                                ${marketHtml || '<div class="text-gray-500">Sem itens de mercado nas últimas 24 horas.</div>'}
+                            </div>
+                            <div class="text-sm text-gray-600">Produzido por: Aurora clipping</div>
+                        </div>`;
+                } catch (e) {
+                    try {
+                        const since = Date.now() - 24*60*60*1000;
+                        const baseRef = collection(db, 'artifacts', appId, 'users', companyId, 'articles');
+                        const snap = await getDocs(baseRef);
+                        const items = [];
+                        snap.forEach(docSnap => {
+                            const d = docSnap.data() || {};
+                            if (String(d.status||'') !== 'approved') return;
+                            let ts = null; try { ts = d.approvedAt?.toDate?.() || null; } catch (_) {}
+                            if (!ts) { const f = d.publishedAt || d.isoDate || d.date || null; ts = f ? new Date(f) : null; }
+                            if (ts && ts.getTime() < since) return;
+                            const s = (typeof d?.sentiment?.score === 'number') ? d.sentiment.score : (typeof d?.ai?.sentiment?.score === 'number' ? d.ai.sentiment.score : null);
+                            let label = 'neutral'; if (typeof s === 'number') { if (s >= 0.2) label = 'positive'; else if (s <= -0.2) label = 'negative'; }
+                            items.push({ ...d, id: docSnap.id, sentiment: label });
+                        });
+                        const pos = items.filter(a => a.sentiment==='positive').length;
+                        const neg = items.filter(a => a.sentiment==='negative').length;
+                        const neu = items.length - pos - neg;
+                        const kCount = new Map(); const vCount = new Map();
+                        items.forEach(a => { (Array.isArray(a.keywords)?a.keywords:[]).forEach(k=>kCount.set(k,(kCount.get(k)||0)+1)); const v = getDisplaySourceName(a) || (a.source?.name || '-'); vCount.set(v,(vCount.get(v)||0)+1); });
+                        const topKeyword = Array.from(kCount.entries()).sort((a,b)=>b[1]-a[1])[0]?.[0] || '';
+                        const topVehicles = Array.from(vCount.entries()).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([n,c])=>`${n} (${c})`);
+                        const now = new Date(); const fmtDate = new Intl.DateTimeFormat('pt-BR').format(now);
+                        const edition = now.getHours()<12 ? 'Matutina' : (now.getHours()<18 ? 'Vespertina' : 'Noturna');
+                        const headerLogos = `
+                            <div class="flex justify-between items-center">
+                                <div class="h-12 flex items-center">${appLogo ? `<img src="${appLogo}" class="h-12 w-auto">` : ''}</div>
+                                <div class="h-12 flex items-center">${companyLogo ? `<img src="${companyLogo}" class="h-12 w-auto">` : ''}</div>
+                            </div>
+                            <div class="mt-2 text-sm text-gray-700">RELATÓRIO DE MONITORAMENTO DE MÍDIA — ${companyName}</div>
+                            <div class="text-sm text-gray-600">📅 Data: ${fmtDate} | 🕒 Edição: ${edition}</div>`;
+                        const quick = `
+                            <ul class="list-disc pl-5 text-gray-700 space-y-1">
+                                ${topKeyword ? `<li>O tema \"${topKeyword}\" é destaque hoje.</li>` : ''}
+                                <li>${pos} notícia(s) positiva(s), ${neg} negativa(s), ${neu} neutra(s).</li>
+                                ${topVehicles.length ? `<li>Top veículos: ${topVehicles.join(', ')}.</li>` : ''}
+                            </ul>`;
+                        const itemHtml = (a) => {
+                            const cls = a.sentiment==='positive' ? 'text-green-700' : (a.sentiment==='negative' ? 'text-red-700' : 'text-gray-800');
+                            const vehicle = getDisplaySourceName(a) || (a.source?.name || '-');
+                            const link = a.url || a.link || a.source?.url || a.feedLink || '#';
+                            return `
+                                <div class="border rounded-md p-4 mb-4">
+                                    <div class="font-semibold ${cls}">[${a.sentiment==='positive'?'🟢 POSITIVA':(a.sentiment==='negative'?'🔴 NEGATIVA':'⚪ NEUTRA')}]  |  📰 VEÍCULO: ${vehicle}</div>
+                                    <div class="mt-2 font-bold">${a.title || a.headline || '-'}</div>
+                                    <div class="mt-2 text-sm">${a.description || a.summary || ''}</div>
+                                    <a href="${link}" target="_blank" rel="noopener" class="mt-2 inline-block text-indigo-600 hover:underline">CLIQUE AQUI PARA LER A MATÉRIA NA ÍNTEGRA</a>
+                                </div>`;
+                        };
+                        const nm = String(companyName||'').toLowerCase();
+                        const institutional = items.filter(a => { const t = String(a.title||'').toLowerCase(); const d = String(a.description||'').toLowerCase(); const kws = (Array.isArray(a.keywords)?a.keywords:[]).map(k=>String(k).toLowerCase()); return t.includes(nm) || d.includes(nm) || kws.includes(nm); });
+                        const market = items.filter(a => !institutional.includes(a));
+                        const institutionalHtml = institutional.map(itemHtml).join('');
+                        const marketHtml = market.map(itemHtml).join('');
+                        reportEl.innerHTML = `
+                            <div class="space-y-6">
+                                <div class="border rounded-md p-4">${headerLogos}</div>
+                                <div class="border rounded-md p-4">
+                                    <div class="font-bold mb-2">📌 DESTAQUES RÁPIDOS (Resumo Executivo)</div>
+                                    ${quick}
+                                </div>
+                                <div class="border rounded-md p-4">
+                                    <div class="font-bold mb-2">SEÇÃO 1: INSTITUCIONAL E MARCA</div>
+                                    ${institutionalHtml || '<div class="text-gray-500">Sem itens institucionais nas últimas 24 horas.</div>'}
+                                </div>
+                                <div class="border rounded-md p-4">
+                                    <div class="font-bold mb-2">SEÇÃO 2: SETOR E CONCORRÊNCIA</div>
+                                    ${marketHtml || '<div class="text-gray-500">Sem itens de mercado nas últimas 24 horas.</div>'}
+                                </div>
+                                <div class="text-sm text-gray-600">Produzido por: Aurora clipping</div>
+                            </div>`;
+                    } catch (_) {
+                        reportEl.innerHTML = '<p class="text-red-600 text-center py-8">Erro ao carregar o relatório. Tente novamente.</p>';
+                    }
+                } finally {
+                    if (loadingEl) loadingEl.classList.add('hidden');
+                }
+            };
+
+            generateBtn.onclick = run;
+            if (exportBtn) exportBtn.onclick = () => window.print();
         }
 
         // --- INICIALIZAÇÃO E OUVINTES DE EVENTOS --- 
