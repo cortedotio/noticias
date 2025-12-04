@@ -42,8 +42,6 @@
       })();
     </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5H0uZfZ5uM=" crossorigin="" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
     <!-- CHAVE DA API DO GOOGLE MAPS -->
     <script>window.initMap = window.initMap || function(){ try { /* stub para evitar erro antes da definição real */ } catch(e){} };</script>
@@ -112,6 +110,11 @@
         .animate-blinking-bell {
             animation: blinking-bell 1.5s infinite;
             border-radius: 9999px;
+        }
+
+        @media print {
+            .a4-page { min-height: 297mm; height: 297mm; }
+            .print-page-break { break-after: page; page-break-after: always; }
         }
 
         .keyword-filter.active {
@@ -414,8 +417,7 @@
                             class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-sm">Filtrar</button>
                     </div>
                 </div>
-                <p class="text-gray-600 mb-4">Veja onde as notícias estão acontecendo. Passe o mouse sobre um pino para
-                    ver o título e clique para ver os detalhes.</p>
+                <p class="text-gray-600 mb-4">Veja onde as notícias estão acontecendo. Passe o mouse sobre um pino para ver o título e clique para ver os detalhes.</p>
                 <div id="map"></div>
             </div>
         </section>
@@ -905,50 +907,43 @@
                     </div>
                 </div>
                 <div class="grid grid-cols-1 gap-8">
-                    <div class="p-4 border rounded-lg">
+                    <div class="p-4 border rounded-lg a4-page print-page-break">
                         <h3 class="text-xl font-semibold mb-4 text-center">Notícias por Fonte</h3>
                         <div class="relative h-[420px]">
                             <canvas id="source-chart" class="w-full h-full"></canvas>
                         </div>
                     </div>
-                    <div class="p-4 border rounded-lg">
+                    <div class="p-4 border rounded-lg a4-page print-page-break">
                         <h3 class="text-xl font-semibold mb-4 text-center">Notícias por Canal</h3>
                         <div class="relative h-[420px]">
                             <canvas id="channel-chart" class="w-full h-full"></canvas>
                         </div>
                     </div>
-                    <div class="p-4 border rounded-lg">
+                    <div class="p-4 border rounded-lg a4-page print-page-break">
                         <h3 class="text-xl font-semibold mb-4 text-center">Notícias por Período</h3>
                         <div class="relative h-[420px]">
                             <canvas id="date-chart" class="w-full h-full"></canvas>
                         </div>
                     </div>
-                    <div class="p-4 border rounded-lg">
+                    <div class="p-4 border rounded-lg a4-page print-page-break">
                         <h3 class="text-xl font-semibold mb-4 text-center">Análise de Sentimento</h3>
                         <div class="relative h-[420px]">
                             <canvas id="sentiment-chart" class="w-full h-full"></canvas>
                         </div>
                     </div>
-                    <div class="p-4 border rounded-lg">
+                    <div class="p-4 border rounded-lg a4-page print-page-break">
                         <h3 class="text-xl font-semibold mb-4 text-center">Direta/Indireta</h3>
                         <div class="relative h-[420px]">
                             <canvas id="directness-chart" class="w-full h-full"></canvas>
                         </div>
                     </div>
-                    <div class="p-4 border rounded-lg">
+                    <div class="p-4 border rounded-lg a4-page print-page-break">
                         <h3 class="text-xl font-semibold mb-4 text-center">Espontânea/Provocada</h3>
                         <div class="relative h-[420px]">
                             <canvas id="media-type-chart" class="w-full h-full"></canvas>
                         </div>
                     </div>
-                    <div class="p-4 border rounded-lg">
-                        <h3 class="text-xl font-semibold mb-4 text-center">Mapa Interativo de Notícias</h3>
-                        <div class="flex gap-4">
-                            <div id="news-map" class="relative h-[520px] flex-grow rounded"></div>
-                            <div id="news-map-legend" class="w-48"></div>
-                        </div>
-                        <div id="news-map-detail" class="mt-4 text-sm text-gray-700"></div>
-                    </div>
+                    
                 </div>
             </div>
         </section>
@@ -1710,7 +1705,6 @@ let keywordToTransferInfo = null;
             if (!currentUser) return;
             if (!mapInstance) {
                 window.addEventListener('mapReady', () => renderMapPage(), { once: true });
-                return;
             }
 
             clearMarkers();
@@ -1779,6 +1773,7 @@ let keywordToTransferInfo = null;
                 console.error("Erro ao carregar notícias para o mapa:", error);
                 showAlert("Não foi possível carregar as notícias no mapa. Pode ser necessário criar um índice no Firestore.", "error");
             }
+            
         }
 
         async function handleManualTrigger() {
@@ -2918,7 +2913,7 @@ const mimeMap = { mp3: 'audio/mpeg', m4a: 'audio/mp4', aac: 'audio/aac', wav: 'a
 const audioMime = mimeMap[audioType] || 'audio/mpeg';
 const audioSrc = article.segmentUrl || article.url;
 const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-3\"><source src=\"${audioSrc}\" type=\"${audioMime}\">Seu navegador não suporta áudio.</audio>` : '';
-alertEl.innerHTML = `                <div class="alert-body-clickable">                    <div class="flex justify-between items-start">                        <h4 class="text-lg font-bold text-gray-800 pr-2">${article.title}</h4>                        <div class="flex items-center gap-2 flex-shrink-0">                            <div class="flex flex-col items-end gap-1">${keywordsHTML}</div>                        </div>                    </div>                    <p class="text-sm text-gray-600 mt-2 line-clamp-2">${article.description || 'Descrição não disponível.'}</p>                </div>                ${audioHtml}                ${aiInsightsHTML}                <div class="text-xs text-gray-500 mt-3 flex justify-between items-center">                    <span>${translationHTML}Fonte: ${getDisplaySourceName(article)} | Publicado: ${formattedDate}</span>                    <div>                        <a href="${article.url}" target="_blank" rel="noopener noreferrer" class="text-indigo-600 hover:underline font-semibold">Ler no site original →</a>                        ${deleteButtonHTML}                    </div>                </div>`;
+            alertEl.innerHTML = `                <div class="alert-body-clickable">                    <div class="flex justify-between items-start">                        <h4 class="text-lg font-bold text-gray-800 pr-2">${article.title}</h4>                        <div class="flex items-center gap-2 flex-shrink-0">                            <div class="flex flex-col items-end gap-1">${keywordsHTML}</div>                        </div>                    </div>                    <p class="text-sm text-gray-600 mt-2 line-clamp-2">${article.description || 'Descrição não disponível.'}</p>                </div>                ${audioHtml}                ${aiInsightsHTML}                <div class="text-xs text-gray-500 mt-3 flex justify-between items-center">                    <span>${translationHTML}Fonte: ${getDisplaySourceName(article)} | Publicado: ${formattedDate}</span>                    <div>                        <a href="${article.url}" target="_blank" rel="noopener noreferrer" class="text-indigo-600 hover:underline font-semibold">Ler no site original →</a>                        ${deleteButtonHTML}                    </div>                </div>`;
             const kwContainer = alertEl.querySelector('.flex.items-center.gap-2.flex-shrink-0')?.querySelector('div');
             if (kwContainer) {
                 const sanitizeKey = s => String(s).toLowerCase().trim().replace(/[.#$\[\]/]/g, '_').replace(/\s+/g, '_');
@@ -3214,6 +3209,7 @@ alertEl.innerHTML = `                <div class="alert-body-clickable">         
                 updateCharts();
             });
             updateCharts();
+            
         }
 
         const chartColors = ['#4F46E5', '#06B6D4', '#F59E0B', '#10B981', '#EF4444', '#8B5CF6', '#EC4899'];
@@ -3315,10 +3311,8 @@ alertEl.innerHTML = `                <div class="alert-body-clickable">         
             sentimentChartInstance = createChart('sentiment-chart', sentimentChartInstance, 'line', { labels: allSentiments, datasets }, sentimentChartOptions);
         }
         function renderDirectnessChart(articles, selectedKeywords) {
-            const labels = (() => {
-                const allKws = [...new Set(articles.flatMap(a => a.keywords || [a.keyword]).filter(Boolean))];
-                return allKws.length ? allKws : ['Todos'];
-            })();
+            const showTotal = !selectedKeywords || selectedKeywords.length === 0 || selectedKeywords.includes('Todos');
+            const labels = showTotal ? ['Geral'] : selectedKeywords;
             const containerEl = document.getElementById('directness-chart')?.parentElement;
             if (containerEl) {
                 const desired = Math.max(420, labels.length * 30);
@@ -3326,11 +3320,9 @@ alertEl.innerHTML = `                <div class="alert-body-clickable">         
             }
             const directData = [];
             const indirectData = [];
-            labels.forEach((keyword) => {
-                const isTodos = keyword === 'Todos';
-                const keywordArticles = isTodos ? articles : articles.filter(a => (a.keywords || [a.keyword]).includes(keyword));
+            if (showTotal) {
                 let directCount = 0, indirectCount = 0;
-                keywordArticles.forEach(article => {
+                articles.forEach(article => {
                     const title = (article.title || '').toLowerCase();
                     const desc = (article.description || '').toLowerCase();
                     const kws = (article.keywords || [article.keyword]).map(k => (k || '').toLowerCase());
@@ -3339,7 +3331,21 @@ alertEl.innerHTML = `                <div class="alert-body-clickable">         
                 });
                 directData.push(directCount);
                 indirectData.push(indirectCount);
-            });
+            } else {
+                labels.forEach((keyword) => {
+                    const keywordArticles = articles.filter(a => (a.keywords || [a.keyword]).includes(keyword));
+                    let directCount = 0, indirectCount = 0;
+                    keywordArticles.forEach(article => {
+                        const title = (article.title || '').toLowerCase();
+                        const desc = (article.description || '').toLowerCase();
+                        const kws = (article.keywords || [article.keyword]).map(k => (k || '').toLowerCase());
+                        const direct = kws.some(k => k && (title.includes(k) || desc.includes(k)));
+                        if (direct) directCount++; else indirectCount++;
+                    });
+                    directData.push(directCount);
+                    indirectData.push(indirectCount);
+                });
+            }
             const datasets = [
                 { label: 'Direto', data: directData, backgroundColor: chartColors[0], stack: 'total' },
                 { label: 'Indireto', data: indirectData, backgroundColor: chartColors[1], stack: 'total' }
@@ -3347,10 +3353,8 @@ alertEl.innerHTML = `                <div class="alert-body-clickable">         
             directnessChartInstance = createChart('directness-chart', directnessChartInstance, 'bar', { labels, datasets }, { scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } }, plugins: { legend: { position: 'bottom' } }, indexAxis: 'y' });
         }
         function renderMediaTypeChart(articles, selectedKeywords) {
-            const labels = (() => {
-                const allKws = [...new Set(articles.flatMap(a => a.keywords || [a.keyword]).filter(Boolean))];
-                return allKws.length ? allKws : ['Todos'];
-            })();
+            const showTotal = !selectedKeywords || selectedKeywords.length === 0 || selectedKeywords.includes('Todos');
+            const labels = showTotal ? ['Geral'] : selectedKeywords;
             const containerEl = document.getElementById('media-type-chart')?.parentElement;
             if (containerEl) {
                 const desired = Math.max(420, labels.length * 30);
@@ -3358,17 +3362,26 @@ alertEl.innerHTML = `                <div class="alert-body-clickable">         
             }
             const espontaneaData = [];
             const provocadaData = [];
-            labels.forEach((keyword) => {
-                const isTodos = keyword === 'Todos';
-                const keywordArticles = isTodos ? articles : articles.filter(a => (a.keywords || [a.keyword]).includes(keyword));
+            if (showTotal) {
                 let espontanea = 0, provocada = 0;
-                keywordArticles.forEach(article => {
+                articles.forEach(article => {
                     const raw = article.mediaType;
                     if (raw && /provocada/i.test(raw)) provocada++; else espontanea++;
                 });
                 espontaneaData.push(espontanea);
                 provocadaData.push(provocada);
-            });
+            } else {
+                labels.forEach((keyword) => {
+                    const keywordArticles = articles.filter(a => (a.keywords || [a.keyword]).includes(keyword));
+                    let espontanea = 0, provocada = 0;
+                    keywordArticles.forEach(article => {
+                        const raw = article.mediaType;
+                        if (raw && /provocada/i.test(raw)) provocada++; else espontanea++;
+                    });
+                    espontaneaData.push(espontanea);
+                    provocadaData.push(provocada);
+                });
+            }
             const datasets = [
                 { label: 'Espontânea', data: espontaneaData, backgroundColor: chartColors[2], stack: 'total' },
                 { label: 'Provocada', data: provocadaData, backgroundColor: chartColors[3], stack: 'total' }
@@ -3376,14 +3389,6 @@ alertEl.innerHTML = `                <div class="alert-body-clickable">         
             mediaTypeChartInstance = createChart('media-type-chart', mediaTypeChartInstance, 'bar', { labels, datasets }, { scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } }, plugins: { legend: { position: 'bottom' } }, indexAxis: 'y' });
         }
 
-        let newsMap = null, newsMapLayer = null, newsMapStateLayer = null;
-        function colorFor(value) { const v = Number(value || 0); if (v > 200) return '#0F172A'; if (v > 100) return '#1D4ED8'; if (v > 50) return '#3B82F6'; if (v > 10) return '#93C5FD'; if (v > 0) return '#DBEAFE'; return '#F1F5F9'; }
-        function initNewsMap() { const el = document.getElementById('news-map'); if (!el || typeof L === 'undefined') return; if (newsMap) { try { newsMap.remove(); } catch {} newsMap = null; } newsMap = L.map(el, { zoomControl: true, attributionControl: false }).setView([-14.235, -51.925], 4); fetch('https://unpkg.com/@highcharts/map-collection/countries/br/br-all.geo.json').then(r => r.json()).then(geo => { renderBrazilStates(geo); renderLegend(); }); }
-        function renderLegend() { const legend = document.getElementById('news-map-legend'); if (!legend) return; const bins = [ { t: '0', c: colorFor(0) }, { t: '1–10', c: colorFor(10) }, { t: '11–50', c: colorFor(50) }, { t: '51–100', c: colorFor(100) }, { t: '101–200', c: colorFor(200) }, { t: '200+', c: colorFor(201) } ]; const top = Object.entries(stateNewsMock).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([k,v])=>({ k, v })); const nameByKey = { 'br-sp':'SP','br-rj':'RJ','br-mt':'MT','br-mg':'MG','br-ba':'BA','br-pr':'PR','br-rs':'RS','br-pe':'PE','br-ce':'CE' }; legend.innerHTML = '<div class="text-sm font-semibold mb-2">Legenda</div>' + bins.map(b => `<div class="flex items-center gap-2 mb-1"><span class="inline-block w-6 h-3 rounded" style="background:${b.c}"></span><span class="text-xs text-gray-700">${b.t}</span></div>`).join('') + '<div class="text-sm font-semibold mt-3 mb-1">Top estados</div>' + top.map(t => `<div class="flex items-center gap-2 mb-1"><span class="inline-block w-6 h-3 rounded" style="background:${colorFor(t.v)}"></span><span class="text-xs text-gray-700">${nameByKey[t.k] || t.k.toUpperCase()}: ${t.v}</span></div>`).join('') + '<button id="news-map-back" class="mt-4 w-full px-2 py-1 border rounded">Brasil</button>'; const backBtn = document.getElementById('news-map-back'); if (backBtn) backBtn.addEventListener('click', () => { initNewsMap(); const p = document.getElementById('news-map-detail'); if (p) p.innerHTML = ''; }); }
-        const stateNewsMock = { 'br-sp': 220, 'br-rj': 180, 'br-mt': 75, 'br-mg': 160, 'br-ba': 90, 'br-pr': 130, 'br-rs': 110, 'br-pe': 60, 'br-ce': 55 };
-        function renderBrazilStates(geo) { if (newsMapLayer) try { newsMapLayer.remove(); } catch {} newsMapLayer = L.geoJSON(geo, { style: f => ({ color: '#374151', weight: 1, fillColor: colorFor(stateNewsMock[f.properties['hc-key']] || 0), fillOpacity: 0.8 }), onEachFeature: (feature, layer) => { const name = feature.properties.name; const key = feature.properties['hc-key']; const count = stateNewsMock[key] || 0; layer.bindTooltip(`${name}: ${count} notícias`, { sticky: true }); layer.on('click', () => loadState(key)); } }).addTo(newsMap); try { newsMap.fitBounds(newsMapLayer.getBounds()); } catch {} }
-        function loadState(key) { const path = `https://unpkg.com/@highcharts/map-collection/countries/br/${key}-all.geo.json`; fetch(path).then(r => r.json()).then(geo => { if (newsMapLayer) try { newsMapLayer.remove(); } catch {} if (newsMapStateLayer) try { newsMapStateLayer.remove(); } catch {} newsMapStateLayer = L.geoJSON(geo, { style: f => { const val = Math.floor(Math.random() * 80); return { color: '#1F2937', weight: 1, fillColor: colorFor(val), fillOpacity: 0.8 }; }, onEachFeature: (feature, layer) => { const name = feature.properties.name; const val = Math.floor(Math.random() * 80); layer.bindTooltip(`${name}: ${val} notícias`, { sticky: true }); layer.on('click', () => showCityDetails(key, feature.properties['hc-key'], name)); } }).addTo(newsMap); try { newsMap.fitBounds(newsMapStateLayer.getBounds()); } catch {} }); }
-        function showCityDetails(stateKey, muniKey, muniName) { const panel = document.getElementById('news-map-detail'); if (!panel) return; const list = [ { name: 'Cidade A', value: Math.floor(Math.random() * 20) + 1 }, { name: 'Cidade B', value: Math.floor(Math.random() * 20) + 1 }, { name: 'Cidade C', value: Math.floor(Math.random() * 20) + 1 } ]; panel.innerHTML = `<div class="font-semibold mb-2">${muniName}</div>` + list.map(x => `<div>${x.name}: ${x.value} notícias</div>`).join(''); }
 
         async function setupSearchPage() { if (!currentUser) return; if (searchInput) searchInput.value = ''; if (searchResults) searchResults.innerHTML = '<p class="text-gray-500">A carregar todos os artigos para pesquisa...</p>'; try { const q = query(collection(db, "artifacts", appId, "users", currentUser.companyId, "articles"), orderBy("publishedAt", "desc")); const articlesSnapshot = await getDocs(q); allCompanyArticles = articlesSnapshot.docs.map(d => ({ ...d.data(), id: d.id })); if (searchResults) searchResults.innerHTML = `<p class="text-gray-500">Pronto para pesquisar em ${allCompanyArticles.length} artigos. Digite um termo ou utilize os filtros.</p>`; setupFilters(); } catch (error) { console.error("Erro ao buscar artigos para pesquisa:", error); if (searchResults) searchResults.innerHTML = '<p class="text-red-500">Não foi possível carregar os artigos para pesquisa.</p>'; } }
 
@@ -3771,7 +3776,6 @@ alertEl.innerHTML = `                <div class="alert-body-clickable">         
             });
         }
 
-        try { initNewsMap(); } catch (e) {}
 
         async function runDiagnosticsAndManual() {
             try {
@@ -4341,10 +4345,38 @@ alertEl.innerHTML = `                <div class="alert-body-clickable">         
                     const topCh = topChannel || (Object.entries(channelCounts).sort((a,b)=>b[1]-a[1])[0]?.[0] || '-');
                     const topVeh = topVehicle || (Object.entries(vehicleCounts).sort((a,b)=>b[1]-a[1])[0]?.[0] || '-');
                     criticalSummary.innerHTML = `
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
-                            <div class="p-3 bg-white rounded shadow"><div class="text-sm text-gray-500">TOTAL DE NOTÍCIAS</div><div class="text-2xl font-bold">${total}</div></div>
-                            <div class="p-3 bg-white rounded shadow"><div class="text-sm text-gray-500">Mídia com maior número de notícias</div><div class="text-lg font-semibold">${topCh}</div></div>
-                            <div class="p-3 bg-white rounded shadow"><div class="text-sm text-gray-500">Fonte com maior número de notícias</div><div class="text-lg font-semibold">${topVeh}</div></div>
+                        <div class="rounded-lg overflow-hidden shadow">
+                            <div class="bg-amber-500 px-6 py-6 flex items-center justify-between">
+                                <div class="text-white">
+                                    <div class="text-2xl sm:text-3xl font-bold">TOTAL DE NOTÍCIAS</div>
+                                </div>
+                                <div class="text-white text-5xl sm:text-6xl font-extrabold leading-none">${total}</div>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2">
+                                <div class="bg-cyan-800 text-white p-6 space-y-6">
+                                    <div>
+                                        <div class="text-sm opacity-80">Mídia com maior número de notícias</div>
+                                        <div class="text-xl font-semibold">${topCh}</div>
+                                    </div>
+                                    <div class="border-t border-cyan-700 pt-6">
+                                        <div class="text-sm opacity-80">Veículo com maior número de notícias</div>
+                                        <div class="text-xl font-semibold">${topVeh}</div>
+                                    </div>
+                                </div>
+                                <div class="bg-yellow-100 p-6">
+                                    <div class="text-gray-800 font-semibold mb-2">Conteúdo:</div>
+                                    <ul class="list-disc list-inside text-gray-700 space-y-1">
+                                        <li><a href="#critical-channel-chart" class="hover:underline">Distribuição por mídia</a></li>
+                                        <li><a href="#critical-space-chart" class="hover:underline">Notícias por tipo de texto</a></li>
+                                        <li><a href="#critical-space-qual-chart" class="hover:underline">Direta/Indireta</a></li>
+                                        <li><a href="#critical-spontaneity-chart" class="hover:underline">Espontânea/Provocada</a></li>
+                                        <li><a href="#critical-wordcloud" class="hover:underline">Assunto</a></li>
+                                        <li><a href="#critical-vehicle-chart" class="hover:underline">Notícias por veículo</a></li>
+                                        <li><a href="#critical-valuation-chart" class="hover:underline">Análise qualitativa</a></li>
+                                        <li><a href="#critical-date-chart" class="hover:underline">Notícias por data de publicação</a></li>
+                                    </ul>
+                                </div>
+                            </div>
                         </div>
                     `;
                 }
