@@ -16,7 +16,21 @@ const { ImageAnnotatorClient } = require('@google-cloud/vision');
 const { VideoIntelligenceServiceClient } = require('@google-cloud/video-intelligence');
 const { Client } = require("@googlemaps/google-maps-services-js");
 const crypto = require('crypto');
-const { isWithinWindow } = require('../server/index.js');
+// Janela horária local (evita dependência de módulos ESM do servidor)
+function isWithinWindow(startHHMM, endHHMM, date = new Date()) {
+  if (!startHHMM || !endHHMM) return false;
+  const [sh, sm] = String(startHHMM).split(':').map(Number);
+  const [eh, em] = String(endHHMM).split(':').map(Number);
+  if ([sh, sm, eh, em].some(n => Number.isNaN(n))) return false;
+  const start = new Date(date); start.setHours(sh, sm, 0, 0);
+  const end = new Date(date); end.setHours(eh, em, 0, 0);
+  if (end < start) {
+    if (date >= start) return true;
+    const prevStart = new Date(start); prevStart.setDate(prevStart.getDate() - 1);
+    return date <= end && date >= prevStart;
+  }
+  return date >= start && date <= end;
+}
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -458,8 +472,10 @@ async function fetchAllNews() {
     for (const company of allCompaniesData) {
         functions.logger.info(`--- Processando empresa: ${company.companyName} ---`);
         
-        // Verificar se está dentro da janela permitida
-        if (!isWithinWindow(settings.newsWindowStart, settings.newsWindowEnd)) {
+        // Verificar se está dentro da janela permitida (preferir campos fetchWindow*)
+        const winStart = settings.fetchWindowStart || settings.newsWindowStart;
+        const winEnd = settings.fetchWindowEnd || settings.newsWindowEnd;
+        if (!isWithinWindow(winStart, winEnd)) {
             functions.logger.info(`Fora da janela permitida (${settings.newsWindowStart} - ${settings.newsWindowEnd}), pulando empresa ${company.companyName}`);
             continue;
         }
