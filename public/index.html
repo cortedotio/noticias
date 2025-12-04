@@ -42,6 +42,8 @@
       })();
     </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5H0uZfZ5uM=" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
     <!-- CHAVE DA API DO GOOGLE MAPS -->
     <script>window.initMap = window.initMap || function(){ try { /* stub para evitar erro antes da definição real */ } catch(e){} };</script>
@@ -902,7 +904,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="grid grid-cols-1 gap-8">
                     <div class="p-4 border rounded-lg">
                         <h3 class="text-xl font-semibold mb-4 text-center">Notícias por Fonte</h3>
                         <div class="relative h-[420px]">
@@ -938,6 +940,14 @@
                         <div class="relative h-[420px]">
                             <canvas id="media-type-chart" class="w-full h-full"></canvas>
                         </div>
+                    </div>
+                    <div class="p-4 border rounded-lg">
+                        <h3 class="text-xl font-semibold mb-4 text-center">Mapa Interativo de Notícias</h3>
+                        <div class="flex gap-4">
+                            <div id="news-map" class="relative h-[520px] flex-grow rounded"></div>
+                            <div id="news-map-legend" class="w-48"></div>
+                        </div>
+                        <div id="news-map-detail" class="mt-4 text-sm text-gray-700"></div>
                     </div>
                 </div>
             </div>
@@ -1284,14 +1294,12 @@
             </div>
 
             <div id="report-content" class="bg-white p-8 md:p-12 rounded-lg shadow-lg">
-                <div class="flex justify-between items-start border-b-2 pb-4 mb-4">
-                    <div id="aurora-clipping-logo" class="flex items-center text-gray-500">
-                    </div>
-                    <div id="report-logo-container" class="h-16 flex-grow flex justify-center items-center">
-                    </div>
+                <div class="flex justify-between items-center border-b border-gray-200 pb-3 mb-4">
+                    <div id="aurora-clipping-logo" class="flex items-center text-gray-500"></div>
+                    <div id="report-logo-container" class="h-16 md:h-20 flex-grow flex justify-center items-center"></div>
                     <div class="text-right">
-                        <h2 class="text-2xl font-bold text-gray-800">Relatório de Notícia</h2>
-                        <p id="report-date" class="text-sm text-gray-500"></p>
+                        <h2 class="text-xl md:text-2xl font-bold text-gray-800">Relatório de Notícia</h2>
+                        <p id="report-date" class="text-xs md:text-sm text-gray-500"></p>
                     </div>
                 </div>
 
@@ -3050,6 +3058,8 @@ alertEl.innerHTML = `                <div class="alert-body-clickable">         
         }
 
         async function handleKeywordSentimentChange(e) {
+            const detailLockEl = document.getElementById('article-detail-page');
+            if (detailLockEl && detailLockEl.dataset.lockAnalyses === 'true' && detailLockEl.contains(e.target)) return;
             const { keyword, word } = e.target.dataset;
             const score = parseFloat(e.target.dataset.sentiment);
             const alertEl = e.target.closest('.fade-in');
@@ -3074,6 +3084,8 @@ alertEl.innerHTML = `                <div class="alert-body-clickable">         
         }
 
         async function handleKeywordMediaTypeChange(e) {
+            const detailLockEl2 = document.getElementById('article-detail-page');
+            if (detailLockEl2 && detailLockEl2.dataset.lockAnalyses === 'true' && detailLockEl2.contains(e.target)) return;
             const { keyword, word } = e.target.dataset;
             const mt = e.target.dataset.mediaType;
             const alertEl = e.target.closest('.fade-in');
@@ -3097,6 +3109,8 @@ alertEl.innerHTML = `                <div class="alert-body-clickable">         
         }
 
         async function handleKeywordDirectnessChange(e) {
+            const detailLockEl3 = document.getElementById('article-detail-page');
+            if (detailLockEl3 && detailLockEl3.dataset.lockAnalyses === 'true' && detailLockEl3.contains(e.target)) return;
             const { keyword, word } = e.target.dataset;
             const isDirect = String(e.target.dataset.directness) === 'true';
             const alertEl = e.target.closest('.fade-in');
@@ -3297,11 +3311,19 @@ alertEl.innerHTML = `                <div class="alert-body-clickable">         
                 const dataInPercentage = totalSentiments > 0 ? [(sentimentCounts.positive / totalSentiments) * 100, (sentimentCounts.neutral / totalSentiments) * 100, (sentimentCounts.negative / totalSentiments) * 100] : [0, 0, 0];
                 datasets.push({ label: isTodos ? 'Todos' : keyword, data: dataInPercentage, borderColor: chartColors[index % chartColors.length], borderWidth: 2, fill: false });
             });
-            const sentimentChartOptions = { scales: { y: { ticks: { callback: function (value) { return value + '%'; } }, min: 0, max: 100 } }, plugins: { tooltip: { callbacks: { label: function (context) { let label = context.dataset.label || ''; if (label) { label += ': '; } if (context.parsed.y !== null) { label += context.parsed.y.toFixed(2) + '%'; } return label; } } } } };
+            const sentimentChartOptions = { scales: { y: { ticks: { callback: function (value) { return value + '%'; } }, min: 0, max: 100 } }, plugins: { legend: { position: 'bottom', align: 'center' }, tooltip: { callbacks: { label: function (context) { let label = context.dataset.label || ''; if (label) { label += ': '; } if (context.parsed.y !== null) { label += context.parsed.y.toFixed(2) + '%'; } return label; } } } } };
             sentimentChartInstance = createChart('sentiment-chart', sentimentChartInstance, 'line', { labels: allSentiments, datasets }, sentimentChartOptions);
         }
         function renderDirectnessChart(articles, selectedKeywords) {
-            const labels = (selectedKeywords && selectedKeywords.length) ? selectedKeywords : ['Todos'];
+            const labels = (() => {
+                const allKws = [...new Set(articles.flatMap(a => a.keywords || [a.keyword]).filter(Boolean))];
+                return allKws.length ? allKws : ['Todos'];
+            })();
+            const containerEl = document.getElementById('directness-chart')?.parentElement;
+            if (containerEl) {
+                const desired = Math.max(420, labels.length * 30);
+                containerEl.style.height = desired + 'px';
+            }
             const directData = [];
             const indirectData = [];
             labels.forEach((keyword) => {
@@ -3322,10 +3344,18 @@ alertEl.innerHTML = `                <div class="alert-body-clickable">         
                 { label: 'Direto', data: directData, backgroundColor: chartColors[0], stack: 'total' },
                 { label: 'Indireto', data: indirectData, backgroundColor: chartColors[1], stack: 'total' }
             ];
-            directnessChartInstance = createChart('directness-chart', directnessChartInstance, 'bar', { labels, datasets }, { scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } }, plugins: { legend: { position: 'bottom' } } });
+            directnessChartInstance = createChart('directness-chart', directnessChartInstance, 'bar', { labels, datasets }, { scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } }, plugins: { legend: { position: 'bottom' } }, indexAxis: 'y' });
         }
         function renderMediaTypeChart(articles, selectedKeywords) {
-            const labels = (selectedKeywords && selectedKeywords.length) ? selectedKeywords : ['Todos'];
+            const labels = (() => {
+                const allKws = [...new Set(articles.flatMap(a => a.keywords || [a.keyword]).filter(Boolean))];
+                return allKws.length ? allKws : ['Todos'];
+            })();
+            const containerEl = document.getElementById('media-type-chart')?.parentElement;
+            if (containerEl) {
+                const desired = Math.max(420, labels.length * 30);
+                containerEl.style.height = desired + 'px';
+            }
             const espontaneaData = [];
             const provocadaData = [];
             labels.forEach((keyword) => {
@@ -3343,8 +3373,17 @@ alertEl.innerHTML = `                <div class="alert-body-clickable">         
                 { label: 'Espontânea', data: espontaneaData, backgroundColor: chartColors[2], stack: 'total' },
                 { label: 'Provocada', data: provocadaData, backgroundColor: chartColors[3], stack: 'total' }
             ];
-            mediaTypeChartInstance = createChart('media-type-chart', mediaTypeChartInstance, 'bar', { labels, datasets }, { scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } }, plugins: { legend: { position: 'bottom' } } });
+            mediaTypeChartInstance = createChart('media-type-chart', mediaTypeChartInstance, 'bar', { labels, datasets }, { scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } }, plugins: { legend: { position: 'bottom' } }, indexAxis: 'y' });
         }
+
+        let newsMap = null, newsMapLayer = null, newsMapStateLayer = null;
+        function colorFor(value) { const v = Number(value || 0); if (v > 200) return '#0F172A'; if (v > 100) return '#1D4ED8'; if (v > 50) return '#3B82F6'; if (v > 10) return '#93C5FD'; if (v > 0) return '#DBEAFE'; return '#F1F5F9'; }
+        function initNewsMap() { const el = document.getElementById('news-map'); if (!el || typeof L === 'undefined') return; if (newsMap) { try { newsMap.remove(); } catch {} newsMap = null; } newsMap = L.map(el, { zoomControl: true, attributionControl: false }).setView([-14.235, -51.925], 4); fetch('https://unpkg.com/@highcharts/map-collection/countries/br/br-all.geo.json').then(r => r.json()).then(geo => { renderBrazilStates(geo); renderLegend(); }); }
+        function renderLegend() { const legend = document.getElementById('news-map-legend'); if (!legend) return; const bins = [ { t: '0', c: colorFor(0) }, { t: '1–10', c: colorFor(10) }, { t: '11–50', c: colorFor(50) }, { t: '51–100', c: colorFor(100) }, { t: '101–200', c: colorFor(200) }, { t: '200+', c: colorFor(201) } ]; const top = Object.entries(stateNewsMock).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([k,v])=>({ k, v })); const nameByKey = { 'br-sp':'SP','br-rj':'RJ','br-mt':'MT','br-mg':'MG','br-ba':'BA','br-pr':'PR','br-rs':'RS','br-pe':'PE','br-ce':'CE' }; legend.innerHTML = '<div class="text-sm font-semibold mb-2">Legenda</div>' + bins.map(b => `<div class="flex items-center gap-2 mb-1"><span class="inline-block w-6 h-3 rounded" style="background:${b.c}"></span><span class="text-xs text-gray-700">${b.t}</span></div>`).join('') + '<div class="text-sm font-semibold mt-3 mb-1">Top estados</div>' + top.map(t => `<div class="flex items-center gap-2 mb-1"><span class="inline-block w-6 h-3 rounded" style="background:${colorFor(t.v)}"></span><span class="text-xs text-gray-700">${nameByKey[t.k] || t.k.toUpperCase()}: ${t.v}</span></div>`).join('') + '<button id="news-map-back" class="mt-4 w-full px-2 py-1 border rounded">Brasil</button>'; const backBtn = document.getElementById('news-map-back'); if (backBtn) backBtn.addEventListener('click', () => { initNewsMap(); const p = document.getElementById('news-map-detail'); if (p) p.innerHTML = ''; }); }
+        const stateNewsMock = { 'br-sp': 220, 'br-rj': 180, 'br-mt': 75, 'br-mg': 160, 'br-ba': 90, 'br-pr': 130, 'br-rs': 110, 'br-pe': 60, 'br-ce': 55 };
+        function renderBrazilStates(geo) { if (newsMapLayer) try { newsMapLayer.remove(); } catch {} newsMapLayer = L.geoJSON(geo, { style: f => ({ color: '#374151', weight: 1, fillColor: colorFor(stateNewsMock[f.properties['hc-key']] || 0), fillOpacity: 0.8 }), onEachFeature: (feature, layer) => { const name = feature.properties.name; const key = feature.properties['hc-key']; const count = stateNewsMock[key] || 0; layer.bindTooltip(`${name}: ${count} notícias`, { sticky: true }); layer.on('click', () => loadState(key)); } }).addTo(newsMap); try { newsMap.fitBounds(newsMapLayer.getBounds()); } catch {} }
+        function loadState(key) { const path = `https://unpkg.com/@highcharts/map-collection/countries/br/${key}-all.geo.json`; fetch(path).then(r => r.json()).then(geo => { if (newsMapLayer) try { newsMapLayer.remove(); } catch {} if (newsMapStateLayer) try { newsMapStateLayer.remove(); } catch {} newsMapStateLayer = L.geoJSON(geo, { style: f => { const val = Math.floor(Math.random() * 80); return { color: '#1F2937', weight: 1, fillColor: colorFor(val), fillOpacity: 0.8 }; }, onEachFeature: (feature, layer) => { const name = feature.properties.name; const val = Math.floor(Math.random() * 80); layer.bindTooltip(`${name}: ${val} notícias`, { sticky: true }); layer.on('click', () => showCityDetails(key, feature.properties['hc-key'], name)); } }).addTo(newsMap); try { newsMap.fitBounds(newsMapStateLayer.getBounds()); } catch {} }); }
+        function showCityDetails(stateKey, muniKey, muniName) { const panel = document.getElementById('news-map-detail'); if (!panel) return; const list = [ { name: 'Cidade A', value: Math.floor(Math.random() * 20) + 1 }, { name: 'Cidade B', value: Math.floor(Math.random() * 20) + 1 }, { name: 'Cidade C', value: Math.floor(Math.random() * 20) + 1 } ]; panel.innerHTML = `<div class="font-semibold mb-2">${muniName}</div>` + list.map(x => `<div>${x.name}: ${x.value} notícias</div>`).join(''); }
 
         async function setupSearchPage() { if (!currentUser) return; if (searchInput) searchInput.value = ''; if (searchResults) searchResults.innerHTML = '<p class="text-gray-500">A carregar todos os artigos para pesquisa...</p>'; try { const q = query(collection(db, "artifacts", appId, "users", currentUser.companyId, "articles"), orderBy("publishedAt", "desc")); const articlesSnapshot = await getDocs(q); allCompanyArticles = articlesSnapshot.docs.map(d => ({ ...d.data(), id: d.id })); if (searchResults) searchResults.innerHTML = `<p class="text-gray-500">Pronto para pesquisar em ${allCompanyArticles.length} artigos. Digite um termo ou utilize os filtros.</p>`; setupFilters(); } catch (error) { console.error("Erro ao buscar artigos para pesquisa:", error); if (searchResults) searchResults.innerHTML = '<p class="text-red-500">Não foi possível carregar os artigos para pesquisa.</p>'; } }
 
@@ -3439,6 +3478,9 @@ alertEl.innerHTML = `                <div class="alert-body-clickable">         
             const target = e.target;
             if (!target) return;
             // Per-keyword toggles
+            const detailLockEl = document.getElementById('article-detail-page');
+            const isLocked = detailLockEl && detailLockEl.dataset.lockAnalyses === 'true' && detailLockEl.contains(target);
+            if (isLocked) return;
             if (target.closest('.keyword-sentiment-btn')) {
                 const container = target.closest('.keyword-sentiment-container');
                 const menu = container?.querySelector('.keyword-sentiment-menu');
@@ -3523,8 +3565,11 @@ alertEl.innerHTML = `                <div class="alert-body-clickable">         
             reportDateEl.textContent = `Gerado em: ${new Date().toLocaleDateString('pt-BR')}`;
             detailTitleEl.textContent = article.title;
             
-            // Verificar se estamos no contexto de Relatório de Notícias (não permite edição de análises)
+            // Verificar se estamos no contexto de Relatório de Notícias (somente leitura)
             const isNewsReport = detailTitleEl.closest('#report-content')?.querySelector('h2')?.textContent === 'Relatório de Notícia';
+            const isReadOnly = isNewsReport;
+            const detailSectionLock = document.getElementById('article-detail-page');
+            if (detailSectionLock) { detailSectionLock.dataset.lockAnalyses = isReadOnly ? 'true' : 'false'; }
             
             const fullContent = article.content || article.description || 'Conteúdo completo não disponível.';
             const initialParagraphs = fullContent.split('\n').filter(p => p.trim() !== '').map(p => `<p class="mb-4">${p}</p>`).join('');
@@ -3606,8 +3651,8 @@ alertEl.innerHTML = `                <div class="alert-body-clickable">         
             const keywordsText = (article.keywords || []).join(', ');
             reportMetaGrid.innerHTML += createMetaItem('Palavras-Chave', keywordsText);
 
-            // Análises por palavra‑chave (detalhe) logo após “Palavras‑Chave”
-            (function () {
+            // Análises por palavra‑chave (somente na tela de Relatório de Alertas)
+            if (!isReadOnly) (function () {
                 const detailSection = document.getElementById('article-detail-page');
                 if (detailSection) { detailSection.dataset.id = article.id; }
                 const sanitizeKey = s => String(s).toLowerCase().trim().replace(/[.#$\[\]/]/g, '_').replace(/\s+/g, '_');
@@ -3663,19 +3708,17 @@ alertEl.innerHTML = `                <div class="alert-body-clickable">         
             else if (sentimentScore < -0.25) { sentimentText = 'Negativo'; }
             const sentimentHTML = createMetaItem('Sentimento', sentimentText);
 
-            // Badges: Direta/Indireta
+            // Texto simples: Direta/Indireta
             const titleLower = (article.title || '').toLowerCase();
             const descLower = (article.description || '').toLowerCase();
             const kwsLower = (article.keywords || [article.keyword]).map(k => (k || '').toLowerCase());
             const isDirect = kwsLower.some(k => k && (titleLower.includes(k) || descLower.includes(k)));
-            const directBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${isDirect ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">${isDirect ? 'Direta' : 'Indireta'}</span>`;
-            reportMetaGrid.innerHTML += `<div class="flex flex-col"><span class="font-semibold text-gray-800">Direta/Indireta</span><span>${directBadge}</span></div>`;
+            reportMetaGrid.innerHTML += createMetaItem('Direta/Indireta', isDirect ? 'Direta' : 'Indireta');
 
-            // Badges: Tipo de Mídia
+            // Texto simples: Tipo de Mídia
             const mediaRaw = article.mediaType;
             const isProvocada = mediaRaw && /provocada/i.test(mediaRaw);
-            const mediaBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${isProvocada ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'}">${isProvocada ? 'Provocada' : 'Espontânea'}</span>`;
-            reportMetaGrid.innerHTML += `<div class="flex flex-col"><span class="font-semibold text-gray-800">Tipo de Mídia</span><span>${mediaBadge}</span></div>`;
+            reportMetaGrid.innerHTML += createMetaItem('Tipo de Mídia', isProvocada ? 'Provocada' : 'Espontânea');
             reportMetaGrid.innerHTML += sentimentHTML;
 
             if (article.author) {
@@ -3727,6 +3770,8 @@ alertEl.innerHTML = `                <div class="alert-body-clickable">         
                 if (pendingAlertsList) { pendingAlertsList.innerHTML = '<p class="text-red-500">Erro ao carregar alertas.</p>'; }
             });
         }
+
+        try { initNewsMap(); } catch (e) {}
 
         async function runDiagnosticsAndManual() {
             try {
@@ -4320,7 +4365,7 @@ alertEl.innerHTML = `                <div class="alert-body-clickable">         
                         { label: 'Direta', data: [directCount], backgroundColor: '#10B981', stack: 'total', borderRadius: 6, borderSkipped: false },
                         { label: 'Indireta', data: [indirectCount], backgroundColor: '#F59E0B', stack: 'total', borderRadius: 6, borderSkipped: false }
                     ];
-                    criticalSpaceQualChartInstance = createChart('critical-space-qual-chart', criticalSpaceQualChartInstance, 'bar', { labels: labelsStack, datasets: datasetsStack }, { plugins: { legend: { position: 'bottom' }, tooltip: { callbacks: { label: function(context) { return context.dataset.label + ': ' + context.parsed.y + ' alertas'; } } } }, scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, beginAtZero: true, grid: { display: true } } } });
+                    criticalSpaceQualChartInstance = createChart('critical-space-qual-chart', criticalSpaceQualChartInstance, 'bar', { labels: labelsStack, datasets: datasetsStack }, { plugins: { legend: { position: 'bottom' }, tooltip: { callbacks: { label: function(context) { return context.dataset.label + ': ' + context.parsed.x + ' alertas'; } } } }, scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, beginAtZero: true, grid: { display: true } } }, indexAxis: 'y' });
                 }
                 const spontaneityLabels = Object.keys(spontaneityCounts);
                 if (spontaneityLabels.length) {
@@ -4331,7 +4376,7 @@ alertEl.innerHTML = `                <div class="alert-body-clickable">         
                         { label: 'Espontânea', data: [espontanea], backgroundColor: '#3B82F6', stack: 'total', borderRadius: 6, borderSkipped: false },
                         { label: 'Provocada', data: [provocada], backgroundColor: '#EF4444', stack: 'total', borderRadius: 6, borderSkipped: false }
                     ];
-                    criticalSpontaneityChartInstance = createChart('critical-spontaneity-chart', criticalSpontaneityChartInstance, 'bar', { labels: labelsStack, datasets: datasetsStack }, { plugins: { legend: { position: 'bottom' }, tooltip: { callbacks: { label: function(context) { return context.dataset.label + ': ' + context.parsed.y + ' artigos'; } } } }, scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, beginAtZero: true, grid: { display: true } } } });
+                    criticalSpontaneityChartInstance = createChart('critical-spontaneity-chart', criticalSpontaneityChartInstance, 'bar', { labels: labelsStack, datasets: datasetsStack }, { plugins: { legend: { position: 'bottom' }, tooltip: { callbacks: { label: function(context) { return context.dataset.label + ': ' + context.parsed.x + ' artigos'; } } } }, scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, beginAtZero: true, grid: { display: true } } }, indexAxis: 'y' });
                 }
                 const vehicleLabels = Object.keys(vehicleCounts).slice(0,10);
                 const vehicleValues = vehicleLabels.map(k => vehicleCounts[k]);
