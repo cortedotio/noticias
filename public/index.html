@@ -113,6 +113,7 @@
             animation: blinking-bell 1.5s infinite;
             border-radius: 9999px;
         }
+        
 
         @media print {
             .a4-page { min-height: 297mm; height: 297mm; }
@@ -934,7 +935,7 @@
                         </div>
                     </div>
                     <div class="p-4 border rounded-lg a4-page print-page-break">
-                        <h3 class="text-xl font-semibold mb-4 text-center">Direta/Indireta</h3>
+                        <h3 class="text-xl font-semibold mb-4 text-center">Citações Direta/Indireta</h3>
                         <div class="relative h-[420px]">
                             <canvas id="directness-chart" class="w-full h-full"></canvas>
                         </div>
@@ -1186,9 +1187,15 @@
             </div>
             <button id="critical-generate-btn" class="mb-6 w-full bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700">Gerar Relatório</button>
 
+            <div id="critical-header" class="mb-6 text-center">
+                <div class="text-3xl font-bold text-gray-900">Relatório de Análise Crítica</div>
+                <div id="critical-header-company" class="text-xl font-semibold text-gray-700 mt-2"></div>
+                <div id="critical-header-period" class="text-sm text-gray-500 mt-1"></div>
+            </div>
+
             <div id="critical-summary" class="mb-6 p-4 bg-gray-50 rounded-md text-gray-800"></div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div class="grid grid-cols-2 gap-8 items-stretch">
                 <div class="p-4 bg-white rounded-lg shadow-lg min-h-[520px] h-full">
                     <h3 class="text-xl font-semibold mb-2 text-orange-500 text-left">Distribuição por mídia</h3>
                     <div class="flex gap-4 items-start">
@@ -1203,29 +1210,44 @@
                     <div id="critical-keywords-by-media" class="flex flex-col gap-6"></div>
                 </div>
                 <div class="p-4 bg-white rounded-lg shadow-lg min-h-[420px] lg:col-span-2">
-                    <h3 class="text-xl font-semibold mb-2 text-orange-500 text-left">Notícias por tipo de texto</h3>
-                    <div class="grid grid-cols-5 gap-4 items-stretch">
-                        <div class="col-span-2">
+                    <h3 class="text-xl font-semibold mb-2 text-orange-500 text-left">Distribuição por texto</h3>
+                    <div class="grid grid-cols-2 gap-4 items-stretch">
+                        <div>
                             <canvas id="critical-space-chart" class="w-full h-full"></canvas>
                         </div>
-                        <div class="col-span-3">
-                            <div id="critical-space-detail-list" class="w-full h-full flex flex-col gap-6"></div>
+                        <div>
+                            <div id="critical-space-detail-list" class="flex flex-col gap-6"></div>
                         </div>
                     </div>
                 </div>
-                <div class="p-4 bg-white rounded-lg shadow-lg h-[420px]">
-                    <h3 class="text-xl font-semibold mb-4 text-center">Direta/Indireta</h3>
-                    <canvas id="critical-space-qual-chart" class="w-full h-full"></canvas>
+                <div class="p-4 bg-white rounded-lg shadow-lg lg:col-span-2">
+                    <h3 class="text-xl font-semibold mb-4 text-center">Citações Direta/Indireta</h3>
+                    <div class="grid grid-cols-2 gap-4 items-stretch">
+                        <div>
+                            <canvas id="critical-space-qual-chart" class="w-full h-full"></canvas>
+                        </div>
+                        <div>
+                            <div id="critical-directness-detail" style="height:400px"><canvas id="critical-directness-detail-chart"></canvas></div>
+                        </div>
+                    </div>
                 </div>
-                <div class="p-4 bg-white rounded-lg shadow-lg h-[420px]">
+                <div class="p-4 bg-white rounded-lg shadow-lg lg:col-span-2">
                     <h3 class="text-xl font-semibold mb-4 text-center">Mídia Provocada/Espontânea</h3>
-                    <canvas id="critical-spontaneity-chart" class="w-full h-full"></canvas>
+                    <div class="grid grid-cols-2 gap-4 items-stretch">
+                        <div>
+                            <canvas id="critical-spontaneity-total-chart" class="w-full h-full"></canvas>
+                        </div>
+                        <div>
+                            <div id="critical-spontaneity-detail" style="height:400px"><canvas id="critical-spontaneity-detail-chart"></canvas></div>
+                        </div>
+                    </div>
                 </div>
+
                 <div class="p-4 bg-white rounded-lg shadow-lg h-[420px]">
                     <h3 class="text-xl font-semibold mb-4 text-center">Notícias por Fonte</h3>
                     <canvas id="critical-vehicle-chart" class="w-full h-full"></canvas>
                 </div>
-                <div class="p-4 bg-white rounded-lg shadow-lg h-[420px]">
+                <div class="p-4 bg-white rounded-lg shadow-lg h-[420px] lg:col-span-2">
                     <h3 class="text-xl font-semibold mb-4 text-center">Gráfico de Sentimento</h3>
                     <canvas id="critical-valuation-chart" class="w-full h-full"></canvas>
                 </div>
@@ -3295,14 +3317,26 @@ const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-
                 .start();
         }
         function renderSourceChart(articles, selectedKeywords) {
-            const datasets = [];
-            const allSources = [...new Set(articles.map(a => getDisplaySourceName(a)))].sort();
-            selectedKeywords.forEach((keyword, index) => {
-                const isTodos = keyword === 'Todos';
-                const sourceCounts = allSources.map(source => articles.filter(a => (isTodos || (a.keywords || [a.keyword]).includes(keyword)) && getDisplaySourceName(a) === source).length);
-                datasets.push({ label: isTodos ? 'Todos' : keyword, data: sourceCounts, borderColor: chartColors[index % chartColors.length], borderWidth: 2, fill: false });
+            const isTodos = !selectedKeywords || selectedKeywords.length === 0 || selectedKeywords.includes('Todos');
+            const filterKws = (selectedKeywords || []).filter(k => k && k !== 'Todos');
+            const countsMap = new Map();
+            articles.forEach(a => {
+                const src = getDisplaySourceName(a);
+                const kws = a.keywords || [a.keyword];
+                const match = isTodos ? true : filterKws.some(k => kws && kws.includes(k));
+                if (!match) return;
+                countsMap.set(src, (countsMap.get(src) || 0) + 1);
             });
-            sourceChartInstance = createChart('source-chart', sourceChartInstance, 'line', { labels: allSources, datasets });
+            const entries = Array.from(countsMap.entries()).filter(([_,c]) => c > 0).sort((a,b) => b[1] - a[1]);
+            const labels = entries.map(([s]) => s);
+            const values = entries.map(([_,c]) => c);
+            const containerEl = document.getElementById('source-chart')?.parentElement;
+            if (containerEl) {
+                const desired = Math.max(420, labels.length * 40);
+                containerEl.style.height = desired + 'px';
+            }
+            const dataset = [{ label: 'Fontes', data: values, backgroundColor: '#EC4899', borderSkipped: false }];
+            sourceChartInstance = createChart('source-chart', sourceChartInstance, 'bar', { labels, datasets: dataset }, { indexAxis: 'y', maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, grid: { display: false } }, y: { grid: { display: true } } } });
         }
         function renderChannelChart(articles, selectedKeywords) {
             const allChannels = ['YouTube', 'Sites', 'Revistas', 'Rádios', 'TV'];
@@ -3776,12 +3810,12 @@ const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-
             else if (sentimentScore < -0.25) { sentimentText = 'Negativo'; }
             const sentimentHTML = createMetaItem('Sentimento', sentimentText);
 
-            // Texto simples: Direta/Indireta
+            // Texto simples: Citações Direta/Indireta
             const titleLower = (article.title || '').toLowerCase();
             const descLower = (article.description || '').toLowerCase();
             const kwsLower = (article.keywords || [article.keyword]).map(k => (k || '').toLowerCase());
             const isDirect = kwsLower.some(k => k && (titleLower.includes(k) || descLower.includes(k)));
-            reportMetaGrid.innerHTML += createMetaItem('Direta/Indireta', isDirect ? 'Direta' : 'Indireta');
+            reportMetaGrid.innerHTML += createMetaItem('Citações Direta/Indireta', isDirect ? 'Direta' : 'Indireta');
 
             // Texto simples: Tipo de Mídia
             const mediaRaw = article.mediaType;
@@ -4372,7 +4406,8 @@ const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-
             const endDate = criticalEndDateInput && criticalEndDateInput.value ? criticalEndDateInput.value : null;
             if (!companyId) { showAlert('Selecione uma empresa.', 'error'); return; }
             if (criticalSummary) criticalSummary.innerHTML = 'Gerando relatório...';
-            [criticalChannelChartInstance, criticalSpaceChartInstance, criticalSpaceQualChartInstance, criticalVehicleChartInstance, criticalValuationChartInstance, criticalDateChartInstance, criticalSentimentByChannelChartInstance, criticalSpaceDetailChartInstance].forEach(inst => { if (inst) { try { inst.destroy(); } catch(_){} } });
+            [criticalChannelChartInstance, criticalSpaceChartInstance, criticalSpaceQualChartInstance, criticalVehicleChartInstance, criticalValuationChartInstance, criticalDateChartInstance, criticalSentimentByChannelChartInstance].forEach(inst => { if (inst) { try { inst.destroy(); } catch(_){} } });
+            if (criticalSpaceDetailInstances && typeof criticalSpaceDetailInstances === 'object') { Object.values(criticalSpaceDetailInstances).forEach(inst => { try { inst.destroy(); } catch(_){} }); criticalSpaceDetailInstances = {}; }
             try {
                 const generateCritical = httpsCallable(functions, 'generateCriticalReport');
                 const result = await generateCritical({ appId, companyId, startDate, endDate });
@@ -4426,7 +4461,21 @@ const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-
                         valuation[val] = (valuation[val] || 0) + 1;
                     });
                 }
+                const companyDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'companies', companyId);
+                let companyName = companyId;
+                try { const companyDocSnap = await getDoc(companyDocRef); if (companyDocSnap.exists()) { const d = companyDocSnap.data() || {}; companyName = d.name || companyId; } } catch (_) {}
                 const total = articles.length || (data.totalAlerts || 0) || Object.values(channelCounts).reduce((s,v)=>s+v,0);
+                const headerEl = document.getElementById('critical-header');
+                const headerCompanyEl = document.getElementById('critical-header-company');
+                const headerPeriodEl = document.getElementById('critical-header-period');
+                if (headerEl && headerCompanyEl && headerPeriodEl) {
+                    headerCompanyEl.textContent = companyName;
+                    const fmt = new Intl.DateTimeFormat('pt-BR');
+                    const toLocalDate = (s) => { try { const [y,m,d] = String(s||'').split('-').map(n=>parseInt(n,10)); if (y && m && d) return new Date(y, m-1, d); } catch(_) {} return s ? new Date(s) : null; };
+                    const startTxt = startDate ? fmt.format(toLocalDate(startDate)) : '';
+                    const endTxt = endDate ? fmt.format(toLocalDate(endDate)) : '';
+                    headerPeriodEl.textContent = startTxt && endTxt ? `${startTxt} a ${endTxt}` : '';
+                }
                 if (criticalSummary) {
                     const topCh = topChannel || (Object.entries(channelCounts).sort((a,b)=>b[1]-a[1])[0]?.[0] || '-');
                     const topVeh = topVehicle || (Object.entries(vehicleCounts).sort((a,b)=>b[1]-a[1])[0]?.[0] || '-');
@@ -4454,7 +4503,7 @@ const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-
                                     <ul class="list-disc list-inside text-gray-700 space-y-1">
                                         <li><a href="#critical-channel-chart" class="hover:underline">Distribuição por mídia</a></li>
                                         <li><a href="#critical-space-chart" class="hover:underline">Notícias por tipo de texto</a></li>
-                                        <li><a href="#critical-space-qual-chart" class="hover:underline">Direta/Indireta</a></li>
+                                        <li><a href="#critical-space-qual-chart" class="hover:underline">Citações Direta/Indireta</a></li>
                                         <li><a href="#critical-spontaneity-chart" class="hover:underline">Espontânea/Provocada</a></li>
                                         <li><a href="#critical-wordcloud" class="hover:underline">Assunto</a></li>
                                         <li><a href="#critical-vehicle-chart" class="hover:underline">Notícias por veículo</a></li>
@@ -4510,18 +4559,19 @@ const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-
                             const kws = Array.isArray(a.keywords) ? a.keywords : (a.keyword ? [a.keyword] : []);
                             kws.forEach(k => { if (!k) return; maps[ch].set(k, (maps[ch].get(k)||0)+1); });
                         });
-                        const globalKwLabels = (() => {
-                            const filterEl = document.getElementById('report-keyword-filter-container') || document;
-                            const selected = Array.from(filterEl.querySelectorAll('.report-kw-checkbox:checked')).map(cb => cb.value).filter(v => v && v !== 'Todos');
-                            if (selected.length) return selected;
-                            const sorted = Object.entries(keywordCounts||{}).sort((a,b)=>b[1]-a[1]).map(([w])=>w).filter(Boolean);
-                            const union = sorted.length ? sorted : Array.from(new Set([].concat(...Object.values(maps).map(m=>Array.from(m.keys())))));
-                            return union.slice(0, 10);
+                        const globalKwLabels = await (async () => {
+                            const kwSnap = await getDocs(query(collection(db, 'artifacts', appId, 'users', companyId, 'keywords')));
+                            const companyKws = Array.from(new Set(kwSnap.docs.map(d => String((d.data()||{}).word||'')).filter(Boolean))).sort((a,b)=>a.localeCompare(b));
+                            if (companyKws.length) return companyKws;
+                            const freqSorted = Object.entries(keywordCounts||{}).map(([w,c])=>[String(w), Number(c)||0]).filter(([w])=>w).sort((a,b)=>a[0].localeCompare(b[0]));
+                            const union = Array.from(new Set(freqSorted.map(([w])=>w).concat(...Object.values(maps).map(m=>Array.from(m.keys()))))).sort((a,b)=>a.localeCompare(b));
+                            return union;
                         })();
                         const visibleChans = chans.filter(ch => globalKwLabels.reduce((sum,k)=> sum + (maps[ch].get(k)||0), 0) > 0);
                         kwByMediaEl.innerHTML = visibleChans.map(ch => {
                             const id = `kw-media-${ch.replace(/[^a-z0-9]/gi,'_').toLowerCase()}`;
-                            return `<div><div class="text-sm font-semibold mb-2" style="color:${colorBy[ch]}">${ch}</div><div class="h-[300px]"><canvas id="${id}"></canvas></div></div>`;
+                            const h = Math.max(400, globalKwLabels.length * 26);
+                            return `<div><div class="text-sm font-semibold mb-2" style="color:${colorBy[ch]}">${ch}</div><div style="height:${h}px"><canvas id="${id}"></canvas></div></div>`;
                         }).join('');
                         visibleChans.forEach(ch => {
                             const id = `kw-media-${ch.replace(/[^a-z0-9]/gi,'_').toLowerCase()}`;
@@ -4530,6 +4580,7 @@ const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-
                             createChart(id, null, 'bar', { labels, datasets: [{ label: 'Ocorrências', data: values, backgroundColor: colorBy[ch] }] }, { indexAxis: 'y', maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, beginAtZero: true }, y: { grid: { display: true } } } });
                         });
                     }
+                    // Coluna esquerda: totalizador (barras verticais) por tipo de texto
                     const categoriesText = ['Matéria', 'Artigos', 'Entrevistas', 'Chamada de Capa', 'Coluna'];
                     const valuesText = categoriesText.map(name => {
                         let total = 0;
@@ -4538,12 +4589,18 @@ const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-
                     });
                     const sumText = valuesText.reduce((s,n)=>s+n,0);
                     const dataText = sumText > 0 ? valuesText : [120, 45, 30, 18, 22];
-                    criticalSpaceChartInstance = createChart('critical-space-chart', criticalSpaceChartInstance, 'bar', { labels: categoriesText, datasets: [{ label: 'Tipo de texto', data: dataText, backgroundColor: '#10B981', borderRadius: 6, borderSkipped: false }] }, { plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(context) { return context.dataset.label + ': ' + context.parsed.y; } } } }, scales: { x: { grid: { display: false } }, y: { beginAtZero: true, grid: { display: true } } } });
+                    criticalSpaceChartInstance = createChart('critical-space-chart', criticalSpaceChartInstance, 'bar', { labels: categoriesText, datasets: [{ label: 'Tipo de texto', data: dataText, backgroundColor: '#10B981', borderRadius: 6, borderSkipped: false }] }, { maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(context) { return context.dataset.label + ': ' + context.parsed.y; } } } }, scales: { x: { grid: { display: false } }, y: { beginAtZero: true, grid: { display: true } } } });
                     // Painel da direita: Palavras‑Chave (Top 10)
                     // Painel da direita: Gráficos individuais por classificação (usa todas as keywords selecionadas)
-                    const filterEl = document.getElementById('report-keyword-filter-container') || document;
-                    const selectedList = Array.from(filterEl.querySelectorAll('.report-kw-checkbox:checked')).map(cb => cb.value).filter(v => v && v !== 'Todos');
-                    const globalKwLabels = (selectedList.length ? selectedList : Object.keys(keywordCounts || {})).slice(0, 20); // limita, caso muitas palavras
+                    const filterElMaster = document.getElementById('report-keyword-filter-container');
+                    const selectedMaster = filterElMaster ? Array.from(filterElMaster.querySelectorAll('.report-kw-checkbox:checked')).map(cb => cb.value).filter(v => v && v !== 'Todos') : [];
+                    const kwSnapCls = await getDocs(query(collection(db, 'artifacts', appId, 'users', companyId, 'keywords')));
+                    let globalKwLabels = (selectedMaster.length ? selectedMaster : Array.from(new Set(kwSnapCls.docs.map(d => String((d.data()||{}).word||'')).filter(Boolean)))).sort((a,b)=>a.localeCompare(b));
+                    if (!globalKwLabels.length) {
+                        const fromCounts = Object.keys(keywordCounts||{});
+                        const fromArticles = Array.from(new Set(articles.flatMap(a => (Array.isArray(a.keywords)?a.keywords: (a.keyword?[a.keyword]:[]))).filter(Boolean)));
+                        globalKwLabels = Array.from(new Set(fromCounts.concat(fromArticles))).sort((a,b)=>a.localeCompare(b));
+                    }
                     const normalize = (s) => String(s||'').toLowerCase();
                     const matchType = (raw, name) => {
                         const r = normalize(raw);
@@ -4559,36 +4616,129 @@ const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-
                     if (listContainer) {
                         listContainer.innerHTML = '';
                         const classes = ['Matéria','Artigos','Entrevistas','Chamada de Capa','Coluna'];
+                        const norm = (s) => String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                        const getTextType = (a) => {
+                            const candidates = [a?.textType, a?.space, a?.text_type, a?.type, a?.contentType, a?.classification?.textType];
+                            const val = candidates.find(v => v && String(v).length) || '';
+                            return val;
+                        };
                         classes.forEach(cls => {
                             const counts = new Map(globalKwLabels.map(k => [k, 0]));
-                            articles.forEach(a => {
-                                const textType = a?.textType || a?.space || '';
-                                if (!matchType(textType, cls)) return;
-                                const kws = Array.isArray(a.keywords) ? a.keywords : (a.keyword ? [a.keyword] : []);
-                                kws.forEach(k => { if (!k) return; const label = globalKwLabels.find(x => normalize(x) === normalize(k)); if (label) counts.set(label, (counts.get(label)||0) + 1); });
+                            const typeArticles = articles.filter(a => matchType(getTextType(a), cls));
+                            typeArticles.forEach(a => {
+                                const title = norm(a?.title||'');
+                                const desc = norm(a?.description||'');
+                                const kwsArr = Array.isArray(a.keywords) ? a.keywords : (a.keyword ? [a.keyword] : []);
+                                globalKwLabels.forEach(label => {
+                                    const nm = norm(label);
+                                    const inArray = (kwsArr||[]).some(k => norm(k) === nm);
+                                    const inText = title.includes(nm) || desc.includes(nm);
+                                    if (inArray || inText) counts.set(label, (counts.get(label)||0) + 1);
+                                });
                             });
-                            const total = Array.from(counts.values()).reduce((s,n)=>s+n,0);
-                            if (total === 0) return; // oculta classificações sem dados
+                            // Usar o total por tipo a partir de spaceCounts, para decidir visibilidade
+                            let typeTotal = 0;
+                            Object.entries(spaceCounts||{}).forEach(([k,v]) => { if (matchType(k, cls)) typeTotal += (v||0); });
+                            if (typeTotal === 0) return; // oculta tipos sem notícias
                             const id = `space-type-${cls.replace(/[^a-z0-9]/gi,'_').toLowerCase()}`;
                             const box = document.createElement('div');
-                            box.innerHTML = `<div class="text-sm font-semibold mb-2 text-gray-700">${cls}</div><div class="h-[300px]"><canvas id="${id}"></canvas></div>`;
+                            const desiredH = Math.max(300, globalKwLabels.length * 28);
+                            box.innerHTML = `<div class="text-sm font-semibold mb-2" style="color:#10B981">${cls}</div><div style="height:${desiredH}px"><canvas id="${id}"></canvas></div>`;
                             listContainer.appendChild(box);
                             const labels = globalKwLabels;
                             const values = labels.map(k => counts.get(k) || 0);
-                            criticalSpaceDetailInstances[id] = createChart(id, null, 'bar', { labels, datasets: [{ label: 'Ocorrências', data: values, backgroundColor: '#10B981' }] }, { indexAxis: 'y', maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, grid: { display: false } }, y: { grid: { display: true } } } });
+                            const maxVal = Math.max(0, ...values);
+                            criticalSpaceDetailInstances[id] = createChart(id, null, 'bar', { labels, datasets: [
+                                { label: 'Ocorrências', data: values, backgroundColor: '#10B981', borderSkipped: false }
+                            ] }, { indexAxis: 'y', maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(ctx) { return ctx.label + ': ' + ctx.parsed.x; } } } }, scales: { x: { min: 0, suggestedMax: Math.max(1, maxVal), grid: { display: false } }, y: { grid: { display: true } } } });
                         });
                     }
-                const spaceQualLabels = Object.keys(spaceCounts);
-                if (spaceQualLabels.length) {
-                    const directCount = (spaceCounts['Direta'] || spaceCounts['direct'] || spaceCounts['Direct'] || spaceCounts['direta'] || 0);
-                    const indirectCount = (spaceCounts['Indireta'] || spaceCounts['indirect'] || spaceCounts['Indirect'] || spaceCounts['indireta'] || 0);
-                    const labelsStack = ['Total'];
-                    const datasetsStack = [
-                        { label: 'Direta', data: [directCount], backgroundColor: '#10B981', stack: 'total', borderRadius: 6, borderSkipped: false },
-                        { label: 'Indireta', data: [indirectCount], backgroundColor: '#F59E0B', stack: 'total', borderRadius: 6, borderSkipped: false }
-                    ];
-                    criticalSpaceQualChartInstance = createChart('critical-space-qual-chart', criticalSpaceQualChartInstance, 'bar', { labels: labelsStack, datasets: datasetsStack }, { plugins: { legend: { position: 'bottom' }, tooltip: { callbacks: { label: function(context) { return context.dataset.label + ': ' + context.parsed.x + ' alertas'; } } } }, scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, beginAtZero: true, grid: { display: true } } }, indexAxis: 'y' });
-                }
+                // Citações Direta/Indireta — Totais e Ranking por Palavra‑Chave
+                const computeDirectness = () => {
+                    let totalDirect = 0, totalIndirect = 0;
+                    const directByKw = new Map();
+                    const indirectByKw = new Map();
+                    const keywordsAll = globalKwLabels && globalKwLabels.length ? globalKwLabels : Array.from(new Set(articles.flatMap(a => (Array.isArray(a.keywords)?a.keywords:(a.keyword?[a.keyword]:[]))).filter(Boolean))).sort((a,b)=>a.localeCompare(b));
+                    keywordsAll.forEach(k => { directByKw.set(k, 0); indirectByKw.set(k, 0); });
+                    articles.forEach(a => {
+                        const title = String(a.title||'').toLowerCase();
+                        const desc = String(a.description||'').toLowerCase();
+                        const kwsArr = Array.isArray(a.keywords) ? a.keywords : (a.keyword ? [a.keyword] : []);
+                        let anyMention = false;
+                        const seen = new Set();
+                        keywordsAll.forEach(kw => {
+                            const nm = String(kw||'').toLowerCase();
+                            const inArray = (kwsArr||[]).some(k => String(k||'').toLowerCase() === nm);
+                            const inText = title.includes(nm) || desc.includes(nm);
+                            if (inArray || inText) {
+                                anyMention = true;
+                                if (inText) { directByKw.set(kw, (directByKw.get(kw)||0)+1); seen.add('d'); } else { indirectByKw.set(kw, (indirectByKw.get(kw)||0)+1); seen.add('i'); }
+                            }
+                        });
+                        if (anyMention) {
+                            if (seen.has('d')) totalDirect++; else totalIndirect++;
+                        }
+                    });
+                    return { totalDirect, totalIndirect, directByKw, indirectByKw, keywordsAll };
+                };
+                const { totalDirect, totalIndirect, directByKw, indirectByKw, keywordsAll } = computeDirectness();
+                // Totalizador (barra empilhada única, vertical)
+                criticalSpaceQualChartInstance = createChart('critical-space-qual-chart', criticalSpaceQualChartInstance, 'bar', { labels: ['Total'], datasets: [
+                    { label: 'Direta', data: [totalDirect], backgroundColor: '#4f46e5', stack: 't' },
+                    { label: 'Indireta', data: [totalIndirect], backgroundColor: '#06b6d4', stack: 't' }
+                ] }, { plugins: { legend: { position: 'bottom' } }, scales: { x: { grid: { display: false } }, y: { beginAtZero: true, grid: { display: true } } } });
+                // Ranking por palavra‑chave (barras horizontais empilhadas)
+                const detailEl = document.getElementById('critical-directness-detail');
+                if (detailEl) { detailEl.style.height = `${Math.max(400, keywordsAll.length * 26)}px`; }
+                const labelsKw = keywordsAll;
+                const dataDirectKw = labelsKw.map(k => directByKw.get(k) || 0);
+                const dataIndirectKw = labelsKw.map(k => indirectByKw.get(k) || 0);
+                createChart('critical-directness-detail-chart', null, 'bar', { labels: labelsKw, datasets: [
+                    { label: 'Direta', data: dataDirectKw, backgroundColor: '#4f46e5', stack: 'kw' },
+                    { label: 'Indireta', data: dataIndirectKw, backgroundColor: '#06b6d4', stack: 'kw' }
+                ] }, { indexAxis: 'y', maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, scales: { x: { stacked: true, grid: { display: false }, beginAtZero: true }, y: { stacked: true, grid: { display: true } } } });
+
+                // Mídia Provocada/Espontânea — Totais e Ranking por Palavra‑Chave
+                const computeSpontaneity = () => {
+                    let totalEsp = 0, totalProv = 0;
+                    const espByKw = new Map();
+                    const provByKw = new Map();
+                    const keywordsAll2 = globalKwLabels && globalKwLabels.length ? globalKwLabels : Array.from(new Set(articles.flatMap(a => (Array.isArray(a.keywords)?a.keywords:(a.keyword?[a.keyword]:[]))).filter(Boolean))).sort((a,b)=>a.localeCompare(b));
+                    keywordsAll2.forEach(k => { espByKw.set(k, 0); provByKw.set(k, 0); });
+                    articles.forEach(a => {
+                        const isProv = !!(a?.mediaType && /provocada/i.test(a.mediaType));
+                        const isEsp = !isProv;
+                        const title = String(a.title||'').toLowerCase();
+                        const desc = String(a.description||'').toLowerCase();
+                        const kwsArr = Array.isArray(a.keywords) ? a.keywords : (a.keyword ? [a.keyword] : []);
+                        let mentioned = false;
+                        keywordsAll2.forEach(kw => {
+                            const nm = String(kw||'').toLowerCase();
+                            const inArray = (kwsArr||[]).some(k => String(k||'').toLowerCase() === nm);
+                            const inText = title.includes(nm) || desc.includes(nm);
+                            if (inArray || inText) {
+                                mentioned = true;
+                                if (isProv) provByKw.set(kw, (provByKw.get(kw)||0)+1); else espByKw.set(kw, (espByKw.get(kw)||0)+1);
+                            }
+                        });
+                        if (mentioned) { if (isProv) totalProv++; else totalEsp++; }
+                    });
+                    return { totalEsp, totalProv, espByKw, provByKw, keywordsAll2 };
+                };
+                const { totalEsp, totalProv, espByKw, provByKw, keywordsAll2 } = computeSpontaneity();
+                createChart('critical-spontaneity-total-chart', null, 'bar', { labels: ['Total'], datasets: [
+                    { label: 'Espontânea', data: [totalEsp], backgroundColor: '#4f46e5', stack: 't' },
+                    { label: 'Provocada', data: [totalProv], backgroundColor: '#06b6d4', stack: 't' }
+                ] }, { plugins: { legend: { position: 'bottom' } }, scales: { x: { grid: { display: false } }, y: { beginAtZero: true, grid: { display: true } } } });
+                const spDetailEl = document.getElementById('critical-spontaneity-detail');
+                if (spDetailEl) { spDetailEl.style.height = `${Math.max(400, keywordsAll2.length * 26)}px`; }
+                const labelsSp = keywordsAll2;
+                const dataEspKw = labelsSp.map(k => espByKw.get(k) || 0);
+                const dataProvKw = labelsSp.map(k => provByKw.get(k) || 0);
+                createChart('critical-spontaneity-detail-chart', null, 'bar', { labels: labelsSp, datasets: [
+                    { label: 'Espontânea', data: dataEspKw, backgroundColor: '#4f46e5', stack: 'kw' },
+                    { label: 'Provocada', data: dataProvKw, backgroundColor: '#06b6d4', stack: 'kw' }
+                ] }, { indexAxis: 'y', maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, scales: { x: { stacked: true, grid: { display: false }, beginAtZero: true }, y: { stacked: true, grid: { display: true } } } });
                 const spontaneityLabels = Object.keys(spontaneityCounts);
                 if (spontaneityLabels.length) {
                     const espontanea = (spontaneityCounts['Espontânea'] || spontaneityCounts['espontanea'] || spontaneityCounts['Espontanea'] || 0);
