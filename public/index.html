@@ -457,7 +457,7 @@
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Empresa</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sites</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">YouTube</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Revistas</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Impresso</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rádio</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">TV</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total a Aprovar</th>
@@ -879,7 +879,7 @@
                         <div id="capture-channels-container" class="space-y-2">
                             <div class="flex items-center"><input type="checkbox" class="capture-channel h-4 w-4 text-indigo-600 border-gray-300 rounded" id="capture-sites" value="Sites"><label class="ml-2 block text-sm text-gray-900" for="capture-sites">Sites</label></div>
                             <div class="flex items-center"><input type="checkbox" class="capture-channel h-4 w-4 text-indigo-600 border-gray-300 rounded" id="capture-youtube" value="YouTube"><label class="ml-2 block text-sm text-gray-900" for="capture-youtube">YouTube</label></div>
-                            <div class="flex items-center"><input type="checkbox" class="capture-channel h-4 w-4 text-indigo-600 border-gray-300 rounded" id="capture-revistas" value="Revistas"><label class="ml-2 block text-sm text-gray-900" for="capture-revistas">Revistas</label></div>
+                            <div class="flex items-center"><input type="checkbox" class="capture-channel h-4 w-4 text-indigo-600 border-gray-300 rounded" id="capture-impresso" value="Impresso"><label class="ml-2 block text-sm text-gray-900" for="capture-impresso">Impresso</label></div>
                             <div class="flex items-center"><input type="checkbox" class="capture-channel h-4 w-4 text-indigo-600 border-gray-300 rounded" id="capture-radios" value="Rádios"><label class="ml-2 block text-sm text-gray-900" for="capture-radios">Rádios</label></div>
                             <div class="flex items-center"><input type="checkbox" class="capture-channel h-4 w-4 text-indigo-600 border-gray-300 rounded" id="capture-tv" value="TV"><label class="ml-2 block text-sm text-gray-900" for="capture-tv">TV</label></div>
                         </div>
@@ -912,7 +912,7 @@
                 <div class="grid grid-cols-1 gap-8">
                     <div class="p-4 border rounded-lg a4-page print-page-break">
                         <h3 class="text-xl font-semibold mb-4 text-center">Notícias por Fonte</h3>
-                        <div class="relative h-[420px]">
+                        <div class="relative h-80 sm:h-96 max-h-[50vh]">
                             <canvas id="source-chart" class="w-full h-full"></canvas>
                         </div>
                     </div>
@@ -972,7 +972,7 @@
                                 <option value="">Todos</option>
                                 <option value="YouTube">YouTube</option>
                                 <option value="Sites">Sites</option>
-                                <option value="Revistas">Revistas</option>
+                                <option value="Impresso">Impresso</option>
                                 <option value="Rádios">Rádios</option>
                                 <option value="TV">TV</option>
                             </select>
@@ -1052,7 +1052,7 @@
                             <option value="Sites">Sites</option>
                             <option value="YouTube">YouTube</option>
                             <option value="Rádios">Rádios</option>
-                            <option value="Revistas">Revistas</option>
+                            <option value="Impresso">Impresso</option>
                             <option value="TV">TV</option>
                         </select>
                     </div>
@@ -1192,6 +1192,9 @@
                 <div id="critical-header-company" class="text-xl font-semibold text-gray-700 mt-2"></div>
                 <div id="critical-header-period" class="text-sm text-gray-500 mt-1"></div>
             </div>
+            <div class="flex justify-end mb-4">
+                <button id="critical-print-btn" class="bg-gray-800 text-white px-4 py-2 rounded-md hover:bg-gray-900">Visualizar em PDF</button>
+            </div>
 
             <div id="critical-summary" class="mb-6 p-4 bg-gray-50 rounded-md text-gray-800"></div>
 
@@ -1250,6 +1253,12 @@
                 <div class="p-4 bg-white rounded-lg shadow-lg h-[420px] lg:col-span-2">
                     <h3 class="text-xl font-semibold mb-4 text-center">Gráfico de Sentimento</h3>
                     <canvas id="critical-valuation-chart" class="w-full h-full"></canvas>
+                </div>
+                <div class="p-4 bg-white rounded-lg shadow-lg min-h-[300px] lg:col-span-2">
+                    <h3 class="text-xl font-semibold mb-4 text-center">Análise de Sentimento por Palavra‑Chave</h3>
+                    <div id="critical-sentiment-by-keyword" class="w-full h-[300px]">
+                        <canvas id="sentiment-by-keyword-chart"></canvas>
+                    </div>
                 </div>
                 <div class="p-4 bg-white rounded-lg shadow-lg h-[420px] lg:col-span-2">
                     <h3 class="text-xl font-semibold mb-4 text-center">Notícias por Data de Publicação</h3>
@@ -1339,6 +1348,7 @@
                     <div class="text-right">
                         <h2 class="text-xl md:text-2xl font-bold text-gray-800">Relatório de Notícia</h2>
                         <p id="report-date" class="text-xs md:text-sm text-gray-500"></p>
+                        <p id="report-author" class="text-xs md:text-sm text-gray-500"></p>
                     </div>
                 </div>
 
@@ -1565,7 +1575,7 @@
         const appId = firebaseConfig.projectId;
         let currentUser = null, clockInterval = null, selectedCompanyForManagement = null, allCompanyArticles = [], companyIdToDelete = null, articleToDeleteInfo = null, mediaMonitoringPage = null;
 let companyCaptureChannels = null;
-        let sourceChartInstance = null, dateChartInstance = null, sentimentChartInstance = null, directnessChartInstance = null, channelChartInstance = null, mediaTypeChartInstance = null, companySummaryChartInstance = null, keywordTotalChartInstance = null, keywordSentimentChartInstance = null, criticalChannelChartInstance = null, criticalSpaceChartInstance = null, criticalSpaceQualChartInstance = null, criticalVehicleChartInstance = null, criticalValuationChartInstance = null, criticalDateChartInstance = null, criticalSpontaneityChartInstance = null, criticalSentimentByChannelChartInstance = null, criticalSpaceDetailInstances = {};
+        let sourceChartInstance = null, dateChartInstance = null, sentimentChartInstance = null, directnessChartInstance = null, channelChartInstance = null, mediaTypeChartInstance = null, companySummaryChartInstance = null, keywordTotalChartInstance = null, keywordSentimentChartInstance = null, criticalChannelChartInstance = null, criticalSpaceChartInstance = null, criticalSpaceQualChartInstance = null, criticalVehicleChartInstance = null, criticalValuationChartInstance = null, criticalDateChartInstance = null, criticalSpontaneityChartInstance = null, criticalSentimentByChannelChartInstance = null, criticalSentimentByKeywordChartInstance = null, criticalSpaceDetailInstances = {};
         let superAdminCredentials = { user: 'ulysses', pass: 'adminqwert' };
         let notificationListener = null, companiesListener = null, deletionRequestsListener = null, pendingAlertsListener = null, activityCompaniesListener = null, activityPendingListener = null, activityDeletionListener = null;
         let keywordToDeleteInfo = null;
@@ -1592,11 +1602,25 @@ let keywordToTransferInfo = null;
             el.innerHTML = `<div class="${c} border-l-4 p-4 rounded-md fade-in" role="alert"><p>${message}</p></div>`;
             setTimeout(() => { if (el) el.innerHTML = ''; }, 4000);
         }
+        function showSavingIndicator(alertEl, text = 'Salvando...') {
+            if (!alertEl) return;
+            let el = alertEl.querySelector('.saving-indicator');
+            if (!el) {
+                el = document.createElement('span');
+                el.className = 'saving-indicator text-xs text-gray-500 ml-2';
+                const head = alertEl.querySelector('.alert-body-clickable');
+                if (head) head.appendChild(el); else alertEl.appendChild(el);
+            }
+            el.textContent = text;
+        }
+        function hideSavingIndicator(alertEl) {
+            try { const el = alertEl?.querySelector('.saving-indicator'); if (el) el.remove(); } catch(_){}
+        }
         function getChannelCategory(sourceName) {
             const name = (sourceName || "").toLowerCase();
             if (name.includes('youtube')) return 'YouTube';
             if (name.includes('globo') || name.includes('g1') || name.includes('uol') || name.includes('terra') || name.includes('r7')) return 'Sites';
-            if (name.includes('veja') || name.includes('istoé') || name.includes('exame')) return 'Revistas';
+            if (name.includes('veja') || name.includes('istoé') || name.includes('exame')) return 'Impresso';
             if (name.includes('cbn') || name.includes('bandeirantes')) return 'Rádios';
             return 'Sites';
         }
@@ -1647,7 +1671,13 @@ let keywordToTransferInfo = null;
                 return (item?.source?.displayName ?? item?.source?.name ?? '-');
             }
         }
-        function updateView(pageName) {
+function updateView(pageName) {
+            try {
+                const savedUser = getStorage('clipping_currentUser', null);
+                const isAuth = !!currentUser || !!savedUser;
+                if (!isAuth && pageName !== 'login') { if (loginPage) loginPage.classList.add('active'); return; }
+                if (!currentUser && savedUser) { currentUser = savedUser; }
+            } catch (_) {}
             if (!pageSections || typeof pageSections.forEach !== 'function') {
                 pageSections = document.querySelectorAll('.page-section');
             }
@@ -1736,8 +1766,8 @@ let keywordToTransferInfo = null;
                 if (!anyActive && loginPage) loginPage.classList.add('active');
             } catch (err) { console.warn('Fallback activation failed', err); }
         }
-        function getStorage(key, defaultValue) { try { const d = localStorage.getItem(key); return d ? JSON.parse(d) : defaultValue; } catch (e) { console.error(e); return defaultValue; } }
-        function setStorage(key, value) { localStorage.setItem(key, JSON.stringify(value)); }
+        function getStorage(key, defaultValue) { try { const d = sessionStorage.getItem(key); return d ? JSON.parse(d) : defaultValue; } catch (e) { console.error(e); return defaultValue; } }
+        function setStorage(key, value) { sessionStorage.setItem(key, JSON.stringify(value)); }
         function updateDateTime() { if (!currentDateTimeEl) return; const n = new Date(), f = { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }; currentDateTimeEl.textContent = `Data: ${n.toLocaleDateString('pt-BR', f).replace(',', ' -')}`; }
 
         function clearMarkers() {
@@ -1840,7 +1870,7 @@ let keywordToTransferInfo = null;
 
         async function handleLogoUpload(e) { const file = e.target.files[0]; if (!file) return; const companyId = currentUser.isSuperAdmin ? selectedCompanyForManagement.id : currentUser.companyId; if (!companyId) return; const reader = new FileReader(); reader.onloadend = async () => { try { const settingsRef = doc(db, "artifacts", appId, "public", "data", "settings", companyId); await setDoc(settingsRef, { logo: reader.result }, { merge: true }); loadAndDisplayLogo(); showAlert('Logótipo atualizado com sucesso!'); } catch (error) { console.error("Erro ao guardar o logótipo:", error); showAlert("Erro ao guardar o logótipo.", "error"); } }; reader.readAsDataURL(file); }
         async function loadAndDisplayLogo() { const companyId = currentUser ? currentUser.companyId : null; if (!companyId) { if (headerLogoContainer) headerLogoContainer.innerHTML = ''; if (loginLogoContainer) loginLogoContainer.innerHTML = ''; return; } const settingsRef = doc(db, "artifacts", appId, "public", "data", "settings", companyId); try { const docSnap = await getDoc(settingsRef); const logoData = docSnap.exists() ? docSnap.data().logo : null; const logoHtml = logoData ? `<img src="${logoData}" alt="Logótipo da Empresa" class="h-full w-auto object-contain">` : ''; if (headerLogoContainer) headerLogoContainer.innerHTML = logoHtml; if (loginLogoContainer) loginLogoContainer.innerHTML = logoHtml; } catch (error) { console.error("Erro ao carregar o logótipo:", error); } }
-        async function loadCompanyCaptureChannels(companyId) { try { const settingsRef = doc(db, "artifacts", appId, "public", "data", "settings", companyId); const docSnap = await getDoc(settingsRef); const caps = docSnap.exists() ? docSnap.data().captureChannels : null; companyCaptureChannels = Array.isArray(caps) && caps.length > 0 ? caps : ['Sites','YouTube','Revistas','Rádios','TV']; } catch (error) { console.error("Erro ao carregar canais de captura:", error); companyCaptureChannels = ['Sites','YouTube','Revistas','Rádios','TV']; } }
+        async function loadCompanyCaptureChannels(companyId) { try { const settingsRef = doc(db, "artifacts", appId, "public", "data", "settings", companyId); const docSnap = await getDoc(settingsRef); const caps = docSnap.exists() ? docSnap.data().captureChannels : null; companyCaptureChannels = Array.isArray(caps) && caps.length > 0 ? caps : ['Sites','YouTube','Impresso','Rádios','TV']; } catch (error) { console.error("Erro ao carregar canais de captura:", error); companyCaptureChannels = ['Sites','YouTube','Impresso','Rádios','TV']; } }
         async function handleGlobalLogoUpload(e) { const file = e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onloadend = async () => { try { const settingsRef = doc(db, "artifacts", appId, "public", "data", "settings", "global"); await setDoc(settingsRef, { appLogo: reader.result }, { merge: true }); loadAndDisplayGlobalLogo(); showAlert('Logótipo global atualizado com sucesso!'); } catch (error) { console.error("Erro ao guardar o logótipo global:", error); showAlert("Erro ao guardar o logótipo global.", "error"); } }; reader.readAsDataURL(file); }
         async function loadAndDisplayGlobalLogo() {
             const settingsRef = doc(db, "artifacts", appId, "public", "data", "settings", "global");
@@ -1867,7 +1897,7 @@ let keywordToTransferInfo = null;
             if (companyName.toLowerCase() === 'newsclip' && user.toLowerCase() === superAdminCredentials.user && pass === superAdminCredentials.pass) {
                 currentUser = { username: 'Ulysses', isSuperAdmin: true, isRestrictedGlobal: false, allowedCompanies: [], companyId: 'super', companyName: 'Super Admin' };
                 setStorage('clipping_currentUser', currentUser);
-                companyCaptureChannels = ['Sites','YouTube','Revistas','Rádios','TV'];
+                companyCaptureChannels = ['Sites','YouTube','Impresso','Rádios','TV'];
                 updateView('dashboard');
                 return;
             }
@@ -1882,7 +1912,7 @@ let keywordToTransferInfo = null;
                         const allowedCompanies = Array.isArray(ru.allowedCompanies) ? ru.allowedCompanies.filter(Boolean) : [];
                         currentUser = { username: user, isSuperAdmin: true, isRestrictedGlobal: true, allowedCompanies, companyId: 'super', companyName: 'Super Admin (Restrito)' };
                         setStorage('clipping_currentUser', currentUser);
-                        companyCaptureChannels = ['Sites','YouTube','Revistas','Rádios','TV'];
+                        companyCaptureChannels = ['Sites','YouTube','Impresso','Rádios','TV'];
                         updateView('dashboard');
                         return;
                     }
@@ -1934,7 +1964,7 @@ let keywordToTransferInfo = null;
             if (activityDeletionListener) activityDeletionListener();
             currentUser = null;
             selectedCompanyForManagement = null;
-            localStorage.removeItem('clipping_currentUser');
+            sessionStorage.removeItem('clipping_currentUser');
             if (clockInterval) clearInterval(clockInterval);
             if (headerLogoContainer) headerLogoContainer.innerHTML = '';
             updateView('login');
@@ -2262,8 +2292,8 @@ let keywordToTransferInfo = null;
             }
         }
 
-        async function renderCompanySettingsAdminPage() { if (!selectedCompanyForManagement || !companySettingsAdminTitle) return; companySettingsAdminTitle.textContent = `Opções para: ${selectedCompanyForManagement.name}`; try { const settingsRef = doc(db, "artifacts", appId, "public", "data", "settings", selectedCompanyForManagement.id); const docSnap = await getDoc(settingsRef); const defaultChannels = ['Sites','YouTube','Revistas','Rádios','TV']; if (docSnap.exists()) { const settings = docSnap.data(); if (reportAccessToggle) reportAccessToggle.checked = settings.reportAccess !== false; if (mapAccessToggle) mapAccessToggle.checked = settings.mapAccess !== false; if (fetchOnlyNewToggle) fetchOnlyNewToggle.checked = settings.fetchOnlyNew === true; if (deletionAccessToggle) deletionAccessToggle.checked = settings.canRequestDeletion === true; if (document.querySelector(`input[name="news-scope"][value="${settings.searchScope || 'br'}"]`)) document.querySelector(`input[name="news-scope"][value="${settings.searchScope || 'br'}"]`).checked = true; if (stateSelect) stateSelect.value = settings.searchState || ''; const channels = Array.isArray(settings.captureChannels) && settings.captureChannels.length > 0 ? settings.captureChannels : defaultChannels; const chBoxes = document.querySelectorAll('#capture-channels-container .capture-channel'); chBoxes.forEach(cb => { cb.checked = channels.includes(cb.value); }); } else { if (reportAccessToggle) reportAccessToggle.checked = true; if (mapAccessToggle) mapAccessToggle.checked = true; if (fetchOnlyNewToggle) fetchOnlyNewToggle.checked = false; if (deletionAccessToggle) deletionAccessToggle.checked = false; if (document.querySelector('input[name="news-scope"][value="br"]')) document.querySelector('input[name="news-scope"][value="br"]').checked = true; if (stateSelect) stateSelect.value = ''; const chBoxes = document.querySelectorAll('#capture-channels-container .capture-channel'); chBoxes.forEach(cb => { cb.checked = true; }); } handleScopeChange(); } catch (error) { console.error("Erro ao renderizar as configurações:", error); } }
-        async function handleSettingsChange(e) { if (!selectedCompanyForManagement) return; const settingsRef = doc(db, "artifacts", appId, "public", "data", "settings", selectedCompanyForManagement.id); let key, value; const defaultChannels = ['Sites','YouTube','Revistas','Rádios','TV']; const target = e.target; if (target && target.classList && target.classList.contains('capture-channel')) { key = 'captureChannels'; value = Array.from(document.querySelectorAll('#capture-channels-container .capture-channel:checked')).map(cb => cb.value); if (!value || value.length === 0) value = defaultChannels; } else { switch (e.target.id) { case 'report-access-toggle': key = 'reportAccess'; value = e.target.checked; break; case 'map-access-toggle': key = 'mapAccess'; value = e.target.checked; break; case 'fetch-only-new-toggle': key = 'fetchOnlyNew'; value = e.target.checked; break; case 'deletion-access-toggle': key = 'canRequestDeletion'; value = e.target.checked; break; case 'state-select': key = 'searchState'; value = e.target.value; break; default: if (e.target.name === 'news-scope') { key = 'searchScope'; value = e.target.value; } else { return; } } } try { await setDoc(settingsRef, { [key]: value }, { merge: true }); showAlert('Opção guardada!', 'success'); } catch (error) { console.error("Erro ao guardar a configuração:", error); } }
+        async function renderCompanySettingsAdminPage() { if (!selectedCompanyForManagement || !companySettingsAdminTitle) return; companySettingsAdminTitle.textContent = `Opções para: ${selectedCompanyForManagement.name}`; try { const settingsRef = doc(db, "artifacts", appId, "public", "data", "settings", selectedCompanyForManagement.id); const docSnap = await getDoc(settingsRef); const defaultChannels = ['Sites','YouTube','Impresso','Rádios','TV']; if (docSnap.exists()) { const settings = docSnap.data(); if (reportAccessToggle) reportAccessToggle.checked = settings.reportAccess !== false; if (mapAccessToggle) mapAccessToggle.checked = settings.mapAccess !== false; if (fetchOnlyNewToggle) fetchOnlyNewToggle.checked = settings.fetchOnlyNew === true; if (deletionAccessToggle) deletionAccessToggle.checked = settings.canRequestDeletion === true; if (document.querySelector(`input[name="news-scope"][value="${settings.searchScope || 'br'}"]`)) document.querySelector(`input[name="news-scope"][value="${settings.searchScope || 'br'}"]`).checked = true; if (stateSelect) stateSelect.value = settings.searchState || ''; const channels = Array.isArray(settings.captureChannels) && settings.captureChannels.length > 0 ? settings.captureChannels : defaultChannels; const chBoxes = document.querySelectorAll('#capture-channels-container .capture-channel'); chBoxes.forEach(cb => { cb.checked = channels.includes(cb.value); }); } else { if (reportAccessToggle) reportAccessToggle.checked = true; if (mapAccessToggle) mapAccessToggle.checked = true; if (fetchOnlyNewToggle) fetchOnlyNewToggle.checked = false; if (deletionAccessToggle) deletionAccessToggle.checked = false; if (document.querySelector('input[name="news-scope"][value="br"]')) document.querySelector('input[name="news-scope"][value="br"]').checked = true; if (stateSelect) stateSelect.value = ''; const chBoxes = document.querySelectorAll('#capture-channels-container .capture-channel'); chBoxes.forEach(cb => { cb.checked = true; }); } handleScopeChange(); } catch (error) { console.error("Erro ao renderizar as configurações:", error); } }
+        async function handleSettingsChange(e) { if (!selectedCompanyForManagement) return; const settingsRef = doc(db, "artifacts", appId, "public", "data", "settings", selectedCompanyForManagement.id); let key, value; const defaultChannels = ['Sites','YouTube','Impresso','Rádios','TV']; const target = e.target; if (target && target.classList && target.classList.contains('capture-channel')) { key = 'captureChannels'; value = Array.from(document.querySelectorAll('#capture-channels-container .capture-channel:checked')).map(cb => cb.value); if (!value || value.length === 0) value = defaultChannels; } else { switch (e.target.id) { case 'report-access-toggle': key = 'reportAccess'; value = e.target.checked; break; case 'map-access-toggle': key = 'mapAccess'; value = e.target.checked; break; case 'fetch-only-new-toggle': key = 'fetchOnlyNew'; value = e.target.checked; break; case 'deletion-access-toggle': key = 'canRequestDeletion'; value = e.target.checked; break; case 'state-select': key = 'searchState'; value = e.target.value; break; default: if (e.target.name === 'news-scope') { key = 'searchScope'; value = e.target.value; } else { return; } } } try { await setDoc(settingsRef, { [key]: value }, { merge: true }); showAlert('Opção guardada!', 'success'); } catch (error) { console.error("Erro ao guardar a configuração:", error); } }
         function handleScopeChange() { if (!stateSelectContainer || !document.querySelector('input[name="news-scope"]:checked')) return; const selectedScope = document.querySelector('input[name="news-scope"]:checked').value; stateSelectContainer.classList.toggle('hidden', selectedScope !== 'state'); }
         async function renderGlobalKeysPage() { try { const settingsRef = doc(db, "artifacts", appId, "public", "data", "settings", "global"); const docSnap = await getDoc(settingsRef); if (docSnap.exists()) { const settings = docSnap.data(); if (apiKeyNewsApiInput) apiKeyNewsApiInput.value = settings.apiKeyNewsApi || ''; if (apiKeyFirebaseNewsInput) apiKeyFirebaseNewsInput.value = settings.apiKeyFirebaseNews || ''; if (typeof apiKeyGoogleMapsInput !== 'undefined' && apiKeyGoogleMapsInput) apiKeyGoogleMapsInput.value = settings.apiKeyGoogleMaps || ''; if (apiKeyGNewsInput1) apiKeyGNewsInput1.value = settings.apiKeyGNews1 || ''; if (apiKeyGNewsInput2) apiKeyGNewsInput2.value = settings.apiKeyGNews2 || ''; if (apiKeyGNewsInput3) apiKeyGNewsInput3.value = settings.apiKeyGNews3 || ''; if (apiKeyGNewsInput4) apiKeyGNewsInput4.value = settings.apiKeyGNews4 || ''; if (apiKeyYoutubeInput) apiKeyYoutubeInput.value = settings.apiKeyYoutube || ''; if (apiKeyBloggerInput) apiKeyBloggerInput.value = settings.apiKeyBlogger || ''; if (apiKeyVisionInput) apiKeyVisionInput.value = settings.apiKeyVision || ''; if (typeof visionEnabledToggle !== 'undefined' && visionEnabledToggle) visionEnabledToggle.checked = settings.visionEnabled === true; if (typeof visionRelevantOnlyToggle !== 'undefined' && visionRelevantOnlyToggle) visionRelevantOnlyToggle.checked = settings.visionRelevantOnly === true; if (typeof visionLogoDetectionToggle !== 'undefined' && visionLogoDetectionToggle) visionLogoDetectionToggle.checked = settings.visionLogoDetection !== false; if (typeof visionOcrTextToggle !== 'undefined' && visionOcrTextToggle) visionOcrTextToggle.checked = settings.visionOcrText !== false; if (apiKeyVideoIntelligenceInput) apiKeyVideoIntelligenceInput.value = settings.apiKeyVideoIntelligence || '';
             if (apiKeySpeechToText) apiKeySpeechToText.value = settings.apiKeySpeechToText || ''; } } catch (error) { console.error("Erro ao carregar as chaves de API globais:", error); } }
@@ -2889,7 +2919,8 @@ let keywordToTransferInfo = null;
         function displayNewsAlert(article, container) {
             const pubDate = new Date(article.publishedAt.seconds ? article.publishedAt.toDate() : article.publishedAt);
             const formattedDate = pubDate.toLocaleDateString('pt-BR');
-            const dateForFilter = pubDate.toISOString().split('T')[0];
+            const localYMD = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+            const dateForFilter = localYMD(pubDate);
 
             const alertEl = document.createElement('div');
             alertEl.className = 'bg-white p-4 rounded-lg shadow-md border-l-4 border-gray-400 fade-in';
@@ -2957,7 +2988,10 @@ const mimeMap = { mp3: 'audio/mpeg', m4a: 'audio/mp4', aac: 'audio/aac', wav: 'a
 const audioMime = mimeMap[audioType] || 'audio/mpeg';
 const audioSrc = article.segmentUrl || article.url;
 const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-3\"><source src=\"${audioSrc}\" type=\"${audioMime}\">Seu navegador não suporta áudio.</audio>` : '';
-            alertEl.innerHTML = `                <div class="alert-body-clickable">                    <div class="flex justify-between items-start">                        <h4 class="text-lg font-bold text-gray-800 pr-2">${article.title}</h4>                        <div class="flex items-center gap-2 flex-shrink-0">                            <div class="flex flex-col items-end gap-1">${keywordsHTML}</div>                        </div>                    </div>                    <p class="text-sm text-gray-600 mt-2 line-clamp-2">${article.description || 'Descrição não disponível.'}</p>                </div>                ${audioHtml}                ${aiInsightsHTML}                <div class="text-xs text-gray-500 mt-3 flex justify-between items-center">                    <span>${translationHTML}Fonte: ${getDisplaySourceName(article)} | Publicado: ${formattedDate}</span>                    <div>                        <a href="${article.url}" target="_blank" rel="noopener noreferrer" class="text-indigo-600 hover:underline font-semibold">Ler no site original →</a>                        ${deleteButtonHTML}                    </div>                </div>`;
+            const authorText = String(article.author || article.byline || '').trim();
+            const authorMeta = authorText ? ` | Autor: ${authorText}` : '';
+            const authorBadge = authorText ? `<div class="mb-2"><span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">Autor: ${authorText}</span></div>` : '';
+            alertEl.innerHTML = `                <div class="alert-body-clickable">                    ${authorBadge}                    <div class="flex justify-between items-start">                        <h4 class="text-lg font-bold text-gray-800 pr-2">${article.title}</h4>                        <div class="flex items-center gap-2 flex-shrink-0">                            <div class="flex flex-col items-end gap-1">${keywordsHTML}</div>                        </div>                    </div>                    <p class="text-sm text-gray-600 mt-2 line-clamp-2">${article.description || 'Descrição não disponível.'}</p>                </div>                ${audioHtml}                ${aiInsightsHTML}                <div class="text-xs text-gray-500 mt-3 flex justify-between items-center">                    <span>${translationHTML}Fonte: ${getDisplaySourceName(article)} | Publicado: ${formattedDate}${authorMeta}</span>                    <div>                        <a href="${article.url}" target="_blank" rel="noopener noreferrer" class="text-indigo-600 hover:underline font-semibold">Ler no site original →</a>                        ${deleteButtonHTML}                    </div>                </div>`;
             const kwContainer = alertEl.querySelector('.flex.items-center.gap-2.flex-shrink-0')?.querySelector('div');
             if (kwContainer) {
                 const sanitizeKey = s => String(s).toLowerCase().trim().replace(/[.#$\[\]/]/g, '_').replace(/\s+/g, '_');
@@ -3011,6 +3045,7 @@ const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-
             const articleId = alertEl.dataset.id;
             if (!articleId || !currentUser) return;
             try {
+                showSavingIndicator(alertEl);
                 const articleRef = doc(db, "artifacts", appId, "users", currentUser.companyId, "articles", articleId);
                 await updateDoc(articleRef, {
                     "sentiment.score": newScore,
@@ -3024,9 +3059,17 @@ const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-
                 alertEl.classList.add(`border-${color}-500`);
                 const newButtonHTML = `<button class="sentiment-btn text-xs font-semibold text-${color}-600 bg-${color}-100 px-2 py-1 rounded-full">${emoji} ${text}</button>`;
                 sentimentContainer.querySelector('.sentiment-btn').outerHTML = newButtonHTML;
+                const found = allCompanyArticles.find(a => a.id === articleId);
+                if (found) {
+                    found.sentiment = { ...(found.sentiment || {}), score: newScore };
+                    found.ai = { ...(found.ai || {}), sentiment: { ...(found.ai?.sentiment || {}), score: newScore } };
+                }
+                hideSavingIndicator(alertEl);
+                showAlert('Alteração salva', 'success');
             } catch (error) {
                 console.error("Erro ao atualizar o sentimento:", error);
                 showAlert("Erro ao atualizar o sentimento.", "error");
+                hideSavingIndicator(alertEl);
             }
         }
 
@@ -3036,6 +3079,7 @@ const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-
             const articleId = alertEl?.dataset.id;
             if (!articleId || !currentUser || !newType) return;
             try {
+                showSavingIndicator(alertEl);
                 const articleRef = doc(db, "artifacts", appId, "users", currentUser.companyId, "articles", articleId);
                 await updateDoc(articleRef, { mediaType: newType });
                 const mediaContainer = alertEl.querySelector('.media-container');
@@ -3044,9 +3088,12 @@ const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-
                 if (oldBtn) { oldBtn.outerHTML = newButtonHTML; }
                 const found = allCompanyArticles.find(a => a.id === articleId);
                 if (found) found.mediaType = newType;
+                hideSavingIndicator(alertEl);
+                showAlert('Alteração salva', 'success');
             } catch (error) {
                 console.error("Erro ao atualizar o tipo de mídia:", error);
                 showAlert("Erro ao atualizar o tipo de mídia.", "error");
+                hideSavingIndicator(alertEl);
             }
         }
 
@@ -3065,6 +3112,60 @@ const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-
                     articles.forEach(article => displayNewsAlert(article, newsAlerts));
                 }
                 filterAlertsByDate();
+                try {
+                    const qRealtime = query(collection(db, "artifacts", appId, "users", currentUser.companyId, "articles"), orderBy("publishedAt", "desc"));
+                    let criticalRefreshTimer = null;
+                    onSnapshot(qRealtime, (snapshot) => {
+                        snapshot.docChanges().forEach(change => {
+                            const a = change.doc.data() || {};
+                            const id = change.doc.id;
+                            const card = newsAlerts.querySelector(`.fade-in[data-id='${id}']`);
+                            if (!card) return;
+                            // Sentimento
+                            const score = a.ai?.sentiment?.score ?? a.sentiment?.score ?? 0;
+                            const scEmoji = score > 0.25 ? '😊' : (score < -0.25 ? '😠' : '😐');
+                            const scColor = score > 0.25 ? 'green' : (score < -0.25 ? 'red' : 'gray');
+                            const scText = score > 0.25 ? 'Positivo' : (score < -0.25 ? 'Negativo' : 'Neutro');
+                            const sCont = card.querySelector('.sentiment-container');
+                            if (sCont) {
+                                const btn = sCont.querySelector('.sentiment-btn');
+                                if (btn) btn.outerHTML = `<button class="sentiment-btn text-xs font-semibold text-${scColor}-600 bg-${scColor}-100 px-2 py-1 rounded-full">${scEmoji} ${scText}</button>`;
+                                card.classList.remove('border-gray-400', 'border-green-500', 'border-red-500');
+                                card.classList.add(`border-${scColor}-500`);
+                            }
+                            // Tipo de mídia
+                            const mtRaw = a.mediaType;
+                            const mt = mtRaw && /provocada/i.test(mtRaw) ? 'Provocada' : 'Espontânea';
+                            const mColor = mt === 'Provocada' ? 'amber' : 'teal';
+                            const mCont = card.querySelector('.media-container');
+                            if (mCont) {
+                                const mBtn = mCont.querySelector('.media-btn');
+                                if (mBtn) mBtn.outerHTML = `<button class="media-btn text-xs font-semibold text-${mColor}-600 bg-${mColor}-100 px-2 py-1 rounded-full">${mt}</button>`;
+                            }
+                            // Direto/Indireto
+                            const dVal = (typeof a.directness === 'boolean') ? a.directness : (/direto/i.test(String(a.directness||'')));
+                            const dCont = card.querySelector('.directness-container');
+                            const dBtn = dCont?.querySelector('.global-directness-btn');
+                            if (dBtn) {
+                                const classes = dBtn.className.split(' ').filter(c => !c.startsWith('text-') && !c.startsWith('bg-'));
+                                const newText = dVal ? 'Direto' : 'Indireto';
+                                const newTextColor = dVal ? 'text-orange-600' : 'text-gray-600';
+                                const newBgColor = dVal ? 'bg-orange-100' : 'bg-gray-100';
+                                dBtn.className = [...classes, newTextColor, newBgColor].join(' ');
+                                dBtn.textContent = newText;
+                            }
+                        });
+                        if (reportPage && reportPage.classList.contains('active')) {
+                            try { renderReportPage(); } catch (_) {}
+                        }
+                        if (criticalReportPage && criticalReportPage.classList.contains('active')) {
+                            try {
+                                if (criticalRefreshTimer) clearTimeout(criticalRefreshTimer);
+                                criticalRefreshTimer = setTimeout(() => { try { handleGenerateCriticalReport(); } catch(_){} }, 600);
+                            } catch (_) {}
+                        }
+                    });
+                } catch (e) { console.warn('Realtime subscribe failed', e); }
             } catch (error) {
                 console.error("Erro ao preencher os alertas:", error);
                 newsAlerts.innerHTML = '<p class="text-red-500">Erro ao carregar alertas.</p>';
@@ -3077,6 +3178,7 @@ const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-
             const articleId = alertEl?.dataset.id;
             if (!articleId || !currentUser) return;
             try {
+                showSavingIndicator(alertEl);
                 const articleRef = doc(db, "artifacts", appId, "users", currentUser.companyId, "articles", articleId);
                 await updateDoc(articleRef, { directness: isDirect });
                 const container = alertEl.querySelector('.directness-container');
@@ -3090,9 +3192,12 @@ const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-
                 }
                 const found = allCompanyArticles.find(a => a.id === articleId);
                 if (found) found.directness = isDirect;
+                hideSavingIndicator(alertEl);
+                showAlert('Alteração salva', 'success');
             } catch (error) {
                 console.error("Erro ao atualizar Direto/Indireto:", error);
                 showAlert("Erro ao atualizar Direto/Indireto.", "error");
+                hideSavingIndicator(alertEl);
             }
         }
 
@@ -3105,6 +3210,7 @@ const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-
             const articleId = alertEl?.dataset.id;
             if (!articleId || !currentUser || !keyword) return;
             try {
+                showSavingIndicator(alertEl);
                 const articleRef = doc(db, "artifacts", appId, "users", currentUser.companyId, "articles", articleId);
                 const field = `keywordAnalysesMap.${keyword}`;
                 await updateDoc(articleRef, { [field]: { ...(alertEl._kwAna?.[keyword] || {}), sentiment: score, word } });
@@ -3116,9 +3222,12 @@ const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-
                     else if (score < -0.25) { emoji = '😠'; color = 'red'; text = 'Negativo'; }
                     btn.outerHTML = `<button class=\"keyword-sentiment-btn text-xs font-semibold text-${color}-600 bg-${color}-100 px-2 py-1 rounded-full\">${emoji} ${text}</button>`;
                 }
+                hideSavingIndicator(alertEl);
+                showAlert('Alteração salva', 'success');
             } catch (error) {
                 console.error("Erro ao atualizar sentimento por palavra:", error);
                 showAlert("Erro ao atualizar sentimento por palavra.", "error");
+                hideSavingIndicator(alertEl);
             }
         }
 
@@ -3131,6 +3240,7 @@ const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-
             const articleId = alertEl?.dataset.id;
             if (!articleId || !currentUser || !keyword || !mt) return;
             try {
+                showSavingIndicator(alertEl);
                 const articleRef = doc(db, "artifacts", appId, "users", currentUser.companyId, "articles", articleId);
                 const field = `keywordAnalysesMap.${keyword}`;
                 await updateDoc(articleRef, { [field]: { ...(alertEl._kwAna?.[keyword] || {}), mediaType: mt, word } });
@@ -3141,9 +3251,12 @@ const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-
                     const color = isProv ? 'amber' : 'teal';
                     btn.outerHTML = `<button class=\"media-btn text-xs font-semibold text-${color}-600 bg-${color}-100 px-2 py-1 rounded-full\">${mt}</button>`;
                 }
+                hideSavingIndicator(alertEl);
+                showAlert('Alteração salva', 'success');
             } catch (error) {
                 console.error("Erro ao atualizar Espontânea/Provocada por palavra:", error);
                 showAlert("Erro ao atualizar Espontânea/Provocada por palavra.", "error");
+                hideSavingIndicator(alertEl);
             }
         }
 
@@ -3156,6 +3269,7 @@ const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-
             const articleId = alertEl?.dataset.id;
             if (!articleId || !currentUser || !keyword) return;
             try {
+                showSavingIndicator(alertEl);
                 const articleRef = doc(db, "artifacts", appId, "users", currentUser.companyId, "articles", articleId);
                 const field = `keywordAnalysesMap.${keyword}`;
                 await updateDoc(articleRef, { [field]: { ...(alertEl._kwAna?.[keyword] || {}), direct: isDirect, word } });
@@ -3167,13 +3281,68 @@ const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-
                     btn.className = `keyword-directness-btn text-xs font-semibold ${newColorText} ${newColorBg} px-2 py-1 rounded-full`;
                     btn.textContent = isDirect ? 'Direto' : 'Indireto';
                 }
+                hideSavingIndicator(alertEl);
+                showAlert('Alteração salva', 'success');
             } catch (error) {
                 console.error("Erro ao atualizar Direto/Indireto por palavra:", error);
                 showAlert("Erro ao atualizar Direto/Indireto por palavra.", "error");
+                hideSavingIndicator(alertEl);
             }
         }
 
-        function filterAlertsByDate() { if (!newsAlerts || !alertDateFilter) return; const selectedDate = alertDateFilter.value; const allAlerts = newsAlerts.querySelectorAll('.fade-in'); let visibleCount = 0; allAlerts.forEach(alert => { const isVisible = !selectedDate || alert.dataset.date === selectedDate; alert.style.display = isVisible ? 'block' : 'none'; if (isVisible) visibleCount++; }); if (visibleCount === 0 && !newsAlerts.querySelector('.text-gray-500')) { newsAlerts.insertAdjacentHTML('beforeend', `<p class=\"text-gray-500\">Nenhum alerta encontrado para a data selecionada.</p>`); } else if (visibleCount > 0) { const noAlertsMsg = newsAlerts.querySelector('.text-gray-500'); if (noAlertsMsg) noAlertsMsg.remove(); } }
+        function filterAlertsByDate() {
+            if (!newsAlerts || !alertDateFilter) return;
+            const raw = alertDateFilter.value;
+            let selectedIso = '';
+            if (raw) {
+                const m = raw.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+                if (m) {
+                    const d = new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]));
+                    const localYMD = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+                    selectedIso = localYMD;
+                } else {
+                    selectedIso = raw; // assume já ISO
+                }
+            }
+            const allAlerts = newsAlerts.querySelectorAll('.fade-in');
+            let visibleCount = 0;
+            const kwSet = new Set();
+            allAlerts.forEach(alert => {
+                const isVisible = !selectedIso || alert.dataset.date === selectedIso;
+                alert.style.display = isVisible ? 'block' : 'none';
+                if (isVisible) {
+                    visibleCount++;
+                    const kws = (alert.dataset.keywords || '').split(',').filter(Boolean);
+                    kws.forEach(k => kwSet.add(k));
+                }
+            });
+            if (visibleCount === 0 && !newsAlerts.querySelector('.text-gray-500')) {
+                newsAlerts.insertAdjacentHTML('beforeend', `<p class="text-gray-500">Nenhum alerta encontrado para a data selecionada.</p>`);
+            } else if (visibleCount > 0) {
+                const noAlertsMsg = newsAlerts.querySelector('.text-gray-500');
+                if (noAlertsMsg) noAlertsMsg.remove();
+            }
+            if (dashboardKeywordList) {
+                dashboardKeywordList.innerHTML = '';
+                const showAllLi = document.createElement('li');
+                showAllLi.className = 'keyword-filter active bg-indigo-100 text-indigo-800 text-md font-medium px-3 py-2 rounded-md flex justify-between items-center cursor-pointer hover:bg-indigo-200';
+                showAllLi.dataset.keyword = "all";
+                showAllLi.innerHTML = `<span>Mostrar Todas</span>`;
+                dashboardKeywordList.appendChild(showAllLi);
+                const kwsSorted = Array.from(kwSet).sort((a,b)=>a.localeCompare(b));
+                if (kwsSorted.length === 0) {
+                    dashboardKeywordList.insertAdjacentHTML('beforeend', `<p class="text-gray-500 text-sm mt-2">Nenhuma palavra-chave no dia selecionado.</p>`);
+                } else {
+                    kwsSorted.forEach(kw => {
+                        const li = document.createElement('li');
+                        li.className = 'keyword-filter bg-indigo-100 text-indigo-800 text-md font-medium px-3 py-2 rounded-md flex justify-content-between items-center cursor-pointer hover:bg-indigo-200';
+                        li.dataset.keyword = kw;
+                        li.innerHTML = `<span>${kw}</span>`;
+                        dashboardKeywordList.appendChild(li);
+                    });
+                }
+            }
+        }
 
         async function renderReportPage() {
             if (!currentUser) return;
@@ -3207,7 +3376,7 @@ const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-
                 let selectedKeywords = reportKeywordFilterContainer ? Array.from(reportKeywordFilterContainer.querySelectorAll('.report-kw-checkbox:checked')).map(cb => cb.value).filter(v => v !== 'Todos') : [];
                 if (startDate) startDate.setHours(0, 0, 0, 0);
                 if (endDate) endDate.setHours(23, 59, 59, 999);
-                const allowedChannels = (typeof companyCaptureChannels !== 'undefined' && companyCaptureChannels && companyCaptureChannels.length > 0) ? companyCaptureChannels : ['Sites','YouTube','Revistas','Rádios','TV'];
+                const allowedChannels = (typeof companyCaptureChannels !== 'undefined' && companyCaptureChannels && companyCaptureChannels.length > 0) ? companyCaptureChannels : ['Sites','YouTube','Impresso','Rádios','TV'];
                 let filteredArticles = allCompanyArticles.filter(a => allowedChannels.includes(a.channel || getChannelCategory(a.source?.name)));
                 filteredArticles = filteredArticles.filter(article => {
                     const pubDate = article.publishedAt.toDate();
@@ -3220,6 +3389,34 @@ const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-
                     const keywordMatch = selectedKeywords.some(sk => articleKeywords.includes(sk));
                     return dateMatch && keywordMatch;
                 });
+                // Recriar lista de palavras‑chave visíveis apenas com as que têm notícias no período
+                if (reportKeywordFilterContainer) {
+                    const norm = (s) => String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                    const hasKw = (a, kw) => {
+                        const arr = a.keywords || [a.keyword];
+                        const inArr = Array.isArray(arr) ? arr.some(k => String(k||'') === kw) : false;
+                        const title = norm(a.title||''); const desc = norm(a.description||'');
+                        const nm = norm(kw);
+                        return inArr || title.includes(nm) || desc.includes(nm);
+                    };
+                    const visible = keywords.filter(kw => filteredArticles.some(a => hasKw(a, kw))).sort((a,b)=>a.localeCompare(b));
+                    // Preserve 'Todos' e reconstruir itens
+                    reportKeywordFilterContainer.innerHTML = '';
+                    const allId = 'kw-filter-all';
+                    const allEl = document.createElement('div');
+                    allEl.className = 'flex items-center';
+                    allEl.innerHTML = `<input type="checkbox" id="${allId}" value="Todos" class="report-kw-checkbox h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" checked><label for="${allId}" class="ml-2 block text-sm text-gray-900">Mostrar Todas</label>`;
+                    reportKeywordFilterContainer.appendChild(allEl);
+                    visible.forEach(kw => {
+                        const id = `kw-filter-${kw.replace(/\s+/g, '-')}`;
+                        const filterEl = document.createElement('div');
+                        filterEl.className = 'flex items-center';
+                        filterEl.innerHTML = `<input type="checkbox" id="${id}" value="${kw}" class="report-kw-checkbox h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" checked><label for="${id}" class="ml-2 block text-sm text-gray-900">${kw}</label>`;
+                        reportKeywordFilterContainer.appendChild(filterEl);
+                    });
+                    // Reset selectedKeywords com base na nova lista
+                    selectedKeywords = visible.slice();
+                }
                 const keywordsToDisplay = (!selectedKeywords || selectedKeywords.length === 0) ? ['Todos'] : selectedKeywords;
                 renderSourceChart(filteredArticles, keywordsToDisplay);
                 renderDateChart(filteredArticles, keywordsToDisplay);
@@ -3257,42 +3454,78 @@ const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-
         }
 
         const chartColors = ['#4F46E5', '#06B6D4', '#F59E0B', '#10B981', '#EF4444', '#8B5CF6', '#EC4899'];
-        function createChart(canvasId, instanceVar, type, data, customOptions = {}) {
-            const canvasEl = document.getElementById(canvasId);
-            if (!canvasEl) return;
-            if (instanceVar) instanceVar.destroy();
-            const ctx = canvasEl.getContext('2d');
-            const defaultOptions = {
-                responsive: true,
-                maintainAspectRatio: false,
-                interaction: { mode: 'index', intersect: false },
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                    }
-                }
-            };
-            const options = { ...defaultOptions, ...customOptions };
-            return new Chart(ctx, { type, data, options });
-        }
+        const AURORA_COLORS = ['#6b21a8','#1e40af','#2563eb','#06b6d4','#0d9488','#84cc16'];
+        const auroraColorsFor = (n) => Array.from({ length: n }, (_, i) => AURORA_COLORS[i % AURORA_COLORS.length]);
+       function createChart(canvasId, instanceVar, type, data, customOptions = {}) {
+           const canvasEl = document.getElementById(canvasId);
+           if (!canvasEl) return;
+            if (instanceVar) {
+                try { instanceVar.destroy(); } catch (_) {}
+            } else {
+                try {
+                    const existing = Chart.getChart(canvasEl);
+                    if (existing) existing.destroy();
+                } catch (_) {}
+            }
+           const ctx = canvasEl.getContext('2d');
+           const defaultOptions = {
+               responsive: true,
+               maintainAspectRatio: false,
+               interaction: { mode: 'index', intersect: false },
+               plugins: {
+                   legend: {
+                       position: 'bottom',
+                   }
+               }
+           };
+           const options = { ...defaultOptions, ...customOptions };
+           return new Chart(ctx, { type, data, options });
+       }
 
-        function renderCriticalWordCloud(keywordCounts = {}) {
+        function renderCriticalWordCloud(keywordCounts = {}, articles = [], globalKwLabels = []) {
             const cloudEl = document.getElementById('critical-wordcloud');
             const legendEl = document.getElementById('critical-wordcloud-legend');
             if (!cloudEl || !legendEl || typeof d3 === 'undefined' || !d3.layout || !d3.layout.cloud) return;
             cloudEl.innerHTML = '';
             legendEl.innerHTML = '';
-            const entries = Object.entries(keywordCounts).filter(([w,c]) => w && c && c > 0).sort((a,b)=>b[1]-a[1]).slice(0,60);
+            const norm = (s) => String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            const baseMap = new Map();
+            Object.entries(keywordCounts||{}).forEach(([w,c]) => {
+                const k = String(w||'').trim();
+                const v = Number(c)||0;
+                if (k && v > 0) baseMap.set(k, (baseMap.get(k)||0) + v);
+            });
+            const articleKeys = Array.from(new Set((Array.isArray(articles)?articles:[]).flatMap(a => {
+                const arr = Array.isArray(a.keywords) ? a.keywords : (a.keyword ? [a.keyword] : []);
+                return arr || [];
+            }).map(w=>String(w)).filter(Boolean)));
+            const unionLabels = Array.from(new Set([...
+                (Array.isArray(globalKwLabels)?globalKwLabels:[]),
+                ...Array.from(baseMap.keys()),
+                ...articleKeys
+            ])).filter(Boolean).sort((a,b)=>a.localeCompare(b));
+            const countsMap = new Map(unionLabels.map(k => [k, baseMap.get(k)||0]));
+            (Array.isArray(articles)?articles:[]).forEach(a => {
+                const title = norm(a?.title||'');
+                const desc = norm(a?.description||'');
+                const kwsArr = Array.isArray(a.keywords) ? a.keywords : (a.keyword ? [a.keyword] : []);
+                unionLabels.forEach(label => {
+                    const nm = norm(label);
+                    const inArray = (kwsArr||[]).some(k => norm(k) === nm);
+                    const inText = title.includes(nm) || desc.includes(nm);
+                    if (inArray || inText) countsMap.set(label, (countsMap.get(label)||0) + 1);
+                });
+            });
+            const entries = Array.from(countsMap.entries()).filter(([w]) => w).sort((a,b)=>b[1]-a[1]);
             const words = entries.map(([text, value]) => ({ text, value }));
             const rect = cloudEl.getBoundingClientRect();
             const width = Math.max(600, Math.floor(rect.width || 600));
             const height = Math.max(400, Math.floor(rect.height || 400));
             const size = d3.scaleLinear().domain([d3.min(words, d=>d.value)||1, d3.max(words, d=>d.value)||1]).range([14, 48]).nice();
-            const scheme = (d3.schemeSet3 || []).concat(d3.schemeTableau10 || []);
-            const color = d3.scaleOrdinal(scheme.length ? scheme : ['#ef4444','#22c55e','#3b82f6','#a855f7','#eab308','#14b8a6','#f97316','#64748b']);
+            const color = d3.scaleOrdinal(AURORA_COLORS);
             d3.layout.cloud()
                 .size([width, height])
-                .words(words.map(d => ({ text: d.text, size: size(d.value), value: d.value, fill: color(d.text) })))
+                .words(words.map(d => ({ text: d.text, size: size(Math.max(1, d.value)), value: d.value, fill: color(d.text) })))
                 .padding(5)
                 .rotate(() => 0)
                 .font('Inter, sans-serif')
@@ -3327,19 +3560,21 @@ const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-
                 if (!match) return;
                 countsMap.set(src, (countsMap.get(src) || 0) + 1);
             });
-            const entries = Array.from(countsMap.entries()).filter(([_,c]) => c > 0).sort((a,b) => b[1] - a[1]);
+            const entries = Array.from(countsMap.entries()).filter(([_,c]) => c > 0).sort((a,b) => a[1] - b[1]);
             const labels = entries.map(([s]) => s);
             const values = entries.map(([_,c]) => c);
             const containerEl = document.getElementById('source-chart')?.parentElement;
             if (containerEl) {
-                const desired = Math.max(420, labels.length * 40);
-                containerEl.style.height = desired + 'px';
+                containerEl.style.height = '';
+                containerEl.style.maxHeight = '50vh';
             }
-            const dataset = [{ label: 'Fontes', data: values, backgroundColor: '#EC4899', borderSkipped: false }];
-            sourceChartInstance = createChart('source-chart', sourceChartInstance, 'bar', { labels, datasets: dataset }, { indexAxis: 'y', maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, grid: { display: false } }, y: { grid: { display: true } } } });
+            const dataset = [{ label: 'Fontes', data: values, borderColor: (AURORA_COLORS ? AURORA_COLORS[2] : '#2563eb'), borderWidth: 2, tension: 0.3, fill: false }];
+            const safeLabels = labels.length ? labels : ['Sem dados'];
+            const safeValues = labels.length ? values : [0];
+            sourceChartInstance = createChart('source-chart', sourceChartInstance, 'line', { labels: safeLabels, datasets: [{ ...dataset[0], data: safeValues }] }, { maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { beginAtZero: true, grid: { display: true } } } });
         }
         function renderChannelChart(articles, selectedKeywords) {
-            const allChannels = ['YouTube', 'Sites', 'Revistas', 'Rádios', 'TV'];
+            const allChannels = ['YouTube', 'Sites', 'Impresso', 'Rádios', 'TV'];
             const hasTodos = selectedKeywords && selectedKeywords.includes('Todos');
             const selectedList = (selectedKeywords || []).filter(k => k !== 'Todos');
             
@@ -3532,7 +3767,7 @@ const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-
                 searchResults.innerHTML = `<p class="text-gray-500">Digite algo para começar a pesquisar ou use os filtros.</p>`;
                 return;
             }
-            const allowedChannels = (typeof companyCaptureChannels !== 'undefined' && companyCaptureChannels && companyCaptureChannels.length > 0) ? companyCaptureChannels : ['Sites','YouTube','Revistas','Rádios','TV'];
+            const allowedChannels = (typeof companyCaptureChannels !== 'undefined' && companyCaptureChannels && companyCaptureChannels.length > 0) ? companyCaptureChannels : ['Sites','YouTube','Impresso','Rádios','TV'];
             let filteredArticles = allCompanyArticles.filter(a => allowedChannels.includes(a.channel || getChannelCategory(a.source?.name)));
             if (keywordFilter) { filteredArticles = filteredArticles.filter(a => (a.keywords || [a.keyword]).includes(keywordFilter)); }
             if (sourceFilterValue) { filteredArticles = filteredArticles.filter(a => getDisplaySourceName(a) === sourceFilterValue); }
@@ -3655,6 +3890,7 @@ const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-
             const reportMetaGrid = document.getElementById('report-meta-grid');
             const detailAiInsightsEl = document.getElementById('detail-ai-insights');
             const reportDateEl = document.getElementById('report-date');
+            const reportAuthorEl = document.getElementById('report-author');
             const detailTitleEl = document.getElementById('detail-title');
             const detailContentEl = document.getElementById('detail-content');
             const reportLogoContainer = document.getElementById('report-logo-container');
@@ -3665,6 +3901,8 @@ const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-
 
             const pubDate = new Date(article.publishedAt.seconds ? article.publishedAt.toDate() : article.publishedAt);
             reportDateEl.textContent = `Gerado em: ${new Date().toLocaleDateString('pt-BR')}`;
+            const authorHeaderText = String(article.author || article.byline || '').trim();
+            if (reportAuthorEl) reportAuthorEl.textContent = authorHeaderText ? `Autor: ${authorHeaderText}` : '';
             detailTitleEl.textContent = article.title;
             
             // Verificar se estamos no contexto de Relatório de Notícias (somente leitura)
@@ -4183,7 +4421,7 @@ const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-
                 // Mapa de contagens por empresa
                 const countsByCompany = {};
                 companies.forEach(c => {
-                    countsByCompany[c.id] = { Sites: 0, YouTube: 0, Revistas: 0, Rádio: 0, TV: 0, totalApprove: 0, pendingDeletion: 0, name: c.name };
+                    countsByCompany[c.id] = { Sites: 0, YouTube: 0, Impresso: 0, Rádio: 0, TV: 0, totalApprove: 0, pendingDeletion: 0, name: c.name };
                 });
 
                 // Alertas pendentes
@@ -4194,7 +4432,7 @@ const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-
                     if (!cid || !countsByCompany[cid]) return;
                     const channelRaw = alert.channel || getChannelCategory(alert.source?.name);
                     const channelNorm = channelRaw === 'Rádios' ? 'Rádio' : channelRaw;
-                    const channel = ['Sites', 'YouTube', 'Revistas', 'Rádio', 'TV'].includes(channelNorm) ? channelNorm : 'Sites';
+                    const channel = ['Sites', 'YouTube', 'Impresso', 'Rádio', 'TV'].includes(channelNorm) ? channelNorm : 'Sites';
                     countsByCompany[cid][channel] += 1;
                     countsByCompany[cid].totalApprove += 1;
                 });
@@ -4216,13 +4454,13 @@ const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-
                 }
                 companies.sort((a, b) => a.name.localeCompare(b.name));
                 companies.forEach(c => {
-                    const cnt = countsByCompany[c.id] || { Sites: 0, YouTube: 0, Revistas: 0, Rádio: 0, TV: 0, totalApprove: 0, pendingDeletion: 0 };
+                    const cnt = countsByCompany[c.id] || { Sites: 0, YouTube: 0, Impresso: 0, Rádio: 0, TV: 0, totalApprove: 0, pendingDeletion: 0 };
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
                         <td class="px-6 py-4 text-sm text-gray-700 font-medium">${c.name}</td>
                         <td class="px-6 py-4 text-sm text-gray-700">${cnt.Sites}</td>
                         <td class="px-6 py-4 text-sm text-gray-700">${cnt.YouTube}</td>
-                        <td class="px-6 py-4 text-sm text-gray-700">${cnt.Revistas}</td>
+                        <td class="px-6 py-4 text-sm text-gray-700">${cnt.Impresso}</td>
                         <td class="px-6 py-4 text-sm text-gray-700">${cnt.Rádio}</td>
                         <td class="px-6 py-4 text-sm text-gray-700">${cnt.TV}</td>
                         <td class="px-6 py-4 text-sm text-gray-700">${cnt.totalApprove}</td>
@@ -4235,19 +4473,19 @@ const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-
                 const totals = Object.values(countsByCompany).reduce((acc, v) => {
                     acc.Sites += v.Sites;
                     acc.YouTube += v.YouTube;
-                    acc.Revistas += v.Revistas;
+                    acc.Impresso += v.Impresso;
                     acc.Rádio += v.Rádio;
                     acc.TV += v.TV;
                     acc.totalApprove += v.totalApprove;
                     acc.pendingDeletion += v.pendingDeletion;
                     return acc;
-                }, { Sites: 0, YouTube: 0, Revistas: 0, Rádio: 0, TV: 0, totalApprove: 0, pendingDeletion: 0 });
+                }, { Sites: 0, YouTube: 0, Impresso: 0, Rádio: 0, TV: 0, totalApprove: 0, pendingDeletion: 0 });
                 const trTotal = document.createElement('tr');
                 trTotal.innerHTML = `
                     <td class="px-6 py-4 text-sm text-gray-800 font-semibold">Total</td>
                     <td class="px-6 py-4 text-sm text-gray-800 font-semibold">${totals.Sites}</td>
                     <td class="px-6 py-4 text-sm text-gray-800 font-semibold">${totals.YouTube}</td>
-                    <td class="px-6 py-4 text-sm text-gray-800 font-semibold">${totals.Revistas}</td>
+                    <td class="px-6 py-4 text-sm text-gray-800 font-semibold">${totals.Impresso}</td>
                     <td class="px-6 py-4 text-sm text-gray-800 font-semibold">${totals.Rádio}</td>
                     <td class="px-6 py-4 text-sm text-gray-800 font-semibold">${totals.TV}</td>
                     <td class="px-6 py-4 text-sm text-gray-800 font-semibold">${totals.totalApprove}</td>
@@ -4395,7 +4633,7 @@ const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-
                 }
             } catch (e) { console.error('Erro ao carregar empresas para relatório crítico:', e); }
             if (criticalSummary) criticalSummary.innerHTML = 'Selecione a empresa e o período, depois clique em Gerar.';
-            [criticalChannelChartInstance, criticalSpaceChartInstance, criticalSpaceQualChartInstance, criticalVehicleChartInstance, criticalValuationChartInstance, criticalDateChartInstance, criticalSentimentByChannelChartInstance].forEach(inst => { if (inst) { try { inst.destroy(); } catch(_){} } });
+            [criticalChannelChartInstance, criticalSpaceChartInstance, criticalSpaceQualChartInstance, criticalVehicleChartInstance, criticalValuationChartInstance, criticalDateChartInstance, criticalSentimentByChannelChartInstance, criticalSentimentByKeywordChartInstance].forEach(inst => { if (inst) { try { inst.destroy(); } catch(_){} } });
             if (criticalSpaceDetailInstances && typeof criticalSpaceDetailInstances === 'object') { Object.values(criticalSpaceDetailInstances).forEach(inst => { try { inst.destroy(); } catch(_){} }); criticalSpaceDetailInstances = {}; }
         }
 
@@ -4422,7 +4660,8 @@ const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-
                 const keywordCounts = data.keywordCounts || {};
                 const spontaneityCounts = data.spontaneityCounts || {};
                 const mediaSpace = data.mediaSpace || {};
-                if ((mediaSpace.webSize == null || mediaSpace.webSize === 0) && Array.isArray(articles) && articles.length) {
+                let globalKwLabels = [];
+                if ((mediaSpace.webSize == null || mediaSpace.webSize === 0 || mediaSpace.printSize == null || mediaSpace.printSize === 0) && Array.isArray(articles) && articles.length) {
                     const estimateWebSizeCm = (list) => {
                         const charsPerLine = 70; const lineHeightPx = 22; const pxToCm = 2.54/96;
                         let totalChars = 0; let imageCount = 0;
@@ -4438,11 +4677,20 @@ const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-
                         const totalPx = textPx + imgPx;
                         return Number((totalPx * pxToCm).toFixed(1));
                     };
-                    const webArticles = articles.filter(a => {
-                        const ch = (a.channel || getChannelCategory(a?.source?.name || ''));
-                        return /site|web/i.test(ch);
-                    });
-                    mediaSpace.webSize = estimateWebSizeCm(webArticles);
+                    if (mediaSpace.webSize == null || mediaSpace.webSize === 0) {
+                        const webArticles = articles.filter(a => {
+                            const ch = (a.channel || getChannelCategory(a?.source?.name || ''));
+                            return /site|web/i.test(ch);
+                        });
+                        mediaSpace.webSize = estimateWebSizeCm(webArticles);
+                    }
+                    if (mediaSpace.printSize == null || mediaSpace.printSize === 0) {
+                        const printArticles = articles.filter(a => {
+                            const ch = (a.channel || getChannelCategory(a?.source?.name || ''));
+                            return /impresso|jornal/i.test(ch);
+                        });
+                        mediaSpace.printSize = estimateWebSizeCm(printArticles);
+                    }
                 }
                 const topChannel = data.topChannel || null;
                 const topVehicle = data.topVehicle || null;
@@ -4504,11 +4752,14 @@ const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-
                                         <li><a href="#critical-channel-chart" class="hover:underline">Distribuição por mídia</a></li>
                                         <li><a href="#critical-space-chart" class="hover:underline">Notícias por tipo de texto</a></li>
                                         <li><a href="#critical-space-qual-chart" class="hover:underline">Citações Direta/Indireta</a></li>
-                                        <li><a href="#critical-spontaneity-chart" class="hover:underline">Espontânea/Provocada</a></li>
+                                        <li><a href="#critical-spontaneity-total-chart" class="hover:underline">Mídia Provocada/Espontânea</a></li>
                                         <li><a href="#critical-wordcloud" class="hover:underline">Assunto</a></li>
-                                        <li><a href="#critical-vehicle-chart" class="hover:underline">Notícias por veículo</a></li>
+                                        <li><a href="#critical-vehicle-chart" class="hover:underline">Notícias por Fonte</a></li>
+                                        <li><a href="#sentiment-by-keyword-chart" class="hover:underline">Sentimento por Palavra‑Chave</a></li>
+                                        <li><a href="#sentiment-by-channel-chart" class="hover:underline">Análise de Sentimento por Tipo de Mídia</a></li>
                                         <li><a href="#critical-valuation-chart" class="hover:underline">Análise qualitativa</a></li>
                                         <li><a href="#critical-date-chart" class="hover:underline">Notícias por data de publicação</a></li>
+                                        <li><a href="#critical-report-map" class="hover:underline">Mapa de Notícias</a></li>
                                     </ul>
                                 </div>
                             </div>
@@ -4528,8 +4779,7 @@ const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-
                     });
                     const barLabels = Object.keys(dist);
                     const barValues = barLabels.map(l => dist[l]);
-                    const colorMap = { 'Site': '#0e4f68', 'Rádio': '#f59e0b', 'Impresso': '#ef4444', 'TV': '#22c55e', 'YouTube/Blog': '#9ca3af' };
-                    const backgroundColors = barLabels.map(l => colorMap[l] || '#64748b');
+                    const backgroundColors = auroraColorsFor(barLabels.length);
                     criticalChannelChartInstance = createChart('critical-channel-chart', criticalChannelChartInstance, 'bar', { labels: barLabels, datasets: [{ label: 'Total', data: barValues, backgroundColor: backgroundColors, borderRadius: 6, borderSkipped: false }] }, { maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { beginAtZero: true, grid: { display: true } } } });
                     const legendEl = document.getElementById('critical-channel-legend');
                     if (legendEl) {
@@ -4542,7 +4792,7 @@ const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-
                     const kwByMediaEl = document.getElementById('critical-keywords-by-media');
                     if (kwByMediaEl && Array.isArray(articles) && articles.length) {
                         const chans = ['Site','Rádio','TV','Impresso','YouTube/Blog'];
-                        const colorBy = colorMap;
+                        const colorBy = { 'Site': AURORA_COLORS[0], 'Rádio': AURORA_COLORS[1], 'TV': AURORA_COLORS[2], 'Impresso': AURORA_COLORS[3], 'YouTube/Blog': AURORA_COLORS[4] };
                         const normChan = (a) => {
                             const c = a.channel || getChannelCategory(a?.source?.name || '');
                             const s = String(c||'').toLowerCase();
@@ -4553,20 +4803,33 @@ const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-
                             if (s.includes('youtube') || s.includes('blog')) return 'YouTube/Blog';
                             return 'Site';
                         };
-                        const maps = { 'Site': new Map(), 'Rádio': new Map(), 'TV': new Map(), 'Impresso': new Map(), 'YouTube/Blog': new Map() };
-                        articles.forEach(a => {
-                            const ch = normChan(a);
-                            const kws = Array.isArray(a.keywords) ? a.keywords : (a.keyword ? [a.keyword] : []);
-                            kws.forEach(k => { if (!k) return; maps[ch].set(k, (maps[ch].get(k)||0)+1); });
-                        });
-                        const globalKwLabels = await (async () => {
+                        globalKwLabels = await (async () => {
                             const kwSnap = await getDocs(query(collection(db, 'artifacts', appId, 'users', companyId, 'keywords')));
                             const companyKws = Array.from(new Set(kwSnap.docs.map(d => String((d.data()||{}).word||'')).filter(Boolean))).sort((a,b)=>a.localeCompare(b));
                             if (companyKws.length) return companyKws;
-                            const freqSorted = Object.entries(keywordCounts||{}).map(([w,c])=>[String(w), Number(c)||0]).filter(([w])=>w).sort((a,b)=>a[0].localeCompare(b[0]));
-                            const union = Array.from(new Set(freqSorted.map(([w])=>w).concat(...Object.values(maps).map(m=>Array.from(m.keys()))))).sort((a,b)=>a.localeCompare(b));
+                            const freqKeys = Object.keys(keywordCounts||{}).map(w=>String(w)).filter(Boolean);
+                            const articleKeys = Array.from(new Set((Array.isArray(articles)?articles:[]).flatMap(a => {
+                                const arr = Array.isArray(a.keywords) ? a.keywords : (a.keyword ? [a.keyword] : []);
+                                return arr || [];
+                            }).map(w=>String(w)).filter(Boolean)));
+                            const union = Array.from(new Set(freqKeys.concat(articleKeys))).sort((a,b)=>a.localeCompare(b));
                             return union;
                         })();
+                        const maps = { 'Site': new Map(), 'Rádio': new Map(), 'TV': new Map(), 'Impresso': new Map(), 'YouTube/Blog': new Map() };
+                        Object.keys(maps).forEach(ch => { globalKwLabels.forEach(k => maps[ch].set(k, 0)); });
+                        const norm = (s) => String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                        articles.forEach(a => {
+                            const ch = normChan(a);
+                            const title = norm(a?.title||'');
+                            const desc = norm(a?.description||'');
+                            const kwsArr = Array.isArray(a.keywords) ? a.keywords : (a.keyword ? [a.keyword] : []);
+                            globalKwLabels.forEach(label => {
+                                const nm = norm(label);
+                                const inArray = (kwsArr||[]).some(k => norm(k) === nm);
+                                const inText = title.includes(nm) || desc.includes(nm);
+                                if (inArray || inText) maps[ch].set(label, (maps[ch].get(label)||0) + 1);
+                            });
+                        });
                         const visibleChans = chans.filter(ch => globalKwLabels.reduce((sum,k)=> sum + (maps[ch].get(k)||0), 0) > 0);
                         kwByMediaEl.innerHTML = visibleChans.map(ch => {
                             const id = `kw-media-${ch.replace(/[^a-z0-9]/gi,'_').toLowerCase()}`;
@@ -4577,7 +4840,7 @@ const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-
                             const id = `kw-media-${ch.replace(/[^a-z0-9]/gi,'_').toLowerCase()}`;
                             const labels = globalKwLabels;
                             const values = labels.map(k => maps[ch].get(k) || 0);
-                            createChart(id, null, 'bar', { labels, datasets: [{ label: 'Ocorrências', data: values, backgroundColor: colorBy[ch] }] }, { indexAxis: 'y', maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, beginAtZero: true }, y: { grid: { display: true } } } });
+                            createChart(id, null, 'bar', { labels, datasets: [{ label: 'Ocorrências', data: values, backgroundColor: auroraColorsFor(labels.length) }] }, { indexAxis: 'y', maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, beginAtZero: true }, y: { grid: { display: true } } } });
                         });
                     }
                     // Coluna esquerda: totalizador (barras verticais) por tipo de texto
@@ -4589,13 +4852,13 @@ const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-
                     });
                     const sumText = valuesText.reduce((s,n)=>s+n,0);
                     const dataText = sumText > 0 ? valuesText : [120, 45, 30, 18, 22];
-                    criticalSpaceChartInstance = createChart('critical-space-chart', criticalSpaceChartInstance, 'bar', { labels: categoriesText, datasets: [{ label: 'Tipo de texto', data: dataText, backgroundColor: '#10B981', borderRadius: 6, borderSkipped: false }] }, { maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(context) { return context.dataset.label + ': ' + context.parsed.y; } } } }, scales: { x: { grid: { display: false } }, y: { beginAtZero: true, grid: { display: true } } } });
+                    criticalSpaceChartInstance = createChart('critical-space-chart', criticalSpaceChartInstance, 'bar', { labels: categoriesText, datasets: [{ label: 'Tipo de texto', data: dataText, backgroundColor: auroraColorsFor(categoriesText.length), borderRadius: 6, borderSkipped: false }] }, { maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(context) { return context.dataset.label + ': ' + context.parsed.y; } } } }, scales: { x: { grid: { display: false } }, y: { beginAtZero: true, grid: { display: true } } } });
                     // Painel da direita: Palavras‑Chave (Top 10)
                     // Painel da direita: Gráficos individuais por classificação (usa todas as keywords selecionadas)
                     const filterElMaster = document.getElementById('report-keyword-filter-container');
                     const selectedMaster = filterElMaster ? Array.from(filterElMaster.querySelectorAll('.report-kw-checkbox:checked')).map(cb => cb.value).filter(v => v && v !== 'Todos') : [];
                     const kwSnapCls = await getDocs(query(collection(db, 'artifacts', appId, 'users', companyId, 'keywords')));
-                    let globalKwLabels = (selectedMaster.length ? selectedMaster : Array.from(new Set(kwSnapCls.docs.map(d => String((d.data()||{}).word||'')).filter(Boolean)))).sort((a,b)=>a.localeCompare(b));
+                    globalKwLabels = (selectedMaster.length ? selectedMaster : Array.from(new Set(kwSnapCls.docs.map(d => String((d.data()||{}).word||'')).filter(Boolean)))).sort((a,b)=>a.localeCompare(b));
                     if (!globalKwLabels.length) {
                         const fromCounts = Object.keys(keywordCounts||{});
                         const fromArticles = Array.from(new Set(articles.flatMap(a => (Array.isArray(a.keywords)?a.keywords: (a.keyword?[a.keyword]:[]))).filter(Boolean)));
@@ -4739,26 +5002,44 @@ const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-
                     { label: 'Espontânea', data: dataEspKw, backgroundColor: '#4f46e5', stack: 'kw' },
                     { label: 'Provocada', data: dataProvKw, backgroundColor: '#06b6d4', stack: 'kw' }
                 ] }, { indexAxis: 'y', maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, scales: { x: { stacked: true, grid: { display: false }, beginAtZero: true }, y: { stacked: true, grid: { display: true } } } });
-                const spontaneityLabels = Object.keys(spontaneityCounts);
-                if (spontaneityLabels.length) {
-                    const espontanea = (spontaneityCounts['Espontânea'] || spontaneityCounts['espontanea'] || spontaneityCounts['Espontanea'] || 0);
-                    const provocada = (spontaneityCounts['Provocada'] || spontaneityCounts['provocada'] || 0);
-                    const labelsStack = ['Total'];
-                    const datasetsStack = [
-                        { label: 'Espontânea', data: [espontanea], backgroundColor: '#3B82F6', stack: 'total', borderRadius: 6, borderSkipped: false },
-                        { label: 'Provocada', data: [provocada], backgroundColor: '#EF4444', stack: 'total', borderRadius: 6, borderSkipped: false }
-                    ];
-                    criticalSpontaneityChartInstance = createChart('critical-spontaneity-chart', criticalSpontaneityChartInstance, 'bar', { labels: labelsStack, datasets: datasetsStack }, { plugins: { legend: { position: 'bottom' }, tooltip: { callbacks: { label: function(context) { return context.dataset.label + ': ' + context.parsed.x + ' artigos'; } } } }, scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, beginAtZero: true, grid: { display: true } } }, indexAxis: 'y' });
+                // Notícias por Fonte — ranking completo (ordem decrescente, único gráfico)
+                const sourceCountsMap = new Map();
+                articles.forEach(a => { const v = getDisplaySourceName(a) || (a.source?.name || '-'); sourceCountsMap.set(v, (sourceCountsMap.get(v)||0)+1); });
+                const sourceEntries = Array.from(sourceCountsMap.entries()).filter(([_,c])=>c>0).sort((a,b)=>b[1]-a[1]).slice(0,10);
+                const sourceLabels = sourceEntries.map(([n])=>n);
+                const sourceValues = sourceEntries.map(([_,c])=>c);
+                const srcContainer = document.getElementById('critical-vehicle-chart')?.parentElement;
+                if (srcContainer) { const desired = Math.max(420, Math.min(10, sourceLabels.length) * 40); srcContainer.style.height = desired + 'px'; }
+                if (sourceLabels.length) {
+                    criticalVehicleChartInstance = createChart('critical-vehicle-chart', criticalVehicleChartInstance, 'bar', { labels: sourceLabels, datasets: [{ label: 'Fontes', data: sourceValues, backgroundColor: auroraColorsFor(sourceLabels.length), borderRadius: 6, borderSkipped: false }] }, { indexAxis: 'y', maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, grid: { display: false } }, y: { grid: { display: true } } } });
                 }
-                const vehicleLabels = Object.keys(vehicleCounts).slice(0,10);
-                const vehicleValues = vehicleLabels.map(k => vehicleCounts[k]);
-                if (vehicleLabels.length) {
-                    criticalVehicleChartInstance = createChart('critical-vehicle-chart', criticalVehicleChartInstance, 'bar', { labels: vehicleLabels, datasets: [{ label: 'Veículos (top 10)', data: vehicleValues, backgroundColor: '#EC4899', borderRadius: 6, borderSkipped: false }] }, { plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(context) { return context.dataset.label + ': ' + context.parsed.y; } } } }, scales: { x: { grid: { display: false } }, y: { beginAtZero: true, grid: { display: true } } }, indexAxis: 'y' });
-                }
-                const valuationLabels = Object.keys(valuation);
+                const valuationLabels = Object.keys(valuation||{});
                 const valuationValues = valuationLabels.map(k => valuation[k]);
-                if (valuationLabels.length) {
-                    criticalValuationChartInstance = createChart('critical-valuation-chart', criticalValuationChartInstance, 'bar', { labels: valuationLabels, datasets: [{ label: 'Análise qualitativa', data: valuationValues, backgroundColor: ['#22C55E','#F59E0B','#EF4444','#6366F1','#0EA5E9'], borderRadius: 6, borderSkipped: false }] }, { plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(context) { return context.label + ': ' + context.parsed.y + ' artigos'; } } } }, scales: { x: { grid: { display: false } }, y: { beginAtZero: true, grid: { display: true } } } });
+                const hasPos = valuationLabels.some(l => /pos/i.test(String(l||'')));
+                const hasNeg = valuationLabels.some(l => /neg/i.test(String(l||'')));
+                const hasNeu = valuationLabels.some(l => /neu/i.test(String(l||'')));
+                let labelsFinal = valuationLabels;
+                let valuesFinal = valuationValues;
+                if (!labelsFinal.length || !(hasPos && hasNeg && hasNeu)) {
+                    const base = { Positivo: 0, Neutro: 0, Negativo: 0 };
+                    (Array.isArray(articles)?articles:[]).forEach(a => {
+                        const lbl = a?.sentiment?.label || a?.valuation || a?.ai?.sentiment?.label || '';
+                        const s = String(lbl||'').toLowerCase();
+                        let k = null;
+                        if (s.includes('pos')) k = 'pos'; else if (s.includes('neg')) k = 'neg'; else if (s.includes('neu')) k = 'neu';
+                        if (!k && typeof a?.ai?.sentiment?.score === 'number') {
+                            const sc = a.ai.sentiment.score;
+                            if (sc > 0.2) k = 'pos'; else if (sc < -0.2) k = 'neg'; else k = 'neu';
+                        }
+                        if (k === 'pos') base.Positivo += 1;
+                        else if (k === 'neg') base.Negativo += 1;
+                        else if (k === 'neu') base.Neutro += 1;
+                    });
+                    labelsFinal = ['Positivo','Neutro','Negativo'];
+                    valuesFinal = labelsFinal.map(l => base[l] || 0);
+                }
+                if (labelsFinal.length) {
+                    criticalValuationChartInstance = createChart('critical-valuation-chart', criticalValuationChartInstance, 'bar', { labels: labelsFinal, datasets: [{ label: 'Sentimento', data: valuesFinal, backgroundColor: ['#22C55E','#94A3B8','#EF4444'], borderRadius: 6, borderSkipped: false }] }, { plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(context) { return context.label + ': ' + context.parsed.y + ' artigos'; } } } }, scales: { x: { grid: { display: false } }, y: { beginAtZero: true, grid: { display: true } } } });
                 }
                 const dateLabels = Object.keys(dateCounts).sort();
                 const dateValues = dateLabels.map(k => dateCounts[k]);
@@ -4768,7 +5049,7 @@ const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-
                 const wordcloudEl = document.getElementById('critical-wordcloud');
                 if (wordcloudEl) {
                     try {
-                        renderCriticalWordCloud(keywordCounts);
+                        renderCriticalWordCloud(keywordCounts, articles, globalKwLabels);
                     } catch (e) {
                         console.error('Falha ao renderizar nuvem de palavras:', e);
                         const entries = Object.entries(keywordCounts).sort((a,b)=>b[1]-a[1]).slice(0,50);
@@ -4779,7 +5060,7 @@ const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-
                 // Atualizar espaço ocupado na mídia
                 const mediaSpaceEl = document.getElementById('critical-media-space');
                 if (mediaSpaceEl) {
-                    const { tvTime = 0, radioTime = 0, webSize = 0, youtubeTime = 0 } = mediaSpace;
+                    const { tvTime = 0, radioTime = 0, webSize = 0, youtubeTime = 0, printSize = 0 } = mediaSpace;
                     const pad = (n) => String(n).padStart(2,'0');
                     const fmtTime = (m) => { const h = Math.floor(m/60); const mm = Math.floor(m%60); const ss = Math.round((m - Math.floor(m)) * 60); return `${pad(h)}:${pad(mm)}:${pad(ss)}`; };
                     mediaSpaceEl.innerHTML = `
@@ -4792,6 +5073,10 @@ const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-
                             <div class="flex items-center gap-3">
                                 <svg class="w-8 h-8 text-teal-600" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="5" width="18" height="14" rx="2"></rect><rect x="3" y="5" width="18" height="3" fill="currentColor"></rect></svg>
                                 <span class="text-gray-700 text-base">WEB: ${webSize.toFixed(1)} centímetros</span>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <svg class="w-8 h-8 text-indigo-600" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="4" width="18" height="14" rx="2"></rect><rect x="5" y="7" width="14" height="2" rx="1" fill="white"></rect><rect x="5" y="11" width="10" height="2" rx="1" fill="white"></rect></svg>
+                                <span class="text-gray-700 text-base">Impresso: ${printSize.toFixed(1)} centímetros</span>
                             </div>
                             <div class="flex items-center gap-3">
                                 <svg class="w-8 h-8 text-red-600" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="6" width="18" height="12" rx="2"></rect><polygon points="10,10 16,12 10,14" fill="white"></polygon></svg>
@@ -4809,11 +5094,14 @@ const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-
                 if (sentimentByChannelEl && Array.isArray(articles) && articles.length) {
                     const base = { pos: 0, neu: 0, neg: 0 };
                     const acc = { TV: { ...base }, Rádio: { ...base }, YouTube: { ...base }, Web: { ...base } };
-                    const normSent = (lbl) => {
+                    const normSent = (lbl, a) => {
                         const s = String(lbl||'').toLowerCase();
                         if (s.includes('pos')) return 'pos';
                         if (s.includes('neg')) return 'neg';
-                        return 'neu';
+                        if (s.includes('neu')) return 'neu';
+                        const sc = typeof a?.ai?.sentiment?.score === 'number' ? a.ai.sentiment.score : null;
+                        if (sc != null) { if (sc > 0.2) return 'pos'; if (sc < -0.2) return 'neg'; return 'neu'; }
+                        return null;
                     };
                     const normChan = (a) => {
                         const c = a.channel || getChannelCategory(a?.source?.name || '');
@@ -4827,8 +5115,8 @@ const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-
                     articles.forEach(a => {
                         const ch = normChan(a);
                         const lbl = a?.sentiment?.label || a?.valuation || a?.ai?.sentiment?.label || null;
-                        const k = normSent(lbl);
-                        acc[ch][k] += 1;
+                        const k = normSent(lbl, a);
+                        if (k) acc[ch][k] += 1;
                     });
                     const labelsCh = ['TV','Rádio','YouTube','Web'];
                     const posData = labelsCh.map(l => acc[l].pos);
@@ -4840,6 +5128,37 @@ const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-
                         { label: 'Negativo', data: negData, backgroundColor: '#EF4444', stack: 'total' }
                     ];
                     criticalSentimentByChannelChartInstance = createChart('sentiment-by-channel-chart', criticalSentimentByChannelChartInstance, 'bar', { labels: labelsCh, datasets }, { scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } }, plugins: { legend: { position: 'bottom' } } });
+                }
+                const sentimentByKeywordEl = document.getElementById('sentiment-by-keyword-chart');
+                if (sentimentByKeywordEl) {
+                    const labelsKw = (globalKwLabels && globalKwLabels.length ? globalKwLabels : Array.from(new Set((Array.isArray(articles)?articles:[]).flatMap(a => (Array.isArray(a.keywords)?a.keywords:(a.keyword?[a.keyword]:[]))).filter(Boolean)))).sort((a,b)=>a.localeCompare(b));
+                    const base = { pos: 0, neu: 0, neg: 0 };
+                    const acc = new Map(labelsKw.map(k => [k, { ...base }]));
+                    const norm = (s) => String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                    const normSent = (lbl, a) => { const s = String(lbl||'').toLowerCase(); if (s.includes('pos')) return 'pos'; if (s.includes('neg')) return 'neg'; if (s.includes('neu')) return 'neu'; const sc = typeof a?.ai?.sentiment?.score === 'number' ? a.ai.sentiment.score : null; if (sc != null) { if (sc > 0.2) return 'pos'; if (sc < -0.2) return 'neg'; return 'neu'; } return null; };
+                    (Array.isArray(articles)?articles:[]).forEach(a => {
+                        const lbl = a?.sentiment?.label || a?.valuation || a?.ai?.sentiment?.label || null;
+                        const ksent = normSent(lbl, a);
+                        const title = norm(a?.title||'');
+                        const desc = norm(a?.description||'');
+                        const kwsArr = Array.isArray(a.keywords) ? a.keywords : (a.keyword ? [a.keyword] : []);
+                        labelsKw.forEach(label => {
+                            const nm = norm(label);
+                            const inArray = (kwsArr||[]).some(k => norm(k) === nm);
+                            const inText = title.includes(nm) || desc.includes(nm);
+                            if (ksent && (inArray || inText)) { const cur = acc.get(label); cur[ksent] += 1; }
+                        });
+                    });
+                    const posData = labelsKw.map(l => acc.get(l).pos);
+                    const neuData = labelsKw.map(l => acc.get(l).neu);
+                    const negData = labelsKw.map(l => acc.get(l).neg);
+                    const wrapEl = document.getElementById('critical-sentiment-by-keyword');
+                    if (wrapEl) { wrapEl.style.height = `${Math.max(400, labelsKw.length * 26)}px`; }
+                    criticalSentimentByKeywordChartInstance = createChart('sentiment-by-keyword-chart', criticalSentimentByKeywordChartInstance, 'bar', { labels: labelsKw, datasets: [
+                        { label: 'Positivo', data: posData, backgroundColor: '#22c55e', stack: 's' },
+                        { label: 'Neutro', data: neuData, backgroundColor: '#94a3b8', stack: 's' },
+                        { label: 'Negativo', data: negData, backgroundColor: '#ef4444', stack: 's' }
+                    ] }, { indexAxis: 'y', maintainAspectRatio: false, scales: { x: { stacked: true, beginAtZero: true }, y: { stacked: true } }, plugins: { legend: { position: 'bottom' } } });
                 }
             } catch (error) {
                 console.error('Erro ao gerar relatório crítico:', error);
@@ -5274,7 +5593,7 @@ fetchWindowEndInput = document.getElementById('fetchWindowEnd');
                         const savedUser = getStorage('clipping_currentUser', null);
                         if (savedUser) {
                             currentUser = savedUser;
-                            if (currentUser && !currentUser.isSuperAdmin && currentUser.companyId) { try { await loadCompanyCaptureChannels(currentUser.companyId); } catch (e) { console.warn('loadCompanyCaptureChannels failed', e); } } else { companyCaptureChannels = ['Sites','YouTube','Revistas','Rádios','TV']; }
+                            if (currentUser && !currentUser.isSuperAdmin && currentUser.companyId) { try { await loadCompanyCaptureChannels(currentUser.companyId); } catch (e) { console.warn('loadCompanyCaptureChannels failed', e); } } else { companyCaptureChannels = ['Sites','YouTube','Impresso','Rádios','TV']; }
                             updateView('dashboard');
                         } else {
                             currentUser = null;
@@ -5636,6 +5955,8 @@ if (youtubeFrequencyInput) youtubeFrequencyInput.addEventListener('input', () =>
             if (shareWhatsappBtn) shareWhatsappBtn.addEventListener('click', handleShareActions);
             if (shareEmailBtn) shareEmailBtn.addEventListener('click', handleShareActions);
             if (printBtn) printBtn.addEventListener('click', () => window.print());
+            const criticalPrintBtn = document.getElementById('critical-print-btn');
+            if (criticalPrintBtn) criticalPrintBtn.addEventListener('click', () => window.print());
             if (mapFilterBtn) mapFilterBtn.addEventListener('click', renderMapPage);
             if (reportStartDateInput) reportStartDateInput.addEventListener('change', renderSuperAdminReport);
             if (reportEndDateInput) reportEndDateInput.addEventListener('change', renderSuperAdminReport);
