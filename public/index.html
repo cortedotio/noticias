@@ -1887,11 +1887,12 @@ function updateView(pageName) {
             }
         }
 
-        async function handleLogin(e) {
-            e.preventDefault();
-            const companyName = document.getElementById('login-company').value.trim();
-            const user = document.getElementById('login-user').value.trim();
-            const pass = document.getElementById('login-password').value.trim();
+async function handleLogin(e) {
+    e.preventDefault();
+    const companyName = document.getElementById('login-company').value.trim();
+    const user = document.getElementById('login-user').value.trim();
+    const pass = document.getElementById('login-password').value.trim();
+
 
             // Super Admin total
             if (companyName.toLowerCase() === 'newsclip' && user.toLowerCase() === superAdminCredentials.user && pass === superAdminCredentials.pass) {
@@ -1925,10 +1926,7 @@ function updateView(pageName) {
             try {
                 const companiesQuery = query(collection(db, "artifacts", appId, "public", "data", "companies"), where("name", "==", companyName.toUpperCase()));
                 const companiesSnapshot = await getDocs(companiesQuery);
-                if (companiesSnapshot.empty) {
-                    showAlert('Empresa não encontrada.', 'error');
-                    return;
-                }
+                if (companiesSnapshot.empty) { showAlert('Empresa não encontrada.', 'error'); return; }
                 const companyDoc = companiesSnapshot.docs[0];
                 const company = { id: companyDoc.id, ...companyDoc.data() };
                 if (company.status === 'inactive') {
@@ -2917,7 +2915,11 @@ function updateView(pageName) {
         }
 
         function displayNewsAlert(article, container) {
-            const pubDate = new Date(article.publishedAt.seconds ? article.publishedAt.toDate() : article.publishedAt);
+            const rawPub = article.publishedAt;
+            let pubDate;
+            if (rawPub && typeof rawPub.toDate === 'function') pubDate = rawPub.toDate();
+            else if (rawPub && typeof rawPub.seconds === 'number') pubDate = new Date(rawPub.seconds * 1000);
+            else pubDate = new Date(rawPub);
             const formattedDate = pubDate.toLocaleDateString('pt-BR');
             const localYMD = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
             const dateForFilter = localYMD(pubDate);
@@ -2990,8 +2992,7 @@ const audioSrc = article.segmentUrl || article.url;
 const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-3\"><source src=\"${audioSrc}\" type=\"${audioMime}\">Seu navegador não suporta áudio.</audio>` : '';
             const authorText = String(article.author || article.byline || '').trim();
             const authorMeta = authorText ? ` | Autor: ${authorText}` : '';
-            const authorBadge = authorText ? `<div class="mb-2"><span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">Autor: ${authorText}</span></div>` : '';
-            alertEl.innerHTML = `                <div class="alert-body-clickable">                    ${authorBadge}                    <div class="flex justify-between items-start">                        <h4 class="text-lg font-bold text-gray-800 pr-2">${article.title}</h4>                        <div class="flex items-center gap-2 flex-shrink-0">                            <div class="flex flex-col items-end gap-1">${keywordsHTML}</div>                        </div>                    </div>                    <p class="text-sm text-gray-600 mt-2 line-clamp-2">${article.description || 'Descrição não disponível.'}</p>                </div>                ${audioHtml}                ${aiInsightsHTML}                <div class="text-xs text-gray-500 mt-3 flex justify-between items-center">                    <span>${translationHTML}Fonte: ${getDisplaySourceName(article)} | Publicado: ${formattedDate}${authorMeta}</span>                    <div>                        <a href="${article.url}" target="_blank" rel="noopener noreferrer" class="text-indigo-600 hover:underline font-semibold">Ler no site original →</a>                        ${deleteButtonHTML}                    </div>                </div>`;
+            alertEl.innerHTML = `                <div class="alert-body-clickable">                    <div class="flex justify-between items-start">                        <h4 class="text-lg font-bold text-gray-800 pr-2">${article.title}</h4>                        <div class="flex items-center gap-2 flex-shrink-0">                            <div class="flex flex-col items-end gap-1">${keywordsHTML}</div>                        </div>                    </div>                    <p class="text-sm text-gray-600 mt-2 line-clamp-2">${article.description || 'Descrição não disponível.'}</p>                </div>                ${audioHtml}                ${aiInsightsHTML}                <div class="text-xs text-gray-500 mt-3 flex justify-between items-center">                    <span>${translationHTML}Fonte: ${getDisplaySourceName(article)} | Publicado: ${formattedDate}${authorMeta}</span>                    <div>                        <a href="${article.url}" target="_blank" rel="noopener noreferrer" class="text-indigo-600 hover:underline font-semibold">Ler no site original →</a>                        ${deleteButtonHTML}                    </div>                </div>`;
             const kwContainer = alertEl.querySelector('.flex.items-center.gap-2.flex-shrink-0')?.querySelector('div');
             if (kwContainer) {
                 const sanitizeKey = s => String(s).toLowerCase().trim().replace(/[.#$\[\]/]/g, '_').replace(/\s+/g, '_');
@@ -3109,6 +3110,8 @@ const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-
                     newsAlerts.innerHTML = '<p class="text-gray-500">Nenhum alerta encontrado.</p>';
                 } else {
                     const articles = articlesSnapshot.docs.map(d => ({ ...d.data(), id: d.id }));
+                    allCompanyArticles = articles;
+                    newsAlerts.innerHTML = '';
                     articles.forEach(article => displayNewsAlert(article, newsAlerts));
                 }
                 filterAlertsByDate();
@@ -3304,15 +3307,42 @@ const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-
                     selectedIso = raw; // assume já ISO
                 }
             }
-            const allAlerts = newsAlerts.querySelectorAll('.fade-in');
-            let visibleCount = 0;
             const kwSet = new Set();
-            allAlerts.forEach(alert => {
-                const isVisible = !selectedIso || alert.dataset.date === selectedIso;
-                alert.style.display = isVisible ? 'block' : 'none';
-                if (isVisible) {
+            newsAlerts.innerHTML = '';
+            let visibleCount = 0;
+            const toLocalYMD = (dateVal) => {
+                try {
+                    let d;
+                    if (dateVal && typeof dateVal.toDate === 'function') d = dateVal.toDate();
+                    else if (dateVal && typeof dateVal.seconds === 'number') d = new Date(dateVal.seconds * 1000);
+                    else d = new Date(dateVal);
+                    if (isNaN(d.getTime())) return '';
+                    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+                } catch(_) { return ''; }
+            };
+            const getArticleYMD = (a) => {
+                const ymd = toLocalYMD(a?.publishedAt);
+                if (ymd) return ymd;
+                const s1 = String(a?.publishedAtStr||'');
+                if (s1) {
+                    const m = s1.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+                    if (m) return `${m[3]}-${m[2]}-${m[1]}`;
+                    if (/^\d{4}-\d{2}-\d{2}$/.test(s1)) return s1;
+                }
+                const s2 = String(a?.formattedDate||'');
+                if (s2) {
+                    const m2 = s2.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+                    if (m2) return `${m2[3]}-${m2[2]}-${m2[1]}`;
+                }
+                return '';
+            };
+            (Array.isArray(allCompanyArticles) ? allCompanyArticles : []).forEach(a => {
+                const ymd = getArticleYMD(a);
+                const match = !selectedIso || ymd === selectedIso;
+                if (match) {
                     visibleCount++;
-                    const kws = (alert.dataset.keywords || '').split(',').filter(Boolean);
+                    displayNewsAlert(a, newsAlerts);
+                    const kws = (a.keywords || [a.keyword]).filter(Boolean);
                     kws.forEach(k => kwSet.add(k));
                 }
             });
@@ -3979,17 +4009,15 @@ const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-
                 };
             }
 
-            const createMetaItem = (label, value) => `<div class="flex flex-col"><span class="font-semibold text-gray-800">${label}</span><span class="text-gray-600">${value || 'N/A'}</span></div>`;
+            const createMetaItem = (label, value, align = 'left') => {
+                const alignClass = align === 'center' ? 'items-center text-center' : (align === 'right' ? 'items-end text-right' : 'items-start text-left');
+                return `<div class="flex flex-col ${alignClass} w-full"><span class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">${label}</span><span class="text-sm font-semibold text-gray-900 text-justify break-words">${value || 'N/A'}</span></div>`;
+            };
 
-            // Ordem solicitada
-            reportMetaGrid.innerHTML += createMetaItem('Data da Publicação', pubDate.toLocaleDateString('pt-BR'));
-            reportMetaGrid.innerHTML += createMetaItem('Fonte', getDisplaySourceName(article));
-            if (article.author) {
-                reportMetaGrid.innerHTML += createMetaItem('Autor', article.author);
-            }
-
+            const dateStr = pubDate.toLocaleDateString('pt-BR');
+            const fonteStr = getDisplaySourceName(article);
+            const autorStr = article.author;
             const keywordsText = (article.keywords || []).join(', ');
-            reportMetaGrid.innerHTML += createMetaItem('Palavras-Chave', keywordsText);
 
             // Análises por palavra‑chave (somente na tela de Relatório de Alertas)
             if (!isReadOnly) (function () {
@@ -4038,8 +4066,17 @@ const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-
                       </div>
                     </div>`;
                 }).join('');
-                const fullRow = `<div class=\"md:col-span-4 col-span-2\"><div id=\"detail-keyword-analyses\" class=\"flex flex-col gap-2\">${kwHTMLDetail}</div></div>`;
-                reportMetaGrid.innerHTML += fullRow;
+            (function(){
+                let kwContainer = document.getElementById('detail-keyword-analyses');
+                if (!kwContainer) {
+                    kwContainer = document.createElement('div');
+                    kwContainer.id = 'detail-keyword-analyses';
+                    kwContainer.className = 'flex flex-col gap-2 mt-4';
+                    const host = document.getElementById('detail-content') || detailAiInsightsEl || document.getElementById('article-detail-page');
+                    if (host) host.parentElement.insertBefore(kwContainer, host);
+                }
+                kwContainer.innerHTML = kwHTMLDetail;
+            })();
             })();
 
             const sentimentScore = article.ai?.sentiment?.score ?? article.sentiment?.score ?? 0;
@@ -4053,17 +4090,23 @@ const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-
             const descLower = (article.description || '').toLowerCase();
             const kwsLower = (article.keywords || [article.keyword]).map(k => (k || '').toLowerCase());
             const isDirect = kwsLower.some(k => k && (titleLower.includes(k) || descLower.includes(k)));
-            reportMetaGrid.innerHTML += createMetaItem('Citações Direta/Indireta', isDirect ? 'Direta' : 'Indireta');
 
             // Texto simples: Tipo de Mídia
             const mediaRaw = article.mediaType;
             const isProvocada = mediaRaw && /provocada/i.test(mediaRaw);
+            const sentimentClass = sentimentText === 'Positivo' ? 'bg-green-100 text-green-800' : (sentimentText === 'Negativo' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800');
+            const kwItems = (article.keywords && article.keywords.length > 0) ? article.keywords : [article.keyword].filter(Boolean);
+            const keywordsText = (kwItems && kwItems.length) ? kwItems.join(', ') : 'N/A';
+            reportMetaGrid.innerHTML = '';
+            reportMetaGrid.innerHTML += createMetaItem('Data da Publicação', dateStr);
+            reportMetaGrid.innerHTML += createMetaItem('Fonte', fonteStr);
+            reportMetaGrid.innerHTML += createMetaItem('Palavras-Chave', keywordsText);
+            reportMetaGrid.innerHTML += createMetaItem('Citações Direta/Indireta', isDirect ? 'Direta' : 'Indireta');
             reportMetaGrid.innerHTML += createMetaItem('Tipo de Mídia', isProvocada ? 'Provocada' : 'Espontânea');
-            reportMetaGrid.innerHTML += sentimentHTML;
+            reportMetaGrid.innerHTML += createMetaItem('Sentimento', sentimentText);
+            if (autorStr) reportMetaGrid.innerHTML += createMetaItem('Autor', autorStr);
 
-            if (article.author) {
-                reportMetaGrid.innerHTML += createMetaItem('Autor', article.author);
-            }
+            
 
             let aiInsightsHTML = '';
             if (article.ai) {
