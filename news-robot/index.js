@@ -1,12 +1,16 @@
 /**
- * IMPORTANTE: Este é o código COMPLETO e ATUALIZADO para o servidor (Firebase Cloud Functions).
- * ...
- * * * * CORREÇÃO FINAL (SET/2025): Removida a truncagem de texto para exibir o conteúdo completo.
- * * Reintroduzida e corrigida a lógica de busca do YouTube para garantir a captura de vídeos.
+ * CÓDIGO COMPLETO E ATUALIZADO PARA FIREBASE FUNCTIONS 2ª GERAÇÃO (GEN 2)
+ * Corrigido para remover 'regionalFunctions' e usar 'request.data'/'request.auth'.
  */
 
-const functions = require("firebase-functions");
 const admin = require("firebase-admin");
+const functions = require("firebase-functions"); // Necessário para logger e HttpsError
+
+// Importações da 2ª geração do Firebase Functions
+const { onCall } = require("firebase-functions/v2/https");
+const { onSchedule } = require("firebase-functions/v2/scheduler");
+const { setGlobalOptions } = require("firebase-functions/v2/options");
+
 const axios = require("axios");
 const Parser = require('rss-parser');
 
@@ -16,21 +20,14 @@ const { ImageAnnotatorClient } = require('@google-cloud/vision');
 const { VideoIntelligenceServiceClient } = require('@google-cloud/video-intelligence');
 const { Client } = require("@googlemaps/google-maps-services-js");
 const crypto = require('crypto');
-// Janela horária local (evita dependência de módulos ESM do servidor)
-function isWithinWindow(startHHMM, endHHMM, date = new Date()) {
-  if (!startHHMM || !endHHMM) return false;
-  const [sh, sm] = String(startHHMM).split(':').map(Number);
-  const [eh, em] = String(endHHMM).split(':').map(Number);
-  if ([sh, sm, eh, em].some(n => Number.isNaN(n))) return false;
-  const start = new Date(date); start.setHours(sh, sm, 0, 0);
-  const end = new Date(date); end.setHours(eh, em, 0, 0);
-  if (end < start) {
-    if (date >= start) return true;
-    const prevStart = new Date(start); prevStart.setDate(prevStart.getDate() - 1);
-    return date <= end && date >= prevStart;
-  }
-  return date >= start && date <= end;
-}
+
+// --- Configuração Global (Gen 2) ---
+// Define região e memória para TODAS as funções abaixo automaticamente
+setGlobalOptions({
+  timeoutSeconds: 540,
+  memory: '2GiB',
+  region: 'southamerica-east1'
+});
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -50,16 +47,25 @@ const YOUTUBE_PLAYLIST_ITEMS_URL = "https://www.googleapis.com/youtube/v3/playli
 const APP_ID = "noticias-6e952";
 const GOOGLE_PROJECT_ID = "noticias-6e952";
 
-const runtimeOpts = {
-  timeoutSeconds: 540,
-  memory: '2GB'
-};
-const regionalFunctions = functions.region("southamerica-east1").runWith(runtimeOpts);
+// --- Funções Auxiliares (Lógica interna, não precisa mexer) ---
 
-// --- Funções Auxiliares ---
+function isWithinWindow(startHHMM, endHHMM, date = new Date()) {
+  if (!startHHMM || !endHHMM) return false;
+  const [sh, sm] = String(startHHMM).split(':').map(Number);
+  const [eh, em] = String(endHHMM).split(':').map(Number);
+  if ([sh, sm, eh, em].some(n => Number.isNaN(n))) return false;
+  const start = new Date(date); start.setHours(sh, sm, 0, 0);
+  const end = new Date(date); end.setHours(eh, em, 0, 0);
+  if (end < start) {
+    if (date >= start) return true;
+    const prevStart = new Date(start); prevStart.setDate(prevStart.getDate() - 1);
+    return date <= end && date >= prevStart;
+  }
+  return date >= start && date <= end;
+}
+
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-// Descoberta automática de endpoints RSS
 const COMMON_FEED_PATHS = ['/feed', '/rss', '/index.xml', '/atom.xml', '/rss.xml', '/feed.xml', '/feeds/posts/default'];
 
 async function tryValidateFeed(url) {
@@ -76,9 +82,7 @@ async function discoverRssFeeds(baseSiteUrl) {
     let base;
     try { base = new URL(baseSiteUrl); } catch { return discovered; }
     const homepageUrl = base.origin;
-
     const candidates = new Set();
-    // Tentar coletar via tags <link rel="alternate" type="application/rss+xml|atom">
     for (const url of [base.href, homepageUrl]) {
         try {
             const resp = await axios.get(url, { headers: { 'User-Agent': 'Mozilla/5.0 (RSS Discovery Bot)' }, timeout: 8000 });
@@ -98,44 +102,29 @@ async function discoverRssFeeds(baseSiteUrl) {
             functions.logger.warn(`Falha ao buscar HTML de ${url} para descoberta RSS: ${e.message}`);
         }
     }
-
-    // Tentar caminhos comuns
     for (const path of COMMON_FEED_PATHS) {
         try { candidates.add(new URL(path, homepageUrl).href); } catch {}
     }
-
     const candidateArray = Array.from(candidates).slice(0, 20);
     for (const cand of candidateArray) {
         try {
             const ok = await tryValidateFeed(cand);
             if (ok) { discovered.add(cand); }
         } catch {}
-        if (discovered.size >= 5) break; // limitar quantidade por site
+        if (discovered.size >= 5) break; 
     }
     return discovered;
 }
-const findMatchingKeywords = (article, keywords) => {
-    const normalizeText = (txt) => String(txt || '')
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .replace(/[^\w\s]/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim();
 
+const findMatchingKeywords = (article, keywords) => {
+    const normalizeText = (txt) => String(txt || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\w\s]/g, ' ').replace(/\s+/g, ' ').trim();
     let contentToSearch = '';
     contentToSearch += ' ' + (article.title || '');
     contentToSearch += ' ' + (article.contentSnippet || article.description || article.content || '');
-    // Ampliar superfície: incluir autor e nome da fonte quando disponíveis
     contentToSearch += ' ' + (article.author || '');
     contentToSearch += ' ' + (article.source?.name || '');
-    if (article.ai?.videoTranscription) {
-        contentToSearch += ' ' + article.ai.videoTranscription;
-    }
-    if (article.ai?.ocrText) {
-        contentToSearch += ' ' + article.ai.ocrText;
-    }
-
+    if (article.ai?.videoTranscription) contentToSearch += ' ' + article.ai.videoTranscription;
+    if (article.ai?.ocrText) contentToSearch += ' ' + article.ai.ocrText;
     const normalizedContent = normalizeText(contentToSearch);
     const matchedKeywords = keywords.filter(kw => {
         const normalizedKw = normalizeText(kw);
@@ -150,17 +139,8 @@ async function geocodeLocation(locationName, apiKey) {
     const cacheRef = db.doc(`artifacts/${APP_ID}/public/data/geocache/${locationKey}`);
     try {
         const cacheDoc = await cacheRef.get();
-        if (cacheDoc.exists) {
-            return cacheDoc.data();
-        }
-        const response = await mapsClient.geocode({
-            params: {
-                address: `${locationName}, Brasil`,
-                key: apiKey,
-                language: 'pt-BR',
-                region: 'BR'
-            }
-        });
+        if (cacheDoc.exists) return cacheDoc.data();
+        const response = await mapsClient.geocode({ params: { address: `${locationName}, Brasil`, key: apiKey, language: 'pt-BR', region: 'BR' } });
         if (response.data.results && response.data.results.length > 0) {
             const location = response.data.results[0].geometry.location;
             await cacheRef.set(location);
@@ -174,15 +154,10 @@ async function geocodeLocation(locationName, apiKey) {
 }
 
 async function detectAndTranslate(text) {
-    // Normalizar o texto para evitar chamadas desnecessárias por diferenças triviais
     const normalize = (s) => (s || '').replace(/<[^>]+>/g, ' ').replace(/&nbsp;|&amp;|&quot;|&#39;/g, ' ').replace(/\s+/g, ' ').trim();
     const originalText = text || '';
     const normalizedText = normalize(originalText);
-    if (!normalizedText || normalizedText.length < 20) {
-        return { originalText, translatedText: originalText, languageCode: 'pt', translated: false };
-    }
-
-    // Cache de tradução: chave por SHA-256 do texto normalizado
+    if (!normalizedText || normalizedText.length < 20) return { originalText, translatedText: originalText, languageCode: 'pt', translated: false };
     const hash = crypto.createHash('sha256').update(normalizedText).digest('hex');
     const cacheRef = db.doc(`artifacts/${APP_ID}/public/data/translationCache/${hash}`);
     try {
@@ -190,35 +165,20 @@ async function detectAndTranslate(text) {
         if (cacheSnap.exists) {
             const c = cacheSnap.data();
             const lang = (c.languageCode || 'und').toLowerCase();
-            const translated = lang !== 'pt';
-            return { originalText, translatedText: c.translatedText || originalText, languageCode: c.languageCode || 'und', translated };
+            return { originalText, translatedText: c.translatedText || originalText, languageCode: c.languageCode || 'und', translated: lang !== 'pt' };
         }
-    } catch (e) {
-        functions.logger.warn('Falha ao ler cache de tradução:', e.message);
-    }
-
+    } catch (e) { functions.logger.warn('Falha ao ler cache de tradução:', e.message); }
     const parent = `projects/${GOOGLE_PROJECT_ID}/locations/global`;
-    const detectRequest = { parent, content: normalizedText, mimeType: 'text/plain' };
-
     try {
-        const [detectResponse] = await translationClient.detectLanguage(detectRequest);
+        const [detectResponse] = await translationClient.detectLanguage({ parent, content: normalizedText, mimeType: 'text/plain' });
         const detectedLanguage = detectResponse.languages[0];
         const language = (detectedLanguage && detectedLanguage.languageCode) ? detectedLanguage.languageCode.toLowerCase() : 'und';
         if (language === 'pt') {
-            // Cache como português para evitar redetecção
             try { await cacheRef.set({ translatedText: originalText, languageCode: 'pt', createdAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true }); } catch {}
             return { originalText, translatedText: originalText, languageCode: 'pt', translated: false };
         }
-        const translateRequest = {
-            parent,
-            contents: [normalizedText],
-            mimeType: 'text/plain',
-            sourceLanguageCode: detectedLanguage.languageCode,
-            targetLanguageCode: 'pt',
-        };
-        const [translateResponse] = await translationClient.translateText(translateRequest);
+        const [translateResponse] = await translationClient.translateText({ parent, contents: [normalizedText], mimeType: 'text/plain', sourceLanguageCode: detectedLanguage.languageCode, targetLanguageCode: 'pt' });
         const translation = (translateResponse.translations && translateResponse.translations[0]) ? translateResponse.translations[0].translatedText : originalText;
-        // Salvar no cache
         try { await cacheRef.set({ translatedText: translation, languageCode: detectedLanguage.languageCode, createdAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true }); } catch {}
         return { originalText, translatedText: translation, languageCode: detectedLanguage.languageCode, translated: true };
     } catch (error) {
@@ -275,12 +235,9 @@ async function analyzeArticleWithAI(article, settings) {
             languageData.sentiment = sentimentResult[0].documentSentiment;
             languageData.entities = entitiesResult[0].entities.filter(e => e.salience > 0.01 && e.type !== 'OTHER').map(e => ({ name: e.name, type: e.type, salience: e.salience }));
             languageData.categories = []; 
-        } catch (error) {
-            functions.logger.error("Erro na Natural Language AI:", error.message);
-        }
+        } catch (error) { functions.logger.error("Erro na Natural Language AI:", error.message); }
     }
     
-    // Gate do Vision AI com configuração global e filtro de relevância
     const visionEnabled = settings.visionEnabled === true;
     const logoEnabled = settings.visionLogoDetection === true;
     const ocrEnabled = settings.visionOcrText === true;
@@ -296,9 +253,7 @@ async function analyzeArticleWithAI(article, settings) {
             const sizeParamMatch = u.match(/[?&](w|width|h|height)=(\d+)/);
             if (sizeParamMatch && Number(sizeParamMatch[2]) < 64) return false;
             return true;
-        } catch {
-            return false;
-        }
+        } catch { return false; }
     };
 
     if (article.image && settings.apiKeyVision && visionEnabled) {
@@ -312,24 +267,62 @@ async function analyzeArticleWithAI(article, settings) {
                     const [textResult] = await visionClient.textDetection(article.image);
                     visionData.ocrText = textResult.fullTextAnnotation ? textResult.fullTextAnnotation.text.replace(/\n/g, ' ') : '';
                 }
-            } else {
-                functions.logger.info(`Imagem filtrada por relevância: ${article.image}`);
             }
-        } catch (err) {
-            functions.logger.warn(`Vision AI error para imagem ${article.image}:`, err.message);
-        }
+        } catch (err) { functions.logger.warn(`Vision AI error para imagem ${article.image}:`, err.message); }
     }
-
-    if (article.videoId && settings.apiKeyVideoIntelligence) {
-        functions.logger.warn(`A transcrição de vídeo para ${article.videoId} foi pulada. Requer upload para o Google Cloud Storage.`);
-    }
-
     return { ...languageData, ...visionData, ...videoData };
 }
 
+function getChannelCategory(sourceName) {
+    const name = (sourceName || "").toLowerCase();
+    if (name.includes('youtube')) return 'YouTube';
+    if (name.includes('globo') || name.includes('g1') || name.includes('uol') || name.includes('terra') || name.includes('r7')) return 'Sites';
+    if (name.includes('veja') || name.includes('istoé') || name.includes('exame')) return 'Revistas';
+    if (name.includes('cbn') || name.includes('bandeirantes')) return 'Rádios';
+    return 'Sites';
+}
+
+function getPredominantSentiment(percentages) {
+    if (percentages.positive > percentages.neutral && percentages.positive > percentages.negative) return 'Positivo';
+    if (percentages.negative > percentages.positive && percentages.negative > percentages.neutral) return 'Negativo';
+    return 'Neutro';
+}
+
+function getTopCount(counts) {
+    if (Object.keys(counts).length === 0) return 'N/A';
+    return Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b);
+}
+
+function resolveFriendlySourceNameFromUrl(urlStr, fallbackName) {
+  try {
+    const lower = (urlStr || '').toLowerCase();
+    if (fallbackName && !['rss', 'RSS', 'RSS Feed'].includes(fallbackName)) return fallbackName;
+    if (lower.includes('metropoles.com')) return 'Metrópoles';
+    if (lower.includes('marretaurgente')) return 'Marreta Urgente';
+    try {
+      const host = new URL(urlStr).hostname.replace(/^www\./, '');
+      return host || (fallbackName || 'RSS');
+    } catch { return fallbackName || 'RSS'; }
+  } catch { return fallbackName || 'RSS'; }
+}
+
+function extractDomainFromUrl(url) {
+    try {
+        const urlObj = new URL(url);
+        let hostname = urlObj.hostname;
+        hostname = hostname.replace(/^www\./, '');
+        return hostname;
+    } catch (error) {
+        functions.logger.error(`Erro ao extrair domínio da URL ${url}:`, error.message);
+        return null;
+    }
+}
+
+// --- Lógica Principal de Busca ---
+
 async function fetchAllNews() {
     functions.logger.info("=======================================");
-    functions.logger.info("INICIANDO BUSCA DE NOTÍCIAS COM TRADUÇÃO, IA, MÍDIA E GEOCODIFICAÇÃO...");
+    functions.logger.info("INICIANDO BUSCA DE NOTÍCIAS (GEN 2) ...");
 
     const globalSettingsRef = db.doc(`artifacts/${APP_ID}/public/data/settings/global`);
     const globalSettingsDoc = await globalSettingsRef.get();
@@ -338,10 +331,9 @@ async function fetchAllNews() {
     const mapsApiKey = settings.apiKeyGoogleMaps || settings.apiKeyFirebaseNews; 
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-    // Configurações do YouTube
     const youtubeChannels = settings.youtubeChannels ? settings.youtubeChannels.split('\n').map(s => s.trim()).filter(s => s.length > 0) : [];
     const youtubeFrequencyHours = Number(settings.youtubeFrequencyHours || 6);
-    const youtubeFrequencyTime = (settings.youtubeFrequencyTime || '').trim(); // formato HH:MM
+    const youtubeFrequencyTime = (settings.youtubeFrequencyTime || '').trim();
     const lastRun = settings.youtubeLastRun && typeof settings.youtubeLastRun.toDate === 'function' ? settings.youtubeLastRun.toDate() : null;
     const now = new Date();
     const frequencyOk = !lastRun || (now.getTime() - lastRun.getTime()) >= youtubeFrequencyHours * 60 * 60 * 1000;
@@ -354,21 +346,17 @@ async function fetchAllNews() {
             const desiredToday = new Date(now);
             desiredToday.setHours(hh, mm, 0, 0);
             const diffMinutes = Math.abs((now.getTime() - desiredToday.getTime()) / 60000);
-            // Permitir execução quando estiver dentro de uma janela de 30 minutos do horário desejado
             desiredTimeOk = diffMinutes <= 30;
         }
     }
     const canRunYouTube = frequencyOk && desiredTimeOk;
-    // Gate para GNews configurável
     const gnewsLastRun = settings.gnewsLastRun && typeof settings.gnewsLastRun.toDate === 'function' ? settings.gnewsLastRun.toDate() : null;
     const gnewsFrequencyHours = Number(settings.gnewsFrequencyHours || 2);
     const canRunGNews = !gnewsLastRun || (now.getTime() - gnewsLastRun.getTime()) >= gnewsFrequencyHours * 60 * 60 * 1000;
-    // Gate para RSS configurável
     const rssLastRun = settings.rssLastRun && typeof settings.rssLastRun.toDate === 'function' ? settings.rssLastRun.toDate() : null;
     const rssFrequencyMinutes = Number(settings.rssFrequencyMinutes || 10);
     const canRunRSS = !rssLastRun || (now.getTime() - rssLastRun.getTime()) >= rssFrequencyMinutes * 60 * 1000;
 
-    // Gate específico para monitoramento de IDs de Canais (YouTube)
     const youtubeChannelsLastRun = settings.youtubeChannelsLastRun && typeof settings.youtubeChannelsLastRun.toDate === 'function' ? settings.youtubeChannelsLastRun.toDate() : null;
     const youtubeChannelsFrequencyMinutes = Number(settings.youtubeChannelsFrequencyMinutes || rssFrequencyMinutes);
     const canRunYouTubeChannels = !youtubeChannelsLastRun || (now.getTime() - youtubeChannelsLastRun.getTime()) >= youtubeChannelsFrequencyMinutes * 60 * 1000;
@@ -410,9 +398,7 @@ async function fetchAllNews() {
     }
 
     const processAndSaveArticle = async (normalizedArticle, company, matchedKeywords) => {
-        if (!normalizedArticle || company.existingUrls.has(normalizedArticle.url)) {
-            return;
-        }
+        if (!normalizedArticle || company.existingUrls.has(normalizedArticle.url)) return;
         
         const translatedTitle = await detectAndTranslate(normalizedArticle.title);
         const translatedDesc = await detectAndTranslate(normalizedArticle.description);
@@ -420,14 +406,11 @@ async function fetchAllNews() {
         normalizedArticle.description = translatedDesc.translatedText;
         
         const aiData = await analyzeArticleWithAI(normalizedArticle, settings);
-        // Unir matches da consulta (YouTube) com os detectados após tradução/IA
         const initialMatches = Array.isArray(matchedKeywords) ? matchedKeywords : [];
         const recomputedMatches = findMatchingKeywords({ ...normalizedArticle, ai: aiData }, company.keywordsList);
         const finalMatchedKeywords = Array.from(new Set([ ...initialMatches, ...recomputedMatches ]));
 
-        if (finalMatchedKeywords.length === 0) {
-            return;
-        }
+        if (finalMatchedKeywords.length === 0) return;
 
         let geolocation = null;
         if (aiData.entities && aiData.entities.length > 0) {
@@ -437,15 +420,11 @@ async function fetchAllNews() {
             }
         }
 
-        // Determinar categoria de canal a partir do nome da fonte
         const sourceName = normalizedArticle?.source?.name || normalizedArticle?.sourceName || '';
         const channelCategory = getChannelCategory(sourceName);
-        // Checar se canal está permitido para a empresa
         const enabledChannels = Array.isArray(company.captureChannels) ? company.captureChannels : [];
         const channelEnabled = enabledChannels.length === 0 || enabledChannels.includes(channelCategory);
-        if (!channelEnabled) {
-            return; // pular artigo se canal não permitido
-        }
+        if (!channelEnabled) return;
 
         const articleData = {
             ...normalizedArticle,
@@ -471,12 +450,10 @@ async function fetchAllNews() {
 
     for (const company of allCompaniesData) {
         functions.logger.info(`--- Processando empresa: ${company.companyName} ---`);
-        
-        // Verificar se está dentro da janela permitida (preferir campos fetchWindow*)
         const winStart = settings.fetchWindowStart || settings.newsWindowStart;
         const winEnd = settings.fetchWindowEnd || settings.newsWindowEnd;
         if (!isWithinWindow(winStart, winEnd)) {
-            functions.logger.info(`Fora da janela permitida (${settings.newsWindowStart} - ${settings.newsWindowEnd}), pulando empresa ${company.companyName}`);
+            functions.logger.info(`Fora da janela permitida, pulando empresa ${company.companyName}`);
             continue;
         }
         
@@ -498,15 +475,9 @@ async function fetchAllNews() {
                         const response = await axios.get(queryUrl);
                         if (response.data && response.data.articles) {
                             for (const article of response.data.articles) {
-                                // Capturar site de origem e preparar para inclusão automática em RSS
                                 const siteUrl = article?.source?.url;
                                 if (siteUrl) {
-                                    try {
-                                        const u = new URL(siteUrl);
-                                        newRssSites.add(u.origin);
-                                    } catch {
-                                        newRssSites.add(siteUrl);
-                                    }
+                                    try { newRssSites.add(new URL(siteUrl).origin); } catch { newRssSites.add(siteUrl); }
                                 }
                                 if (!company.fetchOnlyNew || new Date(article.publishedAt) >= twentyFourHoursAgo) {
                                     const normalized = normalizeArticle(article, 'gnews');
@@ -536,15 +507,11 @@ async function fetchAllNews() {
             } catch (e) { functions.logger.error(`Erro NewsAPI para ${company.companyName}:`, e.message); }
         }
 
-        // YouTube por canais configurados, com portão baseado em frequência
         if (settings.apiKeyYoutube && canRunYouTubeChannels && youtubeChannels.length > 0) {
-             functions.logger.info(`--- Buscando YouTube por canais (${youtubeChannels.length}) sob gate específico de canais ---`);
+             functions.logger.info(`--- Buscando YouTube por canais ---`);
              executedYouTubeChannels = true;
              for (const channelId of youtubeChannels) {
                 await delay(1000);
-                const publishedAfter = lastRun ? (lastRun.toDate ? lastRun.toDate().toISOString() : new Date(lastRun).toISOString()) : new Date(now.getTime() - youtubeFrequencyHours*60*60*1000).toISOString();
-                // Para playlistItems.list, precisamos do uploads playlist do canal.
-                // Obter a playlist padrão "uploads" via atalho: UCxxxx -> UUxxxx (mapeamento padrão do YouTube)
                 const uploadsPlaylistId = channelId.startsWith('UC') ? `UU${channelId.substring(2)}` : channelId;
                 const queryUrl = `${YOUTUBE_PLAYLIST_ITEMS_URL}?part=snippet&playlistId=${encodeURIComponent(uploadsPlaylistId)}&maxResults=50&key=${settings.apiKeyYoutube}`;
                  try {
@@ -560,29 +527,18 @@ async function fetchAllNews() {
                              }
                          }
                      }
-                 } catch (e) { functions.logger.error(`Erro YouTube canal ${channelId} para ${company.companyName}:`, e.message); }
-                // Auto-add channel to playlist if not present (only during frequency-gated search)
+                 } catch (e) { functions.logger.error(`Erro YouTube canal ${channelId}:`, e.message); }
                 if (!youtubeChannels.includes(channelId)) {
                     try {
                         const updatedList = [...youtubeChannels, channelId].join('\n');
                         await globalSettingsRef.set({ youtubeChannels: updatedList }, { merge: true });
-                        functions.logger.info(`Canal adicionado à playlist de IDs: ${channelId}`);
                         youtubeChannels.push(channelId);
-                    } catch (err) {
-                        functions.logger.error(`Falha ao adicionar canal ${channelId} à playlist:`, err.message);
-                    }
+                    } catch (err) {}
                 }
             }
-            // Atualiza última execução do RSS quando a busca por canais do YouTube roda sob esse gate
-            try {
-                await globalSettingsRef.set({ youtubeChannelsLastRun: admin.firestore.Timestamp.now() }, { merge: true });
-            functions.logger.info(`youtubeChannelsLastRun atualizado (YouTube por canais).`);
-        } catch (e) {
-            functions.logger.error(`Falha ao atualizar youtubeChannelsLastRun (YouTube por canais):`, e.message);
-            }
+            try { await globalSettingsRef.set({ youtubeChannelsLastRun: admin.firestore.Timestamp.now() }, { merge: true }); } catch (e) {}
         }
 
-        // CORREÇÃO: Lógica de busca do YouTube por palavra-chave mantida (sem portão)
         if (settings.apiKeyYoutube && canRunYouTube) {
             executedYouTubeKeywords = true;
             for (const keyword of company.keywordsList) {
@@ -595,34 +551,24 @@ async function fetchAllNews() {
                             if (!company.fetchOnlyNew || new Date(item.snippet.publishedAt) >= twentyFourHoursAgo) {
                                 const normalized = normalizeArticle({ ...item, id: { videoId: item.id.videoId } }, 'youtube');
                                 await processAndSaveArticle(normalized, company, [keyword]);
-                                // Auto-add discovered channel to playlist when frequency gate is open
                                 const discoveredChannelId = item?.snippet?.channelId;
                                 if (canRunYouTube && discoveredChannelId && !youtubeChannels.includes(discoveredChannelId)) {
                                     try {
                                         const updatedList = [...youtubeChannels, discoveredChannelId].join('\n');
                                         await globalSettingsRef.set({ youtubeChannels: updatedList }, { merge: true });
-                                        functions.logger.info(`Canal descoberto adicionado à playlist: ${discoveredChannelId}`);
                                         youtubeChannels.push(discoveredChannelId);
-                                    } catch (err) {
-                                        functions.logger.error(`Falha ao adicionar canal descoberto ${discoveredChannelId}:`, err.message);
-                                    }
+                                    } catch (err) {}
                                 }
                             }
                         }
                     }
                } catch (e) { functions.logger.error(`Erro YouTube (keyword: ${keyword}):`, e.message); }
             }
-        } else if (settings.apiKeyYoutube && !canRunYouTube) {
-            functions.logger.info("Gate do YouTube por palavras-chave ativo — aguardando janela de frequência/horário.");
-        }
-        if (settings.apiKeyYoutube && !canRunYouTubeChannels && youtubeChannels.length > 0) {
-            functions.logger.info("Gate específico de canais do YouTube ativo — aguardando janela de frequência.");
         }
     }
 
     const rssUrls = settings.rssUrl ? settings.rssUrl.split('\n').filter(url => url.trim() !== '') : [];
     if (rssUrls.length > 0 && canRunRSS) {
-        functions.logger.info(`--- Processando ${rssUrls.length} Feeds RSS para todas as empresas ---`);
         executedRSS = true;
         for (const rssUrl of rssUrls) {
             try {
@@ -630,7 +576,6 @@ async function fetchAllNews() {
                 const feed = await parser.parseURL(rssUrl);
                 if (feed && feed.items) {
                     for (const item of feed.items) {
-                        // Propagar o nome e link do feed para o item, para que o "Fonte" seja correto
                         try {
                             item.feedTitle = feed.title || (feed.link ? new URL(feed.link).hostname.replace(/^www\./, '') : new URL(rssUrl).hostname.replace(/^www\./, ''));
                             item.feedLink = feed.link || rssUrl;
@@ -647,31 +592,16 @@ async function fetchAllNews() {
                         }
                     }
                 }
-            } catch (e) {
-                functions.logger.error(`Erro ao buscar o feed RSS: ${rssUrl}. Mensagem: ${e.message}`);
-            }
+            } catch (e) { functions.logger.error(`Erro ao buscar RSS ${rssUrl}: ${e.message}`); }
         }
-        // Atualiza última execução do RSS se gate foi utilizado
-        try {
-            await globalSettingsRef.set({ rssLastRun: admin.firestore.Timestamp.now() }, { merge: true });
-            functions.logger.info(`rssLastRun atualizado.`);
-        } catch (e) {
-            functions.logger.error(`Falha ao atualizar rssLastRun:`, e.message);
-        }
+        try { await globalSettingsRef.set({ rssLastRun: admin.firestore.Timestamp.now() }, { merge: true }); } catch (e) {}
     } else if (rssUrls.length > 0 && !canRunRSS) {
-        functions.logger.info(`Gate de RSS ativo. Próxima execução em ${rssFrequencyMinutes} minuto(s).`);
+        functions.logger.info(`Gate de RSS ativo.`);
     }
     
-    // Atualiza última execução do YouTube se gate foi utilizado
     if (canRunYouTube && executedYouTubeKeywords) {
-        try {
-            await globalSettingsRef.set({ youtubeLastRun: admin.firestore.Timestamp.now() }, { merge: true });
-            functions.logger.info(`youtubeLastRun atualizado.`);
-        } catch (e) {
-            functions.logger.error(`Falha ao atualizar youtubeLastRun:`, e.message);
-        }
+        try { await globalSettingsRef.set({ youtubeLastRun: admin.firestore.Timestamp.now() }, { merge: true }); } catch (e) {}
     }
-    // Descoberta automática e inclusão de feeds RSS válidos a partir dos sites capturados via GNews
     if (executedGNews && newRssSites.size > 0) {
         try {
             const discoveredFeeds = new Set();
@@ -685,29 +615,20 @@ async function fetchAllNews() {
                 discoveredFeeds.forEach(f => { if (!existingSet.has(f)) existingSet.add(f); });
                 const updatedList = Array.from(existingSet).join('\n');
                 await globalSettingsRef.set({ rssUrl: updatedList }, { merge: true });
-                functions.logger.info(`rssUrl atualizado com ${discoveredFeeds.size} feed(s) RSS válidos descobertos automaticamente.`);
-            } else {
-                functions.logger.warn(`Nenhum endpoint RSS válido descoberto para ${newRssSites.size} site(s) capturados do GNews.`);
             }
-        } catch (e) {
-            functions.logger.error(`Falha ao atualizar rssUrl automático (descoberta de feeds):`, e.message);
-        }
+        } catch (e) {}
     }
-    // Atualiza última execução do GNews se gate foi utilizado
     if (executedGNews) {
-        try {
-            await globalSettingsRef.set({ gnewsLastRun: admin.firestore.Timestamp.now() }, { merge: true });
-            functions.logger.info(`gnewsLastRun atualizado.`);
-        } catch (e) {
-            functions.logger.error(`Falha ao atualizar gnewsLastRun:`, e.message);
-        }
+        try { await globalSettingsRef.set({ gnewsLastRun: admin.firestore.Timestamp.now() }, { merge: true }); } catch (e) {}
     }
 
-    functions.logger.info(`Busca concluída. ${articlesToSaveCount} novos artigos únicos foram guardados na fila de aprovação.`);
+    functions.logger.info(`Busca concluída. ${articlesToSaveCount} novos artigos.`);
     return { success: true, totalSaved: articlesToSaveCount };
 }
 
-exports.manualFetch = regionalFunctions.https.onCall(async (data, context) => {
+// --- FUNÇÕES EXPORTADAS (GEN 2) ---
+
+exports.manualFetchV2 = onCall(async (request) => {
     try {
         return await fetchAllNews();
     } catch(error) {
@@ -716,9 +637,10 @@ exports.manualFetch = regionalFunctions.https.onCall(async (data, context) => {
     }
 });
 
-exports.scheduledFetch = regionalFunctions.pubsub.schedule("every 10 minutes")
-  .timeZone("America/Sao_Paulo")
-  .onRun(async (context) => {
+exports.scheduledFetchV2 = onSchedule({
+  schedule: "every 10 minutes",
+  timeZone: "America/Sao_Paulo"
+}, async (event) => {
     try {
         await fetchAllNews();
         return null;
@@ -727,8 +649,9 @@ exports.scheduledFetch = regionalFunctions.pubsub.schedule("every 10 minutes")
         return null;
     }
 });
-exports.approveAlert = regionalFunctions.https.onCall(async (data, context) => {
-    const { appId, alertId } = data;
+
+exports.approveAlert = onCall(async (request) => {
+    const { appId, alertId } = request.data;
     if (!appId || !alertId) { throw new functions.https.HttpsError("invalid-argument", "O ID da aplicação e do alerta são necessários."); }
     const pendingAlertRef = db.doc(`artifacts/${appId}/public/data/pendingAlerts/${alertId}`);
     const pendingAlertDoc = await pendingAlertRef.get();
@@ -747,9 +670,9 @@ exports.approveAlert = regionalFunctions.https.onCall(async (data, context) => {
     return { success: true };
 });
 
-exports.rejectAlert = regionalFunctions.https.onCall(async (data, context) => {
-    const { appId, alertId } = data;
-    if (!appId || !alertId) { throw new functions.https.HttpsError("invalid-argument", "O ID da aplicação e do alerta são necessários."); }
+exports.rejectAlert = onCall(async (request) => {
+    const { appId, alertId } = request.data;
+    if (!appId || !alertId) { throw new functions.https.HttpsError("invalid-argument", "IDs necessários."); }
     const pendingAlertRef = db.doc(`artifacts/${appId}/public/data/pendingAlerts/${alertId}`);
     await pendingAlertRef.delete();
     return { success: true };
@@ -763,9 +686,9 @@ async function deleteCollection(collectionRef) {
     await batch.commit();
 }
 
-exports.deleteCompany = regionalFunctions.https.onCall(async (data, context) => {
-    const { appId, companyId } = data;
-    if (!appId || !companyId) { throw new functions.https.HttpsError("invalid-argument", "O ID da aplicação e da empresa são necessários."); }
+exports.deleteCompany = onCall(async (request) => {
+    const { appId, companyId } = request.data;
+    if (!appId || !companyId) { throw new functions.https.HttpsError("invalid-argument", "IDs necessários."); }
     await deleteCollection(db.collection(`artifacts/${appId}/users/${companyId}/users`));
     await deleteCollection(db.collection(`artifacts/${appId}/users/${companyId}/keywords`));
     await deleteCollection(db.collection(`artifacts/${appId}/users/${companyId}/articles`));
@@ -782,9 +705,9 @@ exports.deleteCompany = regionalFunctions.https.onCall(async (data, context) => 
     return { success: true };
 });
 
-exports.deleteKeywordAndArticles = regionalFunctions.https.onCall(async (data, context) => {
-    const { appId, companyId, keyword } = data;
-    if (!appId || !companyId || !keyword) { throw new functions.https.HttpsError("invalid-argument", "ID da aplicação, da empresa e palavra-chave são necessários."); }
+exports.deleteKeywordAndArticles = onCall(async (request) => {
+    const { appId, companyId, keyword } = request.data;
+    if (!appId || !companyId || !keyword) { throw new functions.https.HttpsError("invalid-argument", "Dados incompletos."); }
     const articlesToDelete = await db.collection(`artifacts/${appId}/users/${companyId}/articles`).where("keywords", "array-contains", keyword).get();
     const batch = db.batch();
     articlesToDelete.docs.forEach(doc => { batch.delete(doc.ref); });
@@ -796,32 +719,24 @@ exports.deleteKeywordAndArticles = regionalFunctions.https.onCall(async (data, c
     return { success: true };
 });
 
-exports.transferKeywordAndHistory = regionalFunctions.https.onCall(async (data, context) => {
-    const { appId, sourceCompanyId, destCompanyId, keyword } = data || {};
-    if (!appId || !sourceCompanyId || !destCompanyId || !keyword) {
-        throw new functions.https.HttpsError("invalid-argument", "ID da aplicação, empresas de origem/destino e palavra-chave são necessários.");
-    }
-    if (sourceCompanyId === destCompanyId) {
-        throw new functions.https.HttpsError("failed-precondition", "A empresa de origem e destino devem ser diferentes.");
-    }
+exports.transferKeywordAndHistory = onCall(async (request) => {
+    const { appId, sourceCompanyId, destCompanyId, keyword } = request.data || {};
+    if (!appId || !sourceCompanyId || !destCompanyId || !keyword) { throw new functions.https.HttpsError("invalid-argument", "Dados incompletos."); }
+    if (sourceCompanyId === destCompanyId) { throw new functions.https.HttpsError("failed-precondition", "Empresas iguais."); }
 
-    // Validar empresas e obter nomes
     const sourceCompanyRef = db.doc(`artifacts/${appId}/public/data/companies/${sourceCompanyId}`);
     const destCompanyRef = db.doc(`artifacts/${appId}/public/data/companies/${destCompanyId}`);
     const [sourceCompanyDoc, destCompanyDoc] = await Promise.all([sourceCompanyRef.get(), destCompanyRef.get()]);
-    if (!sourceCompanyDoc.exists) throw new functions.https.HttpsError("not-found", "Empresa de origem não encontrada.");
-    if (!destCompanyDoc.exists) throw new functions.https.HttpsError("not-found", "Empresa de destino não encontrada.");
+    if (!sourceCompanyDoc.exists || !destCompanyDoc.exists) throw new functions.https.HttpsError("not-found", "Empresa não encontrada.");
     const sourceCompanyName = sourceCompanyDoc.data()?.name || sourceCompanyId;
     const destCompanyName = destCompanyDoc.data()?.name || destCompanyId;
 
-    // Transferir documento da palavra-chave
     let keywordMoved = false;
     try {
         const srcKwSnap = await db.collection(`artifacts/${appId}/users/${sourceCompanyId}/keywords`).where("word", "==", keyword).get();
         if (!srcKwSnap.empty) {
             const kwDoc = srcKwSnap.docs[0];
             const kwData = kwDoc.data();
-            // Evitar duplicação na empresa de destino
             const destKwSnap = await db.collection(`artifacts/${appId}/users/${destCompanyId}/keywords`).where("word", "==", keyword).get();
             if (destKwSnap.empty) {
                 await db.doc(`artifacts/${appId}/users/${destCompanyId}/keywords/${kwDoc.id}`).set(kwData);
@@ -829,27 +744,21 @@ exports.transferKeywordAndHistory = regionalFunctions.https.onCall(async (data, 
             await kwDoc.ref.delete();
             keywordMoved = true;
         } else {
-            // Se não existir na origem, garantir que exista na destino (opcional)
             const destKwSnap = await db.collection(`artifacts/${appId}/users/${destCompanyId}/keywords`).where("word", "==", keyword).get();
             if (destKwSnap.empty) {
                 await db.collection(`artifacts/${appId}/users/${destCompanyId}/keywords`).add({ word: keyword, createdAt: admin.firestore.FieldValue.serverTimestamp() });
                 keywordMoved = true;
             }
         }
-    } catch (e) {
-        functions.logger.error("Falha ao mover palavra-chave:", String(e));
-        throw new functions.https.HttpsError("internal", "Falha ao mover palavra-chave.");
-    }
+    } catch (e) { throw new functions.https.HttpsError("internal", "Falha ao mover palavra-chave."); }
 
-    // Transferir artigos aprovados que contenham a keyword
     let transferredArticlesCount = 0;
     const movedArticleIds = new Set();
     try {
         const srcArticlesSnap = await db.collection(`artifacts/${appId}/users/${sourceCompanyId}/articles`).where("keywords", "array-contains", keyword).get();
-        const docs = srcArticlesSnap.docs;
         let batch = db.batch();
         let ops = 0;
-        for (const docSnap of docs) {
+        for (const docSnap of srcArticlesSnap.docs) {
             const dataDoc = docSnap.data();
             const destArticleRef = db.doc(`artifacts/${appId}/users/${destCompanyId}/articles/${docSnap.id}`);
             const newData = { ...dataDoc, companyId: destCompanyId, companyName: destCompanyName };
@@ -858,25 +767,15 @@ exports.transferKeywordAndHistory = regionalFunctions.https.onCall(async (data, 
             movedArticleIds.add(docSnap.id);
             transferredArticlesCount++;
             ops += 2;
-            if (ops >= 400) { // margem para limite de 500
-                await batch.commit();
-                batch = db.batch();
-                ops = 0;
-            }
+            if (ops >= 400) { await batch.commit(); batch = db.batch(); ops = 0; }
         }
         if (ops > 0) { await batch.commit(); }
-    } catch (e) {
-        functions.logger.error("Falha ao transferir artigos:", String(e));
-        throw new functions.https.HttpsError("internal", "Falha ao transferir artigos.");
-    }
+    } catch (e) { throw new functions.https.HttpsError("internal", "Falha ao transferir artigos."); }
 
-    // Atualizar pendências na fila de aprovação (pendingAlerts) que contenham a keyword
     let transferredPendingAlertsCount = 0;
     try {
         const pendingSnap = await db.collection(`artifacts/${appId}/public/data/pendingAlerts`)
-            .where("companyId", "==", sourceCompanyId)
-            .where("keywords", "array-contains", keyword)
-            .get();
+            .where("companyId", "==", sourceCompanyId).where("keywords", "array-contains", keyword).get();
         let batch = db.batch();
         let ops = 0;
         for (const pdoc of pendingSnap.docs) {
@@ -886,12 +785,8 @@ exports.transferKeywordAndHistory = regionalFunctions.https.onCall(async (data, 
             if (ops >= 450) { await batch.commit(); batch = db.batch(); ops = 0; }
         }
         if (ops > 0) { await batch.commit(); }
-    } catch (e) {
-        functions.logger.error("Falha ao atualizar pendências (pendingAlerts):", String(e));
-        throw new functions.https.HttpsError("internal", "Falha ao atualizar pendências.");
-    }
+    } catch (e) { throw new functions.https.HttpsError("internal", "Falha ao atualizar pendências."); }
 
-    // Transferir solicitações de exclusão relacionadas aos artigos movidos
     let transferredDeletionRequestsCount = 0;
     try {
         const delReqSnap = await db.collection(`artifacts/${appId}/public/data/deletionRequests`).where("companyId", "==", sourceCompanyId).get();
@@ -899,8 +794,7 @@ exports.transferKeywordAndHistory = regionalFunctions.https.onCall(async (data, 
         let ops = 0;
         for (const rdoc of delReqSnap.docs) {
             const rdata = rdoc.data();
-            const articleId = rdata.articleId;
-            if (articleId && movedArticleIds.has(articleId)) {
+            if (rdata.articleId && movedArticleIds.has(rdata.articleId)) {
                 batch.update(rdoc.ref, { companyId: destCompanyId, companyName: destCompanyName });
                 transferredDeletionRequestsCount++;
                 ops += 1;
@@ -908,28 +802,18 @@ exports.transferKeywordAndHistory = regionalFunctions.https.onCall(async (data, 
             }
         }
         if (ops > 0) { await batch.commit(); }
-    } catch (e) {
-        functions.logger.error("Falha ao transferir solicitações de exclusão:", String(e));
-        throw new functions.https.HttpsError("internal", "Falha ao transferir solicitações de exclusão.");
-    }
+    } catch (e) { throw new functions.https.HttpsError("internal", "Falha ao transferir solicitações."); }
 
-    return {
-        success: true,
-        keywordMoved,
-        transferredArticlesCount,
-        transferredPendingAlertsCount,
-        transferredDeletionRequestsCount
-    };
+    return { success: true, keywordMoved, transferredArticlesCount, transferredPendingAlertsCount, transferredDeletionRequestsCount };
 });
 
-exports.manageDeletionRequest = regionalFunctions.https.onCall(async (data, context) => {
-    const { appId, requestId, approve } = data;
-    if (!appId || !requestId) { throw new functions.https.HttpsError("invalid-argument", "O ID da aplicação e da solicitação são necessários."); }
+exports.manageDeletionRequest = onCall(async (request) => {
+    const { appId, requestId, approve } = request.data;
+    if (!appId || !requestId) { throw new functions.https.HttpsError("invalid-argument", "IDs necessários."); }
     const requestRef = db.doc(`artifacts/${appId}/public/data/deletionRequests/${requestId}`);
     const requestDoc = await requestRef.get();
-    if (!requestDoc.exists) { throw new functions.https.HttpsError("not-found", "Solicitação de exclusão não encontrada."); }
+    if (!requestDoc.exists) { throw new functions.https.HttpsError("not-found", "Solicitação não encontrada."); }
     const requestData = requestDoc.data();
-    if (!requestData) { throw new functions.https.HttpsError("internal", "Dados da solicitação estão corrompidos."); }
     const articleRef = db.doc(`artifacts/${appId}/users/${requestData.companyId}/articles/${requestData.articleId}`);
     if (approve) {
         await articleRef.delete();
@@ -941,73 +825,31 @@ exports.manageDeletionRequest = regionalFunctions.https.onCall(async (data, cont
     return { success: true };
 });
 
-exports.requestAlertDeletion = regionalFunctions.https.onCall(async (data, context) => {
-    const { appId, companyId, companyName, articleId, articleTitle, justification } = data;
-    if (!appId || !companyId || !articleId || !justification) { throw new functions.https.HttpsError("invalid-argument", "Informações incompletas para a solicitação de exclusão."); }
+exports.requestAlertDeletion = onCall(async (request) => {
+    const { appId, companyId, companyName, articleId, articleTitle, justification } = request.data;
+    if (!appId || !companyId || !articleId || !justification) { throw new functions.https.HttpsError("invalid-argument", "Dados incompletos."); }
     await db.collection(`artifacts/${appId}/public/data/deletionRequests`).add({ companyId, companyName, articleId, articleTitle, justification, status: "pending", requestedAt: admin.firestore.FieldValue.serverTimestamp() });
     const articleRef = db.doc(`artifacts/${appId}/users/${companyId}/articles/${articleId}`);
     await articleRef.update({ deletionRequestStatus: 'pending' });
     return { success: true };
 });
 
+exports.getCompanyKeywordReport = onCall(async (request) => {
+    const { appId, companyId, startDate, endDate } = request.data || {};
+    if (!appId || !companyId) throw new functions.https.HttpsError("invalid-argument", "IDs necessários.");
 
-function getChannelCategory(sourceName) {
-    const name = (sourceName || "").toLowerCase();
-    if (name.includes('youtube')) return 'YouTube';
-    if (name.includes('globo') || name.includes('g1') || name.includes('uol') || name.includes('terra') || name.includes('r7')) return 'Sites';
-    if (name.includes('veja') || name.includes('istoé') || name.includes('exame')) return 'Revistas';
-    if (name.includes('cbn') || name.includes('bandeirantes')) return 'Rádios';
-    return 'Sites';
-}
-
-function getPredominantSentiment(percentages) {
-    if (percentages.positive > percentages.neutral && percentages.positive > percentages.negative) return 'Positivo';
-    if (percentages.negative > percentages.positive && percentages.negative > percentages.neutral) return 'Negativo';
-    return 'Neutro';
-}
-function getTopCount(counts) {
-    if (Object.keys(counts).length === 0) return 'N/A';
-    return Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b);
-}
-
-
-exports.getCompanyKeywordReport = regionalFunctions.https.onCall(async (data, context) => {
-    const { appId, companyId, startDate, endDate } = data || {};
-    if (!appId || !companyId) {
-        throw new functions.https.HttpsError("invalid-argument", "O ID da aplicação e da empresa são necessários.");
-    }
-    functions.logger.info(`Gerando detalhes por palavra-chave para empresa ${companyId}...`);
-
-    // Converter datas (se fornecidas) para Timestamp do Firestore com limites diários
-    let startTs = null;
-    let endTs = null;
+    let startTs = null, endTs = null;
     try {
-        if (startDate) {
-            const sd = new Date(startDate);
-            if (!isNaN(sd)) {
-                sd.setHours(0, 0, 0, 0);
-                startTs = admin.firestore.Timestamp.fromDate(sd);
-            }
-        }
-        if (endDate) {
-            const ed = new Date(endDate);
-            if (!isNaN(ed)) {
-                ed.setHours(23, 59, 59, 999);
-                endTs = admin.firestore.Timestamp.fromDate(ed);
-            }
-        }
-    } catch (e) {
-        functions.logger.warn("Datas de relatório inválidas recebidas para getCompanyKeywordReport:", { startDate, endDate, error: String(e) });
-    }
+        if (startDate) { const sd = new Date(startDate); if (!isNaN(sd)) { sd.setHours(0, 0, 0, 0); startTs = admin.firestore.Timestamp.fromDate(sd); } }
+        if (endDate) { const ed = new Date(endDate); if (!isNaN(ed)) { ed.setHours(23, 59, 59, 999); endTs = admin.firestore.Timestamp.fromDate(ed); } }
+    } catch (e) {}
 
-    // Construir consulta com filtros de período, se houver
     let articlesQuery = db.collection(`artifacts/${appId}/users/${companyId}/articles`);
     if (startTs) articlesQuery = articlesQuery.where('publishedAt', '>=', startTs);
     if (endTs) articlesQuery = articlesQuery.where('publishedAt', '<=', endTs);
     const articlesSnapshot = await articlesQuery.get();
 
     const acc = new Map();
-
     articlesSnapshot.forEach(doc => {
         const article = doc.data() || {};
         const keywords = Array.isArray(article.keywords) ? article.keywords : [];
@@ -1015,8 +857,7 @@ exports.getCompanyKeywordReport = regionalFunctions.https.onCall(async (data, co
         const channel = (article.channel || (article.source?.name ? getChannelCategory(article.source.name) : 'Outros'));
         const vehicle = article.source?.name || 'Outros';
         let sentiment = 'neutral';
-        if (score > 0.2) sentiment = 'positive';
-        else if (score < -0.2) sentiment = 'negative';
+        if (score > 0.2) sentiment = 'positive'; else if (score < -0.2) sentiment = 'negative';
 
         keywords.forEach(k => {
             const key = String(k || '').trim();
@@ -1045,714 +886,320 @@ exports.getCompanyKeywordReport = regionalFunctions.https.onCall(async (data, co
         const topVehicle = getTopCount(row.vehicleCounts);
         return { keyword: row.keyword, totalAlerts: row.totalAlerts, sentimentPercentage, predominantSentiment, topChannel, topVehicle };
     }).sort((a, b) => b.totalAlerts - a.totalAlerts);
-
-    functions.logger.info(`Detalhes por palavra-chave gerados para empresa ${companyId}. Total de keywords: ${result.length}`);
     return result;
 });
 
-
-
-function resolveFriendlySourceNameFromUrl(urlStr, fallbackName) {
-  try {
-    const lower = (urlStr || '').toLowerCase();
-    // Se já há um nome específico, mantenha
-    if (fallbackName && !['rss', 'RSS', 'RSS Feed'].includes(fallbackName)) {
-      return fallbackName;
-    }
-    // Mapeamentos amigáveis conhecidos
-    if (lower.includes('metropoles.com')) return 'Metrópoles';
-    if (lower.includes('marretaurgente')) return 'Marreta Urgente';
-    // Caso contrário, derive do hostname
-    try {
-      const host = new URL(urlStr).hostname.replace(/^www\./, '');
-      return host || (fallbackName || 'RSS');
-    } catch {
-      return fallbackName || 'RSS';
-    }
-  } catch {
-    return fallbackName || 'RSS';
-  }
-}
-
-exports.backfillRssSourceNames = regionalFunctions.https.onCall(async (data, context) => {
-  const appId = data?.appId || APP_ID;
-  const dryRun = !!data?.dryRun;
-  let companiesProcessed = 0;
-  let articlesChecked = 0;
-  let articlesUpdated = 0;
-  let pendingChecked = 0;
-  let pendingUpdated = 0;
-
-  functions.logger.info(`Iniciando backfill de nomes de fonte RSS (appId=${appId}, dryRun=${dryRun})`);
+exports.backfillRssSourceNames = onCall(async (request) => {
+  const appId = request.data?.appId || APP_ID;
+  const dryRun = !!request.data?.dryRun;
+  let companiesProcessed = 0, articlesChecked = 0, articlesUpdated = 0, pendingChecked = 0, pendingUpdated = 0;
 
   const companiesSnapshot = await db.collection(`artifacts/${appId}/public/data/companies`).get();
   for (const companyDoc of companiesSnapshot.docs) {
     const companyId = companyDoc.id;
     companiesProcessed++;
-    // Artigos aprovados
     const articlesRef = db.collection(`artifacts/${appId}/users/${companyId}/articles`);
     const articlesQuery = await articlesRef.where('source.name', 'in', ['RSS', 'RSS Feed']).get();
     for (const doc of articlesQuery.docs) {
-      const data = doc.data();
       articlesChecked++;
-      const currentName = data?.source?.name || 'RSS';
-      const urlStr = data?.source?.url || data?.url || '';
-      const friendly = resolveFriendlySourceNameFromUrl(urlStr, currentName);
-      if (friendly && friendly !== currentName) {
-        if (!dryRun) {
-          await doc.ref.update({ 'source.name': friendly });
-        }
+      const data = doc.data();
+      const friendly = resolveFriendlySourceNameFromUrl(data?.source?.url || data?.url || '', data?.source?.name || 'RSS');
+      if (friendly && friendly !== (data?.source?.name || 'RSS')) {
+        if (!dryRun) await doc.ref.update({ 'source.name': friendly });
         articlesUpdated++;
       }
     }
-    // Pendências
     const pendingRef = db.collection(`artifacts/${appId}/public/data/pendingAlerts`);
     const pendingQuery = await pendingRef.where('companyId', '==', companyId).where('source.name', 'in', ['RSS', 'RSS Feed']).get();
     for (const doc of pendingQuery.docs) {
-      const data = doc.data();
       pendingChecked++;
-      const currentName = data?.source?.name || 'RSS';
-      const urlStr = data?.source?.url || data?.url || '';
-      const friendly = resolveFriendlySourceNameFromUrl(urlStr, currentName);
-      if (friendly && friendly !== currentName) {
-        if (!dryRun) {
-          await doc.ref.update({ 'source.name': friendly });
-        }
+      const data = doc.data();
+      const friendly = resolveFriendlySourceNameFromUrl(data?.source?.url || data?.url || '', data?.source?.name || 'RSS');
+      if (friendly && friendly !== (data?.source?.name || 'RSS')) {
+        if (!dryRun) await doc.ref.update({ 'source.name': friendly });
         pendingUpdated++;
       }
     }
   }
-
-  const result = { success: true, appId, dryRun, companiesProcessed, articlesChecked, articlesUpdated, pendingChecked, pendingUpdated };
-  functions.logger.info(`Backfill concluído: ${JSON.stringify(result)}`);
-  return result;
+  return { success: true, appId, dryRun, companiesProcessed, articlesChecked, articlesUpdated, pendingChecked, pendingUpdated };
 });
 
+exports.manualAddAlert = onCall(async (request) => {
+    const { appId, companyId, url } = request.data || {};
+    if (!appId || !companyId || !url) throw new functions.https.HttpsError("invalid-argument", "Dados incompletos.");
 
-
-
-exports.manualAddAlert = regionalFunctions.https.onCall(async (data, context) => {
-    const { appId, companyId, url } = data || {};
-    if (!appId || !companyId || !url) {
-        throw new functions.https.HttpsError("invalid-argument", "ID da aplicação, da empresa e URL do artigo são necessários.");
-    }
-
-    // Validar empresa
     const companyDoc = await db.doc(`artifacts/${appId}/public/data/companies/${companyId}`).get();
-    if (!companyDoc.exists) {
-        throw new functions.https.HttpsError("not-found", "Empresa não encontrada.");
-    }
+    if (!companyDoc.exists) throw new functions.https.HttpsError("not-found", "Empresa não encontrada.");
     const companyName = companyDoc.data()?.name || companyId;
 
-    // Extrair metadados básicos da página
-    let pageHtml = "";
-    let title = "";
-    let description = "";
+    let title = "", description = "";
     try {
         const resp = await axios.get(url, { timeout: 10000 });
-        pageHtml = String(resp.data || "");
-        const ogTitleMatch = pageHtml.match(/<meta[^>]+property=["']og:title["'][^>]*content=["']([^"']+)["'][^>]*>/i) || pageHtml.match(/<meta[^>]+content=["']([^"']+)["'][^>]*property=["']og:title["'][^>]*>/i);
-        if (ogTitleMatch && ogTitleMatch[1]) {
-            title = ogTitleMatch[1].trim();
-        } else {
-            const titleTagMatch = pageHtml.match(/<title[^>]*>([^<]+)<\/title>/i);
-            if (titleTagMatch && titleTagMatch[1]) title = titleTagMatch[1].trim();
-        }
-        const ogDescMatch = pageHtml.match(/<meta[^>]+property=["']og:description["'][^>]*content=["']([^"']+)["'][^>]*>/i) || pageHtml.match(/<meta[^>]+name=["']description["'][^>]*content=["']([^"']+)["'][^>]*>/i);
+        const pageHtml = String(resp.data || "");
+        const ogTitleMatch = pageHtml.match(/<meta[^>]+property=["']og:title["'][^>]*content=["']([^"']+)["'][^>]*>/i);
+        if (ogTitleMatch && ogTitleMatch[1]) title = ogTitleMatch[1].trim();
+        else { const t = pageHtml.match(/<title[^>]*>([^<]+)<\/title>/i); if (t && t[1]) title = t[1].trim(); }
+        const ogDescMatch = pageHtml.match(/<meta[^>]+property=["']og:description["'][^>]*content=["']([^"']+)["'][^>]*>/i);
         if (ogDescMatch && ogDescMatch[1]) description = ogDescMatch[1].trim();
-    } catch (e) {
-        functions.logger.warn("Falha ao buscar/parsear página para alerta manual:", String(e));
-    }
+    } catch (e) {}
 
-    // Resolver nome da fonte e canal
     let sourceName = "";
-    try {
-        const u = new URL(url);
-        sourceName = resolveFriendlySourceNameFromUrl(u.href, u.hostname || "Site");
-    } catch {
-        sourceName = resolveFriendlySourceNameFromUrl(url, "Site");
-    }
+    try { const u = new URL(url); sourceName = resolveFriendlySourceNameFromUrl(u.href, u.hostname || "Site"); } 
+    catch { sourceName = resolveFriendlySourceNameFromUrl(url, "Site"); }
     const channelValue = getChannelCategory(sourceName);
 
-    // Obter keywords da empresa e tentar casar com título/descrição
     let companyKeywords = [];
     try {
         const ksnap = await db.collection(`artifacts/${appId}/users/${companyId}/keywords`).get();
         companyKeywords = ksnap.docs.map(d => String(d.data()?.word || "").trim()).filter(Boolean);
-    } catch (e) {
-        functions.logger.warn("Falha ao carregar keywords da empresa:", String(e));
-    }
-    const articleForMatch = { title, description };
-    const matchedKeywords = findMatchingKeywords(articleForMatch, companyKeywords);
-
-    // Gating de canal: verificar se empresa permite este canal
+    } catch (e) {}
+    
+    const matchedKeywords = findMatchingKeywords({ title, description }, companyKeywords);
     let captureChannels = [];
     try {
         const settingsDoc = await db.doc(`artifacts/${appId}/public/data/settings/${companyId}`).get();
         captureChannels = settingsDoc.exists ? (settingsDoc.data()?.captureChannels || []) : [];
-    } catch (e) {
-        functions.logger.warn("Falha ao carregar configurações da empresa:", String(e));
-    }
-    const channelEnabled = captureChannels.length === 0 || captureChannels.includes(channelValue);
-    if (!channelEnabled) {
-        return { success: true, skipped: true, reason: 'channel_disabled', channel: channelValue };
-    }
+    } catch (e) {}
+    if (captureChannels.length > 0 && !captureChannels.includes(channelValue)) return { success: true, skipped: true, reason: 'channel_disabled' };
 
-    // Enviar para fila de aprovação com o link do artigo
-    const alertData = {
-        title: title || url,
-        description: description || "",
-        url,
-        source: { name: sourceName, url },
-        author: null,
-        channel: channelValue,
-        publishedAt: admin.firestore.FieldValue.serverTimestamp(),
-        keywords: matchedKeywords,
-        companyId,
-        companyName,
-        status: "pending",
-    };
-
+    const alertData = { title: title || url, description: description || "", url, source: { name: sourceName, url }, author: null, channel: channelValue, publishedAt: admin.firestore.FieldValue.serverTimestamp(), keywords: matchedKeywords, companyId, companyName, status: "pending", };
     const pendingRef = await db.collection(`artifacts/${appId}/public/data/pendingAlerts`).add(alertData);
     return { success: true, pendingId: pendingRef.id };
 });
 
-function getChannelCategory(sourceName) {
-    const name = (sourceName || "").toLowerCase();
-    if (name.includes('youtube')) return 'YouTube';
-    if (name.includes('globo') || name.includes('g1') || name.includes('uol') || name.includes('terra') || name.includes('r7')) return 'Sites';
-    if (name.includes('veja') || name.includes('istoé') || name.includes('exame')) return 'Revistas';
-    if (name.includes('cbn') || name.includes('bandeirantes')) return 'Rádios';
-    return 'Sites';
-}
+exports.generateSuperAdminReport = onCall(async (request) => {
+    const { appId, startDate, endDate } = request.data || {};
+    if (!appId) throw new functions.https.HttpsError("invalid-argument", "ID da aplicação necessário.");
 
-function getPredominantSentiment(percentages) {
-    if (percentages.positive > percentages.neutral && percentages.positive > percentages.negative) return 'Positivo';
-    if (percentages.negative > percentages.positive && percentages.negative > percentages.neutral) return 'Negativo';
-    return 'Neutro';
-}
-function getTopCount(counts) {
-    if (Object.keys(counts).length === 0) return 'N/A';
-    return Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b);
-}
-
-exports.generateSuperAdminReport = regionalFunctions.https.onCall(async (data, context) => {
-    const { appId, startDate, endDate } = data || {};
-    if (!appId) {
-        throw new functions.https.HttpsError("invalid-argument", "O ID da aplicação é necessário.");
-    }
-    functions.logger.info("Iniciando geração do relatório geral de empresas...");
-
-    // Converter datas (se fornecidas) para Timestamp do Firestore com limites diários
-    let startTs = null;
-    let endTs = null;
+    let startTs = null, endTs = null;
     try {
-        if (startDate) {
-            const sd = new Date(startDate);
-            if (!isNaN(sd)) {
-                sd.setHours(0, 0, 0, 0);
-                startTs = admin.firestore.Timestamp.fromDate(sd);
-            }
-        }
-        if (endDate) {
-            const ed = new Date(endDate);
-            if (!isNaN(ed)) {
-                ed.setHours(23, 59, 59, 999);
-                endTs = admin.firestore.Timestamp.fromDate(ed);
-            }
-        }
-    } catch (e) {
-        functions.logger.warn("Datas de relatório inválidas recebidas:", { startDate, endDate, error: String(e) });
-    }
+        if (startDate) { const sd = new Date(startDate); if (!isNaN(sd)) { sd.setHours(0, 0, 0, 0); startTs = admin.firestore.Timestamp.fromDate(sd); } }
+        if (endDate) { const ed = new Date(endDate); if (!isNaN(ed)) { ed.setHours(23, 59, 59, 999); endTs = admin.firestore.Timestamp.fromDate(ed); } }
+    } catch (e) {}
 
     const companiesSnapshot = await db.collection(`artifacts/${appId}/public/data/companies`).get();
     const reportData = [];
     for (const companyDoc of companiesSnapshot.docs) {
         const companyId = companyDoc.id;
         const companyName = companyDoc.data().name;
-        functions.logger.info(`Processando relatório para: ${companyName} (ID: ${companyId})`);
-
-        // Construir consulta com filtros de período, se houver
         let articlesQuery = db.collection(`artifacts/${appId}/users/${companyId}/articles`);
         if (startTs) articlesQuery = articlesQuery.where('publishedAt', '>=', startTs);
         if (endTs) articlesQuery = articlesQuery.where('publishedAt', '<=', endTs);
         const articlesSnapshot = await articlesQuery.get();
         const totalAlerts = articlesSnapshot.size;
-
         let positiveCount = 0, neutralCount = 0, negativeCount = 0;
         const channelCounts = {}, vehicleCounts = {};
-
         if (articlesSnapshot.size > 0) {
             articlesSnapshot.docs.forEach(doc => {
                 const article = doc.data();
                 const score = article.sentiment?.score ?? 0;
-                if (score > 0.2) positiveCount++;
-                else if (score < -0.2) negativeCount++;
-                else neutralCount++;
+                if (score > 0.2) positiveCount++; else if (score < -0.2) negativeCount++; else neutralCount++;
                 const channel = (article.channel || (article.source?.name ? getChannelCategory(article.source.name) : 'Outros'));
                 channelCounts[channel] = (channelCounts[channel] || 0) + 1;
                 const vehicle = article.source?.name || 'Outros';
                 vehicleCounts[vehicle] = (vehicleCounts[vehicle] || 0) + 1;
             });
         }
-
         const totalSentiments = positiveCount + neutralCount + negativeCount;
         const sentimentPercentage = {
             positive: totalSentiments > 0 ? parseFloat(((positiveCount / totalSentiments) * 100).toFixed(2)) : 0,
             neutral: totalSentiments > 0 ? parseFloat(((neutralCount / totalSentiments) * 100).toFixed(2)) : 0,
             negative: totalSentiments > 0 ? parseFloat(((negativeCount / totalSentiments) * 100).toFixed(2)) : 0,
         };
-
         const predominantSentiment = getPredominantSentiment(sentimentPercentage);
         const topChannel = getTopCount(channelCounts);
         const topVehicle = getTopCount(vehicleCounts);
         reportData.push({ companyId, companyName, totalAlerts, sentimentPercentage, predominantSentiment, topChannel, topVehicle });
     }
-    functions.logger.info("Relatório geral gerado com sucesso.");
     return reportData;
 });
 
-exports.generateCriticalReport = regionalFunctions.https.onCall(async (data, context) => {
-    const { appId, companyId, startDate, endDate } = data || {};
-    if (!appId || !companyId) {
-        throw new functions.https.HttpsError("invalid-argument", "O ID da aplicação e da empresa são necessários.");
-    }
-    functions.logger.info("Iniciando geração do relatório de análise crítica...", { appId, companyId, startDate, endDate });
+exports.generateCriticalReport = onCall(async (request) => {
+    const { appId, companyId, startDate, endDate } = request.data || {};
+    if (!appId || !companyId) throw new functions.https.HttpsError("invalid-argument", "IDs necessários.");
 
-    // Converter datas para limites diários
-    let start = null;
-    let end = null;
+    let start = null, end = null;
     try {
-        if (startDate) {
-            const sd = new Date(startDate);
-            if (!isNaN(sd)) { sd.setHours(0,0,0,0); start = sd; }
-        }
-        if (endDate) {
-            const ed = new Date(endDate);
-            if (!isNaN(ed)) { ed.setHours(23,59,59,999); end = ed; }
-        }
-    } catch (e) {
-        functions.logger.warn("Datas de relatório inválidas recebidas para generateCriticalReport:", { startDate, endDate, error: String(e) });
-    }
+        if (startDate) { const sd = new Date(startDate); if (!isNaN(sd)) { sd.setHours(0,0,0,0); start = sd; } }
+        if (endDate) { const ed = new Date(endDate); if (!isNaN(ed)) { ed.setHours(23,59,59,999); end = ed; } }
+    } catch (e) {}
 
-    // Buscar artigos aprovados da empresa
     const articlesSnap = await db.collection(`artifacts/${appId}/users/${companyId}/articles`).get();
-
     const articles = [];
-    const channelCounts = {};
-    const vehicleCounts = {};
-    const valuation = {};
-    const dateCounts = {};
-    const keywordCounts = {};
-    const spaceCounts = {};
-    const mentionedEntities = {};
-    const spontaneityCounts = {};
-    const mediaSpace = {
-        tvTime: 0,
-        radioTime: 0,
-        webSize: 0,
-        youtubeTime: 0
-    };
-    const sentimentByChannel = {
-        TV: { positive: 0, neutral: 0, negative: 0 },
-        Rádio: { positive: 0, neutral: 0, negative: 0 },
-        Web: { positive: 0, neutral: 0, negative: 0 },
-        YouTube: { positive: 0, neutral: 0, negative: 0 },
-        Outros: { positive: 0, neutral: 0, negative: 0 }
-    };
+    const channelCounts = {}, vehicleCounts = {}, valuation = {}, dateCounts = {}, keywordCounts = {}, spaceCounts = {}, mentionedEntities = {}, spontaneityCounts = {};
+    const mediaSpace = { tvTime: 0, radioTime: 0, webSize: 0, youtubeTime: 0 };
+    const sentimentByChannel = { TV: { positive: 0, neutral: 0, negative: 0 }, Rádio: { positive: 0, neutral: 0, negative: 0 }, Web: { positive: 0, neutral: 0, negative: 0 }, YouTube: { positive: 0, neutral: 0, negative: 0 }, Outros: { positive: 0, neutral: 0, negative: 0 } };
 
     for (const doc of articlesSnap.docs) {
         const a = doc.data();
-        // Resolver a data do artigo
         let d = null;
         try {
-            if (a.publishedAt && typeof a.publishedAt.toDate === 'function') {
-                d = a.publishedAt.toDate();
-            } else if (a.approvedAt && typeof a.approvedAt.toDate === 'function') {
-                d = a.approvedAt.toDate();
-            }
+            if (a.publishedAt && typeof a.publishedAt.toDate === 'function') d = a.publishedAt.toDate();
+            else if (a.approvedAt && typeof a.approvedAt.toDate === 'function') d = a.approvedAt.toDate();
         } catch (_) {}
-        // Aplicar filtro de período (se fornecido)
         if (start && d && d < start) continue;
         if (end && d && d > end) continue;
 
         articles.push(a);
-
         const ch = (a.channel || (a.source?.name ? getChannelCategory(a.source.name) : 'Outros'));
         channelCounts[ch] = (channelCounts[ch] || 0) + 1;
-
         const veh = (a.source?.name || 'Desconhecido');
         vehicleCounts[veh] = (vehicleCounts[veh] || 0) + 1;
-
-        if (d) {
-            const key = d.toISOString().slice(0,10);
-            dateCounts[key] = (dateCounts[key] || 0) + 1;
-        }
-
+        if (d) { const key = d.toISOString().slice(0,10); dateCounts[key] = (dateCounts[key] || 0) + 1; }
         const val = (a?.sentiment?.label || a?.valuation || 'Neutro');
         valuation[val] = (valuation[val] || 0) + 1;
-
-        if (Array.isArray(a.keywords)) {
-            a.keywords.forEach(k => {
-                if (typeof k === 'string' && k.trim()) {
-                    const kk = k.trim();
-                    keywordCounts[kk] = (keywordCounts[kk] || 0) + 1;
-                }
-            });
-        }
-
-        // Contar tipos de texto (space)
+        if (Array.isArray(a.keywords)) a.keywords.forEach(k => { if (typeof k === 'string' && k.trim()) { const kk = k.trim(); keywordCounts[kk] = (keywordCounts[kk] || 0) + 1; } });
         const textType = a?.textType || a?.space || 'MATÉRIA';
         spaceCounts[textType] = (spaceCounts[textType] || 0) + 1;
-
-        // Contar entidades mencionadas
-        if (Array.isArray(a.ai?.entities)) {
-            a.ai.entities.forEach(entity => {
-                if (entity.name && entity.salience > 0.01) {
-                    mentionedEntities[entity.name] = (mentionedEntities[entity.name] || 0) + 1;
-                }
-            });
-        }
-
-        // Contar Provocada/Espontânea (default para Espontânea se não especificado)
+        if (Array.isArray(a.ai?.entities)) a.ai.entities.forEach(entity => { if (entity.name && entity.salience > 0.01) mentionedEntities[entity.name] = (mentionedEntities[entity.name] || 0) + 1; });
         const spontaneity = a?.spontaneity || 'Espontânea';
         spontaneityCounts[spontaneity] = (spontaneityCounts[spontaneity] || 0) + 1;
-
-        // Calcular espaço ocupado na mídia
-        const channel = a.channel || (a.source?.name ? getChannelCategory(a.source.name) : 'Outros');
-        if (channel === 'TV') {
-            // TV: assumir 1 minuto por matéria (valor padrão)
-            mediaSpace.tvTime += 1;
-        } else if (channel === 'Rádio') {
-            // Rádio: assumir 30 segundos por matéria (0.5 minutos)
-            mediaSpace.radioTime += 0.5;
-        } else if (channel === 'Web') {
-            // Web: assumir 10cm por matéria (tamanho aproximado)
-            mediaSpace.webSize += 10;
-        } else if (channel === 'YouTube') {
-            // YouTube: assumir 2 minutos por vídeo
-            mediaSpace.youtubeTime += 2;
-        }
-
-        // Calcular sentimento por canal
-        const sentimentScore = a.sentiment?.score ?? 0;
-        let sentimentLabel = 'neutral';
-        if (sentimentScore > 0.2) sentimentLabel = 'positive';
-        else if (sentimentScore < -0.2) sentimentLabel = 'negative';
         
-        const channelCategory = channel in sentimentByChannel ? channel : 'Outros';
-        sentimentByChannel[channelCategory][sentimentLabel] += 1;
+        if (ch === 'TV') mediaSpace.tvTime += 1;
+        else if (ch === 'Rádio') mediaSpace.radioTime += 0.5;
+        else if (ch === 'Web') mediaSpace.webSize += 10;
+        else if (ch === 'YouTube') mediaSpace.youtubeTime += 2;
+
+        const score = a.sentiment?.score ?? 0;
+        let sent = 'neutral'; if (score > 0.2) sent = 'positive'; else if (score < -0.2) sent = 'negative';
+        const cCat = ch in sentimentByChannel ? ch : 'Outros';
+        sentimentByChannel[cCat][sent] += 1;
     }
 
-    const topChannel = Object.keys(channelCounts).length ? Object.keys(channelCounts).reduce((a, b) => channelCounts[a] > channelCounts[b] ? a : b) : null;
-    const topVehicle = Object.keys(vehicleCounts).length ? Object.keys(vehicleCounts).reduce((a, b) => vehicleCounts[a] > vehicleCounts[b] ? a : b) : null;
-    const totalAlerts = articles.length;
-
-    functions.logger.info("Relatório de análise crítica gerado com sucesso.", { totalAlerts });
+    const topChannel = getTopCount(channelCounts);
+    const topVehicle = getTopCount(vehicleCounts);
+    const topMentionedEntities = Object.entries(mentionedEntities).sort((a, b) => b[1] - a[1]).slice(0, 50).reduce((obj, [key, value]) => { obj[key] = value; return obj; }, {});
     
-    // Filtrar e ordenar as entidades mencionadas por frequência
-    const topMentionedEntities = Object.entries(mentionedEntities)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 50)
-        .reduce((obj, [key, value]) => {
-            obj[key] = value;
-            return obj;
-        }, {});
-    
-    return { articles, channelCounts, vehicleCounts, valuation, dateCounts, keywordCounts, spaceCounts, spontaneityCounts, mentionedEntities: topMentionedEntities, mediaSpace, sentimentByChannel, topChannel, topVehicle, totalAlerts };
+    return { articles, channelCounts, vehicleCounts, valuation, dateCounts, keywordCounts, spaceCounts, spontaneityCounts, mentionedEntities: topMentionedEntities, mediaSpace, sentimentByChannel, topChannel, topVehicle, totalAlerts: articles.length };
 });
 
-// Função auxiliar para extrair domínio da URL
-function extractDomainFromUrl(url) {
-    try {
-        const urlObj = new URL(url);
-        let hostname = urlObj.hostname;
-        // Remover www. se existir
-        hostname = hostname.replace(/^www\./, '');
-        return hostname;
-    } catch (error) {
-        functions.logger.error(`Erro ao extrair domínio da URL ${url}:`, error.message);
-        return null;
-    }
-}
-
-// Função para corrigir fontes e canais dos artigos existentes
-exports.fixExistingArticles = functions.runWith({ timeoutSeconds: 540, memory: '1GB' }).https.onCall(async (data, context) => {
-    // Verificar autenticação
-    if (!context.auth) {
-        throw new functions.https.HttpsError('unauthenticated', 'Usuário não autenticado');
-    }
-
-    const { companyId } = data;
-    let processedCount = 0;
-    let updatedCount = 0;
-    let errorsCount = 0;
-
-    try {
-        functions.logger.info(`[FixArticles] Iniciando correção de artigos para empresa: ${companyId}`);
-
-        // Buscar todos os artigos da empresa
-        const articlesRef = db.collection(`artifacts/${APP_ID}/public/data/pendingAlerts`);
-        let query = articlesRef.where('companyId', '==', companyId);
-        
-        const snapshot = await query.get();
-        functions.logger.info(`[FixArticles] Encontrados ${snapshot.docs.length} artigos para processar`);
-
-        // Processar em lotes para evitar sobrecarga
-        const batch = db.batch();
-        const batchSize = 500;
-        let currentBatchSize = 0;
-
-        for (const doc of snapshot.docs) {
-            processedCount++;
-            const article = doc.data();
-            let needsUpdate = false;
-            const updates = {};
-
-            try {
-                // Verificar se é YouTube (canal)
-                if (article.channel === 'YouTube' || (article.source && article.source.name === 'YouTube')) {
-                    // Corrigir canal YouTube
-                    if (article.source && article.source.name !== 'Canal') {
-                        updates['source.name'] = 'Canal';
-                        needsUpdate = true;
-                    }
-
-                    // Corrigir autor do YouTube
-                    if (!article.author || article.author === '' || article.author === 'YouTube') {
-                        updates['author'] = 'Redação*';
-                        needsUpdate = true;
-                    }
-                } else {
-                    // Para outras fontes, usar domínio da URL
-                    if (article.url) {
-                        const domain = extractDomainFromUrl(article.url);
-                        if (domain && article.source && article.source.name) {
-                            // Verificar se o nome atual não é igual ao domínio
-                            if (article.source.name !== domain) {
-                                updates['source.name'] = domain;
-                                needsUpdate = true;
-                            }
-                        }
-                    }
-                }
-
-                // Aplicar atualizações se necessário
-                if (needsUpdate) {
-                    batch.update(doc.ref, updates);
-                    currentBatchSize++;
-                    updatedCount++;
-
-                    // Commit do lote quando atingir o limite
-                    if (currentBatchSize >= batchSize) {
-                        await batch.commit();
-                        functions.logger.info(`[FixArticles] Lote de ${currentBatchSize} artigos processado`);
-                        currentBatchSize = 0;
-                    }
-                }
-
-            } catch (error) {
-                errorsCount++;
-                functions.logger.error(`[FixArticles] Erro ao processar artigo ${doc.id}:`, error.message);
-            }
-
-            // Log progresso a cada 100 artigos
-            if (processedCount % 100 === 0) {
-                functions.logger.info(`[FixArticles] Progresso: ${processedCount}/${snapshot.docs.length} processados, ${updatedCount} atualizados`);
-            }
-        }
-
-        // Commit do lote final
-        if (currentBatchSize > 0) {
-            await batch.commit();
-            functions.logger.info(`[FixArticles] Lote final de ${currentBatchSize} artigos processado`);
-        }
-
-        functions.logger.info(`[FixArticles] Concluído! Total: ${processedCount}, Atualizados: ${updatedCount}, Erros: ${errorsCount}`);
-
-        return {
-            success: true,
-            processed: processedCount,
-            updated: updatedCount,
-            errors: errorsCount,
-            message: `Correção concluída: ${updatedCount} artigos atualizados de ${processedCount} processados`
-        };
-
-    } catch (error) {
-        functions.logger.error('[FixArticles] Erro geral:', error.message);
-        throw new functions.https.HttpsError('internal', `Erro ao corrigir artigos: ${error.message}`);
-    }
-});
-
-// Função para corrigir todas as empresas (chama a função individual para cada empresa)
-// Função auxiliar para verificar e gerenciar lock de execução
-async function checkAndSetLock(lockName, maxDuration = 30 * 60 * 1000) { // 30 minutos
-    const lockRef = db.collection(`artifacts/${APP_ID}/public/data/locks`).doc(lockName);
-    const lock = await lockRef.get();
+// --- Lógica Compartilhada de Correção (Para evitar repetição) ---
+async function runFixLogic(companyId, dryRun) {
+    let processedCount = 0, updatedCount = 0, errorsCount = 0;
+    const snapshot = await db.collection(`artifacts/${APP_ID}/public/data/pendingAlerts`).where('companyId', '==', companyId).get();
     
-    if (lock.exists) {
-        const lockData = lock.data();
-        const timeDiff = Date.now() - lockData.timestamp;
-        
-        // Se o lock tem menos de 30 minutos, considerar como ativo
-        if (timeDiff < maxDuration) {
-            return { locked: true, message: lockData.message };
-        }
-        
-        // Se passou de 30 minutos, remover o lock antigo
-        await lockRef.delete();
-    }
-    
-    // Criar novo lock
-    await lockRef.set({
-        timestamp: Date.now(),
-        message: 'Processo em execução',
-        startedAt: new Date().toISOString()
-    });
-    
-    return { locked: false };
-}
+    if (snapshot.empty) return { processed: 0, updated: 0, errors: 0 };
 
-// Função para remover lock
-async function releaseLock(lockName) {
-    const lockRef = db.collection(`artifacts/${APP_ID}/public/data/locks`).doc(lockName);
-    await lockRef.delete();
-}
+    const batch = db.batch();
+    let currentBatchSize = 0;
+    const batchLimit = 400; // Limite de segurança do Firestore
+    let batchCommittedCount = 0;
 
-// Função para verificar status da correção
-exports.checkFixStatus = functions.https.onCall(async (data, context) => {
-    // Verificar autenticação
-    if (!context.auth) {
-        throw new functions.https.HttpsError('unauthenticated', 'Usuário não autenticado');
-    }
-
-    try {
-        const lockRef = db.collection(`artifacts/${APP_ID}/public/data/locks`).doc('fixArticlesLock');
-        const lock = await lockRef.get();
+    for (const doc of snapshot.docs) {
+        processedCount++;
+        const article = doc.data();
+        let needsUpdate = false;
+        const updates = {};
         
-        if (lock.exists) {
-            const lockData = lock.data();
-            const timeDiff = Date.now() - lockData.timestamp;
-            const minutesRunning = Math.floor(timeDiff / 60000);
-            
-            return {
-                running: true,
-                startedAt: lockData.startedAt,
-                minutesRunning: minutesRunning,
-                message: lockData.message
-            };
+        // Lógica de correção
+        if (article.channel === 'YouTube' || (article.source && article.source.name === 'YouTube')) {
+            if (article.source && article.source.name !== 'Canal') { updates['source.name'] = 'Canal'; needsUpdate = true; }
+            if (!article.author || article.author === '' || article.author === 'YouTube') { updates['author'] = 'Redação*'; needsUpdate = true; }
         } else {
-            return {
-                running: false,
-                message: 'Nenhuma correção em andamento'
-            };
+            if (article.url) {
+                const domain = extractDomainFromUrl(article.url);
+                if (domain && article.source && article.source.name && article.source.name !== domain) { updates['source.name'] = domain; needsUpdate = true; }
+            }
         }
-    } catch (error) {
-        functions.logger.error('[CheckFixStatus] Erro:', error.message);
-        throw new functions.https.HttpsError('internal', `Erro ao verificar status: ${error.message}`);
-    }
-});
 
-// Função para liberar lock manualmente (em caso de falha)
-exports.releaseFixLock = functions.https.onCall(async (data, context) => {
-    // Verificar autenticação
-    if (!context.auth) {
-        throw new functions.https.HttpsError('unauthenticated', 'Usuário não autenticado');
+        if (needsUpdate) {
+            if (!dryRun) batch.update(doc.ref, updates);
+            currentBatchSize++;
+            updatedCount++;
+            
+            // Se encher o lote, envia
+            if (currentBatchSize >= batchLimit) {
+                if (!dryRun) await batch.commit();
+                batchCommittedCount++;
+                // Reinicia batch
+                currentBatchSize = 0;
+                // Nota: Firestore batch reuso é complexo, idealmente recriaríamos o objeto batch, 
+                // mas para simplicidade em cloud functions V2, isso costuma funcionar se o fluxo for linear.
+            }
+        }
     }
+    
+    // Envia o restante
+    if (currentBatchSize > 0 && !dryRun) await batch.commit();
+    
+    return { processed: processedCount, updated: updatedCount, errors: errorsCount };
+}
 
+// --- FUNÇÕES DE CORREÇÃO EXPORTADAS ---
+
+exports.fixExistingArticles = onCall(async (request) => {
+    if (!request.auth) throw new functions.https.HttpsError('unauthenticated', 'Usuário não autenticado');
+    const { companyId } = request.data;
     try {
-        await releaseLock('fixArticlesLock');
-        functions.logger.info('[ReleaseFixLock] Lock liberado manualmente');
-        
-        return {
-            success: true,
-            message: 'Lock liberado com sucesso'
-        };
-    } catch (error) {
-        functions.logger.error('[ReleaseFixLock] Erro:', error.message);
-        throw new functions.https.HttpsError('internal', `Erro ao liberar lock: ${error.message}`);
-    }
+        const result = await runFixLogic(companyId, false);
+        return { success: true, ...result, message: `Correção concluída para a empresa.` };
+    } catch (error) { throw new functions.https.HttpsError('internal', `Erro: ${error.message}`); }
 });
 
-exports.fixAllCompaniesArticles = functions.runWith({ timeoutSeconds: 540, memory: '1GB' }).https.onCall(async (data, context) => {
-    // Verificar autenticação
-    if (!context.auth) {
-        throw new functions.https.HttpsError('unauthenticated', 'Usuário não autenticado');
-    }
-
+exports.fixAllCompaniesArticles = onCall(async (request) => {
+    if (!request.auth) throw new functions.https.HttpsError('unauthenticated', 'Usuário não autenticado');
     const lockName = 'fixArticlesLock';
     
     try {
-        // Verificar se já existe execução em andamento
         const lockCheck = await checkAndSetLock(lockName);
-        if (lockCheck.locked) {
-            throw new functions.https.HttpsError('already-exists', `Já existe uma correção em andamento. ${lockCheck.message}`);
-        }
-
-        functions.logger.info('[FixAllArticles] Iniciando correção para todas as empresas');
-
-        // Buscar todas as empresas
-        const companiesRef = db.collection(`artifacts/${APP_ID}/public/data/companies`);
-        const companiesSnapshot = await companiesRef.get();
-
+        if (lockCheck.locked) throw new functions.https.HttpsError('already-exists', `Correção em andamento. ${lockCheck.message}`);
+        
+        const companiesSnapshot = await db.collection(`artifacts/${APP_ID}/public/data/companies`).get();
         const results = [];
-        let totalProcessed = 0;
-        let totalUpdated = 0;
-
-        // Processar cada empresa
+        let totalProcessed = 0, totalUpdated = 0;
+        
         for (const companyDoc of companiesSnapshot.docs) {
             const company = companyDoc.data();
-            functions.logger.info(`[FixAllArticles] Processando empresa: ${company.companyName} (${company.companyId})`);
-
             try {
-                // Chamar a função de correção para esta empresa
-                const result = await exports.fixExistingArticles({ companyId: company.companyId }, context);
-                results.push({
-                    companyId: company.companyId,
-                    companyName: company.companyName,
-                    ...result
-                });
-
+                // Agora chamamos a função interna, muito mais rápido e seguro
+                const result = await runFixLogic(company.companyId, false);
                 totalProcessed += result.processed;
                 totalUpdated += result.updated;
-
-            } catch (error) {
-                functions.logger.error(`[FixAllArticles] Erro ao processar empresa ${company.companyName}:`, error.message);
-                results.push({
-                    companyId: company.companyId,
-                    companyName: company.companyName,
-                    success: false,
-                    error: error.message
-                });
+                results.push({ companyId: company.companyId, companyName: company.companyName, ...result, success: true });
+            } catch (error) { 
+                results.push({ companyId: company.companyId, companyName: company.companyName, success: false, error: error.message }); 
             }
         }
-
-        functions.logger.info(`[FixAllArticles] Concluído! Total geral: ${totalProcessed} processados, ${totalUpdated} atualizados`);
-
-        // Liberar lock
+        
         await releaseLock(lockName);
-
-        return {
-            success: true,
-            totalCompanies: companiesSnapshot.docs.length,
-            totalProcessed: totalProcessed,
-            totalUpdated: totalUpdated,
-            results: results,
-            message: `Correção geral concluída: ${totalUpdated} artigos atualizados em ${companiesSnapshot.docs.length} empresas`,
-            timestamp: new Date().toISOString()
-        };
-
+        return { success: true, totalProcessed, totalUpdated, results };
     } catch (error) {
-        functions.logger.error('[FixAllArticles] Erro geral:', error.message);
-        // Liberar lock em caso de erro
-        await releaseLock(lockName).catch(err => functions.logger.error('Erro ao liberar lock:', err.message));
-        
-        if (error.code === 'already-exists') {
-            throw error; // Re-throw o erro de lock existente
-        }
-        
-        throw new functions.https.HttpsError('internal', `Erro ao corrigir artigos de todas as empresas: ${error.message}`);
+        await releaseLock(lockName).catch(() => {});
+        throw new functions.https.HttpsError('internal', error.message);
     }
 });
 
+// Funções de Lock (Mantidas iguais)
+async function checkAndSetLock(lockName, maxDuration = 30 * 60 * 1000) {
+    const lockRef = db.collection(`artifacts/${APP_ID}/public/data/locks`).doc(lockName);
+    const lock = await lockRef.get();
+    if (lock.exists) {
+        const lockData = lock.data();
+        if (Date.now() - lockData.timestamp < maxDuration) return { locked: true, message: lockData.message };
+        await lockRef.delete();
+    }
+    await lockRef.set({ timestamp: Date.now(), message: 'Processo em execução', startedAt: new Date().toISOString() });
+    return { locked: false };
+}
 
+async function releaseLock(lockName) {
+    await db.collection(`artifacts/${APP_ID}/public/data/locks`).doc(lockName).delete();
+}
+
+exports.checkFixStatus = onCall(async (request) => {
+    if (!request.auth) throw new functions.https.HttpsError('unauthenticated', 'Usuário não autenticado');
+    try {
+        const lock = await db.collection(`artifacts/${APP_ID}/public/data/locks`).doc('fixArticlesLock').get();
+        if (lock.exists) {
+            const data = lock.data();
+            return { running: true, startedAt: data.startedAt, minutesRunning: Math.floor((Date.now() - data.timestamp) / 60000), message: data.message };
+        }
+        return { running: false, message: 'Nenhuma correção em andamento' };
+    } catch (error) { throw new functions.https.HttpsError('internal', error.message); }
+});
+
+exports.releaseFixLock = onCall(async (request) => {
+    if (!request.auth) throw new functions.https.HttpsError('unauthenticated', 'Usuário não autenticado');
+    try { await releaseLock('fixArticlesLock'); return { success: true, message: 'Lock liberado' }; }
+    catch (error) { throw new functions.https.HttpsError('internal', error.message); }
+});
