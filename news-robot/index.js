@@ -13,6 +13,8 @@ const { setGlobalOptions } = require("firebase-functions/v2/options");
 
 const axios = require("axios");
 const Parser = require('rss-parser');
+const cheerio = require('cheerio');
+const pdf = require('pdf-parse');
 
 const { LanguageServiceClient } = require('@google-cloud/language');
 const { TranslationServiceClient } = require('@google-cloud/translate');
@@ -49,19 +51,21 @@ const GOOGLE_PROJECT_ID = "noticias-6e952";
 
 // --- Funções Auxiliares (Lógica interna, não precisa mexer) ---
 
-function isWithinWindow(startHHMM, endHHMM, date = new Date()) {
+// Função Corrigida para Fuso Horário de Brasília
+function isWithinWindow(startHHMM, endHHMM) {
   if (!startHHMM || !endHHMM) return false;
-  const [sh, sm] = String(startHHMM).split(':').map(Number);
-  const [eh, em] = String(endHHMM).split(':').map(Number);
-  if ([sh, sm, eh, em].some(n => Number.isNaN(n))) return false;
-  const start = new Date(date); start.setHours(sh, sm, 0, 0);
-  const end = new Date(date); end.setHours(eh, em, 0, 0);
-  if (end < start) {
-    if (date >= start) return true;
-    const prevStart = new Date(start); prevStart.setDate(prevStart.getDate() - 1);
-    return date <= end && date >= prevStart;
-  }
-  return date >= start && date <= end;
+  
+  // Pega a hora atual exata em São Paulo/Brasília
+  const now = new Date();
+  const nowString = now.toLocaleTimeString('pt-BR', { 
+    timeZone: 'America/Sao_Paulo', 
+    hour: '2-digit', 
+    minute: '2-digit',
+    hour12: false 
+  }); 
+  
+  // Compara texto com texto (Ex: "10:10" está entre "09:00" e "18:00"?)
+  return nowString >= startHHMM && nowString <= endHHMM;
 }
 
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -421,7 +425,11 @@ async function fetchAllNews() {
         }
 
         const sourceName = normalizedArticle?.source?.name || normalizedArticle?.sourceName || '';
-        const channelCategory = getChannelCategory(sourceName);
+        let channelCategory = getChannelCategory(sourceName);
+        // Força categoria YouTube se o link for de vídeo
+        if (normalizedArticle.url && (normalizedArticle.url.includes('youtube.com') || normalizedArticle.url.includes('youtu.be'))) {
+            channelCategory = 'YouTube';
+        }
         const enabledChannels = Array.isArray(company.captureChannels) ? company.captureChannels : [];
         const channelEnabled = enabledChannels.length === 0 || enabledChannels.includes(channelCategory);
         if (!channelEnabled) return;
@@ -1202,4 +1210,181 @@ exports.releaseFixLock = onCall(async (request) => {
     if (!request.auth) throw new functions.https.HttpsError('unauthenticated', 'Usuário não autenticado');
     try { await releaseLock('fixArticlesLock'); return { success: true, message: 'Lock liberado' }; }
     catch (error) { throw new functions.https.HttpsError('internal', error.message); }
+});
+
+// --- ROBÔ DE IMPRESSO (MONITORAMENTO DE JORNAIS) ---
+exports.scheduledPrintMonitor = onSchedule({
+    schedule: "every 60 minutes",
+    timeoutSeconds: 540,
+    memory: "1GiB"
+}, async (event) => {
+    
+    const db = admin.firestore();
+    console.log(">>> [DEBUG] Iniciando o Robô. Procurando ID do App...");
+
+    // --- CORREÇÃO: BUSCA AUTOMÁTICA DO ID ---
+    // Em vez de usar um ID fixo, pegamos o primeiro que encontrarmos no banco
+    const artifactsRef = db.collection('artifacts');
+    const artifactsSnap = await artifactsRef.limit(1).get();
+
+    if (artifactsSnap.empty) {
+        console.error("[ERRO CRÍTICO] Banco de dados vazio. Nenhuma coleção 'artifacts' encontrada.");
+        return;
+    }
+
+    const appId = artifactsSnap.docs[0].id; // <--- O Robô descobre o ID sozinho aqui!
+    console.log(`[DEBUG] ID do App detectado: ${appId}`);
+
+    // 1. Ler configurações globais usando o ID descoberto
+    const globalSettingsRef = db.doc(`artifacts/${appId}/public/data/settings/global`);
+    const globalSettingsSnap = await globalSettingsRef.get();
+    
+    if (!globalSettingsSnap.exists) {
+        console.error(`[ERRO CRÍTICO] Configurações não encontradas no caminho: artifacts/${appId}/public/data/settings/global`);
+        return;
+    }
+
+    const globalSettings = globalSettingsSnap.data();
+    console.log("[DEBUG] Configurações lidas com sucesso. Prosseguindo...");
+
+    // ... (O RESTO DO CÓDIGO CONTINUA IGUAL DAQUI PARA BAIXO) ...
+    // Mantenha as linhas: const printSourcesRaw = ...
+
+    const printSourcesRaw = globalSettings.printSources || '';
+    const startWindow = globalSettings.printWindowStart || "00:00";
+    const endWindow = globalSettings.printWindowEnd || "23:59";
+    const frequencyHours = parseInt(globalSettings.printFrequencyHours || '24');
+
+    // 2. Validações de Tempo
+    const now = new Date();
+    const brDate = new Date(now.toLocaleString("en-US", {timeZone: "America/Sao_Paulo"}));
+    const currentHHMM = brDate.getHours().toString().padStart(2,'0') + ':' + brDate.getMinutes().toString().padStart(2,'0');
+
+    console.log(`[DEBUG] Hora atual: ${currentHHMM} | Janela: ${startWindow} às ${endWindow}`);
+
+    if (currentHHMM < startWindow || currentHHMM > endWindow) {
+        console.log(`[PAUSA] Fora do horário de trabalho. Voltando a dormir.`);
+        return;
+    }
+
+    // 3. Validação de Links
+    const sourceUrls = printSourcesRaw.split('\n').map(s => s.trim()).filter(s => s);
+    if (sourceUrls.length === 0) {
+        console.log("[AVISO] O campo de Links (URLs) está vazio nas configurações.");
+        return;
+    }
+    console.log(`[DEBUG] Encontrei ${sourceUrls.length} links de jornais para processar.`);
+
+    // 4. Buscar Empresas
+    const companiesSnap = await db.collection(`artifacts/${appId}/public/data/companies`).where('status', '==', 'active').get();
+    const companies = [];
+    
+    for (const docComp of companiesSnap.docs) {
+        const settings = (await db.doc(`artifacts/${appId}/public/data/settings/${docComp.id}`).get()).data() || {};
+        
+        if (settings.captureChannels && settings.captureChannels.includes('Impresso')) {
+            const kwSnap = await db.collection(`artifacts/${appId}/users/${docComp.id}/keywords`).get();
+            const keywords = kwSnap.docs.map(k => k.data().word.toLowerCase());
+            if (keywords.length > 0) companies.push({ id: docComp.id, name: docComp.data().name, keywords });
+        }
+    }
+
+    if (companies.length === 0) {
+        console.log("[AVISO] Nenhuma empresa ativa está com a opção 'Impresso' marcada.");
+        return;
+    }
+    console.log(`[DEBUG] Encontrei ${companies.length} empresas monitorando impresso.`);
+
+    const formatUrlDate = (url) => {
+        const d = new Date(new Date().toLocaleString("en-US", {timeZone: "America/Sao_Paulo"}));
+        const dd = String(d.getDate()).padStart(2, '0');
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const yyyy = d.getFullYear();
+        return url.replace(/{DD}/g, dd).replace(/{MM}/g, mm).replace(/{AAAA}/g, yyyy);
+    };
+
+    // 5. Processamento (COM LÓGICA DE PDF)
+    for (const rawUrl of sourceUrls) {
+        let targetUrl = formatUrlDate(rawUrl);
+        console.log(`[Impresso] Acessando Capa: ${targetUrl}`);
+
+        try {
+            let response = await axios.get(targetUrl, { 
+                headers: { 'User-Agent': 'Mozilla/5.0' },
+                responseType: 'arraybuffer',
+                timeout: 60000 
+            });
+
+            let pageContent = "";
+            let finalUrl = targetUrl;
+            let contentType = response.headers['content-type'] || '';
+
+            // Se for HTML, tenta achar o PDF dentro
+            if (!contentType.includes('pdf')) {
+                const html = response.data.toString();
+                const $ = cheerio.load(html);
+                
+                // Procura link de PDF
+                let pdfLink = $('a[href$=".pdf"]').attr('href');
+                
+                if (pdfLink) {
+                    // Corrige link relativo
+                    if (!pdfLink.startsWith('http')) {
+                        const domain = targetUrl.split('/').slice(0,3).join('/'); 
+                        pdfLink = domain + (pdfLink.startsWith('/') ? '' : '/') + pdfLink;
+                    }
+                    console.log(`[Impresso] PDF Encontrado! Redirecionando: ${pdfLink}`);
+                    finalUrl = pdfLink;
+                    response = await axios.get(pdfLink, { 
+                        headers: { 'User-Agent': 'Mozilla/5.0' },
+                        responseType: 'arraybuffer'
+                    });
+                } else {
+                    console.log("[Impresso] Nenhum link PDF na página. Lendo como site normal...");
+                    pageContent = $('body').text();
+                }
+            }
+
+            // Se for PDF
+            if (finalUrl.endsWith('.pdf') || response.headers['content-type'].includes('pdf')) {
+                console.log("[Impresso] Extraindo texto do PDF...");
+                const pdfData = await pdf(response.data);
+                pageContent = pdfData.text; 
+            }
+
+            if (!pageContent || pageContent.length < 100) {
+                console.log("[Impresso] Conteúdo vazio ou muito curto.");
+                continue;
+            }
+
+            const contentLower = pageContent.toLowerCase().replace(/\s+/g, ' ');
+
+            // Cruzamento de Keywords
+            for (const company of companies) {
+                const matchedKw = company.keywords.filter(kw => contentLower.includes(kw));
+
+                if (matchedKw.length > 0) {
+                    console.log(`   [MATCH] ${company.name} -> ${matchedKw.join(', ')}`);
+                    await db.collection(`artifacts/${appId}/public/data/pendingAlerts`).add({
+                        companyId: company.id,
+                        companyName: company.name,
+                        title: `[Impresso] Menção Detectada`,
+                        description: `Palavras: ${matchedKw.join(', ')}`,
+                        content: pageContent.substring(0, 3000) + '...',
+                        url: finalUrl,
+                        source: { name: 'Jornal Digital', url: finalUrl },
+                        channel: 'Impresso',
+                        publishedAt: admin.firestore.Timestamp.now(),
+                        keywords: matchedKw,
+                        status: 'pending',
+                        createdAt: admin.firestore.Timestamp.now()
+                    });
+                }
+            }
+
+        } catch (err) {
+            console.error(`[Impresso] Erro ao processar ${targetUrl}: ${err.message}`);
+        }
+    }
+    console.log("[DEBUG] Fim da execução.");
 });
