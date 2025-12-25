@@ -1219,26 +1219,15 @@ exports.scheduledPrintMonitor = onSchedule({
     memory: "1GiB"
 }, async (event) => {
     
-    const db = admin.firestore();
-    console.log(">>> [DEBUG] Iniciando o Robô. Procurando ID do App...");
+const db = admin.firestore();
+    const appId = "noticias-6e952"; 
 
-    // --- CORREÇÃO: BUSCA AUTOMÁTICA DO ID ---
-    // Em vez de usar um ID fixo, pegamos o primeiro que encontrarmos no banco
-    const artifactsRef = db.collection('artifacts');
-    const artifactsSnap = await artifactsRef.limit(1).get();
+    console.log(`>>> [DEBUG] Iniciando Robô com ID fixo: ${appId}`);
 
-    if (artifactsSnap.empty) {
-        console.error("[ERRO CRÍTICO] Banco de dados vazio. Nenhuma coleção 'artifacts' encontrada.");
-        return;
-    }
-
-    const appId = artifactsSnap.docs[0].id; // <--- O Robô descobre o ID sozinho aqui!
-    console.log(`[DEBUG] ID do App detectado: ${appId}`);
-
-    // 1. Ler configurações globais usando o ID descoberto
+    // 1. Ler configurações globais
     const globalSettingsRef = db.doc(`artifacts/${appId}/public/data/settings/global`);
     const globalSettingsSnap = await globalSettingsRef.get();
-    
+
     if (!globalSettingsSnap.exists) {
         console.error(`[ERRO CRÍTICO] Configurações não encontradas no caminho: artifacts/${appId}/public/data/settings/global`);
         return;
@@ -1246,9 +1235,6 @@ exports.scheduledPrintMonitor = onSchedule({
 
     const globalSettings = globalSettingsSnap.data();
     console.log("[DEBUG] Configurações lidas com sucesso. Prosseguindo...");
-
-    // ... (O RESTO DO CÓDIGO CONTINUA IGUAL DAQUI PARA BAIXO) ...
-    // Mantenha as linhas: const printSourcesRaw = ...
 
     const printSourcesRaw = globalSettings.printSources || '';
     const startWindow = globalSettings.printWindowStart || "00:00";
@@ -1319,37 +1305,50 @@ exports.scheduledPrintMonitor = onSchedule({
             let finalUrl = targetUrl;
             let contentType = response.headers['content-type'] || '';
 
-            // Se for HTML, tenta achar o PDF dentro
+            // Se for HTML, tenta navegar até o link real de leitura
             if (!contentType.includes('pdf')) {
                 const html = response.data.toString();
                 const $ = cheerio.load(html);
                 
-                // Procura link de PDF
-                let pdfLink = $('a[href$=".pdf"]').attr('href');
-                
-                if (pdfLink) {
-                    // Corrige link relativo
-                    if (!pdfLink.startsWith('http')) {
-                        const domain = targetUrl.split('/').slice(0,3).join('/'); 
-                        pdfLink = domain + (pdfLink.startsWith('/') ? '' : '/') + pdfLink;
+                console.log("[Impresso] PDF direto não encontrado. Procurando botão de leitura...");
+                let readingLink = $('a:contains("Clique aqui para ler")').attr('href') || 
+                                  $('a[href*="flip.gazetadigital.com.br"]').attr('href');
+                                  if (readingLink) {
+                    // Extrai o número da edição para download direto do PDF
+                    const editionMatch = readingLink.match(/numero=(\d+)/);
+                    const editionNumber = editionMatch ? editionMatch[1] : null;
+
+                    if (editionNumber) {
+                        finalUrl = `https://flip.gazetadigital.com.br/pub/jornalagazeta/pdf/jornalagazeta_${editionNumber}.pdf`;
+                        console.log(`[Impresso] Baixando PDF diretamente: ${finalUrl}`);
+                        
+                        try {
+                            response = await axios.get(finalUrl, { 
+                                headers: { 'User-Agent': 'Mozilla/5.0' }, 
+                                responseType: 'arraybuffer',
+                                timeout: 60000 
+                            });
+                        } catch (downloadErr) {
+                            console.log("[Impresso] Link direto falhou, tentando extração via HTML.");
+                            response = await axios.get(readingLink, { headers: { 'User-Agent': 'Mozilla/5.0' }, responseType: 'arraybuffer' });
+                        }
                     }
-                    console.log(`[Impresso] PDF Encontrado! Redirecionando: ${pdfLink}`);
-                    finalUrl = pdfLink;
-                    response = await axios.get(pdfLink, { 
-                        headers: { 'User-Agent': 'Mozilla/5.0' },
-                        responseType: 'arraybuffer'
-                    });
                 } else {
-                    console.log("[Impresso] Nenhum link PDF na página. Lendo como site normal...");
+                    console.log("[Impresso] Botão não encontrado. Lendo texto da página.");
                     pageContent = $('body').text();
                 }
-            }
+            } // Fecha o bloco IF de conteúdo não-PDF
 
-            // Se for PDF
-            if (finalUrl.endsWith('.pdf') || response.headers['content-type'].includes('pdf')) {
+            // Processamento do PDF extraído ou baixado
+            if (finalUrl.endsWith('.pdf') || (response.headers['content-type'] && response.headers['content-type'].includes('pdf'))) {
                 console.log("[Impresso] Extraindo texto do PDF...");
-                const pdfData = await pdf(response.data);
-                pageContent = pdfData.text; 
+                try {
+                    const pdfData = await pdf(Buffer.from(response.data));
+                    pageContent = pdfData.text;
+                } catch (pdfErr) {
+                    console.error(`[Impresso] Erro ao ler dados do PDF: ${pdfErr.message}`);
+                    continue;
+                }
             }
 
             if (!pageContent || pageContent.length < 100) {
@@ -1359,12 +1358,10 @@ exports.scheduledPrintMonitor = onSchedule({
 
             const contentLower = pageContent.toLowerCase().replace(/\s+/g, ' ');
 
-            // Cruzamento de Keywords
             for (const company of companies) {
                 const matchedKw = company.keywords.filter(kw => contentLower.includes(kw));
-
                 if (matchedKw.length > 0) {
-                    console.log(`   [MATCH] ${company.name} -> ${matchedKw.join(', ')}`);
+                    console.log(`    [MATCH] ${company.name} -> ${matchedKw.join(', ')}`);
                     await db.collection(`artifacts/${appId}/public/data/pendingAlerts`).add({
                         companyId: company.id,
                         companyName: company.name,
@@ -1381,10 +1378,9 @@ exports.scheduledPrintMonitor = onSchedule({
                     });
                 }
             }
-
         } catch (err) {
-            console.error(`[Impresso] Erro ao processar ${targetUrl}: ${err.message}`);
+            console.error(`[Impresso] Erro ao processar link: ${err.message}`);
         }
-    }
+    } 
     console.log("[DEBUG] Fim da execução.");
 });
