@@ -286,6 +286,8 @@
                         Admin</a>
                     <a href="#" id="nav-configuracoes-admin"
                         class="hidden text-gray-600 hover:text-indigo-600 px-2 py-1 sm:px-3 sm:py-2 rounded-md text-sm font-medium">Configurações</a>
+                    <a href="#" id="nav-site"
+                        class="hidden text-gray-600 hover:text-indigo-600 px-2 py-1 sm:px-3 sm:py-2 rounded-md text-sm font-medium">Site</a>
                     <div id="notification-bell-container" class="relative cursor-pointer ml-2 sm:ml-4 p-1">
                         <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"
                             xmlns="http://www.w3.org/2000/svg">
@@ -307,26 +309,46 @@
     <main class="container mx-auto p-4 sm:p-6">
         <div id="global-alert" class="mb-6"></div>
 
-        <section id="login-page" class="page-section active fade-in">
-            <div class="max-w-md mx-auto bg-gray-50 p-4 sm:p-8 rounded-lg shadow-lg mt-10 relative">
-                <div id="login-logo-container" class="absolute top-4 right-4 h-12 w-auto"></div>
-                <h1 class="text-2xl sm:text-3xl font-bold text-center text-gray-800">Bem-Vindo</h1>
-                <p class="text-center text-gray-500 mt-2 mb-6">Informe os seus dados de acesso</p>
-                <form id="login-form">
-                    <div id="login-company-wrapper" class="mb-4"><label for="login-company"
-                            class="block text-sm font-medium text-gray-700 mb-1">Empresa</label><input type="text"
-                            id="login-company" class="w-full px-3 py-2 border border-gray-300 rounded-md"></div>
-                    <div class="mb-4"><label for="login-user"
-                            class="block text-sm font-medium text-gray-700 mb-1">Usuário</label><input type="text"
-                            id="login-user" class="w-full px-3 py-2 border border-gray-300 rounded-md" required></div>
-                    <div class="mb-6"><label for="login-password"
-                            class="block text-sm font-medium text-gray-700 mb-1">Palavra-passe</label><input
-                            type="password" id="login-password"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md" required></div>
-                    <button type="submit"
-                        class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700">Entrar</button>
-                </form>
+        <section id="login-page" class="page-section active">
+            <div class="min-h-screen flex items-center justify-center bg-blue-50">
+                <div class="max-w-md w-full bg-white rounded-2xl shadow-xl overflow-hidden">
+                <div class="bg-gradient-to-r from-purple-900 to-green-500 py-8 text-center">
+                    <h1 class="text-3xl font-bold text-white">Bem-Vindo</h1>
+                </div>
+                
+                <div class="p-8">
+                    <h2 class="text-2xl font-bold text-purple-900 text-center mb-2">Acesso ao Sistema</h2>
+                    <p class="text-gray-500 text-center mb-8 text-sm">Por favor, insira suas credenciais para continuar.</p>
+                    
+                    <form id="login-form" class="space-y-5">
+                        <div id="login-company-wrapper">
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-purple-900">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                                </span>
+                                <input type="text" id="login-company" placeholder="Empresa" class="w-full pl-10 pr-4 py-3 border-2 border-purple-100 rounded-xl focus:border-purple-500 outline-none transition-all">
+                            </div>
+                        </div>
+
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-purple-900">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                            </span>
+                            <input type="text" id="login-user" placeholder="Usuário" class="w-full pl-10 pr-4 py-3 border-2 border-purple-100 rounded-xl focus:border-purple-500 outline-none transition-all" required>
+                        </div>
+
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-purple-900">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                            </span>
+                            <input type="password" id="login-password" placeholder="Senha" class="w-full pl-10 pr-4 py-3 border-2 border-purple-100 rounded-xl focus:border-purple-500 outline-none transition-all" required>
+                        </div>
+
+                        <button type="submit" class="w-full bg-purple-900 text-white py-3 rounded-xl font-bold hover:bg-purple-800 transition-colors shadow-lg mt-4">Entrar</button>
+                    </form>
+                </div>
             </div>
+        </div>
         </section>
 
         <section id="dashboard-page" class="page-section fade-in">
@@ -389,18 +411,36 @@
                         <h3 class="text-lg sm:text-xl font-semibold text-gray-700">Relatório de Análise Crítica</h3>
                     </button>
                     <!-- Novo botão Monitoramento de Mídia -->
-                    <button id="btn-media-monitoring"
-                        class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow">
+                    <button id="btn-media-monitoring" class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow font-semibold">
                         <h3 class="text-lg sm:text-xl font-semibold text-gray-700">Monitoramento de mídia</h3>
                     </button>
                 </div>
+
                 <div class="mt-6 p-4 bg-blue-100 border-l-4 border-blue-500 text-blue-800 rounded-md text-left">
                     <p class="font-bold">Execução Manual do Robô</p>
-                    <p class="mt-2 text-sm">A busca automática já está configurada para ser executada a cada 30 minutos.
-                        Utilize o botão abaixo apenas se necessitar de uma atualização imediata.</p>
-                    <button id="manual-trigger-btn"
-                        class="mt-4 w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:bg-blue-300">Executar
-                        Robô Manualmente</button>
+                    <p class="mt-2 text-sm">A busca automática já está configurada para ser executada a cada 30 minutos.</p>
+                    <button id="manual-trigger-btn" class="mt-4 w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:bg-blue-300">Executar Robô Manualmente</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="api-control-page" class="page-section fade-in">
+            <div class="max-w-4xl mx-auto p-4">
+                <button id="back-to-dashboard-api" class="mb-6 bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 shadow-md">← Voltar às Configurações</button>
+                <h2 class="text-2xl sm:text-3xl font-bold mb-6 text-gray-800">Gerenciamento de APIs e Custos</h2>
+                <div class="grid gap-6">
+                    <div class="bg-white p-6 rounded-xl shadow-md border-l-8 border-orange-500 flex items-center justify-between">
+                        <div><h4 class="font-bold text-lg">Google Translate API</h4><p class="text-sm text-gray-500">Gasto em 27/12: R$ 66,23</p></div>
+                        <input type="checkbox" id="api-translate-toggle" class="h-6 w-6">
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-md border-l-8 border-blue-500 flex items-center justify-between">
+                        <div><h4 class="font-bold text-lg">Análise de Sentimento</h4><p class="text-sm text-gray-500">Gasto em 27/12: R$ 58,62</p></div>
+                        <input type="checkbox" id="api-sentiment-toggle" class="h-6 w-6">
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-md border-l-8 border-green-500 flex items-center justify-between">
+                        <div><h4 class="font-bold text-lg">Cloud Vision (OCR)</h4><p class="text-sm text-gray-500">Gasto em 27/12: R$ 16,17</p></div>
+                        <input type="checkbox" id="api-vision-toggle" class="h-6 w-6">
+                    </div>
                 </div>
             </div>
         </section>
@@ -460,6 +500,13 @@
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Impresso</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rádio</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">TV</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Twitter</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Facebook</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Instagram</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">TikTok</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kwai</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">LinkedIn</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Google Alerts</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total a Aprovar</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aguardando Exclusão</th>
                             </tr>
@@ -487,19 +534,19 @@
                     class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow">
                     <h3 class="text-lg sm:text-xl font-semibold">Fontes de Notícias</h3>
                 </button>
-                <button id="btn-radio-sources"
-                    class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow">
-                    <h3 class="text-lg sm:text-xl font-semibold">Fontes de Rádio</h3>
-                </button>
-                <button id="btn-global-logo"
-                    class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow">
-                    <h3 class="text-lg sm:text-xl font-semibold">Logótipo Global</h3>
-                </button>
                 <!-- Novo botão Usuario-Admin -->
                 <button id="btn-usuario-admin"
                     class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow">
                     <h3 class="text-lg sm:text-xl font-semibold">Usuario-Admin</h3>
                 </button>
+                <button id="btn-global-logo"
+                    class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow">
+                    <h3 class="text-lg sm:text-xl font-semibold">Logótipo Global</h3>
+                </button>            
+                <button id="btn-radio-sources"
+                    class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow">
+                    <h3 class="text-lg sm:text-xl font-semibold">Fontes de Rádio</h3>
+                </button>                          
                 <!-- Novo botão Fontes de TV -->
                 <button id="btn-tv-sources"
                     class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow">
@@ -514,6 +561,9 @@
                 <button id="btn-print-sources"
                     class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow">
                     <h3 class="text-lg sm:text-xl font-semibold">Fontes de Impresso</h3>
+                </button>
+                <button id="btn-api-control" class="bg-white p-6 rounded-lg shadow-lg text-center hover:shadow-xl transition-shadow border-2 border-red-100">
+                    <h3 class="text-lg sm:text-xl font-semibold text-red-600">Controle de Custos (APIs)</h3>
                 </button>
             </div>
         </section>
@@ -755,7 +805,7 @@
 
         <!-- Nova página: Fontes de TV Globais -->
         <section id="global-tv-sources-page" class="page-section fade-in">
-            <button id="back-to-admin-config-7" onclick="updateView('configuracoes-admin')"
+            <button id="back-to-admin-config-7" onclick="updateView('configuracoes-admin').catch(console.error)"
                 class="mb-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Voltar</button>
             <h2 class="text-2xl sm:text-3xl font-bold mb-6">Fontes de TV Globais</h2>
             <div class="w-full max-w-none bg-white p-4 sm:p-6 rounded-lg shadow-lg">
@@ -866,13 +916,45 @@
                 Admin</button>
             <h2 id="company-keyword-admin-title" class="text-2xl sm:text-3xl font-bold mb-6">Gerir Palavras-Chave</h2>
             <div class="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
-                <form id="keyword-form" class="flex gap-2 mb-4">
-                    <input type="text" id="keyword-input" placeholder="Adicionar ou editar palavra"
-                        class="flex-grow px-3 py-2 border border-gray-300 rounded-md">
-                    <input type="hidden" id="keyword-id">
-                    <button type="submit"
-                        class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700">Guardar</button>
+                <form id="keyword-form" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div class="md:col-span-2">
+                        <input type="text" id="keyword-input" placeholder="Digite a palavra-chave"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                        <input type="hidden" id="keyword-id">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Tipo:</label>
+                        <select id="keyword-category" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                            <option value="">Selecione o tipo</option>
+                            <option value="personalidade">Personalidade</option>
+                            <option value="empresa">Empresa</option>
+                            <option value="lugar">Lugar</option>
+                            <option value="objeto">Objeto</option>
+                        </select>
+                    </div>
+                    
+                    <div id="subcategory-container" class="hidden">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Subcategoria:</label>
+                        <select id="keyword-subcategory" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                            <option value="">Selecione a subcategoria</option>
+                        </select>
+                    </div>
+                    
+                    <div id="specific-name-container" class="hidden md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Nome Específico:</label>
+                        <input type="text" id="keyword-specific-name" placeholder="Digite o nome específico"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                    </div>
+                    
+                    <div class="md:col-span-2">
+                        <button type="submit" class="bg-indigo-600 text-white px-6 py-2 rounded-md hover:bg-indigo-700 w-full">
+                            Guardar Palavra-Chave
+                        </button>
+                    </div>
                 </form>
+                
+                <div id="keyword-validation" class="text-sm text-red-600 mb-4 hidden"></div>
                 <ul id="admin-keyword-list" class="space-y-2 max-h-96 overflow-y-auto"></ul>
             </div>
         </section>
@@ -929,12 +1011,99 @@
                     </div>
                     <div>
                         <h4 class="text-lg font-semibold mb-2">Captura de Notícias</h4>
-                        <div id="capture-channels-container" class="space-y-2">
-                            <div class="flex items-center"><input type="checkbox" class="capture-channel h-4 w-4 text-indigo-600 border-gray-300 rounded" id="capture-sites" value="Sites"><label class="ml-2 block text-sm text-gray-900" for="capture-sites">Sites</label></div>
-                            <div class="flex items-center"><input type="checkbox" class="capture-channel h-4 w-4 text-indigo-600 border-gray-300 rounded" id="capture-youtube" value="YouTube"><label class="ml-2 block text-sm text-gray-900" for="capture-youtube">YouTube</label></div>
-                            <div class="flex items-center"><input type="checkbox" class="capture-channel h-4 w-4 text-indigo-600 border-gray-300 rounded" id="capture-impresso" value="Impresso"><label class="ml-2 block text-sm text-gray-900" for="capture-impresso">Impresso</label></div>
-                            <div class="flex items-center"><input type="checkbox" class="capture-channel h-4 w-4 text-indigo-600 border-gray-300 rounded" id="capture-radios" value="Rádios"><label class="ml-2 block text-sm text-gray-900" for="capture-radios">Rádios</label></div>
-                            <div class="flex items-center"><input type="checkbox" class="capture-channel h-4 w-4 text-indigo-600 border-gray-300 rounded" id="capture-tv" value="TV"><label class="ml-2 block text-sm text-gray-900" for="capture-tv">TV</label></div>
+                        <div id="capture-channels-container" class="space-y-3">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <input type="checkbox" class="capture-channel h-4 w-4 text-indigo-600 border-gray-300 rounded" id="capture-sites" value="Sites">
+                                    <label class="ml-2 block text-sm text-gray-900" for="capture-sites">Sites</label>
+                                </div>
+                                <div class="flex items-center ml-4">
+                                    <input type="checkbox" class="monitor-images-videos h-4 w-4 text-blue-600 border-gray-300 rounded" id="monitor-images-sites" data-channel="Sites">
+                                    <label class="ml-1 block text-xs text-blue-600" for="monitor-images-sites">Imagens/Vídeos</label>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <input type="checkbox" class="capture-channel h-4 w-4 text-indigo-600 border-gray-300 rounded" id="capture-youtube" value="YouTube">
+                                    <label class="ml-2 block text-sm text-gray-900" for="capture-youtube">YouTube</label>
+                                </div>
+                                <div class="flex items-center ml-4">
+                                    <input type="checkbox" class="monitor-images-videos h-4 w-4 text-blue-600 border-gray-300 rounded" id="monitor-images-youtube" data-channel="YouTube">
+                                    <label class="ml-1 block text-xs text-blue-600" for="monitor-images-youtube">Imagens/Vídeos</label>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <input type="checkbox" class="capture-channel h-4 w-4 text-indigo-600 border-gray-300 rounded" id="capture-impresso" value="Impresso">
+                                    <label class="ml-2 block text-sm text-gray-900" for="capture-impresso">Impresso</label>
+                                </div>
+                                <div class="flex items-center ml-4">
+                                    <input type="checkbox" class="monitor-images-videos h-4 w-4 text-blue-600 border-gray-300 rounded" id="monitor-images-impresso" data-channel="Impresso">
+                                    <label class="ml-1 block text-xs text-blue-600" for="monitor-images-impresso">Imagens/Vídeos</label>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <input type="checkbox" class="capture-channel h-4 w-4 text-indigo-600 border-gray-300 rounded" id="capture-radios" value="Rádios">
+                                    <label class="ml-2 block text-sm text-gray-900" for="capture-radios">Rádios</label>
+                                </div>
+                                <div class="flex items-center ml-4">
+                                    <input type="checkbox" class="monitor-images-videos h-4 w-4 text-blue-600 border-gray-300 rounded" id="monitor-images-radios" data-channel="Rádios">
+                                    <label class="ml-1 block text-xs text-blue-600" for="monitor-images-radios">Imagens/Vídeos</label>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <input type="checkbox" class="capture-channel h-4 w-4 text-indigo-600 border-gray-300 rounded" id="capture-tv" value="TV">
+                                    <label class="ml-2 block text-sm text-gray-900" for="capture-tv">TV</label>
+                                </div>
+                                <div class="flex items-center ml-4">
+                                    <input type="checkbox" class="monitor-images-videos h-4 w-4 text-blue-600 border-gray-300 rounded" id="monitor-images-tv" data-channel="TV">
+                                    <label class="ml-1 block text-xs text-blue-600" for="monitor-images-tv">Imagens/Vídeos</label>
+                                </div>
+                            </div>
+                            <!-- Redes Sociais -->
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <input type="checkbox" class="capture-channel h-4 w-4 text-indigo-600 border-gray-300 rounded" id="capture-twitter" value="Twitter">
+                                    <label class="ml-2 block text-sm text-gray-900" for="capture-twitter">Twitter</label>
+                                </div>
+                                <div class="flex items-center ml-4">
+                                    <input type="checkbox" class="monitor-images-videos h-4 w-4 text-blue-600 border-gray-300 rounded" id="monitor-images-twitter" data-channel="Twitter">
+                                    <label class="ml-1 block text-xs text-blue-600" for="monitor-images-twitter">Imagens/Vídeos</label>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <input type="checkbox" class="capture-channel h-4 w-4 text-indigo-600 border-gray-300 rounded" id="capture-facebook-instagram" value="Facebook/Instagram">
+                                    <label class="ml-2 block text-sm text-gray-900" for="capture-facebook-instagram">Facebook/Instagram</label>
+                                </div>
+                                <div class="flex items-center ml-4">
+                                    <input type="checkbox" class="monitor-images-videos h-4 w-4 text-blue-600 border-gray-300 rounded" id="monitor-images-facebook-instagram" data-channel="Facebook/Instagram">
+                                    <label class="ml-1 block text-xs text-blue-600" for="monitor-images-facebook-instagram">Imagens/Vídeos</label>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <input type="checkbox" class="capture-channel h-4 w-4 text-indigo-600 border-gray-300 rounded" id="capture-tiktok-kwai-linkedin" value="TikTok/Kwai/LinkedIn">
+                                    <label class="ml-2 block text-sm text-gray-900" for="capture-tiktok-kwai-linkedin">TikTok/Kwai/LinkedIn</label>
+                                </div>
+                                <div class="flex items-center ml-4">
+                                    <input type="checkbox" class="monitor-images-videos h-4 w-4 text-blue-600 border-gray-300 rounded" id="monitor-images-tiktok-kwai-linkedin" data-channel="TikTok/Kwai/LinkedIn">
+                                    <label class="ml-1 block text-xs text-blue-600" for="monitor-images-tiktok-kwai-linkedin">Imagens/Vídeos</label>
+                                </div>
+                            </div>
+                            <!-- Google Alerts -->
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <input type="checkbox" class="capture-channel h-4 w-4 text-indigo-600 border-gray-300 rounded" id="capture-google-alerts" value="Google Alerts">
+                                    <label class="ml-2 block text-sm text-gray-900" for="capture-google-alerts">Google Alerts</label>
+                                </div>
+                                <div class="flex items-center ml-4">
+                                    <input type="checkbox" class="monitor-images-videos h-4 w-4 text-blue-600 border-gray-300 rounded" id="monitor-images-google-alerts" data-channel="Google Alerts">
+                                    <label class="ml-1 block text-xs text-blue-600" for="monitor-images-google-alerts">Imagens/Vídeos</label>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1444,6 +1613,65 @@
             </div>
         </section>
 
+        <!-- Nova página Site -->
+        <section id="site-page" class="page-section fade-in">
+            <div class="bg-white p-4 sm:p-6 md:p-8 rounded-lg shadow-lg">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl sm:text-3xl font-bold text-gray-800">Site</h2>
+                    <div class="flex items-center gap-4">
+                        <button id="fazer-login-btn" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700">
+                            Fazer Login
+                        </button>
+                        <div class="flex items-center gap-2">
+                            <span class="text-sm font-medium text-gray-700">Habilitar Site</span>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="site-toggle" class="sr-only peer">
+                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="site-content" class="hidden">
+                    <!-- Embed do Brand24 -->
+                    <div class="mb-8">
+                        <h3 class="text-xl font-semibold mb-4 text-gray-800">Serviços Brand24</h3>
+                        <div class="bg-gray-100 p-6 rounded-lg border-2 border-dashed border-gray-300 text-center">
+                            <p class="text-gray-600 mb-4">Conteúdo integrado do Brand24</p>
+                            <div class="bg-white p-4 rounded-lg shadow-inner">
+                                <p class="text-sm text-gray-500">Monitoramento de redes sociais em tempo real</p>
+                                <p class="text-sm text-gray-500">Análise de sentimentos e menções</p>
+                                <p class="text-sm text-gray-500">Relatórios detalhados e métricas</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tabela de Planos Personalizada -->
+                    <div class="mb-8">
+                        <h3 class="text-xl font-semibold mb-4 text-gray-800">Nossos Planos</h3>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full bg-white border border-gray-200 rounded-lg">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Plano</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Recursos</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Preço</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-200" id="planos-table-body">
+                                    <!-- Conteúdo será preenchido dinamicamente -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="login-content" class="hidden">
+                    <!-- Conteúdo atual da tela de login será mostrado aqui quando o toggle estiver desabilitado -->
+                </div>
+            </div>
+        </section>
+
     </main>
 
     <!-- Modais -->
@@ -1628,6 +1856,7 @@
         const appId = firebaseConfig.projectId;
         let currentUser = null, clockInterval = null, selectedCompanyForManagement = null, allCompanyArticles = [], companyIdToDelete = null, articleToDeleteInfo = null, mediaMonitoringPage = null;
 let companyCaptureChannels = null;
+let companyImageVideoMonitoring = null;
         let sourceChartInstance = null, dateChartInstance = null, sentimentChartInstance = null, directnessChartInstance = null, channelChartInstance = null, mediaTypeChartInstance = null, companySummaryChartInstance = null, keywordTotalChartInstance = null, keywordSentimentChartInstance = null, criticalChannelChartInstance = null, criticalSpaceChartInstance = null, criticalSpaceQualChartInstance = null, criticalVehicleChartInstance = null, criticalValuationChartInstance = null, criticalDateChartInstance = null, criticalSpontaneityChartInstance = null, criticalSentimentByChannelChartInstance = null, criticalSentimentByKeywordChartInstance = null, criticalSpaceDetailInstances = {};
         let superAdminCredentials = { user: 'ulysses', pass: 'adminqwert' };
         let notificationListener = null, companiesListener = null, deletionRequestsListener = null, pendingAlertsListener = null, activityCompaniesListener = null, activityPendingListener = null, activityDeletionListener = null;
@@ -1747,7 +1976,7 @@ let keywordToTransferInfo = null;
     }
 }
 
-function updateView(pageName) {
+async function updateView(pageName) {
             try {
                 const savedUser = getStorage('clipping_currentUser', null);
                 const isAuth = !!currentUser || !!savedUser;
@@ -1758,6 +1987,24 @@ function updateView(pageName) {
                 pageSections = document.querySelectorAll('.page-section');
             }
             pageSections.forEach(s => s.classList.remove('active'));
+            
+            // Atualizar URL conforme a página acessada
+            try {
+                const url = new URL(window.location);
+                
+                if (pageName === 'dashboard') {
+                    url.searchParams.delete('page');
+                } else {
+                    url.searchParams.set('page', pageName);
+                }
+                
+                // Atualizar URL sem recarregar a página
+                if (window.location.href !== url.toString()) {
+                    window.history.replaceState({ page: pageName }, '', url.toString());
+                }
+            } catch (error) {
+                console.warn('Erro ao atualizar URL:', error);
+            }
             const i = !!currentUser;
             if (navLoggedIn) navLoggedIn.style.display = i ? 'flex' : 'none';
             if (navRelatorio) navRelatorio.classList.toggle('hidden', !currentUser || currentUser.isSuperAdmin || !currentUser.canAccessReport);
@@ -1770,11 +2017,12 @@ function updateView(pageName) {
             loadAndDisplayLogo();
             loadAndDisplayGlobalLogo();
             switch (pageName) {
-                case 'login': loginPage.classList.add('active'); break;
-                case 'dashboard': dashboardPage.classList.add('active'); renderDashboard(); updateDateTime(); clockInterval = setInterval(updateDateTime, 60000); break;
-                case 'map': mapPage.classList.add('active'); renderMapPage(); break;
-                case 'search': searchPage.classList.add('active'); if (typeof setupSearchPage === 'function') setupSearchPage(); break;
-                case 'super-admin': superAdminPage.classList.add('active'); setupCompaniesListener(); break;
+                case 'login': if (loginPage) loginPage.classList.add('active'); break;
+                case 'dashboard': if (dashboardPage) dashboardPage.classList.add('active'); renderDashboard(); updateDateTime(); clockInterval = setInterval(updateDateTime, 60000); break;
+                case 'map': if (mapPage) mapPage.classList.add('active'); renderMapPage(); break;
+                case 'search': if (searchPage) searchPage.classList.add('active'); if (typeof setupSearchPage === 'function') setupSearchPage(); break;
+                case 'super-admin': if (superAdminPage) superAdminPage.classList.add('active'); setupCompaniesListener(); break;
+                case 'site': if (sitePage) sitePage.classList.add('active'); renderSitePage(); break;
                 case 'activity': activityPage.classList.add('active'); setupActivityListeners(); if (typeof renderActivityPage === 'function') renderActivityPage(); break;
                 case 'company-keyword-admin': companyKeywordAdminPage.classList.add('active'); renderCompanyKeywordAdminPage(); break;
                 case 'company-settings-admin': companySettingsAdminPage.classList.add('active'); renderCompanySettingsAdminPage(); break;
@@ -1793,7 +2041,12 @@ function updateView(pageName) {
             if (globalPrintSourcesPage) globalPrintSourcesPage.classList.add('active');
             renderGlobalPrintSourcesPage();
             break;
-                case 'global-logo': globalLogoPage.classList.add('active'); break;
+                case 'api-control': 
+            document.getElementById('api-control-page').classList.add('active'); 
+            renderApiControlPage();
+            setupApiToggleListeners();
+            break;
+            case 'global-logo': globalLogoPage.classList.add('active'); break;
                 case 'usuario-admin': {
                     const page = document.getElementById('usuario-admin-page');
                     if (page) page.classList.add('active');
@@ -1950,7 +2203,7 @@ function updateView(pageName) {
 
         async function handleLogoUpload(e) { const file = e.target.files[0]; if (!file) return; const companyId = currentUser.isSuperAdmin ? selectedCompanyForManagement.id : currentUser.companyId; if (!companyId) return; const reader = new FileReader(); reader.onloadend = async () => { try { const settingsRef = doc(db, "artifacts", appId, "public", "data", "settings", companyId); await setDoc(settingsRef, { logo: reader.result }, { merge: true }); loadAndDisplayLogo(); showAlert('Logótipo atualizado com sucesso!'); } catch (error) { console.error("Erro ao guardar o logótipo:", error); showAlert("Erro ao guardar o logótipo.", "error"); } }; reader.readAsDataURL(file); }
         async function loadAndDisplayLogo() { const companyId = currentUser ? currentUser.companyId : null; if (!companyId) { if (headerLogoContainer) headerLogoContainer.innerHTML = ''; if (loginLogoContainer) loginLogoContainer.innerHTML = ''; return; } const settingsRef = doc(db, "artifacts", appId, "public", "data", "settings", companyId); try { const docSnap = await getDoc(settingsRef); const logoData = docSnap.exists() ? docSnap.data().logo : null; const logoHtml = logoData ? `<img src="${logoData}" alt="Logótipo da Empresa" class="h-full w-auto object-contain">` : ''; if (headerLogoContainer) headerLogoContainer.innerHTML = logoHtml; if (loginLogoContainer) loginLogoContainer.innerHTML = logoHtml; } catch (error) { console.error("Erro ao carregar o logótipo:", error); } }
-        async function loadCompanyCaptureChannels(companyId) { try { const settingsRef = doc(db, "artifacts", appId, "public", "data", "settings", companyId); const docSnap = await getDoc(settingsRef); const caps = docSnap.exists() ? docSnap.data().captureChannels : null; companyCaptureChannels = Array.isArray(caps) && caps.length > 0 ? caps : ['Sites','YouTube','Impresso','Rádios','TV']; } catch (error) { console.error("Erro ao carregar canais de captura:", error); companyCaptureChannels = ['Sites','YouTube','Impresso','Rádios','TV']; } }
+        async function loadCompanyCaptureChannels(companyId) { try { const settingsRef = doc(db, "artifacts", appId, "public", "data", "settings", companyId); const docSnap = await getDoc(settingsRef); const caps = docSnap.exists() ? docSnap.data().captureChannels : null; companyCaptureChannels = Array.isArray(caps) && caps.length > 0 ? caps : ['Sites','YouTube','Impresso','Rádios','TV']; const imageMonitoring = docSnap.exists() ? docSnap.data().imageVideoMonitoring : null; companyImageVideoMonitoring = imageMonitoring || { Sites: false, YouTube: false, Impresso: false, Rádios: false, TV: false }; } catch (error) { console.error("Erro ao carregar canais de captura:", error); companyCaptureChannels = ['Sites','YouTube','Impresso','Rádios','TV']; companyImageVideoMonitoring = { Sites: false, YouTube: false, Impresso: false, Rádios: false, TV: false }; } }
         async function handleGlobalLogoUpload(e) { const file = e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onloadend = async () => { try { const settingsRef = doc(db, "artifacts", appId, "public", "data", "settings", "global"); await setDoc(settingsRef, { appLogo: reader.result }, { merge: true }); loadAndDisplayGlobalLogo(); showAlert('Logótipo global atualizado com sucesso!'); } catch (error) { console.error("Erro ao guardar o logótipo global:", error); showAlert("Erro ao guardar o logótipo global.", "error"); } }; reader.readAsDataURL(file); }
         async function loadAndDisplayGlobalLogo() {
             const settingsRef = doc(db, "artifacts", appId, "public", "data", "settings", "global");
@@ -2190,9 +2443,183 @@ async function handleLogin(e) {
         async function handleUserSubmit(e) { e.preventDefault(); const username = userInput.value.trim(), password = userPasswordInput.value.trim(), id = userIdInput.value; if (!username || !password || !selectedCompanyForManagement) return; try { const usersRef = collection(db, "artifacts", appId, "users", selectedCompanyForManagement.id, "users"); const q = query(usersRef, where("username", "==", username)); const querySnapshot = await getDocs(q); if (!querySnapshot.empty && querySnapshot.docs[0].id !== id) { showAlert('Este nome de usuário já está em uso nesta empresa.', 'error'); return; } if (id) { await updateDoc(doc(db, "artifacts", appId, "users", selectedCompanyForManagement.id, "users", id), { username, password }); } else { await addDoc(usersRef, { username, password }); } if (userInput) userInput.value = ''; if (userPasswordInput) userPasswordInput.value = ''; if (userIdInput) userIdInput.value = ''; renderUsersForSelectedCompany(); } catch (error) { console.error("Erro ao guardar o usuário:", error); showAlert("Erro ao guardar o usuário.", "error"); } }
         async function handleUserActions(e) { if (!selectedCompanyForManagement) return; const id = e.target.dataset.id; if (!id) return; try { if (e.target.classList.contains('edit-user-btn')) { const userDoc = await getDoc(doc(db, "artifacts", appId, "users", selectedCompanyForManagement.id, "users", id)); if (userDoc.exists()) { const user = userDoc.data(); if (userInput) userInput.value = user.username; if (userPasswordInput) userPasswordInput.value = user.password; if (userIdInput) userIdInput.value = id; if (userInput) userInput.focus(); } } if (e.target.classList.contains('delete-user-btn')) { await deleteDoc(doc(db, "artifacts", appId, "users", selectedCompanyForManagement.id, "users", id)); renderUsersForSelectedCompany(); } } catch (error) { console.error("Erro ao lidar com a ação do usuário:", error); } }
 
-        async function renderCompanyKeywordAdminPage() { if (!selectedCompanyForManagement || !companyKeywordAdminTitle) return; companyKeywordAdminTitle.textContent = `Gerir Palavras-Chave para: ${selectedCompanyForManagement.name}`; renderKeywordsForSelectedCompany(); }
-        async function renderKeywordsForSelectedCompany() { try { const keywordsRef = collection(db, "artifacts", appId, "users", selectedCompanyForManagement.id, "keywords"); const querySnapshot = await getDocs(keywordsRef); const keywords = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); if (!adminKeywordList) return; adminKeywordList.innerHTML = ''; keywords.sort((a, b) => a.word.localeCompare(b.word)); keywords.forEach(kw => { const li = document.createElement('li'); li.className = 'flex justify-between items-center bg-gray-100 p-2 rounded-md'; li.innerHTML = `<span>${kw.word}</span><div><button data-id="${kw.id}" class="edit-keyword-btn text-blue-500 hover:text-blue-700 mr-2">Editar</button><button data-id="${kw.id}" data-word="${kw.word}" class="transfer-keyword-btn text-indigo-500 hover:text-indigo-700 mr-2">Transferir</button><button data-id="${kw.id}" data-word="${kw.word}" class="delete-keyword-btn text-red-500 hover:text-red-700">Excluir</button></div>`; adminKeywordList.appendChild(li); }); } catch (error) { console.error("Erro ao renderizar palavras-chave:", error); } }
-        async function handleKeywordSubmit(e) { e.preventDefault(); const word = keywordInput.value.trim(), id = keywordIdInput.value; if (!word || !selectedCompanyForManagement) return; try { const keywordsRef = collection(db, "artifacts", appId, "users", selectedCompanyForManagement.id, "keywords"); if (id) { await updateDoc(doc(db, "artifacts", appId, "users", selectedCompanyForManagement.id, "keywords", id), { word }); } else { await addDoc(keywordsRef, { word }); } if (keywordInput) keywordInput.value = ''; if (keywordIdInput) keywordIdInput.value = ''; renderKeywordsForSelectedCompany(); } catch (error) { console.error("Erro ao guardar a palavra-chave:", error); } }
+        // ✅ NOVA LÓGICA: Controle de categorias dinâmicas para palavras-chave
+        function setupKeywordCategoryLogic() {
+            const categorySelect = document.getElementById('keyword-category');
+            const subcategoryContainer = document.getElementById('subcategory-container');
+            const subcategorySelect = document.getElementById('keyword-subcategory');
+            const specificNameContainer = document.getElementById('specific-name-container');
+            
+            if (!categorySelect) return;
+            
+            categorySelect.addEventListener('change', function() {
+                const category = this.value;
+                
+                // Limpar subcategorias
+                subcategorySelect.innerHTML = '<option value="">Selecione a subcategoria</option>';
+                
+                // Mostrar/ocultar containers baseado na categoria
+                if (category === 'personalidade') {
+                    subcategoryContainer.classList.remove('hidden');
+                    specificNameContainer.classList.remove('hidden');
+                    
+                    // Adicionar opções de subcategoria para Personalidade
+                    const subcategories = ['Político', 'Artista', 'Atleta', 'Comum'];
+                    subcategories.forEach(sub => {
+                        const option = document.createElement('option');
+                        option.value = sub.toLowerCase();
+                        option.textContent = sub;
+                        subcategorySelect.appendChild(option);
+                    });
+                } else if (category === 'empresa') {
+                    subcategoryContainer.classList.add('hidden');
+                    specificNameContainer.classList.remove('hidden');
+                    document.getElementById('keyword-specific-name').placeholder = 'Digite o nome da empresa';
+                } else if (category === 'lugar') {
+                    subcategoryContainer.classList.remove('hidden');
+                    specificNameContainer.classList.remove('hidden');
+                    
+                    // Adicionar sugestões para Lugar
+                    const suggestions = ['Avenida', 'Praça', 'Cidade', 'Estado', 'País'];
+                    suggestions.forEach(sugg => {
+                        const option = document.createElement('option');
+                        option.value = sugg.toLowerCase();
+                        option.textContent = sugg;
+                        subcategorySelect.appendChild(option);
+                    });
+                } else if (category === 'objeto') {
+                    subcategoryContainer.classList.add('hidden');
+                    specificNameContainer.classList.remove('hidden');
+                    document.getElementById('keyword-specific-name').placeholder = 'Digite o nome do objeto';
+                } else {
+                    subcategoryContainer.classList.add('hidden');
+                    specificNameContainer.classList.add('hidden');
+                }
+            });
+        }
+
+        // ✅ VALIDAÇÃO DO FORMULÁRIO
+        function validateKeywordForm() {
+            const word = document.getElementById('keyword-input').value.trim();
+            const category = document.getElementById('keyword-category').value;
+            const specificName = document.getElementById('keyword-specific-name').value.trim();
+            const validationEl = document.getElementById('keyword-validation');
+            
+            if (!word) {
+                validationEl.textContent = 'A palavra-chave é obrigatória.';
+                validationEl.classList.remove('hidden');
+                return false;
+            }
+            
+            if (!category) {
+                validationEl.textContent = 'Selecione o tipo da palavra-chave.';
+                validationEl.classList.remove('hidden');
+                return false;
+            }
+            
+            if (category !== 'objeto' && !specificName) {
+                validationEl.textContent = 'O nome específico é obrigatório.';
+                validationEl.classList.remove('hidden');
+                return false;
+            }
+            
+            validationEl.classList.add('hidden');
+            return true;
+        }
+
+        async function renderCompanyKeywordAdminPage() { 
+            if (!selectedCompanyForManagement || !companyKeywordAdminTitle) return; 
+            companyKeywordAdminTitle.textContent = `Gerir Palavras-Chave para: ${selectedCompanyForManagement.name}`; 
+            
+            // ✅ INICIALIZAR LÓGICA DE CATEGORIAS
+            setTimeout(() => {
+                setupKeywordCategoryLogic();
+            }, 100);
+            
+            renderKeywordsForSelectedCompany(); 
+        }
+        async function renderKeywordsForSelectedCompany() { 
+            try { 
+                const keywordsRef = collection(db, "artifacts", appId, "users", selectedCompanyForManagement.id, "keywords"); 
+                const querySnapshot = await getDocs(keywordsRef); 
+                const keywords = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); 
+                if (!adminKeywordList) return; 
+                adminKeywordList.innerHTML = ''; 
+                keywords.sort((a, b) => a.word.localeCompare(b.word)); 
+                
+                keywords.forEach(kw => { 
+                    const li = document.createElement('li'); 
+                    li.className = 'flex justify-between items-center bg-gray-100 p-2 rounded-md';
+                    
+                    // ✅ NOVA EXIBIÇÃO COM METADADOS
+                    let metadataText = '';
+                    if (kw.category) {
+                        metadataText = ` (${kw.category}`;
+                        if (kw.subcategory) metadataText += `: ${kw.subcategory}`;
+                        if (kw.specificName) metadataText += ` - ${kw.specificName}`;
+                        metadataText += ') ';
+                    }
+                    
+                    li.innerHTML = `
+                        <div class="flex-1">
+                            <span class="font-medium">${kw.word}</span>
+                            <span class="text-sm text-gray-600">${metadataText}</span>
+                        </div>
+                        <div>
+                            <button data-id="${kw.id}" class="edit-keyword-btn text-blue-500 hover:text-blue-700 mr-2">Editar</button>
+                            <button data-id="${kw.id}" data-word="${kw.word}" class="transfer-keyword-btn text-indigo-500 hover:text-indigo-700 mr-2">Transferir</button>
+                            <button data-id="${kw.id}" data-word="${kw.word}" class="delete-keyword-btn text-red-500 hover:text-red-700">Excluir</button>
+                        </div>
+                    `; 
+                    adminKeywordList.appendChild(li); 
+                }); 
+            } catch (error) { 
+                console.error("Erro ao renderizar palavras-chave:", error); 
+            } 
+        }
+        async function handleKeywordSubmit(e) { 
+            e.preventDefault(); 
+            
+            // ✅ VALIDAÇÃO DO FORMULÁRIO
+            if (!validateKeywordForm() || !selectedCompanyForManagement) return;
+            
+            const word = document.getElementById('keyword-input').value.trim();
+            const id = document.getElementById('keyword-id').value;
+            const category = document.getElementById('keyword-category').value;
+            const subcategory = document.getElementById('keyword-subcategory').value;
+            const specificName = document.getElementById('keyword-specific-name').value.trim();
+            
+            try { 
+                const keywordsRef = collection(db, "artifacts", appId, "users", selectedCompanyForManagement.id, "keywords");
+                
+                // ✅ NOVA ESTRUTURA DE DADOS COM METADADOS
+                const keywordData = {
+                    word,
+                    category,
+                    subcategory: category === 'personalidade' || category === 'lugar' ? subcategory : '',
+                    specificName: category !== 'objeto' ? specificName : ''
+                };
+                
+                if (id) { 
+                    await updateDoc(doc(db, "artifacts", appId, "users", selectedCompanyForManagement.id, "keywords", id), keywordData); 
+                } else { 
+                    await addDoc(keywordsRef, keywordData); 
+                } 
+                
+                // Limpar formulário
+                document.getElementById('keyword-input').value = '';
+                document.getElementById('keyword-id').value = '';
+                document.getElementById('keyword-category').value = '';
+                document.getElementById('keyword-subcategory').value = '';
+                document.getElementById('keyword-specific-name').value = '';
+                document.getElementById('subcategory-container').classList.add('hidden');
+                document.getElementById('specific-name-container').classList.add('hidden');
+                
+                renderKeywordsForSelectedCompany(); 
+            } catch (error) { 
+                console.error("Erro ao guardar a palavra-chave:", error); 
+            } 
+        }
         async function handleKeywordActions(e) {
             if (!selectedCompanyForManagement) return;
             const target = e.target.closest('button');
@@ -2204,9 +2631,28 @@ async function handleLogin(e) {
                     const kwDoc = await getDoc(doc(db, "artifacts", appId, "users", selectedCompanyForManagement.id, "keywords", id));
                     if (kwDoc.exists()) {
                         const kw = kwDoc.data();
-                        if (keywordInput) keywordInput.value = kw.word;
-                        if (keywordIdInput) keywordIdInput.value = id;
-                        if (keywordInput) keywordInput.focus();
+                        
+                        // ✅ PREENCHER FORMULÁRIO COM DADOS EXISTENTES
+                        document.getElementById('keyword-input').value = kw.word || '';
+                        document.getElementById('keyword-id').value = id;
+                        
+                        if (kw.category) {
+                            document.getElementById('keyword-category').value = kw.category;
+                            // Disparar evento change para carregar subcategorias
+                            document.getElementById('keyword-category').dispatchEvent(new Event('change'));
+                            
+                            if (kw.subcategory) {
+                                setTimeout(() => {
+                                    document.getElementById('keyword-subcategory').value = kw.subcategory;
+                                }, 100);
+                            }
+                            
+                            if (kw.specificName) {
+                                document.getElementById('keyword-specific-name').value = kw.specificName;
+                            }
+                        }
+                        
+                        document.getElementById('keyword-input').focus();
                     }
                 }
                 if (target.classList.contains('transfer-keyword-btn')) {
@@ -2370,8 +2816,8 @@ async function handleLogin(e) {
             }
         }
 
-        async function renderCompanySettingsAdminPage() { if (!selectedCompanyForManagement || !companySettingsAdminTitle) return; companySettingsAdminTitle.textContent = `Opções para: ${selectedCompanyForManagement.name}`; try { const settingsRef = doc(db, "artifacts", appId, "public", "data", "settings", selectedCompanyForManagement.id); const docSnap = await getDoc(settingsRef); const defaultChannels = ['Sites','YouTube','Impresso','Rádios','TV']; if (docSnap.exists()) { const settings = docSnap.data(); if (reportAccessToggle) reportAccessToggle.checked = settings.reportAccess !== false; if (mapAccessToggle) mapAccessToggle.checked = settings.mapAccess !== false; if (fetchOnlyNewToggle) fetchOnlyNewToggle.checked = settings.fetchOnlyNew === true; if (deletionAccessToggle) deletionAccessToggle.checked = settings.canRequestDeletion === true; if (document.querySelector(`input[name="news-scope"][value="${settings.searchScope || 'br'}"]`)) document.querySelector(`input[name="news-scope"][value="${settings.searchScope || 'br'}"]`).checked = true; if (stateSelect) stateSelect.value = settings.searchState || ''; const channels = Array.isArray(settings.captureChannels) && settings.captureChannels.length > 0 ? settings.captureChannels : defaultChannels; const chBoxes = document.querySelectorAll('#capture-channels-container .capture-channel'); chBoxes.forEach(cb => { cb.checked = channels.includes(cb.value); }); } else { if (reportAccessToggle) reportAccessToggle.checked = true; if (mapAccessToggle) mapAccessToggle.checked = true; if (fetchOnlyNewToggle) fetchOnlyNewToggle.checked = false; if (deletionAccessToggle) deletionAccessToggle.checked = false; if (document.querySelector('input[name="news-scope"][value="br"]')) document.querySelector('input[name="news-scope"][value="br"]').checked = true; if (stateSelect) stateSelect.value = ''; const chBoxes = document.querySelectorAll('#capture-channels-container .capture-channel'); chBoxes.forEach(cb => { cb.checked = true; }); } handleScopeChange(); } catch (error) { console.error("Erro ao renderizar as configurações:", error); } }
-        async function handleSettingsChange(e) { if (!selectedCompanyForManagement) return; const settingsRef = doc(db, "artifacts", appId, "public", "data", "settings", selectedCompanyForManagement.id); let key, value; const defaultChannels = ['Sites','YouTube','Impresso','Rádios','TV']; const target = e.target; if (target && target.classList && target.classList.contains('capture-channel')) { key = 'captureChannels'; value = Array.from(document.querySelectorAll('#capture-channels-container .capture-channel:checked')).map(cb => cb.value); if (!value || value.length === 0) value = defaultChannels; } else { switch (e.target.id) { case 'report-access-toggle': key = 'reportAccess'; value = e.target.checked; break; case 'map-access-toggle': key = 'mapAccess'; value = e.target.checked; break; case 'fetch-only-new-toggle': key = 'fetchOnlyNew'; value = e.target.checked; break; case 'deletion-access-toggle': key = 'canRequestDeletion'; value = e.target.checked; break; case 'state-select': key = 'searchState'; value = e.target.value; break; default: if (e.target.name === 'news-scope') { key = 'searchScope'; value = e.target.value; } else { return; } } } try { await setDoc(settingsRef, { [key]: value }, { merge: true }); showAlert('Opção guardada!', 'success'); } catch (error) { console.error("Erro ao guardar a configuração:", error); } }
+        async function renderCompanySettingsAdminPage() { if (!selectedCompanyForManagement || !companySettingsAdminTitle) return; companySettingsAdminTitle.textContent = `Opções para: ${selectedCompanyForManagement.name}`; try { const settingsRef = doc(db, "artifacts", appId, "public", "data", "settings", selectedCompanyForManagement.id); const docSnap = await getDoc(settingsRef); const defaultChannels = ['Sites','YouTube','Impresso','Rádios','TV']; const defaultImageMonitoring = { Sites: false, YouTube: false, Impresso: false, Rádios: false, TV: false }; if (docSnap.exists()) { const settings = docSnap.data(); if (reportAccessToggle) reportAccessToggle.checked = settings.reportAccess !== false; if (mapAccessToggle) mapAccessToggle.checked = settings.mapAccess !== false; if (fetchOnlyNewToggle) fetchOnlyNewToggle.checked = settings.fetchOnlyNew === true; if (deletionAccessToggle) deletionAccessToggle.checked = settings.canRequestDeletion === true; if (document.querySelector(`input[name="news-scope"][value="${settings.searchScope || 'br'}"]`)) document.querySelector(`input[name="news-scope"][value="${settings.searchScope || 'br'}"]`).checked = true; if (stateSelect) stateSelect.value = settings.searchState || ''; const channels = Array.isArray(settings.captureChannels) && settings.captureChannels.length > 0 ? settings.captureChannels : defaultChannels; const chBoxes = document.querySelectorAll('#capture-channels-container .capture-channel'); chBoxes.forEach(cb => { cb.checked = channels.includes(cb.value); }); const imageMonitoring = settings.imageVideoMonitoring || defaultImageMonitoring; const imageBoxes = document.querySelectorAll('#capture-channels-container .monitor-images-videos'); imageBoxes.forEach(box => { const channel = box.dataset.channel; box.checked = imageMonitoring[channel] === true; }); } else { if (reportAccessToggle) reportAccessToggle.checked = true; if (mapAccessToggle) mapAccessToggle.checked = true; if (fetchOnlyNewToggle) fetchOnlyNewToggle.checked = false; if (deletionAccessToggle) deletionAccessToggle.checked = false; if (document.querySelector('input[name="news-scope"][value="br"]')) document.querySelector('input[name="news-scope"][value="br"]').checked = true; if (stateSelect) stateSelect.value = ''; const chBoxes = document.querySelectorAll('#capture-channels-container .capture-channel'); chBoxes.forEach(cb => { cb.checked = true; }); const imageBoxes = document.querySelectorAll('#capture-channels-container .monitor-images-videos'); imageBoxes.forEach(box => { box.checked = false; }); } handleScopeChange(); } catch (error) { console.error("Erro ao renderizar as configurações:", error); } }
+        async function handleSettingsChange(e) { if (!selectedCompanyForManagement) return; const settingsRef = doc(db, "artifacts", appId, "public", "data", "settings", selectedCompanyForManagement.id); let key, value; const defaultChannels = ['Sites','YouTube','Impresso','Rádios','TV']; const target = e.target; if (target && target.classList && target.classList.contains('capture-channel')) { key = 'captureChannels'; value = Array.from(document.querySelectorAll('#capture-channels-container .capture-channel:checked')).map(cb => cb.value); if (!value || value.length === 0) value = defaultChannels; } else if (target && target.classList && target.classList.contains('monitor-images-videos')) { key = 'imageVideoMonitoring'; const imageMonitoring = {}; const imageBoxes = document.querySelectorAll('#capture-channels-container .monitor-images-videos'); imageBoxes.forEach(box => { imageMonitoring[box.dataset.channel] = box.checked; }); value = imageMonitoring; } else { switch (e.target.id) { case 'report-access-toggle': key = 'reportAccess'; value = e.target.checked; break; case 'map-access-toggle': key = 'mapAccess'; value = e.target.checked; break; case 'fetch-only-new-toggle': key = 'fetchOnlyNew'; value = e.target.checked; break; case 'deletion-access-toggle': key = 'canRequestDeletion'; value = e.target.checked; break; case 'state-select': key = 'searchState'; value = e.target.value; break; default: if (e.target.name === 'news-scope') { key = 'searchScope'; value = e.target.value; } else { return; } } } try { await setDoc(settingsRef, { [key]: value }, { merge: true }); showAlert('Opção guardada!', 'success'); } catch (error) { console.error("Erro ao guardar a configuração:", error); } }
         function handleScopeChange() { if (!stateSelectContainer || !document.querySelector('input[name="news-scope"]:checked')) return; const selectedScope = document.querySelector('input[name="news-scope"]:checked').value; stateSelectContainer.classList.toggle('hidden', selectedScope !== 'state'); }
         async function renderGlobalKeysPage() { try { const settingsRef = doc(db, "artifacts", appId, "public", "data", "settings", "global"); const docSnap = await getDoc(settingsRef); if (docSnap.exists()) { const settings = docSnap.data(); if (apiKeyNewsApiInput) apiKeyNewsApiInput.value = settings.apiKeyNewsApi || ''; if (apiKeyFirebaseNewsInput) apiKeyFirebaseNewsInput.value = settings.apiKeyFirebaseNews || ''; if (typeof apiKeyGoogleMapsInput !== 'undefined' && apiKeyGoogleMapsInput) apiKeyGoogleMapsInput.value = settings.apiKeyGoogleMaps || ''; if (apiKeyGNewsInput1) apiKeyGNewsInput1.value = settings.apiKeyGNews1 || ''; if (apiKeyGNewsInput2) apiKeyGNewsInput2.value = settings.apiKeyGNews2 || ''; if (apiKeyGNewsInput3) apiKeyGNewsInput3.value = settings.apiKeyGNews3 || ''; if (apiKeyGNewsInput4) apiKeyGNewsInput4.value = settings.apiKeyGNews4 || ''; if (apiKeyYoutubeInput) apiKeyYoutubeInput.value = settings.apiKeyYoutube || ''; if (apiKeyBloggerInput) apiKeyBloggerInput.value = settings.apiKeyBlogger || ''; if (apiKeyVisionInput) apiKeyVisionInput.value = settings.apiKeyVision || ''; if (typeof visionEnabledToggle !== 'undefined' && visionEnabledToggle) visionEnabledToggle.checked = settings.visionEnabled === true; if (typeof visionRelevantOnlyToggle !== 'undefined' && visionRelevantOnlyToggle) visionRelevantOnlyToggle.checked = settings.visionRelevantOnly === true; if (typeof visionLogoDetectionToggle !== 'undefined' && visionLogoDetectionToggle) visionLogoDetectionToggle.checked = settings.visionLogoDetection !== false; if (typeof visionOcrTextToggle !== 'undefined' && visionOcrTextToggle) visionOcrTextToggle.checked = settings.visionOcrText !== false; if (apiKeyVideoIntelligenceInput) apiKeyVideoIntelligenceInput.value = settings.apiKeyVideoIntelligence || '';
             if (apiKeySpeechToText) apiKeySpeechToText.value = settings.apiKeySpeechToText || ''; } } catch (error) { console.error("Erro ao carregar as chaves de API globais:", error); } }
@@ -2441,6 +2887,7 @@ async function handleLogin(e) {
                     let url = '';
                     let timeRaw = '';
                     let timeIndex = -1;
+                    let isEnabled = false;
 
                     const isTime = (s) => /^\d{2}:\d{2}(?:\s*-\s*\d{2}:\d{2})?$/.test(s || '');
                     const isStreamURL = (s) => /^(https?:\/\/)/.test(s || '') && /m3u8|\.mp3|\.aac|\.ogg|icecast|shoutcast|stream|live|playlist/i.test(s);
@@ -2513,12 +2960,42 @@ async function handleLogin(e) {
                     const daysTokensCombined = parts.slice(timeIndex + 1).join(' ').toLowerCase();
                     const selectedDays = new Set(daysTokensCombined.split(/\s+/).filter(Boolean));
 
+                    // Extrair estado do toggle (último campo)
+                    if (parts.length >= 7) {
+                        const lastField = parts[parts.length - 1];
+                        isEnabled = lastField === 'enabled';
+                    }
+
                     const row = document.createElement('div');
-            row.className = 'tv-source-row grid grid-cols-1 sm:grid-cols-13 items-center gap-2 border-b border-gray-100 pb-2 mb-2';
+            row.className = 'tv-source-row grid grid-cols-1 sm:grid-cols-14 items-center gap-2 border-b border-gray-100 pb-2 mb-2';
 
                     const statusBadge = document.createElement('span');
                     statusBadge.className = 'sm:col-span-1 px-2 py-1 text-xs font-bold rounded-md text-white text-center bg-green-600';
                     statusBadge.textContent = 'AGUARDANDO';
+
+                    // Botão de toggle ligado/desligado
+                    const toggleButton = document.createElement('button');
+                    toggleButton.type = 'button';
+                    toggleButton.className = 'sm:col-span-1 px-2 py-1 text-xs font-bold rounded-md text-white bg-gray-400 hover:bg-gray-500 toggle-radio';
+                    toggleButton.textContent = isEnabled ? 'LIGADO' : 'DESLIGADO';
+                    toggleButton.dataset.enabled = isEnabled.toString();
+                    toggleButton.className = isEnabled 
+                        ? 'sm:col-span-1 px-2 py-1 text-xs font-bold rounded-md text-white bg-green-600 hover:bg-green-700 toggle-radio'
+                        : 'sm:col-span-1 px-2 py-1 text-xs font-bold rounded-md text-white bg-gray-400 hover:bg-gray-500 toggle-radio';
+
+                    // Função de toggle
+                    toggleButton.addEventListener('click', () => {
+                        const isEnabled = toggleButton.dataset.enabled === 'true';
+                        toggleButton.dataset.enabled = !isEnabled;
+                        if (!isEnabled) {
+                            toggleButton.textContent = 'LIGADO';
+                            toggleButton.className = 'sm:col-span-1 px-2 py-1 text-xs font-bold rounded-md text-white bg-green-600 hover:bg-green-700 toggle-radio';
+                        } else {
+                            toggleButton.textContent = 'DESLIGADO';
+                            toggleButton.className = 'sm:col-span-1 px-2 py-1 text-xs font-bold rounded-md text-white bg-gray-400 hover:bg-gray-500 toggle-radio';
+                        }
+                        persist();
+                    });
 
                     const nameInput = document.createElement('input');
                     nameInput.type = 'text';
@@ -2626,14 +3103,15 @@ async function handleLogin(e) {
                         const s = (siteInput.value || '').trim();
                         const u = (urlInput.value || '').trim();
 
-                        // Posições fixas: name | program | site | url | HH:MM - HH:MM | dias
+                        // Posições fixas: name | program | site | url | HH:MM - HH:MM | dias | enabled
                         const timeToken = (inputStart.value && inputEnd.value)
                             ? `${inputStart.value} - ${inputEnd.value}`
                             : (inputStart.value || '');
                         const selected = weekdayAbbr.filter(d => dayInputs[d]?.checked);
                         const daysToken = selected.length > 0 ? selected.join(' ') : '';
+                        const enabledState = toggleButton.dataset.enabled === 'true' ? 'enabled' : 'disabled';
 
-                        const tokens = [n, p, s, u, timeToken, daysToken];
+                        const tokens = [n, p, s, u, timeToken, daysToken, enabledState];
                         const newLine = tokens.join(' | ');
 
                         const currentLines = (srcEl.value || '').split('\n').map(l => l.trim()).filter(l => l.length > 0);
@@ -2687,6 +3165,7 @@ async function handleLogin(e) {
                     weekdayAbbr.forEach(d => dayInputs[d].addEventListener('change', () => { persist(); updateStatus(); }));
 
                     row.appendChild(statusBadge);
+                    row.appendChild(toggleButton);
                     row.appendChild(nameInput);
                     row.appendChild(programInput);
                     row.appendChild(siteInput);
@@ -4532,7 +5011,7 @@ const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-
         async function renderActivityPage() {
             const tbody = document.getElementById('activity-table-body');
             if (!tbody) return;
-            tbody.innerHTML = '<tr><td colspan="8" class="px-6 py-4 text-sm text-gray-500">Carregando atividade...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="15" class="px-6 py-4 text-sm text-gray-500">Carregando atividade...</td></tr>';
             try {
                 // Empresas ativas
                 const companiesSnap = await getDocs(query(collection(db, "artifacts", appId, "public", "data", "companies"), where("status", "==", "active")));
@@ -4544,7 +5023,11 @@ const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-
                 // Mapa de contagens por empresa
                 const countsByCompany = {};
                 companies.forEach(c => {
-                    countsByCompany[c.id] = { Sites: 0, YouTube: 0, Impresso: 0, Rádio: 0, TV: 0, totalApprove: 0, pendingDeletion: 0, name: c.name };
+                    countsByCompany[c.id] = { 
+                        Sites: 0, YouTube: 0, Impresso: 0, Rádio: 0, TV: 0, 
+                        Twitter: 0, Facebook: 0, Instagram: 0, TikTok: 0, Kwai: 0, LinkedIn: 0, GoogleAlerts: 0,
+                        totalApprove: 0, pendingDeletion: 0, name: c.name 
+                    };
                 });
 
                 // Alertas pendentes
@@ -4555,7 +5038,28 @@ const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-
                     if (!cid || !countsByCompany[cid]) return;
                     const channelRaw = alert.channel || getChannelCategory(alert.source?.name);
                     const channelNorm = channelRaw === 'Rádios' ? 'Rádio' : channelRaw;
-                    const channel = ['Sites', 'YouTube', 'Impresso', 'Rádio', 'TV'].includes(channelNorm) ? channelNorm : 'Sites';
+                    
+                    // Mapeamento das fontes específicas
+                    let channel;
+                    if (['Sites', 'YouTube', 'Impresso', 'Rádio', 'TV', 'Twitter', 'Facebook', 'Instagram', 'TikTok', 'Kwai', 'LinkedIn', 'GoogleAlerts'].includes(channelNorm)) {
+                        channel = channelNorm;
+                    } else if (channelNorm.toLowerCase().includes('twitter')) {
+                        channel = 'Twitter';
+                    } else if (channelNorm.toLowerCase().includes('facebook')) {
+                        channel = 'Facebook';
+                    } else if (channelNorm.toLowerCase().includes('instagram')) {
+                        channel = 'Instagram';
+                    } else if (channelNorm.toLowerCase().includes('tiktok')) {
+                        channel = 'TikTok';
+                    } else if (channelNorm.toLowerCase().includes('kwai')) {
+                        channel = 'Kwai';
+                    } else if (channelNorm.toLowerCase().includes('linkedin')) {
+                        channel = 'LinkedIn';
+                    } else if (channelNorm.toLowerCase().includes('google') || channelNorm.toLowerCase().includes('alert')) {
+                        channel = 'GoogleAlerts';
+                    } else {
+                        channel = 'Sites';
+                    }
                     countsByCompany[cid][channel] += 1;
                     countsByCompany[cid].totalApprove += 1;
                 });
@@ -4572,12 +5076,12 @@ const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-
                 // Renderização da tabela
                 tbody.innerHTML = '';
                 if (companies.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="8" class="px-6 py-4 text-sm text-gray-500">Nenhuma empresa ativa encontrada.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="15" class="px-6 py-4 text-sm text-gray-500">Nenhuma empresa ativa encontrada.</td></tr>';
                     return;
                 }
                 companies.sort((a, b) => a.name.localeCompare(b.name));
                 companies.forEach(c => {
-                    const cnt = countsByCompany[c.id] || { Sites: 0, YouTube: 0, Impresso: 0, Rádio: 0, TV: 0, totalApprove: 0, pendingDeletion: 0 };
+                    const cnt = countsByCompany[c.id] || { Sites: 0, YouTube: 0, Impresso: 0, Rádio: 0, TV: 0, Twitter: 0, Facebook: 0, Instagram: 0, TikTok: 0, Kwai: 0, LinkedIn: 0, GoogleAlerts: 0, totalApprove: 0, pendingDeletion: 0 };
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
                         <td class="px-6 py-4 text-sm text-gray-700 font-medium">${c.name}</td>
@@ -4586,6 +5090,13 @@ const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-
                         <td class="px-6 py-4 text-sm text-gray-700">${cnt.Impresso}</td>
                         <td class="px-6 py-4 text-sm text-gray-700">${cnt.Rádio}</td>
                         <td class="px-6 py-4 text-sm text-gray-700">${cnt.TV}</td>
+                        <td class="px-6 py-4 text-sm text-gray-700">${cnt.Twitter}</td>
+                        <td class="px-6 py-4 text-sm text-gray-700">${cnt.Facebook}</td>
+                        <td class="px-6 py-4 text-sm text-gray-700">${cnt.Instagram}</td>
+                        <td class="px-6 py-4 text-sm text-gray-700">${cnt.TikTok}</td>
+                        <td class="px-6 py-4 text-sm text-gray-700">${cnt.Kwai}</td>
+                        <td class="px-6 py-4 text-sm text-gray-700">${cnt.LinkedIn}</td>
+                        <td class="px-6 py-4 text-sm text-gray-700">${cnt.GoogleAlerts}</td>
                         <td class="px-6 py-4 text-sm text-gray-700">${cnt.totalApprove}</td>
                         <td class="px-6 py-4 text-sm text-gray-700">${cnt.pendingDeletion}</td>
                     `;
@@ -4599,10 +5110,17 @@ const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-
                     acc.Impresso += v.Impresso;
                     acc.Rádio += v.Rádio;
                     acc.TV += v.TV;
+                    acc.Twitter += v.Twitter;
+                    acc.Facebook += v.Facebook;
+                    acc.Instagram += v.Instagram;
+                    acc.TikTok += v.TikTok;
+                    acc.Kwai += v.Kwai;
+                    acc.LinkedIn += v.LinkedIn;
+                    acc.GoogleAlerts += v.GoogleAlerts;
                     acc.totalApprove += v.totalApprove;
                     acc.pendingDeletion += v.pendingDeletion;
                     return acc;
-                }, { Sites: 0, YouTube: 0, Impresso: 0, Rádio: 0, TV: 0, totalApprove: 0, pendingDeletion: 0 });
+                }, { Sites: 0, YouTube: 0, Impresso: 0, Rádio: 0, TV: 0, Twitter: 0, Facebook: 0, Instagram: 0, TikTok: 0, Kwai: 0, LinkedIn: 0, GoogleAlerts: 0, totalApprove: 0, pendingDeletion: 0 });
                 const trTotal = document.createElement('tr');
                 trTotal.innerHTML = `
                     <td class="px-6 py-4 text-sm text-gray-800 font-semibold">Total</td>
@@ -4611,6 +5129,13 @@ const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-
                     <td class="px-6 py-4 text-sm text-gray-800 font-semibold">${totals.Impresso}</td>
                     <td class="px-6 py-4 text-sm text-gray-800 font-semibold">${totals.Rádio}</td>
                     <td class="px-6 py-4 text-sm text-gray-800 font-semibold">${totals.TV}</td>
+                    <td class="px-6 py-4 text-sm text-gray-800 font-semibold">${totals.Twitter}</td>
+                    <td class="px-6 py-4 text-sm text-gray-800 font-semibold">${totals.Facebook}</td>
+                    <td class="px-6 py-4 text-sm text-gray-800 font-semibold">${totals.Instagram}</td>
+                    <td class="px-6 py-4 text-sm text-gray-800 font-semibold">${totals.TikTok}</td>
+                    <td class="px-6 py-4 text-sm text-gray-800 font-semibold">${totals.Kwai}</td>
+                    <td class="px-6 py-4 text-sm text-gray-800 font-semibold">${totals.LinkedIn}</td>
+                    <td class="px-6 py-4 text-sm text-gray-800 font-semibold">${totals.GoogleAlerts}</td>
                     <td class="px-6 py-4 text-sm text-gray-800 font-semibold">${totals.totalApprove}</td>
                     <td class="px-6 py-4 text-sm text-gray-800 font-semibold">${totals.pendingDeletion}</td>
                 `;
@@ -4618,7 +5143,7 @@ const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-
 
             } catch (e) {
                 console.error('Erro ao renderizar atividade:', e);
-                tbody.innerHTML = `<tr><td colspan="8" class="px-6 py-4 text-sm text-red-600">Erro ao carregar atividade.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="15" class="px-6 py-4 text-sm text-red-600">Erro ao carregar atividade.</td></tr>`;
             }
         }
 
@@ -5480,6 +6005,84 @@ const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-
             if (exportBtn) exportBtn.onclick = () => window.print();
         }
 
+        // Função para renderizar a página Site
+        async function renderSitePage() {
+            const siteToggle = document.getElementById('site-toggle');
+            const siteContent = document.getElementById('site-content');
+            const loginContent = document.getElementById('login-content');
+            const fazerLoginBtn = document.getElementById('fazer-login-btn');
+            const planosTableBody = document.getElementById('planos-table-body');
+            
+            if (!siteToggle || !siteContent || !loginContent) return;
+            
+            // Configurar o toggle
+            siteToggle.addEventListener('change', function() {
+                if (this.checked) {
+                    siteContent.classList.remove('hidden');
+                    loginContent.classList.add('hidden');
+                } else {
+                    siteContent.classList.add('hidden');
+                    loginContent.classList.remove('hidden');
+                    // Mostrar conteúdo da tela de login atual
+                    if (loginPage) {
+                        loginContent.innerHTML = loginPage.innerHTML;
+                    }
+                }
+            });
+            
+            // Configurar botão Fazer Login
+            if (fazerLoginBtn) {
+                fazerLoginBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    updateView('login');
+                });
+            }
+            
+            // Preencher tabela de planos
+            if (planosTableBody) {
+                const planos = [
+                    {
+                        nome: 'Básico',
+                        recursos: ['Monitoramento de 5 palavras-chave', 'Relatórios diários', 'Suporte por email'],
+                        preco: 'R$ 299/mês'
+                    },
+                    {
+                        nome: 'Profissional', 
+                        recursos: ['Monitoramento de 15 palavras-chave', 'Relatórios em tempo real', 'Suporte prioritário', 'Análise de sentimentos'],
+                        preco: 'R$ 599/mês'
+                    },
+                    {
+                        nome: 'Enterprise',
+                        recursos: ['Monitoramento ilimitado', 'API de integração', 'Suporte 24/7', 'Relatórios personalizados', 'Treinamento da equipe'],
+                        preco: 'R$ 1.299/mês'
+                    }
+                ];
+                
+                planosTableBody.innerHTML = '';
+                planos.forEach(plano => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${plano.nome}</td>
+                        <td class="px-6 py-4 text-sm text-gray-500">
+                            <ul class="list-disc pl-5 space-y-1">
+                                ${plano.recursos.map(recurso => `<li>${recurso}</li>`).join('')}
+                            </ul>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-indigo-600">${plano.preco}</td>
+                    `;
+                    planosTableBody.appendChild(row);
+                });
+            }
+            
+            // Inicializar com toggle desligado (mostrar login)
+            siteToggle.checked = false;
+            siteContent.classList.add('hidden');
+            loginContent.classList.remove('hidden');
+            if (loginPage) {
+                loginContent.innerHTML = loginPage.innerHTML;
+            }
+        }
+
         // --- INICIALIZAÇÃO E OUVINTES DE EVENTOS --- 
         document.addEventListener('DOMContentLoaded', () => {
             pageSections = document.querySelectorAll('.page-section');
@@ -5499,6 +6102,7 @@ const audioHtml = isRadio ? `<audio controls preload=\"none\" class=\"w-full mt-
             searchPage = document.getElementById('search-page');
             activityPage = document.getElementById('activity-page');
             superAdminPage = document.getElementById('super-admin-page');
+            sitePage = document.getElementById('site-page');
             companyKeywordAdminPage = document.getElementById('company-keyword-admin-page');
             companySettingsAdminPage = document.getElementById('company-settings-admin-page');
             reportPage = document.getElementById('report-page');
@@ -5747,6 +6351,7 @@ fetchWindowEndInput = document.getElementById('fetchWindowEnd');
             if (navAtividade) navAtividade.addEventListener('click', (e) => { e.preventDefault(); updateView('activity'); });
             if (navSuperAdmin) navSuperAdmin.addEventListener('click', (e) => { e.preventDefault(); updateView('super-admin'); });
             if (navConfiguracoesAdmin) navConfiguracoesAdmin.addEventListener('click', (e) => { e.preventDefault(); updateView('configuracoes-admin'); });
+            if (navSite) navSite.addEventListener('click', (e) => { e.preventDefault(); updateView('site'); });
             if (navLogout) navLogout.addEventListener('click', (e) => { e.preventDefault(); handleLogout(); });
             if (manualTriggerBtn) manualTriggerBtn.addEventListener('click', handleManualTrigger);
             if (companyForm) companyForm.addEventListener('submit', handleCompanySubmit);
@@ -6168,6 +6773,75 @@ if (youtubeFrequencyInput) youtubeFrequencyInput.addEventListener('input', () =>
             });
         });
 
+        // Carregar página baseada na URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const pageParam = urlParams.get('page');
+        if (pageParam && pageParam !== 'dashboard') {
+            updateView(pageParam);
+        } else {
+            updateView('dashboard');
+        }
+
+// --- LOGICA DE CONTROLE DE CUSTOS CORRIGIDA ---
+
+// 1. Abrir a página
+const btnApiControl = document.getElementById('btn-api-control');
+if (btnApiControl) {
+    btnApiControl.addEventListener('click', () => updateView('api-control'));
+}
+
+// 2. Botão Voltar
+const btnBackApi = document.getElementById('back-to-dashboard-api');
+if (btnBackApi) {
+    btnBackApi.addEventListener('click', () => updateView('configuracoes-admin'));
+}
+
+// 3. Carregar dados do Firebase ao abrir a tela
+async function renderApiControlPage() {
+    try {
+        const settingsRef = doc(db, "artifacts", appId, "public", "data", "settings", "global");
+        const docSnap = await getDoc(settingsRef);
+        if (docSnap.exists()) {
+            const s = docSnap.data();
+            const tglTranslate = document.getElementById('api-translate-toggle');
+            const tglSentiment = document.getElementById('api-sentiment-toggle');
+            const tglVision = document.getElementById('api-vision-toggle');
+
+            if (tglTranslate) tglTranslate.checked = s.apiTranslateEnabled !== false;
+            if (tglSentiment) tglSentiment.checked = s.apiSentimentEnabled !== false;
+            if (tglVision) tglVision.checked = s.apiVisionEnabled !== false;
+        }
+    } catch (error) {
+        console.error("Erro ao carregar configurações de API:", error);
+    }
+}
+
+// 4. Salvar alteração IMEDIATAMENTE ao clicar (sem clonar elementos)
+function setupApiToggleListeners() {
+    const toggles = ['api-translate-toggle', 'api-sentiment-toggle', 'api-vision-toggle'];
+    
+    toggles.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.onchange = async (e) => {
+                const isChecked = e.target.checked; // Captura se você marcou ou desmarcou
+                const field = id.replace('-toggle', '').replace('api-', 'api') + 'Enabled';
+                const settingsRef = doc(db, "artifacts", appId, "public", "data", "settings", "global");
+                
+                try {
+                    await setDoc(settingsRef, { [field]: isChecked }, { merge: true });
+                    showAlert('Configuração salva no banco de dados!', 'success');
+                } catch (err) {
+                    console.error("Erro ao salvar:", err);
+                    showAlert('Erro ao salvar no servidor.', 'error');
+                }
+            };
+        }
+    });
+}
+
+// Os ouvintes são inicializados quando a página de controle de API é exibida
+setupApiToggleListeners();
 
     </script>
 </body>
